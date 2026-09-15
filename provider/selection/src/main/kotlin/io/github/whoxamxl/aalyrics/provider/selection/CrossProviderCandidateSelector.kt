@@ -51,6 +51,8 @@ class CrossProviderCandidateSelector : CandidateSelector {
         candidates: Collection<LyricsCandidate>,
     ): List<CandidateScore> {
         return candidates.mapNotNull { candidate ->
+            if (!hasUsableLyricContent(candidate)) return@mapNotNull null
+
             val metadata = metadataScore(track, candidate) ?: return@mapNotNull null
             if (metadata < MIN_METADATA_SCORE) return@mapNotNull null
 
@@ -270,6 +272,12 @@ class CrossProviderCandidateSelector : CandidateSelector {
                 syncType == LyricsSyncType.PLAIN -> 0.55
                 else -> 0.80
             }
+        }
+    }
+
+    private fun hasUsableLyricContent(candidate: LyricsCandidate): Boolean {
+        return candidate.lyrics.lines.any { line ->
+            line.text.isNotBlank() && line.text.trim() != "♪"
         }
     }
 
