@@ -6,7 +6,7 @@ This document defines the architectural boundaries for AALyrics. The project was
 
 AALyrics is a greenfield codebase, but not a greenfield behavior specification. The working `whoxamxl/auto-lyrics` fork is treated as a behavioral reference and regression oracle. Proven behavior should not be re-invented merely because the new module structure is different.
 
-The Core Readiness Gate completed in PR #14. Post-gate migration now preserves mature behavior behind the boundaries established before adaptation began.
+The Core Readiness Gate completed in PR #14. Post-gate migration now preserves mature behavior behind the boundaries established before adaptation began. Production candidate selection was migrated in PR #17; concrete providers have not yet been migrated to `main`.
 
 ## Design goals
 
@@ -26,13 +26,15 @@ The Core Readiness Gate completed in PR #14. Post-gate migration now preserves m
 Every significant behavior from the working fork is classified before implementation work begins:
 
 - **PRESERVE** — behavior is already correct and should migrate with minimal semantic change.
-- **REFACTOR** — behavior should stay, but ownership/dependencies should change to fit AALyrics.
+- **REFACTOR** — behavior should stay, but ownership/dependencies should change to fit AALyrics. Mature implementation code may be reused/refactored where appropriate; REFACTOR does not imply a gratuitous rewrite.
 - **REWRITE** — existing implementation is too coupled, obsolete, or unsuitable; reimplement the behavior against the new contracts.
 - **DROP** — behavior is unused, superseded, or intentionally excluded.
 
 The classification is tracked in `docs/MIGRATION_INVENTORY.md`. Classification can change when evidence changes, but silent reinvention is not allowed.
 
 Before every non-trivial migration slice, re-check the current working-fork `main` rather than relying only on an older snapshot.
+
+Concrete-provider ownership and migration rules are defined in `docs/PROVIDER_ARCHITECTURE.md`; provider-specific capabilities and quirks are recorded under `docs/providers/`. Provider-profile or migration-policy approval is not by itself authorization to start provider implementation.
 
 ## Modules
 
@@ -58,11 +60,21 @@ Pure Kotlin AALyrics orchestration. It owns application lyrics state, provider o
 
 Pure Kotlin production implementation of the `CandidateSelector` port.
 
-This module owns cross-provider matching/ranking policy, including the mature metadata, payload-quality, source-confidence, synchronized/plain fallback, cross-script, recording-version, and karaoke-preference behavior adapted from the working fork. Generic matching/version helpers that were historically embedded in `LrcLibClient` live here because they are not LRCLIB networking concerns.
+This module owns cross-provider matching/ranking policy, including the mature metadata, payload-quality, source-confidence, synchronized/plain fallback, cross-script, recording-version, and karaoke-preference behavior adapted from the working fork. Generic matching/version helpers that were historically embedded in `LrcLibClient` currently live here because they are not LRCLIB networking concerns.
 
 Provider-specific source-confidence policy is intentionally outside `:core:lyrics`. This preserves dependency inversion: core knows the selector interface, while the composition root may inject `CrossProviderCandidateSelector` without making core depend on its implementation.
 
 Concrete provider networking, parsing, authentication, and provider-local search strategy do not belong in this module.
+
+If concrete providers later need the same pure generic matching semantics, extract a neutral shared provider-matching utility rather than duplicating those helpers or making provider adapters depend on the production selector implementation.
+
+### Concrete provider modules
+
+Concrete providers are outer adapters implementing `LyricsProvider`.
+
+Each provider owns only its provider-local transport/authentication, query/fallback strategy, DTOs, parsing, provider-local validation, and normalization into `LyricsCandidate`. A provider may report provider-neutral evidence discovered during search, but it must not decide the final winner across providers.
+
+Shared policy is defined in `docs/PROVIDER_ARCHITECTURE.md`; concise provider profiles live in `docs/providers/`.
 
 ### `:platform:media`
 
@@ -97,7 +109,7 @@ Android Auto presentation only. It consumes the same application/domain state as
 
 The diagram is a compile-time dependency sketch, not a runtime call-order diagram. `:provider:selection` depends on the selector port in `:core:lyrics`; `:core:lyrics` never depends on `:provider:selection`.
 
-Concrete provider modules depend on `:provider:api` and `:core:model`. The domain must never depend on a concrete provider.
+Concrete provider modules depend on `:provider:api` and normalized model types required by that contract. The domain must never depend on a concrete provider. Shared pure provider-matching utilities may later be extracted only when needed by more than one outer provider/selection component.
 
 ## Runtime state flow
 
@@ -205,6 +217,7 @@ Represents the observable domain state consumed by presentation layers. Loading,
 - UI layers must not retry, rank, merge, or fetch provider results directly.
 - Android framework types must not cross into `:core:model`, `:core:lyrics`, or `:provider:api`.
 - Existing proven matching/scoring behavior must not be replaced without explicit regression evidence and a documented reason.
+- Concrete providers surface operational failures according to the provider contract instead of silently converting every failure into a no-result outcome.
 
 ## Architecture guardrails
 
@@ -212,6 +225,6 @@ Represents the observable domain state consumed by presentation layers. Loading,
 
 ## Future extension points
 
-Translation, caching, timing adjustment, demand gating, session selection, karaoke rendering, and other features may be introduced later behind explicit contracts. Their future existence must not be used as a reason to mix those responsibilities into `LyricsCoordinator`, `PlaybackLyricsController`, or provider selection.
+Translation, caching, timing adjustment, demand gating, session selection, karaoke rendering, and other features may be introduced later behind explicit contracts. Their future existence must not be used as a reason to mix those responsibilities into `LyricsCoordinator`, `PlaybackLyricsController`, provider selection, or concrete provider adapters.
 
-The roadmap and the completed Core Readiness Gate are defined in `docs/ROADMAP.md` and `docs/CORE_READINESS_GATE.md`. Migration classifications are defined in `docs/MIGRATION_INVENTORY.md`.
+The roadmap and the completed Core Readiness Gate are defined in `docs/ROADMAP.md` and `docs/CORE_READINESS_GATE.md`. Migration classifications are defined in `docs/MIGRATION_INVENTORY.md`; concrete-provider migration policy is defined in `docs/PROVIDER_ARCHITECTURE.md`.
