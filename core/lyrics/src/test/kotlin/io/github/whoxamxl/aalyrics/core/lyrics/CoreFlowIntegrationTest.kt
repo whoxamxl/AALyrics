@@ -244,6 +244,41 @@ class CoreFlowIntegrationTest {
         assertEquals(2, selector.callCount)
     }
 
+    @Test
+    fun `clear cancels active lookup and leaves idle without selection`() = runTest {
+        val track = Track(
+            title = "Clear",
+            artists = listOf("AALyrics"),
+        )
+        val started = CompletableDeferred<Unit>()
+        val cancelled = CompletableDeferred<Unit>()
+        val provider = RecordingProvider("provider") {
+            started.complete(Unit)
+            try {
+                awaitCancellation()
+            } finally {
+                cancelled.complete(Unit)
+            }
+        }
+        val selector = RecordingSelector(null)
+        val coordinator = LyricsCoordinator(
+            providers = listOf(provider),
+            selector = selector,
+            scope = this,
+        )
+
+        coordinator.startLookup(track)
+        runCurrent()
+        assertTrue(started.isCompleted)
+
+        coordinator.clear()
+        advanceUntilIdle()
+
+        assertTrue(cancelled.isCompleted)
+        assertEquals(LyricsState.Idle, coordinator.state.value)
+        assertEquals(0, selector.callCount)
+    }
+
     private fun candidate(
         providerId: String,
         track: Track,
