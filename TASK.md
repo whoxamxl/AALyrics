@@ -1,81 +1,62 @@
-# Core Readiness Task
+# Playback Boundary Task
 
-This branch implements only Phase 3.4 of `docs/ROADMAP.md`.
+This branch implements only Phase 4 of `docs/ROADMAP.md`.
+
+## Reference check
+
+Before implementation, the working fork was re-checked at `8484bed2dbe8db5ca7b17dec5481b3c22714dc6f` (`v1.13.0`). Relevant behavior reviewed:
+
+- `SpotifyTrackIdentity` — PRESERVE / REFACTOR semantics: only Spotify playback may yield a Spotify track reference; accept explicit `spotify:track:` URIs and `open.spotify.com/track/...` URLs; do not infer a Spotify track reference from a bare 22-character media id.
+- `MediaTracker` — REWRITE boundary only. It currently mixes Android metadata, playback state, debounce, lyrics fetching, cache, translation, artwork, timing, and presentation state.
+- `MediaListenerService` — REWRITE / REFACTOR later as a thin Android session-selection adapter.
+- `LyricsDemandController` — PRESERVE / REFACTOR later. Demand gating is intentionally not folded into metadata normalization or lyrics lookup identity in this phase.
+
+No previous-fork implementation code is copied into AALyrics before the STOP GATE.
 
 ## Scope guard
 
-This phase is validation-first. Do not add concrete providers, resolver/scoring logic, Android media integration, cache, translation, phone UI, Android Auto UI, or import/adapt implementation code from the previous Auto Lyrics fork.
+Phase 4 defines the Android playback boundary and the pure lookup-driving boundary only.
 
-Use the existing AALyrics `LyricsState`, `LyricsCoordinator`, provider contracts, fake providers, and a fake `CandidateSelector`. Add production code only if a test exposes a genuine core boundary defect that cannot be expressed or fixed through existing contracts.
+Do not add:
 
-Before adding any non-trivial behavior, re-check `docs/MIGRATION_INVENTORY.md` and the current `whoxamxl/auto-lyrics` main branch so proven fork behavior is not independently reinvented.
+- concrete lyrics providers,
+- resolver/scoring logic,
+- cache or translation,
+- phone or Android Auto presentation,
+- process-wide demand gating,
+- metadata debounce,
+- artwork/color extraction,
+- provider-specific timeout/networking policy.
 
 ## Commit strategy
 
-Keep commits small and single-purpose so each change is easy to review and revert.
+Keep development commits small and single-purpose. PR-level squash remains separate from branch history.
 
-- one logical test group per commit where practical,
-- production fixes, if any, in a separate commit from the test that exposes them,
-- documentation/checklist updates in their own commit,
-- avoid bundling unrelated readiness checks into one large commit,
-- keep PR-level squashing separate from branch-level development history.
+1. document Phase 4 scope,
+2. define explicit playback-track identity in `:core:model`,
+3. add a pure playback-to-lyrics lookup controller in `:core:lyrics`,
+4. add Spotify playback-reference normalization in `:platform:media`,
+5. add Android MediaController → `PlaybackSnapshot` mapping,
+6. add platform/core boundary tests,
+7. update roadmap/migration docs,
+8. open PR, run CI, request Codex review, and stop before merge.
 
-For Phase 3.4, prefer roughly this sequence:
+## Phase 4 checklist
 
-1. baseline end-to-end happy-path integration test,
-2. provider-order / multi-provider aggregation tests,
-3. failure-state tests,
-4. cancellation / stale-result / repeated-lookup tests,
-5. clear()/selector invocation ownership tests,
-6. documentation/checklist update.
-
-## Phase 3.4 — Core integration/readiness tests
-
-- [x] Exercise the complete provider-independent flow through `LyricsCoordinator` and `LyricsState` using fake providers and a fake selector only.
-- [x] Verify provider completion order does not become the winner-selection rule.
-- [x] Verify multiple providers can contribute normalized candidates before selection.
-- [x] Verify one provider failure does not discard healthy provider results.
-- [x] Verify all-provider failure reaches `Failed` without exposing raw exceptions in shared state.
-- [x] Verify no usable winner with healthy providers reaches `NotFound`.
-- [x] Verify a partial provider failure plus a winner reaches `Degraded`.
-- [x] Verify a newer lookup supersedes older work and stale completion cannot overwrite current state.
-- [x] Verify repeating the same track still creates a fresh lookup identity and stale prior work remains rejected.
-- [x] Verify `clear()` cancels active work and leaves `Idle` as the final owned state.
-- [x] Verify selector invocation happens once per completed lookup after candidate collection.
-- [x] Verify the core flow is independent of Android and network types.
-- [x] Run debug build and all unit tests in CI.
-- [x] Open one Phase 3.4 PR to `main`.
-
-## Readiness evidence
-
-- `CoreFlowIntegrationTest` covers the end-to-end fake-only flow and lifecycle/failure invariants.
-- Existing `LyricsStateTest` retains direct stale-completion reducer coverage.
-- `:core:model`, `:provider:api`, and `:core:lyrics` all use the pure Kotlin JVM plugin rather than an Android plugin.
-- The only non-project runtime dependency in `:core:lyrics` is `kotlinx-coroutines-core`; no Android framework or networking library is present.
-- No production source changed during Phase 3.4; all behavior under validation is the already-merged core.
-- PR #10 is open and its branch-name check, debug APK build, and unit tests passed in CI run `34944334320`.
-
-## Explicitly out of scope
-
-- [ ] LRCLIB implementation
-- [ ] Musixmatch implementation
-- [ ] PetitLyrics implementation or configuration changes
-- [ ] SyncLRC implementation
-- [ ] adapting `LyricsProviderResolver`
-- [ ] scoring weights or metadata similarity logic
-- [ ] recording-version / cross-script matching
-- [ ] provider-specific timeout/networking policy
-- [ ] Android `MediaSession` / `MediaController`
-- [ ] playback demand gating or metadata debounce
-- [ ] cache / translation
-- [ ] phone / Android Auto presentation
+- [ ] Make track-change identity explicit and independent from playback position/status.
+- [ ] Prefer stable playback references when available; otherwise use source media identity, then metadata fallback.
+- [ ] Ensure duration/position/playback-state-only changes do not restart lyrics lookup.
+- [ ] Clear lyrics ownership when playback no longer has a track.
+- [ ] Preserve Spotify playback identity semantics without leaking Spotify logic into lyrics core.
+- [ ] Map Android MediaController metadata/state into `PlaybackSnapshot` inside `:platform:media`.
+- [ ] Keep Android framework types out of `:core:model`, `:provider:api`, and `:core:lyrics`.
+- [ ] Test the pure normalization and lookup-driving logic without an emulator or network.
+- [ ] Update durable architecture/roadmap notes.
+- [ ] Run CI and Codex review.
+- [ ] Stop before merge for explicit approval.
 
 ## Exit criteria
 
-Phase 3.4 is complete when the pure Kotlin core flow is covered end-to-end with fakes and the tests demonstrate that orchestration, lifecycle ownership, failure isolation, cancellation, and stale-result protection behave correctly without relying on any concrete provider or Android framework type.
+Phase 4 is complete when Android media data can be normalized into the existing provider-independent playback model, and the pure lyrics layer can decide whether a playback snapshot starts, preserves, or clears a lookup without depending on Android classes or provider implementations.
 
-Passing Phase 3.4 does **not** authorize provider migration. The project proceeds next to Phase 4 Playback boundary, then Phase 5 Core Readiness validation, then stops at the documented STOP GATE for explicit architecture/migration review.
-
-## Next action
-
-Review and squash-merge PR #10. After merge, Phase 4 begins on a new topic branch. Do not start Phase 4 or any fork code adaptation on this branch.
+Passing Phase 4 does not authorize provider migration. After merge, proceed only to Phase 5 Core Readiness validation, then stop at the documented STOP GATE.
