@@ -43,8 +43,8 @@ For Phase 3.4, prefer roughly this sequence:
 - [x] Verify `clear()` cancels active work and leaves `Idle` as the final owned state.
 - [x] Verify selector invocation happens once per completed lookup after candidate collection.
 - [x] Verify the core flow is independent of Android and network types.
-- [ ] Run debug build and all unit tests in CI.
-- [ ] Open one Phase 3.4 PR to `main`.
+- [x] Run debug build and all unit tests in CI.
+- [x] Open one Phase 3.4 PR to `main`.
 
 ## Readiness evidence
 
@@ -53,6 +53,7 @@ For Phase 3.4, prefer roughly this sequence:
 - `:core:model`, `:provider:api`, and `:core:lyrics` all use the pure Kotlin JVM plugin rather than an Android plugin.
 - The only non-project runtime dependency in `:core:lyrics` is `kotlinx-coroutines-core`; no Android framework or networking library is present.
 - No production source changed during Phase 3.4; all behavior under validation is the already-merged core.
+- PR #10 is open and its branch-name check, debug APK build, and unit tests passed in CI run `34944334320`.
 
 ## Explicitly out of scope
 
@@ -77,4 +78,4 @@ Passing Phase 3.4 does **not** authorize provider migration. The project proceed
 
 ## Next action
 
-Open the Phase 3.4 PR, run the branch-name check, debug build, and all unit tests in CI, then record the result. Do not begin Phase 4 or any fork code adaptation on this branch.
+Review and squash-merge PR #10. After merge, Phase 4 begins on a new topic branch. Do not start Phase 4 or any fork code adaptation on this branch.
