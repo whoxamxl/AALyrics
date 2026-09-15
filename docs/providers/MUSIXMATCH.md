@@ -18,6 +18,28 @@ The mature provider uses the anonymous mobile API flow and may return:
 
 Expected AALyrics descriptor capability: `LINE`, `WORD`.
 
+## Spotify relationship
+
+Musixmatch is Spotify-aware, but Spotify is **not** a separate lyrics provider in the current working fork.
+
+When playback identity contains a valid Spotify track reference, the Musixmatch client uses the Spotify track ID as strong request/match evidence. The lyric payload still comes from Musixmatch.
+
+```text
+Spotify playback
+    ↓
+Spotify TrackReference
+    ↓
+Musixmatch request (`track_spotify_id` when available)
+    ↓
+Musixmatch candidate identity validation
+    ↓
+Musixmatch RichSync / subtitle payload
+```
+
+An explicit Spotify-ID mismatch rejects the Musixmatch candidate. Absence of a Spotify reference does not disable Musixmatch; normal metadata matching remains available.
+
+In AALyrics, Spotify resource extraction remains owned by `:platform:media`. The Musixmatch adapter consumes normalized identity/reference data only and must not depend directly on Android media APIs or the old platform helper.
+
 ## Current transport/authentication behavior
 
 The working implementation uses the mobile API path because the previously tested desktop endpoint produced unreliable/poisoned matches.
@@ -86,7 +108,7 @@ Outside Musixmatch:
 
 - final cross-provider ranking,
 - application state and provider fan-out,
-- Android media identity extraction,
+- Spotify/Android media identity extraction,
 - UI, global cache, and translation.
 
 ## Migration note
