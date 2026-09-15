@@ -1,60 +1,35 @@
-# Provider Migration Documentation Task
+# LRCLIB Provider Migration
 
-## Current branch
+## Branch and reference
 
-`docs/provider-migration-architecture`
+- Branch: `feature/lrclib-provider-migration`
+- AALyrics base: `c7280dedbe73bf69998ad9b9256fcc75a352e9c1` (latest main).
+- Working fork: `whoxamxl/auto-lyrics` main `8484bed2dbe8db5ca7b17dec5481b3c22714dc6f`, fetched and re-checked before implementation.
+- Read AGENTS.md, architecture, provider architecture, migration inventory, LRCLIB profile, roadmap, and fork client/parser/matching tests and call sites.
+- User explicitly authorized LRCLIB implementation as PRESERVE / REFACTOR.
 
-## Goal
+## Acceptance criteria
 
-Define the provider migration/documentation policy before any concrete provider implementation resumes.
+- Preserve exact-get fast path, structured/featured/title-only/free-text discovery, deduplication, local validation thresholds, and synchronized-before-plain fallback.
+- Extract shared metadata/version semantics to a neutral pure provider matching module; keep cross-provider ranking in selection.
+- Implement LRCLIB transport, parsing and normalization behind LyricsProvider; report provider metadata/attribution without fabricating missing metadata.
+- Preserve existing matching/version/parser regression cases and add deterministic transport/fallback, malformed-result, operational-failure and cancellation tests.
+- Reject unusable payloads before local selection; surface operational errors and propagate cancellation as required by the AALyrics contract.
+- No application wiring, other provider migration, UI, cache, translation, or cross-provider scoring changes.
+- Relevant tests, full repository checks and PR CI pass; complete bounded review and stop before merge.
 
-This branch is documentation-only. It does **not** authorize or contain LRCLIB, PetitLyrics, Musixmatch, or SyncLRC implementation migration.
+## Plan/status
 
-Reference baseline re-checked before documenting provider profiles:
-
-- repository: `whoxamxl/auto-lyrics`
-- branch: `main`
-- commit: `8484bed2dbe8db5ca7b17dec5481b3c22714dc6f` (`v1.13.0`)
-
-## Work slices
-
-- [x] Add one shared provider architecture/migration document.
-- [x] Add concise provider profiles for LRCLIB, PetitLyrics, Musixmatch, and SyncLRC.
-- [x] Keep provider profiles focused on capabilities, provider-local behavior, quirks, invariants, and migration status rather than duplicating architecture.
-- [x] Clarify that playback sources such as Spotify are not lyrics providers, while normalized Spotify identity may be consumed by Musixmatch for stronger matching.
-- [x] Align `ARCHITECTURE.md`, `ROADMAP.md`, and `MIGRATION_INVENTORY.md` with the finalized provider migration model.
-- [x] Update `AGENTS.md` so planning/documentation approval is never inferred as authorization to begin provider implementation.
-- [x] Open a documentation PR and run CI.
-- [ ] Complete the bounded review process.
+- [x] Verify tools/access and latest branches; inspect approved docs and mature implementation/tests.
+- [ ] Extract shared matching and port matching/version regression tests.
+- [ ] Preserve parser and implement LRCLIB adapter with regression tests.
+- [ ] Update durable migration documentation.
+- [ ] Run targeted tests, full repository tests/build and architecture checks.
+- [ ] Open PR and perform at most two normal review rounds; fix material in-scope findings.
 - [ ] Stop before merge for explicit approval.
 
-## Policy documented
+## Intentional adaptations
 
-- AALyrics architecture remains authoritative.
-- Existing mature provider implementations in the working fork are normally **PRESERVE / REFACTOR**, not gratuitous rewrites.
-- Provider migration may reuse/refactor mature implementation semantics and tested code structure where appropriate; do not force behavioral re-derivation merely to claim a rewrite.
-- Provider-local HTTP, authentication, search, parsing, and provider validation stay inside the provider adapter.
-- Cross-provider ranking remains in `:provider:selection` behind the `CandidateSelector` port.
-- Providers return normalized `LyricsCandidate` values and provider-neutral evidence, not final global scores.
-- A playback source is not automatically a lyrics provider; Spotify currently supplies normalized track identity that Musixmatch may use as corroboration while Musixmatch remains the lyrics source.
-- Each concrete provider is migrated as a bounded slice with regression coverage.
-- PetitLyrics configuration values are immutable during migration unless the user explicitly requests otherwise.
-- Documentation/planning approval is not implementation approval.
-
-## Explicit non-goals
-
-- no concrete provider source migration,
-- no changes to provider network behavior,
-- no changes to selector scoring,
-- no application wiring for providers,
-- no reuse or cherry-picking from the existing experimental LRCLIB adaptation branch.
-
-## Durable documents
-
-- `docs/PROVIDER_ARCHITECTURE.md` — shared provider architecture and migration rules.
-- `docs/providers/LRCLIB.md` — LRCLIB provider profile.
-- `docs/providers/PETITLYRICS.md` — PetitLyrics provider profile and immutable configuration rule.
-- `docs/providers/MUSIXMATCH.md` — Musixmatch mobile-flow provider profile, including Spotify-aware matching semantics.
-- `docs/providers/SYNCLRC.md` — SyncLRC karaoke-only provider profile.
-- `docs/ARCHITECTURE.md`, `docs/ROADMAP.md`, and `docs/MIGRATION_INVENTORY.md` — aligned system/migration references.
-- `AGENTS.md` — execution authorization guardrail.
+- HTTP/service failures become exceptions, rather than the fork's catch-all no-result behavior, to satisfy the existing provider contract.
+- Parsed payload usability is checked before accepting fast-path/local winners, so malformed or empty timed payloads cannot block valid fallback.
+- Shared parser retains enhanced-LRC coverage; LRCLIB advertises and returns only PLAIN/LINE.
