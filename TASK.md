@@ -25,8 +25,8 @@
 - [x] Preserve parser and implement LRCLIB adapter with regression tests.
 - [x] Update durable migration documentation.
 - [x] Run targeted tests, full repository tests/build and architecture checks.
-- [ ] Open PR and perform at most two normal review rounds; fix material in-scope findings.
-- [ ] Stop before merge for explicit approval.
+- [x] Open PR #19 and perform bounded review; no material in-scope findings.
+- [x] Stop before merge; explicit user approval remains required.
 
 ## Intentional adaptations
 
@@ -36,5 +36,13 @@
 
 Shared utility validation: matching, selection and LRC parser tests passed locally. Java 25 needs a short jdk.net.unixdomain.tmpdir path on this machine; this is a command-only workaround.
 
+LRCLIB validation: 21 deterministic MockWebServer tests passed (discovery/fallback, deduplication, parsing, metadata, HTTP failures and in-flight cancellation). Full `test check :app:assembleDebug` (including Android lint), architecture and diff checks passed. PR review completed; final CI status is tracked on PR #19 and must be green before pre-merge approval.
 
-LRCLIB validation: 21 deterministic MockWebServer tests passed (discovery/fallback, deduplication, parsing, metadata, HTTP failures and in-flight cancellation). Full `test check :app:assembleDebug` (including Android lint), architecture and diff checks passed. PR review remains pending.
+## Bounded review record
+
+- PR: https://github.com/whoxamxl/AALyrics/pull/19
+- Normal round 1: Codex self-review of PR head `2dbb67d`, using this task, PR description, architecture and LRCLIB profile as acceptance criteria.
+- Reviewed discovery/fallback/local scoring against the working fork; normalized output, malformed payload handling, coroutine/HTTP cancellation and resource closure; shared matching/parser ownership; regression tests and Gradle/architecture boundaries.
+- Verified discovery/scoring source matches the fork after only the documented suspend, payload-usability and shared-duration substitutions. Global selector code changes are imports only.
+- No unresolved P0/P1 or current-scope blocking P2. The latest review has no material in-scope findings, so the AGENTS.md exit condition permits ending broad review after one round.
+- This final record changes documentation only; verify final-head CI through the PR checks. No merge or application wiring was performed.
