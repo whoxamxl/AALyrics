@@ -10,12 +10,14 @@ import io.github.whoxamxl.aalyrics.provider.api.LyricsProviderDescriptor
 import io.github.whoxamxl.aalyrics.provider.api.LyricsProviderId
 import io.github.whoxamxl.aalyrics.provider.api.LyricsRequest
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
+import kotlin.test.assertNotEquals
 import kotlin.test.assertTrue
 
 class CoreFlowIntegrationTest {
@@ -170,6 +172,76 @@ class CoreFlowIntegrationTest {
         val notFound = assertIs<LyricsState.NotFound>(coordinator.state.value)
         assertEquals(lookup, notFound.lookup)
         assertTrue(selector.candidates.isEmpty())
+    }
+
+    @Test
+    fun `new lookup supersedes older work and owns final state`() = runTest {
+        val firstTrack = Track(
+            title = "First",
+            artists = listOf("AALyrics"),
+        )
+        val secondTrack = firstTrack.copy(title = "Second")
+        val secondCandidate = candidate("provider", secondTrack, "second lyrics")
+        val firstStarted = CompletableDeferred<Unit>()
+        val firstCancelled = CompletableDeferred<Unit>()
+        val provider = RecordingProvider("provider") { request ->
+            if (request.track == firstTrack) {
+                firstStarted.complete(Unit)
+                try {
+                    awaitCancellation()
+                } finally {
+                    firstCancelled.complete(Unit)
+                }
+            } else {
+                listOf(secondCandidate)
+            }
+        }
+        val selector = RecordingSelector(secondCandidate)
+        val coordinator = LyricsCoordinator(
+            providers = listOf(provider),
+            selector = selector,
+            scope = this,
+        )
+
+        val firstLookup = coordinator.startLookup(firstTrack)
+        runCurrent()
+        assertTrue(firstStarted.isCompleted)
+
+        val secondLookup = coordinator.startLookup(secondTrack)
+        advanceUntilIdle()
+
+        assertTrue(firstCancelled.isCompleted)
+        assertNotEquals(firstLookup.id, secondLookup.id)
+        val ready = assertIs<LyricsState.Ready>(coordinator.state.value)
+        assertEquals(secondLookup, ready.lookup)
+        assertEquals(secondCandidate.lyrics, ready.lyrics)
+        assertEquals(1, selector.callCount)
+    }
+
+    @Test
+    fun `refreshing the same track creates a fresh lookup identity`() = runTest {
+        val track = Track(
+            title = "Refresh",
+            artists = listOf("AALyrics"),
+        )
+        val result = candidate("provider", track, "lyrics")
+        val provider = RecordingProvider("provider", listOf(result))
+        val selector = RecordingSelector(result)
+        val coordinator = LyricsCoordinator(
+            providers = listOf(provider),
+            selector = selector,
+            scope = this,
+        )
+
+        val firstLookup = coordinator.startLookup(track)
+        advanceUntilIdle()
+        val secondLookup = coordinator.startLookup(track)
+        advanceUntilIdle()
+
+        assertNotEquals(firstLookup.id, secondLookup.id)
+        val ready = assertIs<LyricsState.Ready>(coordinator.state.value)
+        assertEquals(secondLookup, ready.lookup)
+        assertEquals(2, selector.callCount)
     }
 
     private fun candidate(
