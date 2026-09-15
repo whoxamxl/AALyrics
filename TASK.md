@@ -10,6 +10,25 @@ Use the existing AALyrics `LyricsState`, `LyricsCoordinator`, provider contracts
 
 Before adding any non-trivial behavior, re-check `docs/MIGRATION_INVENTORY.md` and the current `whoxamxl/auto-lyrics` main branch so proven fork behavior is not independently reinvented.
 
+## Commit strategy
+
+Keep commits small and single-purpose so each change is easy to review and revert.
+
+- one logical test group per commit where practical,
+- production fixes, if any, in a separate commit from the test that exposes them,
+- documentation/checklist updates in their own commit,
+- avoid bundling unrelated readiness checks into one large commit,
+- keep PR-level squashing separate from branch-level development history.
+
+For Phase 3.4, prefer roughly this sequence:
+
+1. baseline end-to-end happy-path integration test,
+2. provider-order / multi-provider aggregation tests,
+3. failure-state tests,
+4. cancellation / stale-result / repeated-lookup tests,
+5. clear()/selector invocation ownership tests,
+6. documentation/checklist update.
+
 ## Phase 3.4 — Core integration/readiness tests
 
 - [ ] Exercise the complete provider-independent flow through `LyricsCoordinator` and `LyricsState` using fake providers and a fake selector only.
@@ -50,4 +69,4 @@ Passing Phase 3.4 does **not** authorize provider migration. The project proceed
 
 ## Next action
 
-Implement only the Phase 3.4 integration/readiness tests above. If they pass without revealing a core defect, avoid changing production behavior. Then run CI and open the Phase 3.4 PR.
+Implement only the Phase 3.4 integration/readiness tests above using the granular commit sequence in this file. If they pass without revealing a core defect, avoid changing production behavior. Then run CI and open the Phase 3.4 PR.
