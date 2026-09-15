@@ -8,7 +8,7 @@ kotlin {
 
 dependencies {
     api(project(":core:model"))
-    implementation(project(":provider:api"))
+    api(project(":provider:api"))
     testImplementation(kotlin("test"))
 }
 
