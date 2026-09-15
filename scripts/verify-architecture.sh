@@ -6,17 +6,51 @@ fail() {
   exit 1
 }
 
-production_dependency_lines() {
-  grep -En '^[[:space:]]*(api|implementation|compileOnly|runtimeOnly)[[:space:]]*\(' "$1" || true
+production_dependency_expressions() {
+  awk '
+    function paren_delta(text, copy, opens, closes) {
+      copy = text
+      opens = gsub(/\(/, "(", copy)
+      copy = text
+      closes = gsub(/\)/, ")", copy)
+      return opens - closes
+    }
+
+    {
+      line = $0
+      sub(/^[[:space:]]+/, "", line)
+
+      if (!collecting) {
+        if (line ~ /^(api|implementation|compileOnly|runtimeOnly)[[:space:]]*\(/) {
+          expression = line
+          depth = paren_delta(line)
+          collecting = 1
+
+          if (depth <= 0) {
+            print expression
+            collecting = 0
+          }
+        }
+      } else {
+        expression = expression " " line
+        depth += paren_delta(line)
+
+        if (depth <= 0) {
+          print expression
+          collecting = 0
+        }
+      }
+    }
+  ' "$1"
 }
 
-dependency_prefix='^[0-9]+:[[:space:]]*(api|implementation|compileOnly|runtimeOnly)[[:space:]]*\([[:space:]]*'
+dependency_prefix='^[[:space:]]*(api|implementation|compileOnly|runtimeOnly)[[:space:]]*\([[:space:]]*'
 dependency_suffix='[[:space:]]*\)[[:space:]]*(//.*)?$'
 core_model_target='(project[[:space:]]*\([[:space:]]*(path[[:space:]]*=[[:space:]]*)?":core:model"[[:space:]]*\)|projects\.core\.model)'
 core_lyrics_target='(project[[:space:]]*\([[:space:]]*(path[[:space:]]*=[[:space:]]*)?":core:lyrics"[[:space:]]*\)|projects\.core\.lyrics)'
 provider_api_target='(project[[:space:]]*\([[:space:]]*(path[[:space:]]*=[[:space:]]*)?":provider:api"[[:space:]]*\)|projects\.provider\.api)'
 coroutines_core_target='"org\.jetbrains\.kotlinx:kotlinx-coroutines-core:[^"]+"'
-network_api_refs='(okhttp3\.|retrofit2\.|io\.ktor\.|org\.apache\.http\.|java\.net\.|javax\.net\.)'
+network_api_refs='(android\.net\.http\.|okhttp3\.|retrofit2\.|io\.ktor\.|org\.apache\.http\.|java\.net\.|javax\.net\.)'
 
 pure_modules=(
   "core/model"
@@ -34,7 +68,7 @@ for module in "${pure_modules[@]}"; do
     fail "$module build configuration must not depend on Android plugins/libraries"
   fi
 
-  production_dependencies="$(production_dependency_lines "$build_file")"
+  production_dependencies="$(production_dependency_expressions "$build_file")"
   case "$module" in
     "core/model")
       forbidden_dependencies="$production_dependencies"
@@ -85,9 +119,10 @@ feature_modules=(
   "feature/automotive"
 )
 
+feature_source_dirs=()
 for module in "${feature_modules[@]}"; do
   build_file="$module/build.gradle.kts"
-  feature_dependencies="$(production_dependency_lines "$build_file")"
+  feature_dependencies="$(production_dependency_expressions "$build_file")"
 
   printf '%s\n' "$feature_dependencies" \
     | grep -Eq "${dependency_prefix}${core_lyrics_target}${dependency_suffix}" \
@@ -99,6 +134,7 @@ for module in "${feature_modules[@]}"; do
   fi
 
   source_dir="$module/src/main"
+  feature_source_dirs+=("$source_dir")
   if [[ -d "$source_dir" ]]; then
     forbidden_network_refs=$(
       (grep -RInE \
@@ -115,11 +151,19 @@ for module in "${feature_modules[@]}"; do
   fi
 done
 
+production_source_dirs=()
+while IFS= read -r -d '' source_dir; do
+  production_source_dirs+=("$source_dir")
+done < <(find core provider platform feature app -type d -path '*/src/main' -print0 2>/dev/null)
+
+[[ "${#production_source_dirs[@]}" -gt 0 ]] \
+  || fail "no production source directories found"
+
 lyrics_state_declarations=$(
   (grep -RIE \
     --include='*.kt' \
     '^[[:space:]]*((public|private|protected|internal|data|sealed|open|abstract|final|value|enum|annotation)[[:space:]]+)*(class|interface|object)[[:space:]]+LyricsState([^[:alnum:]_]|$)|^[[:space:]]*((public|private|protected|internal)[[:space:]]+)*typealias[[:space:]]+LyricsState([^[:alnum:]_]|$)' \
-    core provider platform feature app 2>/dev/null || true) \
+    "${production_source_dirs[@]}" 2>/dev/null || true) \
   | wc -l | tr -d ' '
 )
 
@@ -131,7 +175,7 @@ echo "Shared-state feature-consumption boundary check passed."
 if grep -RInE \
   --include='*.kt' --include='*.java' \
   '^[[:space:]]*import[[:space:]]+io\.github\.whoxamxl\.aalyrics\.provider\.|\b(LyricsProvider|CandidateSelector)\b' \
-  feature 2>/dev/null; then
+  "${feature_source_dirs[@]}" 2>/dev/null; then
   fail "UI feature modules must not fetch from providers or rank candidates"
 fi
 
@@ -142,11 +186,18 @@ if grep -RInE \
   fail "provider-specific implementation details must not become pure-core application behavior"
 fi
 
+non_media_source_dirs=()
+for source_dir in "${production_source_dirs[@]}"; do
+  if [[ "$source_dir" != "platform/media/src/main" ]]; then
+    non_media_source_dirs+=("$source_dir")
+  fi
+done
+
 forbidden_media_refs=$(
   (grep -RInE \
     --include='*.kt' --include='*.java' \
     'android\.media\.(\*|MediaMetadata|session\.(\*|[A-Za-z_][A-Za-z0-9_]*))' \
-    app core provider feature 2>/dev/null || true) \
+    "${non_media_source_dirs[@]}" 2>/dev/null || true) \
     | grep -Ev ':[0-9]+:[[:space:]]*(//|/\*|\*)' \
     || true
 )
