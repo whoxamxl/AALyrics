@@ -32,7 +32,7 @@ class LyricsCoordinator(
     providers: List<LyricsProvider>,
     private val selector: CandidateSelector,
     private val scope: CoroutineScope,
-) {
+) : LyricsLookupLifecycle {
     private val providers = providers.toList()
     private val lookupIds = AtomicLong(0L)
 
@@ -51,9 +51,9 @@ class LyricsCoordinator(
      * Starting the same track again still receives a fresh [LyricsLookupId], so
      * refreshes and late results cannot be confused by track equality alone.
      */
-    fun startLookup(
+    override fun startLookup(
         track: Track,
-        preferences: CandidateSelectionPreferences = CandidateSelectionPreferences(),
+        preferences: CandidateSelectionPreferences,
     ): LyricsLookup {
         val lookup = LyricsLookup(
             id = LyricsLookupId(lookupIds.getAndIncrement()),
@@ -116,7 +116,7 @@ class LyricsCoordinator(
     }
 
     /** Cancels active lookup work and returns observable state to idle. */
-    fun clear() {
+    override fun clear() {
         activeJob?.cancel()
         activeJob = null
         _state.update { current -> current.reduce(LyricsStateEvent.Cleared) }

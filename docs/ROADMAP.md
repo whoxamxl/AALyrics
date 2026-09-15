@@ -70,13 +70,9 @@ Merged in PR #8. The mature `LyricsProviderResolver` remains reserved for post-g
 
 Merged in PR #9. Before implementation, the working fork was re-checked at `8484bed2dbe8db5ca7b17dec5481b3c22714dc6f` (`v1.13.0`) so mature behavior was not reimplemented unnecessarily.
 
-## Current work
+### Phase 3.4 — Core integration/readiness tests ✅
 
-### Phase 3.4 — Core integration/readiness tests
-
-The validation implementation is complete on `feature/core-readiness`; CI and PR review remain before merge.
-
-The branch proves the complete provider-independent domain flow without Android or network access:
+The pure provider-independent domain flow is covered end-to-end with fake providers and a fake selector:
 
 ```text
 Fake Playback Input
@@ -90,41 +86,49 @@ CandidateSelector boundary
 LyricsState
 ```
 
-Phase 3.4 now covers:
+Validated behavior includes provider-order independence, failure isolation, no-result/degraded/failure states, fresh lookup identity, clear ownership, and stale-result rejection. PR #10 added integration/readiness coverage. PR #11 then fixed and regression-tested a concurrent stale-publication race by making all `LyricsState` transitions atomic through `MutableStateFlow.update`.
 
-- happy-path `Loading` → `Ready` ownership
-- provider completion order does not become winner selection
-- multiple providers contribute normalized candidates before selection
-- one provider failure does not discard healthy results
-- all-provider failure reaches terminal failure without leaking raw exceptions into shared state
-- healthy no-result reaches not-found
-- partial failure plus a winner reaches degraded state
-- newer lookups supersede older work
-- stale completion cannot overwrite current state through lookup identity/reducer ownership
-- repeated lookup of the same track still has fresh request identity
-- `clear()` cancels active work and leaves `Idle` as the final owned state
-- selector invocation occurs only after collection and once per completed lookup
-- the flow remains pure Kotlin and independent of Android/network libraries
+No concrete provider or resolver implementation was introduced.
 
-No production behavior changed in this phase; all new code is validation-only.
-
-## Next
+## Current work
 
 ### Phase 4 — Playback boundary
 
 Define and test the boundary between Android playback/media events and the pure lyrics core.
 
+Current design:
+
+```text
+Android MediaController
+        ↓
+MediaControllerSnapshotAdapter       (:platform:media)
+        ↓
+PlaybackSnapshot                     (:core:model)
+        ↓
+PlaybackTrackIdentity                (:core:model)
+        ↓
+PlaybackLyricsController             (:core:lyrics)
+        ↓
+LyricsLookupLifecycle
+        ↓
+LyricsCoordinator
+```
+
 Goals:
 
 - normalize MediaSession data into `PlaybackSnapshot`
 - make track-change identity explicit
-- make position/playback-state updates separate from lyrics lookup identity
+- prefer stable references, then source media identity, then metadata fallback
+- keep position/playback-state/duration updates separate from lyrics lookup identity
+- preserve proven Spotify playback identity semantics at the platform boundary
 - keep Android framework types inside `:platform:media`
-- drive the lyrics core through a narrow provider-independent interface
+- drive the lyrics core through a narrow provider-independent lookup lifecycle
 
-Before implementing playback behavior, consult `docs/MIGRATION_INVENTORY.md` and the fork for existing proven identity/lifecycle behavior such as Spotify track identity and demand control.
+Before implementation, `docs/MIGRATION_INVENTORY.md` and the current fork were re-checked. `SpotifyTrackIdentity`, `MediaTracker`, `MediaListenerService`, and `LyricsDemandController` were reviewed. Demand gating and metadata debounce remain intentionally outside this phase.
 
-Real Android integration may be implemented here, but it must not contain provider logic.
+Real provider logic, provider scoring, cache, translation, phone UI, and Android Auto UI remain out of scope.
+
+## Next
 
 ### Phase 5 — Core Readiness validation
 
@@ -136,6 +140,8 @@ Before any concrete lyrics provider is implemented or any previous-fork code is 
 - provider execution order cannot determine the selected result accidentally
 - track changes cannot allow stale results to overwrite current state
 - one provider failure is isolated from other providers
+- playback position/status changes cannot accidentally restart lyrics lookup
+- Android MediaSession types remain inside `:platform:media`
 - phone and automotive layers can consume one shared `LyricsState`
 - no UI layer performs provider fetching or ranking
 - concrete provider quirks are not represented as core application behavior
