@@ -25,22 +25,30 @@ Prefer this sequence:
 
 ## Phase 5 checklist
 
-- [ ] `:core:model`, `:provider:api`, and `:core:lyrics` contain no Android framework dependency.
-- [ ] Core orchestration is exercised entirely with fake providers.
-- [ ] Selection remains behind a stable provider-independent boundary.
-- [ ] Provider execution order cannot accidentally determine the selected result.
-- [ ] Track changes cannot allow stale results to overwrite current state.
-- [ ] One provider failure is isolated from healthy providers.
-- [ ] Playback position/status changes cannot accidentally restart lyrics lookup.
-- [ ] Android MediaSession / MediaController types remain inside `:platform:media`.
-- [ ] Phone and automotive layers can consume one shared `LyricsState` contract.
-- [ ] No UI layer performs provider fetching or ranking.
-- [ ] Concrete provider quirks are not represented as core application behavior.
-- [ ] Architecture and tests make the intended dependency direction difficult to violate accidentally.
-- [ ] `docs/MIGRATION_INVENTORY.md` has been reviewed against the current fork.
+- [x] `:core:model`, `:provider:api`, and `:core:lyrics` contain no Android framework dependency.
+- [x] Core orchestration is exercised entirely with fake providers.
+- [x] Selection remains behind a stable provider-independent boundary.
+- [x] Provider execution order cannot accidentally determine the selected result.
+- [x] Track changes cannot allow stale results to overwrite current state.
+- [x] One provider failure is isolated from healthy providers.
+- [x] Playback position/status changes cannot accidentally restart lyrics lookup.
+- [x] Android MediaSession / MediaController types remain inside `:platform:media`.
+- [x] Phone and automotive layers can consume one shared `LyricsState` contract.
+- [x] No UI layer performs provider fetching or ranking.
+- [x] Concrete provider quirks are not represented as core application behavior.
+- [x] Architecture and tests make the intended dependency direction difficult to violate accidentally.
+- [x] `docs/MIGRATION_INVENTORY.md` has been reviewed against the current fork.
 - [ ] CI debug build and all tests pass on the final Phase 5 head.
 - [ ] Codex review is complete on the final Phase 5 head.
 - [ ] Stop for explicit architecture/migration review before any provider/resolver adaptation.
+
+## Evidence
+
+- `scripts/verify-architecture.sh` makes the dependency/ownership rules executable and CI-enforced.
+- Existing core integration tests cover provider ordering, fake-provider orchestration, failure isolation, stale-result rejection, and selector ownership.
+- Phase 4 playback tests cover identity-driven lookup ownership independently from timeline/status churn.
+- `docs/CORE_READINESS_GATE.md` records the evidence matrix and STOP GATE review topics.
+- `docs/MIGRATION_INVENTORY.md` was re-reviewed against fork commit `8484bed2dbe8db5ca7b17dec5481b3c22714dc6f`.
 
 ## Exit criteria
 
@@ -48,4 +56,4 @@ Phase 5 is complete only when every readiness item is either demonstrated by cod
 
 ## Next action
 
-Start with the pure-core dependency-boundary audit only. Keep that validation in its own commit, then stop and review the result before moving to the next readiness group.
+Open the Phase 5 PR, run CI and Codex review on the final head, address any substantive finding in a separate commit, then stop before merge for explicit architecture/migration review.
