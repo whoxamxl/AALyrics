@@ -8,11 +8,11 @@ Use only AALyrics domain/provider contracts and synthetic test data. Do not add 
 
 ## Slice 1 — Lyrics state lifecycle (current)
 
-- [ ] Define a provider-independent lookup identity tied to a track.
-- [ ] Define explicit `LyricsState` variants for idle, loading, resolved, degraded, not found, and terminal failure.
-- [ ] Define pure state events/reduction rules.
-- [ ] Reject stale completion events after a newer lookup starts.
-- [ ] Add unit tests for lifecycle and invariants.
+- [x] Define a provider-independent lookup identity tied to a track.
+- [x] Define explicit `LyricsState` variants for idle, loading, resolved, degraded, not found, and terminal failure.
+- [x] Define pure state events/reduction rules.
+- [x] Reject stale completion events after a newer lookup starts.
+- [x] Add unit tests for lifecycle and invariants.
 - [ ] Run CI and open a PR.
 
 ## Later slices — not part of Slice 1
@@ -29,4 +29,4 @@ After Phase 5, stop for explicit architecture review before any LRCLIB, Musixmat
 
 ## Next action
 
-Implement Slice 1 only. Do not start CandidateResolver in this branch until Slice 1 has been reviewed and merged.
+Open the Slice 1 PR and verify the branch-name/build/unit-test checks. Do not start CandidateResolver until Slice 1 has been reviewed and merged.
