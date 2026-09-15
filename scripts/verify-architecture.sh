@@ -6,6 +6,17 @@ fail() {
   exit 1
 }
 
+production_dependency_lines() {
+  grep -En '^[[:space:]]*(api|implementation|compileOnly|runtimeOnly)[[:space:]]*\(' "$1" || true
+}
+
+dependency_prefix='^[0-9]+:[[:space:]]*(api|implementation|compileOnly|runtimeOnly)[[:space:]]*\([[:space:]]*'
+dependency_suffix='[[:space:]]*\)[[:space:]]*(//.*)?$'
+core_model_target='(project[[:space:]]*\([[:space:]]*(path[[:space:]]*=[[:space:]]*)?":core:model"[[:space:]]*\)|projects\.core\.model)'
+core_lyrics_target='(project[[:space:]]*\([[:space:]]*(path[[:space:]]*=[[:space:]]*)?":core:lyrics"[[:space:]]*\)|projects\.core\.lyrics)'
+provider_api_target='(project[[:space:]]*\([[:space:]]*(path[[:space:]]*=[[:space:]]*)?":provider:api"[[:space:]]*\)|projects\.provider\.api)'
+coroutines_core_target='"org\.jetbrains\.kotlinx:kotlinx-coroutines-core:[^"]+"'
+
 pure_modules=(
   "core/model"
   "provider/api"
@@ -22,14 +33,31 @@ for module in "${pure_modules[@]}"; do
     fail "$module build configuration must not depend on Android plugins/libraries"
   fi
 
-  production_dependencies=$(
-    (grep -En '^[[:space:]]*(api|implementation|compileOnly|runtimeOnly)[[:space:]]*\(' "$build_file" || true) \
-      | grep -Ev 'project[[:space:]]*\(|projects\.|org\.jetbrains\.kotlinx:kotlinx-coroutines-core' \
-      || true
-  )
-  if [[ -n "$production_dependencies" ]]; then
-    echo "$production_dependencies"
-    fail "$module may not add arbitrary production libraries; pure-core dependencies must remain explicitly allowlisted"
+  production_dependencies="$(production_dependency_lines "$build_file")"
+  case "$module" in
+    "core/model")
+      forbidden_dependencies="$production_dependencies"
+      ;;
+    "provider/api")
+      forbidden_dependencies=$(
+        printf '%s\n' "$production_dependencies" \
+          | grep -Ev "${dependency_prefix}${core_model_target}${dependency_suffix}" \
+          || true
+      )
+      ;;
+    "core/lyrics")
+      allowed_target="(${core_model_target}|${provider_api_target}|${coroutines_core_target})"
+      forbidden_dependencies=$(
+        printf '%s\n' "$production_dependencies" \
+          | grep -Ev "${dependency_prefix}${allowed_target}${dependency_suffix}" \
+          || true
+      )
+      ;;
+  esac
+
+  if [[ -n "$forbidden_dependencies" ]]; then
+    echo "$forbidden_dependencies"
+    fail "$module may only use its explicitly approved production dependencies"
   fi
 
   source_dir="$module/src/main"
@@ -58,11 +86,14 @@ feature_modules=(
 
 for module in "${feature_modules[@]}"; do
   build_file="$module/build.gradle.kts"
+  feature_dependencies="$(production_dependency_lines "$build_file")"
 
-  grep -Eq ':core:lyrics|projects\.core\.lyrics' "$build_file" \
+  printf '%s\n' "$feature_dependencies" \
+    | grep -Eq "${dependency_prefix}${core_lyrics_target}${dependency_suffix}" \
     || fail "$module must consume the shared lyrics-core contract"
 
-  if grep -Eq ':provider:|:platform:media|projects\.provider\.|projects\.platform\.media' "$build_file"; then
+  if printf '%s\n' "$feature_dependencies" \
+    | grep -Eq 'project[[:space:]]*\([[:space:]]*(path[[:space:]]*=[[:space:]]*)?":(provider:[^"]+|platform:media)"|projects\.(provider\.|platform\.media)'; then
     fail "$module must not depend directly on providers or the media platform adapter"
   fi
 done
