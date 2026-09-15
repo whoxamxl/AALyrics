@@ -1,36 +1,44 @@
 # Lyrics Core Task
 
-This branch implements Phase 3 of `docs/ROADMAP.md` in small slices.
+This branch implements Phase 3.2 of `docs/ROADMAP.md`.
 
 ## Scope guard
 
-Use only AALyrics domain/provider contracts and synthetic test data. Do not add concrete provider implementations, networking, Android media code, or copy/adapt code from the previous Auto Lyrics fork.
+Use only AALyrics domain/provider contracts and synthetic test data. Do not add a scoring algorithm, concrete provider implementation, networking, Android media code, or copied/adapted implementation from the previous Auto Lyrics fork.
 
-Before starting any non-trivial behavior, inspect the current fork and the migration inventory so proven behavior is not independently reinvented.
+Before changing behavior, consult `docs/MIGRATION_INVENTORY.md` and the current `whoxamxl/auto-lyrics` fork. The mature resolver behavior is reserved for post-gate adaptation.
 
-## Slice 1 — Lyrics state lifecycle (current)
+## Slice 2 — Candidate selection boundary (current)
 
-- [x] Define a provider-independent lookup identity tied to a track.
-- [x] Define explicit `LyricsState` variants for idle, loading, resolved, degraded, not found, and terminal failure.
-- [x] Define pure state events/reduction rules.
-- [x] Reject stale completion events after a newer lookup starts.
-- [x] Add unit tests for lifecycle and invariants.
-- [x] Run CI and open PR #6.
+- [ ] Define a provider-independent `CandidateSelector` contract.
+- [ ] Define only the minimum selection preferences required by future orchestration.
+- [ ] Keep input/output in normalized AALyrics domain/provider types.
+- [ ] Add contract-level tests proving the boundary can be faked and does not depend on a concrete resolver.
+- [ ] Run CI and open a PR.
 
-## Later slices — not part of Slice 1
+## Explicitly out of scope
 
-- [ ] Slice 2: define only the provider-independent candidate-selection port/preferences; do not create a new scoring algorithm.
+- No metadata similarity algorithm.
+- No scoring weights or thresholds.
+- No recording-version matching implementation.
+- No source-confidence policy.
+- No karaoke winner-selection implementation.
+- No LRCLIB, Musixmatch, PetitLyrics, or SyncLRC code.
+- No `LyricsCoordinator` yet.
+
+The mature fork `LyricsProviderResolver`, recording-version logic, similarity helpers, and regression tests remain classified for later PRESERVE/REFACTOR work after the Core Readiness Gate.
+
+## Later slices
+
 - [ ] Slice 3: `LyricsCoordinator` using fake providers and a fake selector only.
 - [ ] Slice 4: core integration tests.
 - [ ] Phase 4: playback boundary, after reviewing proven fork identity/lifecycle behavior.
 - [ ] Phase 5: Core Readiness validation.
 
-The mature `LyricsProviderResolver` and its matching/scoring behavior are reserved for post-gate adaptation behind the selection port. See PR #7 / `docs/MIGRATION_INVENTORY.md` once merged.
-
 ## Stop gate
 
-After Phase 5, stop for explicit architecture review before any LRCLIB, Musixmatch, PetitLyrics, SyncLRC, resolver implementation, or previous-fork code is implemented or adapted.
+After Phase 5, stop for explicit architecture review before any concrete provider/resolver implementation or previous-fork code is adapted.
 
 ## Next action
 
-Review and merge PR #6 and the fork-aware documentation PR #7. After both are on `main`, create a new topic branch for Slice 2 and define only the candidate-selection boundary required by `LyricsCoordinator`.
+Implement only the minimal candidate-selection port and its contract tests. Stop before `LyricsCoordinator`.
