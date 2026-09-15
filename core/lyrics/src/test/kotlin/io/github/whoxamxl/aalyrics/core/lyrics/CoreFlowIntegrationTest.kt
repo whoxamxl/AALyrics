@@ -219,6 +219,64 @@ class CoreFlowIntegrationTest {
     }
 
     @Test
+    fun `obsolete completion after supersession cannot replace newer loading state`() = runTest {
+        val firstTrack = Track(
+            title = "First Race",
+            artists = listOf("AALyrics"),
+        )
+        val secondTrack = firstTrack.copy(title = "Second Race")
+        val firstCandidate = candidate("provider", firstTrack, "obsolete lyrics")
+        val secondCandidate = candidate("provider", secondTrack, "current lyrics")
+        val secondStarted = CompletableDeferred<Unit>()
+        val releaseSecond = CompletableDeferred<Unit>()
+        val provider = RecordingProvider("provider") { request ->
+            if (request.track == firstTrack) {
+                listOf(firstCandidate)
+            } else {
+                secondStarted.complete(Unit)
+                releaseSecond.await()
+                listOf(secondCandidate)
+            }
+        }
+
+        lateinit var coordinator: LyricsCoordinator
+        var secondLookup: LyricsLookup? = null
+        val selector = object : CandidateSelector {
+            override fun select(
+                track: Track,
+                candidates: List<LyricsCandidate>,
+                preferences: CandidateSelectionPreferences,
+            ): LyricsCandidate? {
+                if (track == firstTrack) {
+                    secondLookup = coordinator.startLookup(secondTrack)
+                }
+                return candidates.singleOrNull()
+            }
+        }
+        coordinator = LyricsCoordinator(
+            providers = listOf(provider),
+            selector = selector,
+            scope = this,
+        )
+
+        val firstLookup = coordinator.startLookup(firstTrack)
+        runCurrent()
+
+        val supersedingLookup = requireNotNull(secondLookup)
+        assertTrue(secondStarted.isCompleted)
+        assertNotEquals(firstLookup.id, supersedingLookup.id)
+        val loading = assertIs<LyricsState.Loading>(coordinator.state.value)
+        assertEquals(supersedingLookup, loading.lookup)
+
+        releaseSecond.complete(Unit)
+        advanceUntilIdle()
+
+        val ready = assertIs<LyricsState.Ready>(coordinator.state.value)
+        assertEquals(supersedingLookup, ready.lookup)
+        assertEquals(secondCandidate.lyrics, ready.lyrics)
+    }
+
+    @Test
     fun `refreshing the same track creates a fresh lookup identity`() = runTest {
         val track = Track(
             title = "Refresh",
