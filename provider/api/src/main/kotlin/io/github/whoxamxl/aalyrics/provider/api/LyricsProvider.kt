@@ -39,6 +39,17 @@ data class LyricsRequest(
 )
 
 /**
+ * Provider-neutral evidence learned while finding a candidate.
+ *
+ * Providers report search facts here rather than converting those facts into a
+ * global winner score. The central selection policy decides how much the evidence
+ * matters when candidates are compared across providers.
+ */
+data class LyricsCandidateEvidence(
+    val artistQueryCorroborated: Boolean = false,
+)
+
+/**
  * One plausible provider result. Providers report facts; they do not choose the
  * global winner or assign the final cross-provider score.
  */
@@ -46,6 +57,7 @@ data class LyricsCandidate(
     val providerId: LyricsProviderId,
     val matchedTrack: Track,
     val lyrics: LyricsDocument,
+    val evidence: LyricsCandidateEvidence = LyricsCandidateEvidence(),
 ) {
     init {
         val attributionProvider = lyrics.attribution?.providerId
