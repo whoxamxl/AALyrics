@@ -4,6 +4,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
+import kotlin.test.assertNotEquals
 import kotlin.test.assertTrue
 
 class DomainModelTest {
@@ -69,6 +70,85 @@ class DomainModelTest {
 
         assertTrue(playing.isPlaying)
         assertFalse(paused.isPlaying)
+    }
+
+    @Test
+    fun `playback track identity prefers stable references over mutable metadata`() {
+        val spotifyReference = TrackReference("spotify", "6rqhFgbbKwnb9MLmUQDhG6")
+        val initial = PlaybackSnapshot(
+            track = Track(
+                title = "Initial title",
+                artists = listOf("Artist"),
+                durationMs = 100_000L,
+                references = setOf(spotifyReference),
+            ),
+            source = PlaybackSource(
+                id = "com.spotify.music",
+                mediaId = "opaque-session-id",
+                mediaUri = "spotify:track:6rqhFgbbKwnb9MLmUQDhG6",
+            ),
+        )
+        val updated = initial.copy(
+            track = initial.track!!.copy(
+                title = "Corrected title",
+                durationMs = 101_000L,
+            ),
+            status = PlaybackStatus.PLAYING,
+            positionMs = 40_000L,
+        )
+
+        assertEquals(initial.trackIdentity, updated.trackIdentity)
+        assertEquals(
+            PlaybackTrackIdentity.Referenced(
+                sourceId = "com.spotify.music",
+                references = setOf(spotifyReference),
+            ),
+            initial.trackIdentity,
+        )
+    }
+
+    @Test
+    fun `source media identity ignores timeline and duration changes`() {
+        val initial = PlaybackSnapshot(
+            track = Track(
+                title = "Track",
+                artists = listOf("Artist"),
+                durationMs = null,
+            ),
+            source = PlaybackSource(
+                id = "com.example.player",
+                mediaId = "queue-item-42",
+            ),
+        )
+        val updated = initial.copy(
+            track = initial.track!!.copy(durationMs = 200_000L),
+            status = PlaybackStatus.PAUSED,
+            positionMs = 15_000L,
+        )
+
+        assertEquals(initial.trackIdentity, updated.trackIdentity)
+    }
+
+    @Test
+    fun `metadata fallback changes only when identifying metadata changes`() {
+        val initial = PlaybackSnapshot(
+            track = Track(
+                title = "Track A",
+                artists = listOf("Artist"),
+                album = "Album",
+            ),
+        )
+        val timelineUpdate = initial.copy(
+            track = initial.track!!.copy(durationMs = 180_000L),
+            status = PlaybackStatus.PLAYING,
+            positionMs = 50_000L,
+        )
+        val nextTrack = initial.copy(
+            track = initial.track!!.copy(title = "Track B"),
+        )
+
+        assertEquals(initial.trackIdentity, timelineUpdate.trackIdentity)
+        assertNotEquals(initial.trackIdentity, nextTrack.trackIdentity)
     }
 
     @Test
