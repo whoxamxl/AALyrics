@@ -6,7 +6,7 @@ This document defines the architectural boundaries for AALyrics. The project was
 
 AALyrics is a greenfield codebase, but not a greenfield behavior specification. The working `whoxamxl/auto-lyrics` fork is treated as a behavioral reference and regression oracle. Proven behavior should not be re-invented merely because the new module structure is different.
 
-The Core Readiness Gate completed in PR #14. Post-gate migration now preserves mature behavior behind the boundaries established before adaptation began. Production candidate selection was migrated in PR #17; concrete providers have not yet been migrated to `main`.
+The Core Readiness Gate completed in PR #14. Post-gate migration now preserves mature behavior behind the boundaries established before adaptation began. Production candidate selection was migrated in PR #17; the LRCLIB migration slice adds the first concrete adapter (pending merge).
 
 ## Design goals
 
@@ -60,13 +60,17 @@ Pure Kotlin AALyrics orchestration. It owns application lyrics state, provider o
 
 Pure Kotlin production implementation of the `CandidateSelector` port.
 
-This module owns cross-provider matching/ranking policy, including the mature metadata, payload-quality, source-confidence, synchronized/plain fallback, cross-script, recording-version, and karaoke-preference behavior adapted from the working fork. Generic matching/version helpers that were historically embedded in `LrcLibClient` currently live here because they are not LRCLIB networking concerns.
+This module owns cross-provider matching/ranking policy, including the mature metadata, payload-quality, source-confidence, synchronized/plain fallback, cross-script, recording-version, and karaoke-preference behavior adapted from the working fork. Generic matching/version helpers historically embedded in `LrcLibClient` live in `:provider:matching`, shared with LRCLIB without depending on selector implementation.
 
 Provider-specific source-confidence policy is intentionally outside `:core:lyrics`. This preserves dependency inversion: core knows the selector interface, while the composition root may inject `CrossProviderCandidateSelector` without making core depend on its implementation.
 
 Concrete provider networking, parsing, authentication, and provider-local search strategy do not belong in this module.
 
-If concrete providers later need the same pure generic matching semantics, extract a neutral shared provider-matching utility rather than duplicating those helpers or making provider adapters depend on the production selector implementation.
+The neutral `:provider:matching` module owns the preserved generic title, artist, duration, and recording-version semantics. It has no production dependencies. Both selection and LRCLIB use it; cross-provider weights and winner policy remain in selection.
+
+### `:provider:matching` and `:provider:lrc`
+
+Pure Kotlin outer utilities. Matching owns shared metadata/version semantics; LRC owns the preserved ordinary/enhanced parser normalized to core model timing types. Neither utility owns provider networking or application state. The LRC parser retains enhanced word-timing regression coverage, while LRCLIB uses ordinary line parsing and advertises only PLAIN/LINE.
 
 ### Concrete provider modules
 
@@ -109,7 +113,7 @@ Android Auto presentation only. It consumes the same application/domain state as
 
 The diagram is a compile-time dependency sketch, not a runtime call-order diagram. `:provider:selection` depends on the selector port in `:core:lyrics`; `:core:lyrics` never depends on `:provider:selection`.
 
-Concrete provider modules depend on `:provider:api` and normalized model types required by that contract. The domain must never depend on a concrete provider. Shared pure provider-matching utilities may later be extracted only when needed by more than one outer provider/selection component.
+Concrete provider modules depend on `:provider:api` and normalized model types required by that contract. The domain must never depend on a concrete provider. LRCLIB and selection share `:provider:matching`; LRCLIB also uses `:provider:lrc`. These utilities remain outside core orchestration.
 
 ## Runtime state flow
 
