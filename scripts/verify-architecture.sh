@@ -49,12 +49,44 @@ for module in "${feature_modules[@]}"; do
   fi
 done
 
-lyrics_state_declarations=$(grep -RIE \
-  --include='*.kt' \
-  '^[[:space:]]*(sealed[[:space:]]+(interface|class)|class|interface)[[:space:]]+LyricsState\b' \
-  core provider platform feature app 2>/dev/null | wc -l | tr -d ' ')
+lyrics_state_declarations=$(
+  (grep -RIE \
+    --include='*.kt' \
+    '^[[:space:]]*(sealed[[:space:]]+(interface|class)|class|interface)[[:space:]]+LyricsState\b' \
+    core provider platform feature app 2>/dev/null || true) \
+  | wc -l | tr -d ' '
+)
 
 [[ "$lyrics_state_declarations" == "1" ]] \
   || fail "exactly one shared LyricsState declaration is required; found $lyrics_state_declarations"
 
 echo "Shared-state feature-consumption boundary check passed."
+
+if grep -RInE \
+  --include='*.kt' --include='*.java' \
+  '^[[:space:]]*import[[:space:]]+io\.github\.whoxamxl\.aalyrics\.provider\.|\b(LyricsProvider|CandidateSelector)\b' \
+  feature 2>/dev/null; then
+  fail "UI feature modules must not fetch from providers or rank candidates"
+fi
+
+if grep -RInEi \
+  --include='*.kt' --include='*.java' \
+  '\b(lrclib|musixmatch|petitlyrics|synclrc|spotify)\b' \
+  core/model/src/main core/lyrics/src/main provider/api/src/main 2>/dev/null; then
+  fail "provider-specific quirks must not become pure-core application behavior"
+fi
+
+if grep -RInE \
+  --include='*.kt' --include='*.java' \
+  '^[[:space:]]*import[[:space:]]+android\.media\.(session\.|MediaMetadata)' \
+  app core provider feature 2>/dev/null; then
+  fail "MediaSession and MediaController framework types must stay inside platform/media"
+fi
+
+grep -RInE \
+  --include='*.kt' --include='*.java' \
+  '^[[:space:]]*import[[:space:]]+android\.media\.(session\.|MediaMetadata)' \
+  platform/media/src/main >/dev/null \
+  || fail "platform/media must own the Android media framework adapter"
+
+echo "Provider/UI ownership and Android media confinement checks passed."
