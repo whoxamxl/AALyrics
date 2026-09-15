@@ -45,48 +45,44 @@ This phase defines only the boundary. It does not include any concrete provider 
 
 Merged in PR #6.
 
+### Phase 3.2 — Candidate selection boundary ✅
+
+- provider-independent `CandidateSelector`
+- normalized `Track` + `LyricsCandidate` inputs
+- explicit selection preferences
+- nullable no-winner result
+- no scoring/matching implementation
+- fake-selector contract tests
+
+Merged in PR #8. The mature `LyricsProviderResolver` remains reserved for post-gate adaptation behind this boundary.
+
 ## Current work
 
 ### Phase 3 — Lyrics core
 
 Build only the AALyrics-specific provider-independent core that does not already exist as mature, proven behavior in the working fork.
 
-#### 3.2 Candidate selection boundary
-
-Do **not** redesign the mature scoring/selection policy from scratch.
-
-The working fork already contains a substantial `LyricsProviderResolver`, regression tests, recording-version matching, cross-script handling, payload-quality scoring, source-confidence policy, and karaoke-aware selection. That behavior is classified for later preservation/refactoring in `docs/MIGRATION_INVENTORY.md`.
-
-Before the stop gate, AALyrics defines only the narrow core boundary needed by orchestration: a provider-independent `CandidateSelector`, normalized candidates, and explicit selection preferences. Tests use a fake selector.
-
-The current Phase 3.2 implementation intentionally contains no scoring weights, metadata similarity algorithm, source preference policy, or recording-version algorithm.
-
-Goals:
-
-- provider execution order must not determine the winner
-- `LyricsCoordinator` must not depend on a concrete resolver implementation
-- the future fork-derived resolver must be replaceable behind the boundary
-- no new scoring weights, metadata similarity algorithm, source preference policy, or recording-version algorithm are invented here
-
 #### 3.3 Lyrics coordinator
 
 Coordinate `LyricsProvider` contracts and publish `LyricsState`.
 
-Cover at least:
+Current implementation in PR #9 covers:
 
-- request start for a new track
-- multiple provider results
-- partial provider failure
-- no-result behavior
-- cancellation
-- stale-result rejection after track change
-- handoff to the candidate-selection boundary
+- fresh request identity for every lookup
+- concurrent provider fan-out
+- partial provider failure isolation
+- cancellation propagation
+- no-result and terminal-failure behavior
+- cancellation/supersession on a newer lookup
+- stale-result protection through lookup identity and the existing reducer
+- handoff to `CandidateSelector` exactly once after candidates are collected
+- fake-provider/fake-selector tests only
 
-Use fake providers and a fake selector only.
+Before implementation, the current fork was re-checked at `8484bed2dbe8db5ca7b17dec5481b3c22714dc6f` (`v1.13.0`). Media debounce, demand gating, cache, translation, provider-specific timeout/networking details, and resolver heuristics remain outside this coordinator slice.
 
 #### 3.4 Core integration tests
 
-Prove the complete domain flow without Android or network access:
+After PR #9 is merged, prove the complete domain flow without Android or network access:
 
 ```text
 Fake Playback Input
@@ -101,6 +97,8 @@ LyricsState
 ```
 
 The purpose is to prove orchestration and lifecycle correctness, not to duplicate the fork's mature selection policy.
+
+Phase 3.4 should also exercise the Core Readiness invariants that can be validated before Android playback integration, including provider-order independence at the orchestration boundary, stale-result rejection, failure isolation, and shared-state behavior.
 
 ## Next
 
