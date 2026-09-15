@@ -72,31 +72,15 @@ Merged in PR #9. Before implementation, the working fork was re-checked at `8484
 
 ### Phase 3.4 — Core integration/readiness tests ✅
 
-The pure provider-independent domain flow is covered end-to-end with fake providers and a fake selector:
-
-```text
-Fake Playback Input
-        ↓
-LyricsCoordinator
-        ↓
-Fake Providers
-        ↓
-CandidateSelector boundary
-        ↓
-LyricsState
-```
-
-Validated behavior includes provider-order independence, failure isolation, no-result/degraded/failure states, fresh lookup identity, clear ownership, and stale-result rejection. PR #10 added integration/readiness coverage. PR #11 then fixed and regression-tested a concurrent stale-publication race by making all `LyricsState` transitions atomic through `MutableStateFlow.update`.
+The pure provider-independent domain flow is covered end-to-end with fake providers and a fake selector. Validated behavior includes provider-order independence, failure isolation, no-result/degraded/failure states, fresh lookup identity, clear ownership, and stale-result rejection. PR #10 added integration/readiness coverage. PR #11 then fixed and regression-tested a concurrent stale-publication race by making all `LyricsState` transitions atomic through `MutableStateFlow.update`.
 
 No concrete provider or resolver implementation was introduced.
 
-## Current work
+### Phase 4 — Playback boundary ✅
 
-### Phase 4 — Playback boundary
+Merged in PR #12.
 
-Define and test the boundary between Android playback/media events and the pure lyrics core.
-
-Current design:
+The Android playback edge is now separated from the pure lyrics core:
 
 ```text
 Android MediaController
@@ -114,43 +98,31 @@ LyricsLookupLifecycle
 LyricsCoordinator
 ```
 
-Goals:
+Phase 4 established explicit track ownership, stable-reference/source-media/metadata identity fallback, Spotify playback-reference normalization at the platform edge, and JVM tests proving that position/status/duration-only churn does not restart lyrics lookup. Android media framework types remain inside `:platform:media`.
 
-- normalize MediaSession data into `PlaybackSnapshot`
-- make track-change identity explicit
-- prefer stable references, then source media identity, then metadata fallback
-- keep position/playback-state/duration updates separate from lyrics lookup identity
-- preserve proven Spotify playback identity semantics at the platform boundary
-- keep Android framework types inside `:platform:media`
-- drive the lyrics core through a narrow provider-independent lookup lifecycle
-
-Before implementation, `docs/MIGRATION_INVENTORY.md` and the current fork were re-checked. `SpotifyTrackIdentity`, `MediaTracker`, `MediaListenerService`, and `LyricsDemandController` were reviewed. Demand gating and metadata debounce remain intentionally outside this phase.
-
-Real provider logic, provider scoring, cache, translation, phone UI, and Android Auto UI remain out of scope.
-
-## Next
+## Current work
 
 ### Phase 5 — Core Readiness validation
 
-Before any concrete lyrics provider is implemented or any previous-fork code is adapted, verify all of the following:
+Phase 5 is validation-first. It adds no concrete provider or resolver implementation.
 
-- `:core:model`, `:provider:api`, and `:core:lyrics` contain no Android framework dependency
-- core orchestration is exercised entirely with fake providers
-- selection is behind a stable provider-independent boundary
-- provider execution order cannot determine the selected result accidentally
-- track changes cannot allow stale results to overwrite current state
-- one provider failure is isolated from other providers
-- playback position/status changes cannot accidentally restart lyrics lookup
-- Android MediaSession types remain inside `:platform:media`
-- phone and automotive layers can consume one shared `LyricsState`
-- no UI layer performs provider fetching or ranking
-- concrete provider quirks are not represented as core application behavior
-- architecture and tests make the intended dependency direction difficult to violate accidentally
-- migration inventory has been reviewed so proven fork behavior is not needlessly reimplemented
+Current validation includes:
 
-If any item fails, the project stays in core-first development.
+- executable CI architecture checks for pure Kotlin/JVM core modules,
+- one shared `LyricsState` contract for phone and automotive features,
+- feature ownership guards preventing provider fetching/ranking in UI modules,
+- Android MediaSession / MediaController confinement to `:platform:media`,
+- provider-specific behavior exclusion from pure core,
+- existing regression evidence for provider order, stale-result rejection, failure isolation, and playback identity,
+- migration-inventory re-review against `whoxamxl/auto-lyrics` `main` at `8484bed2dbe8db5ca7b17dec5481b3c22714dc6f` (`v1.13.0`).
 
-## STOP GATE — Concrete provider / code adaptation
+Detailed evidence is recorded in `docs/CORE_READINESS_GATE.md`.
+
+If any validation fails, the project stays in core-first development.
+
+## Next — STOP GATE
+
+### Concrete provider / code adaptation
 
 **Stop here for explicit review.**
 
