@@ -1,73 +1,53 @@
-# Lyrics Coordinator Task
+# Core Readiness Task
 
-This branch implements only Phase 3.3 of `docs/ROADMAP.md`.
+This branch implements only Phase 3.4 of `docs/ROADMAP.md`.
 
 ## Scope guard
 
-Use only AALyrics domain/provider contracts, fake providers, and a fake `CandidateSelector`. Do not add concrete provider implementations, networking, cache, translation, Android media code, or adapt resolver/provider code from the previous Auto Lyrics fork.
+This phase is validation-first. Do not add concrete providers, resolver/scoring logic, Android media integration, cache, translation, phone UI, Android Auto UI, or import/adapt implementation code from the previous Auto Lyrics fork.
 
-Before starting non-trivial orchestration behavior, inspect the current fork and `docs/MIGRATION_INVENTORY.md` so proven behavior is preserved without bringing the old ownership model forward.
+Use the existing AALyrics `LyricsState`, `LyricsCoordinator`, provider contracts, fake providers, and a fake `CandidateSelector`. Add production code only if a test exposes a genuine core boundary defect that cannot be expressed or fixed through existing contracts.
 
-## Fork preflight
+Before adding any non-trivial behavior, re-check `docs/MIGRATION_INVENTORY.md` and the current `whoxamxl/auto-lyrics` main branch so proven fork behavior is not independently reinvented.
 
-Reviewed current `whoxamxl/auto-lyrics` main at `8484bed2dbe8db5ca7b17dec5481b3c22714dc6f` (`v1.13.0`).
+## Phase 3.4 — Core integration/readiness tests
 
-Behavior to preserve at the new boundary:
-
-- provider attempts are independent; one source failure must not cancel healthy sources,
-- providers are queried concurrently rather than winner-by-call-order,
-- a newer track/request supersedes older work,
-- late results from obsolete work must not replace current state,
-- candidate selection happens only after provider results are normalized and collected,
-- cancellation must remain cancellation rather than being converted into a provider failure.
-
-Behavior intentionally **not** moved into `LyricsCoordinator` in this slice:
-
-- the existing 600 ms media metadata debounce — playback/platform concern for Phase 4,
-- phone/Android Auto demand gating — `LyricsDemandController` remains a Phase 4/application boundary concern,
-- cache freshness/variant policy — later cache boundary,
-- translation reset/translation jobs — later translation/state concern,
-- per-provider HTTP timeout implementation — provider/shared execution policy to review at the stop gate,
-- scoring, source confidence, recording-version matching, cross-script matching, and karaoke winner policy — mature resolver behavior reserved for post-gate adaptation.
-
-## Slice 3 — Lyrics coordinator
-
-- [x] Add coroutine support to `:core:lyrics` without Android dependencies.
-- [x] Define `LyricsCoordinator` with caller-owned `CoroutineScope`.
-- [x] Start each lookup with a fresh `LyricsLookupId` and publish `Loading`.
-- [x] Fan out enabled `LyricsProvider` searches concurrently.
-- [x] Isolate ordinary provider failures while propagating cancellation.
-- [x] Collect normalized candidates and hand them to `CandidateSelector` exactly once.
-- [x] Publish `Ready`, `Degraded`, `NotFound`, or `Failed` through the existing reducer.
-- [x] Cancel/supersede active work on a newer lookup and reject late stale completion through lookup identity.
-- [x] Clear active work to `Idle`.
-- [x] Add tests using fake providers and a fake selector only.
-- [x] Pass branch-name check, debug build, and unit tests in CI.
-- [x] Open PR #9.
-
-## Failure semantics for this slice
-
-- winner + zero failed providers → `Ready`
-- winner + one or more failed providers → `Degraded`
-- no winner + zero failed providers → `NotFound`
-- no winner + one or more failed providers → `Failed`
-
-This is orchestration status only. Provider-specific diagnostics remain internal and no raw exception enters shared UI state.
+- [ ] Exercise the complete provider-independent flow through `LyricsCoordinator` and `LyricsState` using fake providers and a fake selector only.
+- [ ] Verify provider completion order does not become the winner-selection rule.
+- [ ] Verify multiple providers can contribute normalized candidates before selection.
+- [ ] Verify one provider failure does not discard healthy provider results.
+- [ ] Verify all-provider failure reaches `Failed` without exposing raw exceptions in shared state.
+- [ ] Verify no usable winner with healthy providers reaches `NotFound`.
+- [ ] Verify a partial provider failure plus a winner reaches `Degraded`.
+- [ ] Verify a newer lookup supersedes older work and stale completion cannot overwrite current state.
+- [ ] Verify repeating the same track still creates a fresh lookup identity and stale prior work remains rejected.
+- [ ] Verify `clear()` cancels active work and leaves `Idle` as the final owned state.
+- [ ] Verify selector invocation happens once per completed lookup after candidate collection.
+- [ ] Verify the core flow is independent of Android and network types.
+- [ ] Run debug build and all unit tests in CI.
+- [ ] Open one Phase 3.4 PR to `main`.
 
 ## Explicitly out of scope
 
-- [ ] concrete provider implementation
-- [ ] resolver/scoring implementation
-- [ ] provider-specific timeout/networking logic
-- [ ] cache
-- [ ] translation
-- [ ] Android `MediaSession`
-- [ ] playback demand/debounce logic
-- [ ] phone UI
-- [ ] Android Auto UI
+- [ ] LRCLIB implementation
+- [ ] Musixmatch implementation
+- [ ] PetitLyrics implementation or configuration changes
+- [ ] SyncLRC implementation
+- [ ] adapting `LyricsProviderResolver`
+- [ ] scoring weights or metadata similarity logic
+- [ ] recording-version / cross-script matching
+- [ ] provider-specific timeout/networking policy
+- [ ] Android `MediaSession` / `MediaController`
+- [ ] playback demand gating or metadata debounce
+- [ ] cache / translation
+- [ ] phone / Android Auto presentation
+
+## Exit criteria
+
+Phase 3.4 is complete when the pure Kotlin core flow is covered end-to-end with fakes and the tests demonstrate that orchestration, lifecycle ownership, failure isolation, cancellation, and stale-result protection behave correctly without relying on any concrete provider or Android framework type.
+
+Passing Phase 3.4 does **not** authorize provider migration. The project proceeds next to Phase 4 Playback boundary, then Phase 5 Core Readiness validation, then stops at the documented STOP GATE for explicit architecture/migration review.
 
 ## Next action
 
-Review and squash-merge PR #9. After it is merged, create a new topic branch for Phase 3.4 and add core integration/readiness tests around the existing `LyricsState`, `CandidateSelector` boundary, and `LyricsCoordinator`.
-
-Do not begin Phase 4 or any fork code adaptation until Phase 3.4 and the Core Readiness review are complete.
+Implement only the Phase 3.4 integration/readiness tests above. If they pass without revealing a core defect, avoid changing production behavior. Then run CI and open the Phase 3.4 PR.
