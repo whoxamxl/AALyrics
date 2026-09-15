@@ -4,7 +4,9 @@
 
 This document defines the architectural boundaries for AALyrics. The project is intentionally being built core-first before any concrete lyrics provider implementation is introduced.
 
-AALyrics is a greenfield implementation. The previous Auto Lyrics fork may be used as a behavioral reference and regression oracle later, but implementation code is not imported into the new codebase before the Core Readiness Gate described in `ROADMAP.md`.
+AALyrics is a greenfield codebase, but not a greenfield behavior specification. The working `whoxamxl/auto-lyrics` fork is treated as a behavioral reference and regression oracle. Proven behavior should not be re-invented merely because the new module structure is different.
+
+Implementation code from the previous fork is not imported into the new codebase before the Core Readiness Gate described in `ROADMAP.md`. Before that gate, the fork is inspected to inform boundaries, tests, migration classifications, and compatibility requirements.
 
 ## Design goals
 
@@ -16,14 +18,29 @@ AALyrics is a greenfield implementation. The previous Auto Lyrics fork may be us
 6. Keep pure domain modules free of Android framework dependencies.
 7. Make track changes, cancellation, provider failures, and stale results explicit domain concerns rather than incidental UI behavior.
 8. Ensure AALyrics core behavior can be tested entirely with fake providers before any real provider is connected.
+9. Preserve proven fork behavior unless there is a concrete architectural, correctness, or maintainability reason to change it.
+10. Separate semantic migration from structural refactoring: behavior may stay the same even when ownership and module boundaries change.
 
 ## Core-first rule
 
 Concrete provider implementations are adapters. They must conform to AALyrics; AALyrics must not grow around the quirks of a provider.
 
-Before the Core Readiness Gate, development is limited to provider-independent models, contracts, orchestration, selection policy, playback abstractions, state transitions, and tests using fake providers.
+Before the Core Readiness Gate, development is limited to provider-independent models, contracts, orchestration, selection boundaries, playback abstractions, state transitions, and tests using fake providers.
 
-No LRCLIB, Musixmatch, PetitLyrics, SyncLRC, or previous-fork implementation code is to be ported before that gate is reached and explicitly reviewed.
+No LRCLIB, Musixmatch, PetitLyrics, SyncLRC, or previous-fork implementation code is ported before that gate is reached and explicitly reviewed.
+
+This does **not** mean existing behavior is ignored. Before implementing any substantial behavior, consult `docs/MIGRATION_INVENTORY.md` and the current fork. If equivalent mature behavior already exists, define only the AALyrics boundary needed to receive it later instead of creating a competing implementation.
+
+## Migration principle
+
+Every significant behavior from the working fork should be classified before implementation work begins:
+
+- **PRESERVE** — behavior is already correct and should migrate with minimal semantic change.
+- **REFACTOR** — behavior should stay, but ownership/dependencies should change to fit AALyrics.
+- **REWRITE** — existing implementation is too coupled, obsolete, or unsuitable; reimplement the behavior against the new contracts.
+- **DROP** — behavior is unused, superseded, or intentionally excluded.
+
+The initial classification is tracked in `docs/MIGRATION_INVENTORY.md`. Classification can change when evidence changes, but silent reinvention is not allowed.
 
 ## Modules
 
@@ -41,7 +58,9 @@ Pure Kotlin contracts implemented by lyrics providers. It defines what a provide
 
 ### `:core:lyrics`
 
-Pure Kotlin AALyrics orchestration. It owns application lyrics state, candidate resolution, provider orchestration policy, request lifecycle, stale-result rejection, and domain-level state transitions. It depends on provider contracts, never concrete providers.
+Pure Kotlin AALyrics orchestration. It owns application lyrics state, provider orchestration policy, request lifecycle, stale-result rejection, the candidate-selection port, and domain-level state transitions. It depends on provider contracts, never concrete providers.
+
+The mature scoring/matching policy from the working fork is **not** to be independently redesigned during core-first work. AALyrics defines a stable selection boundary first; the proven resolver behavior is adapted behind that boundary after the Core Readiness Gate.
 
 ### `:platform:media`
 
@@ -96,7 +115,7 @@ LyricsCoordinator
         |                  v
         |          List<LyricsCandidate>
         |                  |
-        +<----- CandidateResolver
+        +<----- CandidateSelector port
         |
         v
 LyricsState
@@ -113,13 +132,15 @@ The central direction is deliberate: platform and provider adapters feed normali
 
 Owns the lifecycle of a lyrics request for the current track. It coordinates providers through contracts, handles track changes and cancellation, ignores stale results, and publishes domain state.
 
-### `CandidateResolver`
+### Candidate-selection port
 
-Owns deterministic cross-provider candidate selection. Provider adapters may expose normalized candidate metadata, but they must not decide global provider priority or final winner selection.
+Owns the dependency boundary between orchestration and winner selection. The coordinator supplies a track, normalized candidates, and explicit selection preferences; a selector returns the selected candidate/result.
+
+Before the Core Readiness Gate, tests use a fake selector. The production selector policy is expected to preserve/refactor the mature `LyricsProviderResolver` behavior from the working fork rather than invent a second scoring system.
 
 ### `LyricsState`
 
-Represents the observable domain state consumed by presentation layers. Loading, resolved, unavailable, and failure states should be explicit and should not be inferred from UI widgets or nullable fields.
+Represents the observable domain state consumed by presentation layers. Loading, resolved, unavailable, degraded, and failure states are explicit and are not inferred from UI widgets or nullable Android-specific fields.
 
 ## Failure and lifecycle rules
 
@@ -128,9 +149,10 @@ Represents the observable domain state consumed by presentation layers. Loading,
 - Provider execution order must not implicitly determine the winning candidate.
 - UI layers must not retry, rank, merge, or fetch provider results directly.
 - Android framework types must not cross into `:core:model`, `:core:lyrics`, or `:provider:api`.
+- Existing proven matching/scoring behavior must not be replaced without explicit regression evidence and a documented reason.
 
 ## Future extension points
 
 Translation, caching, timing adjustment, karaoke rendering, and other features may be introduced later behind explicit contracts. Their future existence must not be used as a reason to mix those responsibilities into `LyricsCoordinator` now.
 
-The roadmap and the Core Readiness Gate are defined in `docs/ROADMAP.md`.
+The roadmap and the Core Readiness Gate are defined in `docs/ROADMAP.md`. The migration classifications are defined in `docs/MIGRATION_INVENTORY.md`.
