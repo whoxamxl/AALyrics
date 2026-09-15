@@ -66,6 +66,28 @@ A provider must not own:
 - global cache policy,
 - Android `MediaSession` / `MediaController` types.
 
+## Playback source is not a lyrics provider
+
+A playback application/source and a lyrics provider are separate architectural concepts.
+
+A playback source may contribute stable identity or metadata that improves provider matching without itself being a lyrics source. Spotify is the current example: AALyrics may normalize a Spotify track resource into `TrackReference(namespace = "spotify", ...)` in `:platform:media`, and a concrete lyrics provider may use that reference as corroborating query/match evidence.
+
+```text
+Spotify playback
+    ↓
+:platform:media extracts Spotify TrackReference
+    ↓
+LyricsRequest / normalized Track identity
+    ↓
+concrete lyrics providers may consume that reference
+    ↓
+lyrics still come from that provider
+```
+
+This does **not** make Spotify a `LyricsProvider`. The current working fork has no independent Spotify lyrics client/provider; Musixmatch uses Spotify track identity to strengthen matching while the lyric payload still comes from Musixmatch.
+
+Do not create a `SpotifyProvider` merely because Spotify identity is available. A future direct Spotify lyrics source would be a separate provider decision with its own profile and explicit implementation authorization.
+
 ## Candidate and evidence rule
 
 Providers return facts, not global scores.
