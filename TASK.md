@@ -32,16 +32,18 @@ Behavior intentionally **not** moved into `LyricsCoordinator` in this slice:
 
 ## Slice 3 — Lyrics coordinator
 
-- [ ] Add coroutine support to `:core:lyrics` without Android dependencies.
-- [ ] Define `LyricsCoordinator` with caller-owned `CoroutineScope`.
-- [ ] Start each lookup with a fresh `LyricsLookupId` and publish `Loading`.
-- [ ] Fan out enabled `LyricsProvider` searches concurrently.
-- [ ] Isolate ordinary provider failures while propagating cancellation.
-- [ ] Collect normalized candidates and hand them to `CandidateSelector` exactly once.
-- [ ] Publish `Ready`, `Degraded`, `NotFound`, or `Failed` through the existing reducer.
-- [ ] Cancel/supersede active work on a newer lookup and reject late stale completion through lookup identity.
-- [ ] Clear active work to `Idle`.
-- [ ] Add tests using fake providers and a fake selector only.
+- [x] Add coroutine support to `:core:lyrics` without Android dependencies.
+- [x] Define `LyricsCoordinator` with caller-owned `CoroutineScope`.
+- [x] Start each lookup with a fresh `LyricsLookupId` and publish `Loading`.
+- [x] Fan out enabled `LyricsProvider` searches concurrently.
+- [x] Isolate ordinary provider failures while propagating cancellation.
+- [x] Collect normalized candidates and hand them to `CandidateSelector` exactly once.
+- [x] Publish `Ready`, `Degraded`, `NotFound`, or `Failed` through the existing reducer.
+- [x] Cancel/supersede active work on a newer lookup and reject late stale completion through lookup identity.
+- [x] Clear active work to `Idle`.
+- [x] Add tests using fake providers and a fake selector only.
+- [x] Pass branch-name check, debug build, and unit tests in CI.
+- [x] Open PR #9.
 
 ## Failure semantics for this slice
 
@@ -66,4 +68,6 @@ This is orchestration status only. Provider-specific diagnostics remain internal
 
 ## Next action
 
-Implement the coordinator and its fake-only tests, run CI, and open one Phase 3.3 PR. After that PR is reviewed and merged, Phase 3.4 is core integration/readiness testing. Do not begin Phase 4 or any fork code adaptation in this branch.
+Review and squash-merge PR #9. After it is merged, create a new topic branch for Phase 3.4 and add core integration/readiness tests around the existing `LyricsState`, `CandidateSelector` boundary, and `LyricsCoordinator`.
+
+Do not begin Phase 4 or any fork code adaptation until Phase 3.4 and the Core Readiness review are complete.
