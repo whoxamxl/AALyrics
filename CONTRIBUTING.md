@@ -23,6 +23,14 @@ Use lowercase, descriptive names after the prefix, for example `feature/provider
 
 `main` is the integration branch. Changes are merged only after the pull request checks pass.
 
+## Pull request review discipline
+
+Keep the pull request's stated scope and acceptance criteria fixed during review. Review feedback should block the current PR when it identifies a current defect, regression, CI failure, security/safety issue, or direct violation of those criteria. Theoretical bypasses, hypothetical future configurations, speculative hardening, and intentionally adversarial ways to evade a best-effort guardrail should normally be deferred rather than expanding the PR indefinitely.
+
+For AI-assisted review, use at most two normal Codex review rounds. After that, new P2 findings are merge blockers only when they materially affect the current scope. Lightweight CI architecture scripts are regression guardrails, not formal static-analysis proofs; stronger enforcement should be implemented separately with structural tooling when it becomes necessary.
+
+AI agents working in this repository must follow the detailed policy in [`AGENTS.md`](AGENTS.md), including the requirement to stop before merge and wait for explicit approval.
+
 ## External contributions
 
 External code contributions are not being accepted yet while the architecture, ownership model, and contribution terms are being established. Bug reports, design feedback, and technical discussion are welcome through GitHub Issues.
