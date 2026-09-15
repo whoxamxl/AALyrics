@@ -31,20 +31,28 @@ For Phase 3.4, prefer roughly this sequence:
 
 ## Phase 3.4 — Core integration/readiness tests
 
-- [ ] Exercise the complete provider-independent flow through `LyricsCoordinator` and `LyricsState` using fake providers and a fake selector only.
-- [ ] Verify provider completion order does not become the winner-selection rule.
-- [ ] Verify multiple providers can contribute normalized candidates before selection.
-- [ ] Verify one provider failure does not discard healthy provider results.
-- [ ] Verify all-provider failure reaches `Failed` without exposing raw exceptions in shared state.
-- [ ] Verify no usable winner with healthy providers reaches `NotFound`.
-- [ ] Verify a partial provider failure plus a winner reaches `Degraded`.
-- [ ] Verify a newer lookup supersedes older work and stale completion cannot overwrite current state.
-- [ ] Verify repeating the same track still creates a fresh lookup identity and stale prior work remains rejected.
-- [ ] Verify `clear()` cancels active work and leaves `Idle` as the final owned state.
-- [ ] Verify selector invocation happens once per completed lookup after candidate collection.
-- [ ] Verify the core flow is independent of Android and network types.
+- [x] Exercise the complete provider-independent flow through `LyricsCoordinator` and `LyricsState` using fake providers and a fake selector only.
+- [x] Verify provider completion order does not become the winner-selection rule.
+- [x] Verify multiple providers can contribute normalized candidates before selection.
+- [x] Verify one provider failure does not discard healthy provider results.
+- [x] Verify all-provider failure reaches `Failed` without exposing raw exceptions in shared state.
+- [x] Verify no usable winner with healthy providers reaches `NotFound`.
+- [x] Verify a partial provider failure plus a winner reaches `Degraded`.
+- [x] Verify a newer lookup supersedes older work and stale completion cannot overwrite current state.
+- [x] Verify repeating the same track still creates a fresh lookup identity and stale prior work remains rejected.
+- [x] Verify `clear()` cancels active work and leaves `Idle` as the final owned state.
+- [x] Verify selector invocation happens once per completed lookup after candidate collection.
+- [x] Verify the core flow is independent of Android and network types.
 - [ ] Run debug build and all unit tests in CI.
 - [ ] Open one Phase 3.4 PR to `main`.
+
+## Readiness evidence
+
+- `CoreFlowIntegrationTest` covers the end-to-end fake-only flow and lifecycle/failure invariants.
+- Existing `LyricsStateTest` retains direct stale-completion reducer coverage.
+- `:core:model`, `:provider:api`, and `:core:lyrics` all use the pure Kotlin JVM plugin rather than an Android plugin.
+- The only non-project runtime dependency in `:core:lyrics` is `kotlinx-coroutines-core`; no Android framework or networking library is present.
+- No production source changed during Phase 3.4; all behavior under validation is the already-merged core.
 
 ## Explicitly out of scope
 
@@ -69,4 +77,4 @@ Passing Phase 3.4 does **not** authorize provider migration. The project proceed
 
 ## Next action
 
-Implement only the Phase 3.4 integration/readiness tests above using the granular commit sequence in this file. If they pass without revealing a core defect, avoid changing production behavior. Then run CI and open the Phase 3.4 PR.
+Open the Phase 3.4 PR, run the branch-name check, debug build, and all unit tests in CI, then record the result. Do not begin Phase 4 or any fork code adaptation on this branch.
