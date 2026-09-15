@@ -364,4 +364,3 @@ class CrossProviderCandidateSelector : CandidateSelector {
 }
 
 private fun LyricLine.startTimeMsOrNull(): Long? = (this as? TimedLyricLine)?.startMs
-

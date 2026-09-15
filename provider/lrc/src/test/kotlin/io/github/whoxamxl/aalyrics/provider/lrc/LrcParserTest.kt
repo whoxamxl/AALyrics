@@ -75,5 +75,5 @@ class LrcParserTest {
     fun malformedWordOrderIsRejectedWithoutBreakingOtherRows() {
         val lines = LrcParser.parseKaraoke("[00:01.00]<00:02.00>Later<00:01.00>Earlier\n[00:03.00]Valid")
         assertEquals(listOf("Valid"), lines.map { it.text })
-    }}
-
+    }
+}

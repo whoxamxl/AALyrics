@@ -22,9 +22,9 @@
 
 - [x] Verify tools/access and latest branches; inspect approved docs and mature implementation/tests.
 - [x] Extract shared matching and port matching/version regression tests.
-- [ ] Preserve parser and implement LRCLIB adapter with regression tests.
-- [ ] Update durable migration documentation.
-- [ ] Run targeted tests, full repository tests/build and architecture checks.
+- [x] Preserve parser and implement LRCLIB adapter with regression tests.
+- [x] Update durable migration documentation.
+- [x] Run targeted tests, full repository tests/build and architecture checks.
 - [ ] Open PR and perform at most two normal review rounds; fix material in-scope findings.
 - [ ] Stop before merge for explicit approval.
 
@@ -36,3 +36,5 @@
 
 Shared utility validation: matching, selection and LRC parser tests passed locally. Java 25 needs a short jdk.net.unixdomain.tmpdir path on this machine; this is a command-only workaround.
 
+
+LRCLIB validation: 21 deterministic MockWebServer tests passed (discovery/fallback, deduplication, parsing, metadata, HTTP failures and in-flight cancellation). Full `test check :app:assembleDebug` (including Android lint), architecture and diff checks passed. PR review remains pending.

@@ -101,4 +101,3 @@ object LrcParser {
         return min * 60_000 + sec * 1_000 + ms
     }
 }
-

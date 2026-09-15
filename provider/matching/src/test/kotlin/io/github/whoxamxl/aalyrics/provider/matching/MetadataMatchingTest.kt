@@ -339,6 +339,5 @@ class MetadataMatchingTest {
         assertEquals(-1.0, MetadataMatching.durationSimilaritySeconds(240, 255.0001))
         assertNull(MetadataMatching.durationSimilaritySeconds(240, Double.NaN))
         assertNull(MetadataMatching.durationSimilaritySeconds(240, Double.POSITIVE_INFINITY))
-    }}
-
-
+    }
+}

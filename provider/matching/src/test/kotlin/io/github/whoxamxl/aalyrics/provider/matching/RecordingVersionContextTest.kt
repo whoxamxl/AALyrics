@@ -75,4 +75,3 @@ class RecordingVersionContextTest {
         assertFalse(MetadataMatching.versionsCompatible("Song", "Song (Instrumental)"))
     }
 }
-
