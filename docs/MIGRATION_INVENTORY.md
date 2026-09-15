@@ -23,6 +23,15 @@ Initial review baseline:
 - Branch: `main`
 - Reviewed commit: `6ad450213f1896a5a65e217f15d1544c6e646d0e`
 
+Core Readiness Gate re-review:
+
+- Repository: `whoxamxl/auto-lyrics`
+- Branch: `main`
+- Reviewed commit: `8484bed2dbe8db5ca7b17dec5481b3c22714dc6f` (`v1.13.0`)
+- Re-reviewed: 2026-09-15
+
+The gate re-review confirmed that the mature resolver and provider clients remain present, `MediaTracker` still combines Android media, provider, cache, translation, timing, and presentation responsibilities, and the explicit Spotify playback identity and lyrics-demand helpers remain separate behaviors. No classification below needs to change before the STOP GATE.
+
 The fork continues to evolve. Re-check `main` before migration work rather than assuming this snapshot remains current.
 
 ## Selection and metadata matching
@@ -49,8 +58,8 @@ The fork continues to evolve. Re-check `main` before migration work rather than 
 
 | Fork implementation | Classification | AALyrics destination / rule | Notes |
 | --- | --- | --- | --- |
-| `media/SpotifyTrackIdentity.kt` | **PRESERVE / REFACTOR** | `:platform:media` identity normalization feeding `core:model` references | Preserve the Spotify-specific robustness, but keep Spotify/platform details outside lyrics core. |
-| `media/LyricsDemandController.kt` | **PRESERVE / REFACTOR** | playback/application demand boundary after core lifecycle is stable | Review proven demand/lifecycle behavior before creating a replacement. |
+| `media/SpotifyTrackIdentity.kt` | **PRESERVE / REFACTOR** | `:platform:media` identity normalization feeding `core:model` references | Preserve the Spotify-specific robustness, but keep Spotify/platform details outside lyrics core. Phase 4 now reflects these semantics in the platform boundary. |
+| `media/LyricsDemandController.kt` | **PRESERVE / REFACTOR** | playback/application demand boundary after core lifecycle is stable | Review proven demand/lifecycle behavior before creating a replacement. It remains intentionally outside the Core Readiness Gate implementation. |
 | `media/LyricsVariantTransition.kt` | **PRESERVE / REFACTOR** | future state/variant transition policy if still required | Small but potentially regression-sensitive. Inspect call sites before migration. |
 | `media/MediaTracker.kt` | **REWRITE** | split across `:platform:media`, `:core:lyrics`, composition root, and later feature-specific services | Preserve observable behavior through tests/reference, but do not migrate the monolithic ownership model. This class mixes playback tracking, provider calls, cache, translation, timing, art/colors, and state. |
 | `media/MediaListenerService.kt` | **REWRITE / REFACTOR** | thin Android adapter in `:platform:media` | Preserve required Android behavior, but keep domain orchestration outside the service. |
@@ -92,8 +101,9 @@ The following current AALyrics work is intentionally new rather than duplicated 
 | explicit `LyricsLookupId` / request identity | Needed to make stale-result rejection a first-class core invariant rather than incidental asynchronous behavior. |
 | sealed provider-independent `LyricsState` lifecycle | Replaces the old Android/UI-heavy state DTO and creates one shared contract for phone and automotive presentation. |
 | pure reducer/state transitions | Provides testable lifecycle semantics independent of Android, providers, cache, translation, and UI. |
-| future `LyricsCoordinator` boundary | Replaces orchestration responsibilities currently mixed into `MediaTracker`. |
+| `LyricsCoordinator` boundary | Replaces orchestration responsibilities currently mixed into `MediaTracker`. |
 | candidate-selection **port** | Allows the proven fork resolver to be adapted later without coupling the coordinator to its implementation. |
+| explicit playback identity and `PlaybackLyricsController` | Separates track ownership from position/status updates so media churn does not restart lyrics lookup. |
 
 ## Migration rule for the current phase
 
