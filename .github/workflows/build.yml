@@ -2,13 +2,32 @@ name: Build
 
 on:
   push:
-    branches: [main, foundation]
+    branches: [main]
   pull_request:
 
 permissions:
   contents: read
 
 jobs:
+  branch-name:
+    name: Branch name
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    env:
+      BRANCH_NAME: ${{ github.head_ref }}
+
+    steps:
+      - name: Validate branch name
+        shell: bash
+        run: |
+          if [[ "$BRANCH_NAME" =~ ^(feature|fix|refactor|chore|docs|test|ci|build|release|hotfix)/[a-z0-9][a-z0-9._/-]*$ ]]; then
+            echo "Valid branch name: $BRANCH_NAME"
+          else
+            echo "Invalid branch name: $BRANCH_NAME"
+            echo "Use one of: feature/*, fix/*, refactor/*, chore/*, docs/*, test/*, ci/*, build/*, release/*, hotfix/*"
+            exit 1
+          fi
+
   build:
     runs-on: ubuntu-latest
 
