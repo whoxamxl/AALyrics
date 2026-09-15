@@ -56,17 +56,7 @@ Merged in PR #6.
 
 Merged in PR #8. The mature `LyricsProviderResolver` remains reserved for post-gate adaptation behind this boundary.
 
-## Current work
-
-### Phase 3 — Lyrics core
-
-Build only the AALyrics-specific provider-independent core that does not already exist as mature, proven behavior in the working fork.
-
-#### 3.3 Lyrics coordinator
-
-Coordinate `LyricsProvider` contracts and publish `LyricsState`.
-
-Current implementation in PR #9 covers:
+### Phase 3.3 — Lyrics coordinator ✅
 
 - fresh request identity for every lookup
 - concurrent provider fan-out
@@ -74,15 +64,17 @@ Current implementation in PR #9 covers:
 - cancellation propagation
 - no-result and terminal-failure behavior
 - cancellation/supersession on a newer lookup
-- stale-result protection through lookup identity and the existing reducer
-- handoff to `CandidateSelector` exactly once after candidates are collected
+- stale-result protection through lookup identity and the reducer
+- one handoff to `CandidateSelector` after candidates are collected
 - fake-provider/fake-selector tests only
 
-Before implementation, the current fork was re-checked at `8484bed2dbe8db5ca7b17dec5481b3c22714dc6f` (`v1.13.0`). Media debounce, demand gating, cache, translation, provider-specific timeout/networking details, and resolver heuristics remain outside this coordinator slice.
+Merged in PR #9. Before implementation, the working fork was re-checked at `8484bed2dbe8db5ca7b17dec5481b3c22714dc6f` (`v1.13.0`) so mature behavior was not reimplemented unnecessarily.
 
-#### 3.4 Core integration tests
+## Current work
 
-After PR #9 is merged, prove the complete domain flow without Android or network access:
+### Phase 3.4 — Core integration/readiness tests
+
+Prove the complete provider-independent domain flow without Android or network access:
 
 ```text
 Fake Playback Input
@@ -96,9 +88,24 @@ CandidateSelector boundary
 LyricsState
 ```
 
-The purpose is to prove orchestration and lifecycle correctness, not to duplicate the fork's mature selection policy.
+The purpose is to validate orchestration and lifecycle correctness, not to duplicate the fork's mature selection policy.
 
-Phase 3.4 should also exercise the Core Readiness invariants that can be validated before Android playback integration, including provider-order independence at the orchestration boundary, stale-result rejection, failure isolation, and shared-state behavior.
+Phase 3.4 validates at least:
+
+- provider completion order does not become winner selection
+- multiple providers contribute normalized candidates before selection
+- one provider failure does not discard healthy results
+- all-provider failure reaches terminal failure without leaking raw exceptions into shared state
+- healthy no-result reaches not-found
+- partial failure plus a winner reaches degraded state
+- newer lookups supersede older work
+- stale completion cannot overwrite current state
+- repeated lookup of the same track still has fresh request identity
+- `clear()` leaves `Idle` as the final owned state
+- selector invocation occurs once per completed lookup after collection
+- the flow remains pure Kotlin and independent of Android/network types
+
+This phase should be validation-first. Production behavior should change only if the tests reveal a genuine core boundary defect.
 
 ## Next
 
