@@ -1,4 +1,4 @@
-package io.github.whoxamxl.aalyrics.provider.selection
+package io.github.whoxamxl.aalyrics.provider.matching
 
 import java.text.Normalizer
 import java.util.Locale
@@ -54,7 +54,7 @@ private val ALLOWED_ENGLISH_CONTEXT_WORDS = setOf(
     "concert",
 )
 
-internal object RecordingVersionContext {
+object RecordingVersionContext {
     fun extractAlbumVersionQualifiers(value: String): Set<String> {
         if (value.isBlank()) return emptySet()
 
@@ -158,3 +158,4 @@ internal object RecordingVersionContext {
         }
     }
 }
+

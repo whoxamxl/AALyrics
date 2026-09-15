@@ -21,7 +21,7 @@
 ## Plan/status
 
 - [x] Verify tools/access and latest branches; inspect approved docs and mature implementation/tests.
-- [ ] Extract shared matching and port matching/version regression tests.
+- [x] Extract shared matching and port matching/version regression tests.
 - [ ] Preserve parser and implement LRCLIB adapter with regression tests.
 - [ ] Update durable migration documentation.
 - [ ] Run targeted tests, full repository tests/build and architecture checks.
@@ -33,3 +33,6 @@
 - HTTP/service failures become exceptions, rather than the fork's catch-all no-result behavior, to satisfy the existing provider contract.
 - Parsed payload usability is checked before accepting fast-path/local winners, so malformed or empty timed payloads cannot block valid fallback.
 - Shared parser retains enhanced-LRC coverage; LRCLIB advertises and returns only PLAIN/LINE.
+
+Shared utility validation: matching, selection and LRC parser tests passed locally. Java 25 needs a short jdk.net.unixdomain.tmpdir path on this machine; this is a command-only workaround.
+

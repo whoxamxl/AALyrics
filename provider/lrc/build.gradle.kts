@@ -7,12 +7,10 @@ kotlin {
 }
 
 dependencies {
-    api(project(":core:lyrics"))
-    implementation(project(":provider:matching"))
+    api(project(":core:model"))
     testImplementation(kotlin("test"))
 }
 
 tasks.test {
     useJUnitPlatform()
 }
-
