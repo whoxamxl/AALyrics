@@ -41,13 +41,11 @@ jobs:
           distribution: temurin
           java-version: "17"
 
-      - name: Set up Gradle 9.6
+      - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
-        with:
-          gradle-version: "9.6.0"
 
       - name: Build debug APK
-        run: gradle :app:assembleDebug --stacktrace
+        run: ./gradlew :app:assembleDebug --stacktrace
 
       - name: Run unit tests
-        run: gradle test --stacktrace
+        run: ./gradlew test --stacktrace
