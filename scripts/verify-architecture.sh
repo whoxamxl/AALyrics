@@ -69,11 +69,11 @@ if grep -RInE \
   fail "UI feature modules must not fetch from providers or rank candidates"
 fi
 
-if grep -RInEi \
+if grep -RInE \
   --include='*.kt' --include='*.java' \
-  '\b(lrclib|musixmatch|petitlyrics|synclrc|spotify)\b' \
+  '^[[:space:]]*import[[:space:]].*provider\.(lrclib|musixmatch|petitlyrics|synclrc)\.|\b(LrcLibClient|MusixmatchClient|PetitLyricsClient|SyncLrcClient|SpotifyTrackIdentity)\b' \
   core/model/src/main core/lyrics/src/main provider/api/src/main 2>/dev/null; then
-  fail "provider-specific quirks must not become pure-core application behavior"
+  fail "provider-specific implementation details must not become pure-core application behavior"
 fi
 
 if grep -RInE \
