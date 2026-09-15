@@ -16,6 +16,7 @@ core_model_target='(project[[:space:]]*\([[:space:]]*(path[[:space:]]*=[[:space:
 core_lyrics_target='(project[[:space:]]*\([[:space:]]*(path[[:space:]]*=[[:space:]]*)?":core:lyrics"[[:space:]]*\)|projects\.core\.lyrics)'
 provider_api_target='(project[[:space:]]*\([[:space:]]*(path[[:space:]]*=[[:space:]]*)?":provider:api"[[:space:]]*\)|projects\.provider\.api)'
 coroutines_core_target='"org\.jetbrains\.kotlinx:kotlinx-coroutines-core:[^"]+"'
+network_api_refs='(okhttp3\.|retrofit2\.|io\.ktor\.|org\.apache\.http\.|java\.net\.|javax\.net\.)'
 
 pure_modules=(
   "core/model"
@@ -65,7 +66,7 @@ for module in "${pure_modules[@]}"; do
     forbidden_source_refs=$(
       (grep -RInE \
         --include='*.kt' --include='*.java' \
-        '(android\.|androidx\.|okhttp3\.|retrofit2\.|io\.ktor\.|org\.apache\.http\.|java\.net\.|javax\.net\.)' \
+        "(android\\.|androidx\\.|${network_api_refs})" \
         "$source_dir" 2>/dev/null || true) \
         | grep -Ev ':[0-9]+:[[:space:]]*(//|/\*|\*)' \
         || true
@@ -96,6 +97,22 @@ for module in "${feature_modules[@]}"; do
     | grep -Eq 'project[[:space:]]*\([[:space:]]*(path[[:space:]]*=[[:space:]]*)?":(provider:[^"]+|platform:media)"|projects\.(provider\.|platform\.media)'; then
     fail "$module must not depend directly on providers or the media platform adapter"
   fi
+
+  source_dir="$module/src/main"
+  if [[ -d "$source_dir" ]]; then
+    forbidden_network_refs=$(
+      (grep -RInE \
+        --include='*.kt' --include='*.java' \
+        "$network_api_refs" \
+        "$source_dir" 2>/dev/null || true) \
+        | grep -Ev ':[0-9]+:[[:space:]]*(//|/\*|\*)' \
+        || true
+    )
+    if [[ -n "$forbidden_network_refs" ]]; then
+      echo "$forbidden_network_refs"
+      fail "$module presentation sources must not perform networking directly"
+    fi
+  fi
 done
 
 lyrics_state_declarations=$(
@@ -125,10 +142,16 @@ if grep -RInE \
   fail "provider-specific implementation details must not become pure-core application behavior"
 fi
 
-if grep -RInE \
-  --include='*.kt' --include='*.java' \
-  'android\.media\.(MediaMetadata|session\.[A-Za-z_][A-Za-z0-9_]*)' \
-  app core provider feature 2>/dev/null; then
+forbidden_media_refs=$(
+  (grep -RInE \
+    --include='*.kt' --include='*.java' \
+    'android\.media\.(\*|MediaMetadata|session\.(\*|[A-Za-z_][A-Za-z0-9_]*))' \
+    app core provider feature 2>/dev/null || true) \
+    | grep -Ev ':[0-9]+:[[:space:]]*(//|/\*|\*)' \
+    || true
+)
+if [[ -n "$forbidden_media_refs" ]]; then
+  echo "$forbidden_media_refs"
   fail "MediaSession and MediaController framework types must stay inside platform/media"
 fi
 
