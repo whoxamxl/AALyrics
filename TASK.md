@@ -13,7 +13,7 @@ Use only AALyrics domain/provider contracts and synthetic test data. Do not add 
 - [x] Define pure state events/reduction rules.
 - [x] Reject stale completion events after a newer lookup starts.
 - [x] Add unit tests for lifecycle and invariants.
-- [ ] Run CI and open a PR.
+- [x] Run CI and open PR #6.
 
 ## Later slices — not part of Slice 1
 
@@ -29,4 +29,4 @@ After Phase 5, stop for explicit architecture review before any LRCLIB, Musixmat
 
 ## Next action
 
-Open the Slice 1 PR and verify the branch-name/build/unit-test checks. Do not start CandidateResolver until Slice 1 has been reviewed and merged.
+Review and merge PR #6. After it is merged, create a new topic branch for Slice 2 and implement only the deterministic `CandidateResolver` with synthetic candidates. Do not start `LyricsCoordinator` or any concrete provider in the same slice.
