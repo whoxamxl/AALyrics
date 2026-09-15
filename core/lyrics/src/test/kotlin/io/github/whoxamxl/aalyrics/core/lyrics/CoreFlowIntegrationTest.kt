@@ -99,6 +99,79 @@ class CoreFlowIntegrationTest {
         assertEquals(setOf(slowCandidate, fastCandidate), selector.candidates.toSet())
     }
 
+    @Test
+    fun `healthy winner with one failed provider is degraded`() = runTest {
+        val track = Track(
+            title = "Partial Failure",
+            artists = listOf("AALyrics"),
+        )
+        val winner = candidate("healthy", track, "winner")
+        val failingProvider = RecordingProvider("failing") { error("provider unavailable") }
+        val healthyProvider = RecordingProvider("healthy", listOf(winner))
+        val selector = RecordingSelector(winner)
+        val coordinator = LyricsCoordinator(
+            providers = listOf(failingProvider, healthyProvider),
+            selector = selector,
+            scope = this,
+        )
+
+        val lookup = coordinator.startLookup(track)
+        advanceUntilIdle()
+
+        val degraded = assertIs<LyricsState.Degraded>(coordinator.state.value)
+        assertEquals(lookup, degraded.lookup)
+        assertEquals(winner.lyrics, degraded.lyrics)
+        assertEquals(1, degraded.failedAttempts)
+        assertEquals(listOf(winner), selector.candidates)
+    }
+
+    @Test
+    fun `all provider failures reach failed without raw exception state`() = runTest {
+        val track = Track(
+            title = "Total Failure",
+            artists = listOf("AALyrics"),
+        )
+        val first = RecordingProvider("first") { error("first failure") }
+        val second = RecordingProvider("second") { error("second failure") }
+        val selector = RecordingSelector(null)
+        val coordinator = LyricsCoordinator(
+            providers = listOf(first, second),
+            selector = selector,
+            scope = this,
+        )
+
+        val lookup = coordinator.startLookup(track)
+        advanceUntilIdle()
+
+        val failed = assertIs<LyricsState.Failed>(coordinator.state.value)
+        assertEquals(lookup, failed.lookup)
+        assertEquals(2, failed.failedAttempts)
+        assertTrue(selector.candidates.isEmpty())
+    }
+
+    @Test
+    fun `healthy providers with no usable winner reach not found`() = runTest {
+        val track = Track(
+            title = "No Lyrics",
+            artists = listOf("AALyrics"),
+        )
+        val first = RecordingProvider("first", emptyList())
+        val second = RecordingProvider("second", emptyList())
+        val selector = RecordingSelector(null)
+        val coordinator = LyricsCoordinator(
+            providers = listOf(first, second),
+            selector = selector,
+            scope = this,
+        )
+
+        val lookup = coordinator.startLookup(track)
+        advanceUntilIdle()
+
+        val notFound = assertIs<LyricsState.NotFound>(coordinator.state.value)
+        assertEquals(lookup, notFound.lookup)
+        assertTrue(selector.candidates.isEmpty())
+    }
+
     private fun candidate(
         providerId: String,
         track: Track,
@@ -133,7 +206,7 @@ class CoreFlowIntegrationTest {
     }
 
     private class RecordingSelector(
-        private val result: LyricsCandidate,
+        private val result: LyricsCandidate?,
     ) : CandidateSelector {
         lateinit var track: Track
             private set
@@ -146,7 +219,7 @@ class CoreFlowIntegrationTest {
             track: Track,
             candidates: List<LyricsCandidate>,
             preferences: CandidateSelectionPreferences,
-        ): LyricsCandidate {
+        ): LyricsCandidate? {
             callCount += 1
             this.track = track
             this.candidates = candidates
