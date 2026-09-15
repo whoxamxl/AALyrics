@@ -6,12 +6,14 @@ This file prevents AALyrics from reimplementing behavior that is already mature 
 
 Before starting a non-trivial implementation slice, inspect the current fork and update this inventory. The classifications below describe **behavioral migration intent** and ownership in the AALyrics architecture.
 
+Concrete-provider migration additionally follows `docs/PROVIDER_ARCHITECTURE.md` and the relevant profile under `docs/providers/`.
+
 ## Classification
 
 | Class | Meaning |
 | --- | --- |
 | **PRESERVE** | Keep behavior with minimal semantic change. Structural cleanup is allowed only if regression behavior remains equivalent. |
-| **REFACTOR** | Keep the proven behavior, but move ownership/dependencies to the AALyrics architecture. |
+| **REFACTOR** | Keep the proven behavior, but move ownership/dependencies to the AALyrics architecture. Existing mature project code may be reused/refactored; this does not require a gratuitous rewrite. |
 | **REWRITE** | Preserve the user-facing requirement where applicable, but replace the old implementation because it is too coupled or structurally unsuitable. |
 | **DROP** | Do not migrate unless later evidence shows it is still required. |
 
@@ -37,6 +39,13 @@ Provider-selection migration re-check:
 - Reviewed commit: `8484bed2dbe8db5ca7b17dec5481b3c22714dc6f` (`v1.13.0`)
 - Re-checked immediately before the first post-gate adaptation slice
 
+Provider-profile documentation re-check:
+
+- Repository: `whoxamxl/auto-lyrics`
+- Branch: `main`
+- Reviewed commit: `8484bed2dbe8db5ca7b17dec5481b3c22714dc6f` (`v1.13.0`)
+- Re-checked before documenting concrete-provider migration policy/profiles
+
 The mature resolver/provider clients remain present, `MediaTracker` still combines Android media, provider, cache, translation, timing, and presentation responsibilities, and the explicit Spotify playback identity and lyrics-demand helpers remain separate behaviors.
 
 The fork continues to evolve. Re-check `main` before every later migration slice rather than assuming this snapshot remains current.
@@ -45,11 +54,11 @@ The fork continues to evolve. Re-check `main` before every later migration slice
 
 | Fork implementation | Classification | AALyrics destination / rule | Notes |
 | --- | --- | --- | --- |
-| `lyrics/LyricsProviderResolver.kt` | **PRESERVE / REFACTOR** | `:provider:selection` implementation of the `:core:lyrics` `CandidateSelector` port | First post-gate migration slice. Preserve mature cross-provider metadata, payload-quality, source-confidence, synchronization, karaoke, cross-script, and fallback policy without making core depend on the implementation. |
-| `lyrics/RecordingVersionContext.kt` | **PRESERVE / REFACTOR** | pure matching utility in `:provider:selection` | Explicit live/remix/remaster/etc. context handling is heavily refined and regression-sensitive. Preserve semantics while removing accidental ownership by LRCLIB-specific code. |
-| generic similarity helpers currently in `LrcLibClient` (`stringSimilarity`, artist matching, duration similarity, version compatibility) | **PRESERVE / REFACTOR** | generic matching utility in `:provider:selection` | These semantics are used by cross-provider selection and must not remain owned by the future LRCLIB networking adapter. |
-| `lyrics/MetadataCleaner.kt` | **PRESERVE / REFACTOR** | metadata normalization utility at an appropriate domain/platform boundary | Not part of the selector migration. Do not independently reinvent metadata cleanup; verify call sites/tests before choosing final ownership. |
-| `LyricsProviderResolverTest.kt` and version-context tests | **PRESERVE** | `:provider:selection` regression specification using AALyrics models | Behavioral cases and thresholds are ported rather than recreated from memory. AALyrics additionally makes exact score ties deterministic so provider execution order cannot become winner policy. |
+| `lyrics/LyricsProviderResolver.kt` | **PRESERVE / REFACTOR** | `:provider:selection` implementation of the `:core:lyrics` `CandidateSelector` port | Migrated in PR #17. Preserve mature cross-provider metadata, payload-quality, source-confidence, synchronization, karaoke, cross-script, and fallback policy without making core depend on the implementation. |
+| `lyrics/RecordingVersionContext.kt` | **PRESERVE / REFACTOR** | pure matching utility currently owned by `:provider:selection` | Explicit live/remix/remaster/etc. context handling is heavily refined and regression-sensitive. Preserve semantics. |
+| generic similarity helpers historically in `LrcLibClient` (`stringSimilarity`, artist matching, duration similarity, version compatibility) | **PRESERVE / REFACTOR** | pure generic matching currently used by `:provider:selection` | Migrated as generic semantics rather than LRCLIB networking behavior. If concrete adapters also require the same helpers, extract a neutral pure matching utility rather than duplicating them or making providers depend on the selector implementation. |
+| `lyrics/MetadataCleaner.kt` | **PRESERVE / REFACTOR** | metadata normalization utility at an appropriate domain/platform boundary | Not part of provider selection. Do not independently reinvent metadata cleanup; verify call sites/tests before choosing final ownership. |
+| `LyricsProviderResolverTest.kt` and version-context tests | **PRESERVE** | `:provider:selection` regression specification using AALyrics models | Behavioral cases and thresholds were migrated rather than recreated from memory. AALyrics additionally makes exact score ties deterministic so provider execution order cannot become winner policy. |
 
 ### Intentional structural adaptation
 
@@ -62,7 +71,7 @@ The old resolver directly names provider implementations and calls generic helpe
            |
 :provider:selection
     CrossProviderCandidateSelector
-    metadata/version/quality matching
+    cross-provider ranking policy
            ↑
            |
 normalized LyricsCandidate facts
@@ -74,19 +83,23 @@ AALyrics also normalizes candidate duration to milliseconds in `Track`. A provid
 
 ## Provider-local search and parsing
 
+Shared provider migration rules are in `docs/PROVIDER_ARCHITECTURE.md`. Provider-specific behavior is summarized in `docs/providers/`.
+
 | Fork implementation | Classification | AALyrics destination / rule | Notes |
 | --- | --- | --- | --- |
-| `lyrics/LrcLibClient.kt` | **REFACTOR** | future `:provider:lrclib` adapter; generic matching already moved to `:provider:selection` | Preserve mature search/fallback behavior, but keep HTTP/provider concerns separate from generic track matching. |
-| `lyrics/MusixmatchClient.kt` | **REFACTOR** | future Musixmatch provider adapter | Preserve proven behavior and tests where legally/technically appropriate; conform output to `LyricsProvider`. Do not let Musixmatch-specific decisions leak into core state. |
-| `lyrics/PetitLyricsClient.kt` | **REFACTOR** | future PetitLyrics provider adapter | Preserve working behavior. Existing PetitLyrics configuration values must not be changed during migration unless explicitly requested. |
-| `lyrics/SyncLrcClient.kt` | **REFACTOR** | future SyncLRC provider adapter | Preserve useful behavior and R8/regression fixes, but adapt to the common provider contract. |
-| `lyrics/LrcParser.kt` | **PRESERVE / REFACTOR** | pure parser utility owned by the relevant provider/parser layer | Parsing behavior is already tested. Reuse semantics rather than writing a new LRC parser without evidence. |
+| `lyrics/LrcLibClient.kt` | **PRESERVE / REFACTOR** | future `:provider:lrclib` adapter; see `docs/providers/LRCLIB.md` | Preserve mature exact/structured/title-only/free-text/plain fallback and local validation. Keep HTTP/provider concerns separate from cross-provider ranking. |
+| `lyrics/LrcParser.kt` | **PRESERVE / REFACTOR** | provider/parser layer shared where appropriate | Parsing behavior is already tested. Preserve semantics rather than rewriting a stable parser for novelty. |
+| `lyrics/PetitLyricsClient.kt` | **PRESERVE / REFACTOR** | future PetitLyrics provider adapter; see `docs/providers/PETITLYRICS.md` | Preserve working search, WSY/LSY parsing, companion-text resolution, and tests. PetitLyrics configuration values are immutable unless explicitly requested. |
+| `lyrics/MusixmatchClient.kt` | **PRESERVE / REFACTOR** | future Musixmatch provider adapter; see `docs/providers/MUSIXMATCH.md` | Preserve the proven anonymous mobile API flow, RichSync/subtitle fallback, identity validation, and failure isolation. Do not switch endpoint strategy as incidental migration cleanup. |
+| `lyrics/SyncLrcClient.kt` | **PRESERVE / REFACTOR** | future SyncLRC provider adapter; see `docs/providers/SYNCLRC.md` | Preserve its deliberate karaoke-only role, response-shape compatibility, and genuine word-timing requirement. |
+
+Provider migration is not a clean-room exercise. Mature provider implementation may be reused/refactored when it already expresses the behavior we intend to keep. The structural requirement is that legacy coupling does not cross the AALyrics provider boundary.
 
 ## Playback identity and request lifecycle
 
 | Fork implementation | Classification | AALyrics destination / rule | Notes |
 | --- | --- | --- | --- |
-| `media/SpotifyTrackIdentity.kt` | **PRESERVE / REFACTOR** | `:platform:media` identity normalization feeding `core:model` references | Preserve the Spotify-specific robustness, but keep Spotify/platform details outside lyrics core. Phase 4 reflects these semantics in the platform boundary. |
+| `media/SpotifyTrackIdentity.kt` | **PRESERVE / REFACTOR** | `:platform:media` identity normalization feeding `core:model` references | Preserve Spotify-specific robustness, but keep Spotify/platform details outside lyrics core. Phase 4 reflects these semantics in the platform boundary. |
 | `media/LyricsDemandController.kt` | **PRESERVE / REFACTOR** | playback/application demand boundary after provider/core wiring is stable | Review proven demand/lifecycle behavior before creating a replacement. |
 | `media/LyricsVariantTransition.kt` | **PRESERVE / REFACTOR** | future state/variant transition policy if still required | Small but potentially regression-sensitive. Inspect call sites before migration. |
 | `media/MediaTracker.kt` | **REWRITE** | split across `:platform:media`, `:core:lyrics`, composition root, and later feature-specific services | Preserve observable behavior through tests/reference, but do not migrate the monolithic ownership model. This class mixes playback tracking, provider calls, cache, translation, timing, art/colors, and state. |
@@ -136,13 +149,13 @@ AALyrics also normalizes candidate duration to milliseconds in `Track`. A provid
 ## Migration rule after the Core Readiness Gate
 
 ```text
-Inspect current fork behavior
+Inspect current fork behavior and tests
         ↓
-Update this inventory / classify the slice
+Read/update migration inventory + relevant provider profile
         ↓
-Choose the existing AALyrics port or add the smallest necessary boundary
+Choose the existing AALyrics boundary
         ↓
-Adapt mature behavior with regression tests
+PRESERVE / REFACTOR mature implementation and regression knowledge
         ↓
 Keep provider/platform quirks outside pure core
         ↓
@@ -151,10 +164,15 @@ CI + bounded review
 STOP before merge
 ```
 
-Do not bulk-port the old application. Each provider or subsystem is a separate migration slice with explicit acceptance criteria.
+Do not bulk-port the old application. Each provider or subsystem remains a separate migration slice with explicit acceptance criteria. At the same time, do not invent a clean-room rewrite step for mature provider code when PRESERVE / REFACTOR is the documented classification.
 
 ## Current migration status
 
-The STOP GATE was accepted after Phase 5. The first migration batch is the mature resolver/matching behavior in `:provider:selection` (PR #17). No concrete provider client is included in that batch.
+- Core Readiness STOP GATE: accepted and merged in PR #14.
+- Production candidate selection: migrated and merged in PR #17.
+- Concrete provider migration: **not started on `main`**.
+- Current work: document the shared provider architecture and provider profiles before implementation resumes.
 
-After this slice, re-check the working fork again and choose the first concrete provider adapter based on coverage value, current implementation maturity, and migration complexity.
+Documentation/planning approval does not authorize provider implementation. Concrete provider migration begins only after explicit user authorization for an implementation slice.
+
+Default planned order is LRCLIB → PetitLyrics → Musixmatch → SyncLRC, subject to a fresh working-fork/profile check before each provider begins.
