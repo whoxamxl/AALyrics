@@ -1,59 +1,63 @@
-# Core Readiness Gate Task
+# Provider Selection Migration Task
 
-This branch implements only Phase 5 of `docs/ROADMAP.md`: final core-readiness validation before the concrete-provider / previous-fork adaptation STOP GATE.
+This branch is the first post-Core-Readiness migration slice. It adapts the mature cross-provider resolver behavior from the working `whoxamxl/auto-lyrics` fork behind AALyrics' existing `CandidateSelector` port.
 
-Phase 4 was merged in PR #12. The working fork was re-checked again before this phase and `whoxamxl/auto-lyrics` `main` is still at `8484bed2dbe8db5ca7b17dec5481b3c22714dc6f` (`v1.13.0`). No previous-fork implementation code is adapted on this branch.
+Reference baseline re-checked before implementation:
 
-## Scope guard
+- repository: `whoxamxl/auto-lyrics`
+- branch: `main`
+- commit: `8484bed2dbe8db5ca7b17dec5481b3c22714dc6f` (`v1.13.0`)
+- relevant behavior: `LyricsProviderResolver`, generic metadata matching helpers currently embedded in `LrcLibClient`, and `RecordingVersionContext`
 
-This phase is validation-first. Do not add concrete providers, resolver/scoring logic, cache, translation, timing/karaoke implementation, phone UI, Android Auto UI, or bulk migration code.
+## Classification
 
-Production changes are allowed only if a readiness check exposes a genuine architecture boundary defect. Any such fix must be isolated from the test/audit that exposes it.
+- mature resolver scoring/selection semantics — **PRESERVE / REFACTOR**
+- generic title/artist/duration/version matching — **PRESERVE / REFACTOR** out of `LrcLibClient`
+- provider-specific source-confidence policy — **PRESERVE / REFACTOR** outside pure core
+- concrete provider clients — not part of this branch
+- cache, translation, demand gating, UI, provider networking — not part of this branch
 
-## Commit strategy
+## Architecture decision
 
-Keep commits small and single-purpose. PR-level squash remains separate from branch history.
+Keep `CandidateSelector` as a port in `:core:lyrics`. Put the production cross-provider implementation in a new pure Kotlin `:provider:selection` module so provider-specific source-confidence policy does not leak into pure application core. The selector consumes only normalized `Track` and `LyricsCandidate` values.
 
-Prefer this sequence:
+Provider adapters may attach provider-neutral match evidence to a candidate when search context corroborates metadata. They still do not assign the final cross-provider score.
 
-1. validate pure-core dependency boundaries,
-2. validate shared-state / feature consumption boundaries,
-3. validate provider and UI ownership boundaries,
-4. re-review migration inventory against the current fork,
-5. record final gate evidence and update durable roadmap docs,
-6. open one Phase 5 PR, run CI and Codex review, then stop at the STOP GATE.
+## Scope
 
-## Phase 5 checklist
+1. extend normalized candidate evidence only where required by the proven resolver,
+2. add `:provider:selection` and generic matching/version utilities,
+3. adapt mature metadata/quality/source-confidence scoring behind `CandidateSelector`,
+4. interpret `preferredSyncType = WORD` as the proven near-equivalent karaoke preference,
+5. port resolver regression cases to AALyrics models,
+6. update architecture/migration roadmap documentation,
+7. open a PR, run CI, use the normal review policy, and stop before merge.
 
-- [x] `:core:model`, `:provider:api`, and `:core:lyrics` contain no Android framework dependency.
-- [x] Core orchestration is exercised entirely with fake providers.
-- [x] Selection remains behind a stable provider-independent boundary.
-- [x] Provider execution order cannot accidentally determine the selected result.
-- [x] Track changes cannot allow stale results to overwrite current state.
-- [x] One provider failure is isolated from healthy providers.
-- [x] Playback position/status changes cannot accidentally restart lyrics lookup.
-- [x] Android MediaSession / MediaController types remain inside `:platform:media`.
-- [x] Phone and automotive layers can consume one shared `LyricsState` contract.
-- [x] No UI layer performs provider fetching or ranking.
-- [x] Concrete provider quirks are not represented as core application behavior.
-- [x] Architecture and tests make the intended dependency direction difficult to violate accidentally.
-- [x] `docs/MIGRATION_INVENTORY.md` has been reviewed against the current fork.
-- [ ] CI debug build and all tests pass on the final Phase 5 head.
-- [ ] Codex review is complete on the final Phase 5 head.
-- [ ] Stop for explicit architecture/migration review before any provider/resolver adaptation.
+## Explicit non-goals
 
-## Evidence
+- no LRCLIB, Musixmatch, PetitLyrics, or SyncLRC networking/client implementation,
+- no changes to PetitLyrics configuration values,
+- no cache/translation/timing-adjustment/UI work,
+- no competing scoring algorithm,
+- no application wiring that requires a concrete provider.
 
-- `scripts/verify-architecture.sh` makes the dependency/ownership rules executable and CI-enforced.
-- Existing core integration tests cover provider ordering, fake-provider orchestration, failure isolation, stale-result rejection, and selector ownership.
-- Phase 4 playback tests cover identity-driven lookup ownership independently from timeline/status churn.
-- `docs/CORE_READINESS_GATE.md` records the evidence matrix and STOP GATE review topics.
-- `docs/MIGRATION_INVENTORY.md` was re-reviewed against fork commit `8484bed2dbe8db5ca7b17dec5481b3c22714dc6f`.
+## Acceptance criteria
 
-## Exit criteria
+- [x] selector implementation lives outside `:core:lyrics` while implementing its existing port,
+- [x] synchronized candidates beat plain fallback candidates,
+- [x] recording-version mismatches are rejected,
+- [x] title/artist/duration/album scoring preserves the mature resolver thresholds and weights,
+- [x] cross-script artist corroboration behavior is preserved,
+- [x] Japanese/Latin interleaved transliteration quality penalty is preserved,
+- [x] provider source-confidence preferences are preserved without entering pure core,
+- [x] WORD preference only overrides the standard winner for near-equivalent metadata/quality and real word timing,
+- [x] provider execution order is not used as winner policy,
+- [x] migrated regression tests pass,
+- [x] full repository CI passes on the implementation/documentation head (`b7352d6d91` / run `34959811080`),
+- [ ] stop before merge for explicit approval.
 
-Phase 5 is complete only when every readiness item is either demonstrated by code/tests/module configuration or explicitly identified as a blocker. Passing the checklist does not authorize automatic provider migration.
+## Review status
 
-## Next action
-
-Open the Phase 5 PR, run CI and Codex review on the final head, address any substantive finding in a separate commit, then stop before merge for explicit architecture/migration review.
+- Codex round 1 reviewed the initial implementation head and found one in-scope P2: durable architecture documentation had not yet been updated.
+- `docs/ARCHITECTURE.md`, `docs/ROADMAP.md`, and `docs/MIGRATION_INVENTORY.md` now document `:provider:selection` ownership and migration status.
+- Final-head review remains bounded by `AGENTS.md`; do not reopen an unbounded adversarial review loop.
