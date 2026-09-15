@@ -18,5 +18,5 @@ android {
 
 dependencies {
     api(project(":core:model"))
-    testImplementation(kotlin("test"))
+    testImplementation(kotlin("test-junit"))
 }
