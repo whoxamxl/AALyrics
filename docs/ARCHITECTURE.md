@@ -2,11 +2,11 @@
 
 ## Status
 
-This document defines the architectural boundaries for AALyrics. The project is intentionally being built core-first before any concrete lyrics provider implementation is introduced.
+This document defines the architectural boundaries for AALyrics. The project was built core-first through the Core Readiness Gate before implementation code from the working fork was adapted.
 
 AALyrics is a greenfield codebase, but not a greenfield behavior specification. The working `whoxamxl/auto-lyrics` fork is treated as a behavioral reference and regression oracle. Proven behavior should not be re-invented merely because the new module structure is different.
 
-Implementation code from the previous fork is not imported into the new codebase before the Core Readiness Gate described in `ROADMAP.md`. Before that gate, the fork is inspected to inform boundaries, tests, migration classifications, and compatibility requirements.
+The Core Readiness Gate completed in PR #14. Post-gate migration now preserves mature behavior behind the boundaries established before adaptation began.
 
 ## Design goals
 
@@ -17,30 +17,22 @@ Implementation code from the previous fork is not imported into the new codebase
 5. Make timing, translation, caching, and provider implementations independently replaceable.
 6. Keep pure domain modules free of Android framework dependencies.
 7. Make track changes, cancellation, provider failures, and stale results explicit domain concerns rather than incidental UI behavior.
-8. Ensure AALyrics core behavior can be tested entirely with fake providers before any real provider is connected.
+8. Ensure AALyrics core behavior can be tested entirely with fake providers.
 9. Preserve proven fork behavior unless there is a concrete architectural, correctness, or maintainability reason to change it.
 10. Separate semantic migration from structural refactoring: behavior may stay the same even when ownership and module boundaries change.
 
-## Core-first rule
-
-Concrete provider implementations are adapters. They must conform to AALyrics; AALyrics must not grow around the quirks of a provider.
-
-Before the Core Readiness Gate, development is limited to provider-independent models, contracts, orchestration, selection boundaries, playback abstractions, state transitions, and tests using fake providers.
-
-No LRCLIB, Musixmatch, PetitLyrics, SyncLRC, or previous-fork implementation code is ported before that gate is reached and explicitly reviewed.
-
-This does **not** mean existing behavior is ignored. Before implementing any substantial behavior, consult `docs/MIGRATION_INVENTORY.md` and the current fork. If equivalent mature behavior already exists, define only the AALyrics boundary needed to receive it later instead of creating a competing implementation.
-
 ## Migration principle
 
-Every significant behavior from the working fork should be classified before implementation work begins:
+Every significant behavior from the working fork is classified before implementation work begins:
 
 - **PRESERVE** — behavior is already correct and should migrate with minimal semantic change.
 - **REFACTOR** — behavior should stay, but ownership/dependencies should change to fit AALyrics.
 - **REWRITE** — existing implementation is too coupled, obsolete, or unsuitable; reimplement the behavior against the new contracts.
 - **DROP** — behavior is unused, superseded, or intentionally excluded.
 
-The initial classification is tracked in `docs/MIGRATION_INVENTORY.md`. Classification can change when evidence changes, but silent reinvention is not allowed.
+The classification is tracked in `docs/MIGRATION_INVENTORY.md`. Classification can change when evidence changes, but silent reinvention is not allowed.
+
+Before every non-trivial migration slice, re-check the current working-fork `main` rather than relying only on an older snapshot.
 
 ## Modules
 
@@ -54,13 +46,23 @@ Pure Kotlin domain types shared across the project. It owns normalized track, pl
 
 ### `:provider:api`
 
-Pure Kotlin contracts implemented by lyrics providers. It defines what a provider may return to AALyrics, not how provider selection works. Concrete provider modules live outside this module.
+Pure Kotlin contracts implemented by lyrics providers. It defines what a provider may return to AALyrics, not how a concrete provider performs HTTP/search/parsing.
+
+A normalized `LyricsCandidate` may include provider-neutral search evidence such as whether an artist-constrained query corroborated the candidate. Providers report facts; they do not convert those facts into the final cross-provider winner score.
 
 ### `:core:lyrics`
 
-Pure Kotlin AALyrics orchestration. It owns application lyrics state, provider orchestration policy, request lifecycle, stale-result rejection, playback-to-lookup ownership, the candidate-selection port, and domain-level state transitions. It depends on provider contracts, never concrete providers.
+Pure Kotlin AALyrics orchestration. It owns application lyrics state, provider orchestration policy, request lifecycle, stale-result rejection, playback-to-lookup ownership, the `CandidateSelector` port, and domain-level state transitions. It depends on provider contracts, never concrete providers or the production selector implementation.
 
-The mature scoring/matching policy from the working fork is **not** to be independently redesigned during core-first work. AALyrics defines a stable selection boundary first; the proven resolver behavior is adapted behind that boundary after the Core Readiness Gate.
+### `:provider:selection`
+
+Pure Kotlin production implementation of the `CandidateSelector` port.
+
+This module owns cross-provider matching/ranking policy, including the mature metadata, payload-quality, source-confidence, synchronized/plain fallback, cross-script, recording-version, and karaoke-preference behavior adapted from the working fork. Generic matching/version helpers that were historically embedded in `LrcLibClient` live here because they are not LRCLIB networking concerns.
+
+Provider-specific source-confidence policy is intentionally outside `:core:lyrics`. This preserves dependency inversion: core knows the selector interface, while the composition root may inject `CrossProviderCandidateSelector` without making core depend on its implementation.
+
+Concrete provider networking, parsing, authentication, and provider-local search strategy do not belong in this module.
 
 ### `:platform:media`
 
@@ -77,27 +79,25 @@ Android Auto presentation only. It consumes the same application/domain state as
 ## Intended dependency direction
 
 ```text
-                         +-------------------+
-                         |       :app        |
-                         +---------+---------+
-                                   |
-                 +-----------------+-----------------+
-                 |                 |                 |
-                 v                 v                 v
-        :feature:phone   :feature:automotive   :platform:media
-                 |                 |                 |
-                 +--------+--------+                 |
-                          v                          v
-                    :core:lyrics                :core:model
-                          |
-                          v
-                    :provider:api
-                          |
-                          v
-                    :core:model
+                                  +-------------------+
+                                  |       :app        |
+                                  +---------+---------+
+                                            |
+        +----------------+------------------+------------------+----------------+
+        |                |                  |                  |                |
+        v                v                  v                  v                v
+:feature:phone  :feature:automotive  :platform:media  :provider:selection  provider adapters
+        |                |                  |                  |                |
+        +--------+-------+                  v                  v                v
+                 v                    :core:model        :core:lyrics      :provider:api
+           :core:lyrics                                      |                |
+                 |                                           v                v
+                 +------------------------------------> :provider:api ----> :core:model
 ```
 
-Concrete provider modules will depend on `:provider:api` and `:core:model`. The domain must never depend on a concrete provider.
+The diagram is a compile-time dependency sketch, not a runtime call-order diagram. `:provider:selection` depends on the selector port in `:core:lyrics`; `:core:lyrics` never depends on `:provider:selection`.
+
+Concrete provider modules depend on `:provider:api` and `:core:model`. The domain must never depend on a concrete provider.
 
 ## Runtime state flow
 
@@ -127,7 +127,10 @@ LyricsCoordinator
         |                  v
         |          List<LyricsCandidate>
         |                  |
-        +<----- CandidateSelector port
+        +----> CandidateSelector port
+                    ^
+                    |
+        CrossProviderCandidateSelector       (:provider:selection)
         |
         v
 LyricsState
@@ -136,7 +139,7 @@ LyricsState
 Phone UI   Android Auto UI
 ```
 
-The central direction is deliberate: platform and provider adapters feed normalized inputs into AALyrics core; they do not own application behavior.
+The central direction is deliberate: platform and provider adapters feed normalized inputs into AALyrics core; they do not own application state. Selection is injected behind a core port rather than being embedded in provider execution order.
 
 ## Playback boundary
 
@@ -172,9 +175,21 @@ Owns the pure transition from playback identity to lyrics-request ownership. It 
 
 ### Candidate-selection port
 
-Owns the dependency boundary between orchestration and winner selection. The coordinator supplies a track, normalized candidates, and explicit selection preferences; a selector returns the selected candidate/result.
+`CandidateSelector` owns the dependency boundary between orchestration and winner selection. The coordinator supplies a track, normalized candidates, and explicit selection preferences; a selector returns the selected candidate/result.
 
-Before the Core Readiness Gate, tests use a fake selector. The production selector policy is expected to preserve/refactor the mature `LyricsProviderResolver` behavior from the working fork rather than invent a second scoring system.
+The production implementation is `CrossProviderCandidateSelector` in `:provider:selection`. It is adapted from the mature working-fork resolver rather than being a second independently invented scoring system.
+
+The current production policy preserves these important semantics:
+
+- metadata identity dominates the final score,
+- incompatible recording versions are rejected,
+- title/artist/duration/album evidence is weighted consistently,
+- cross-script artist mismatches require independent corroboration,
+- payload quality can penalize likely Japanese/romanization interleaving,
+- source confidence may differ by provider and track/script context,
+- synchronized candidates beat plain fallback candidates,
+- a WORD preference may choose a real word-timed candidate only when metadata and payload quality remain near-equivalent,
+- exact score ties use a stable candidate key so provider execution order does not become winner policy.
 
 ### `LyricsState`
 
@@ -191,8 +206,12 @@ Represents the observable domain state consumed by presentation layers. Loading,
 - Android framework types must not cross into `:core:model`, `:core:lyrics`, or `:provider:api`.
 - Existing proven matching/scoring behavior must not be replaced without explicit regression evidence and a documented reason.
 
+## Architecture guardrails
+
+`scripts/verify-architecture.sh` is a best-effort regression guardrail for common accidental boundary violations. It is not a formal Kotlin/Gradle static-analysis proof and should not be expanded indefinitely to enumerate every theoretical bypass. Stronger structural enforcement, if later needed, should use appropriate Gradle/static-analysis tooling as separate work.
+
 ## Future extension points
 
-Translation, caching, timing adjustment, demand gating, session selection, karaoke rendering, and other features may be introduced later behind explicit contracts. Their future existence must not be used as a reason to mix those responsibilities into `LyricsCoordinator` or `PlaybackLyricsController` now.
+Translation, caching, timing adjustment, demand gating, session selection, karaoke rendering, and other features may be introduced later behind explicit contracts. Their future existence must not be used as a reason to mix those responsibilities into `LyricsCoordinator`, `PlaybackLyricsController`, or provider selection.
 
-The roadmap and the Core Readiness Gate are defined in `docs/ROADMAP.md`. The migration classifications are defined in `docs/MIGRATION_INVENTORY.md`.
+The roadmap and the completed Core Readiness Gate are defined in `docs/ROADMAP.md` and `docs/CORE_READINESS_GATE.md`. Migration classifications are defined in `docs/MIGRATION_INVENTORY.md`.
