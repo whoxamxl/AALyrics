@@ -74,7 +74,9 @@ Merged in PR #9. Before implementation, the working fork was re-checked at `8484
 
 ### Phase 3.4 — Core integration/readiness tests
 
-Prove the complete provider-independent domain flow without Android or network access:
+The validation implementation is complete on `feature/core-readiness`; CI and PR review remain before merge.
+
+The branch proves the complete provider-independent domain flow without Android or network access:
 
 ```text
 Fake Playback Input
@@ -88,10 +90,9 @@ CandidateSelector boundary
 LyricsState
 ```
 
-The purpose is to validate orchestration and lifecycle correctness, not to duplicate the fork's mature selection policy.
+Phase 3.4 now covers:
 
-Phase 3.4 validates at least:
-
+- happy-path `Loading` → `Ready` ownership
 - provider completion order does not become winner selection
 - multiple providers contribute normalized candidates before selection
 - one provider failure does not discard healthy results
@@ -99,13 +100,13 @@ Phase 3.4 validates at least:
 - healthy no-result reaches not-found
 - partial failure plus a winner reaches degraded state
 - newer lookups supersede older work
-- stale completion cannot overwrite current state
+- stale completion cannot overwrite current state through lookup identity/reducer ownership
 - repeated lookup of the same track still has fresh request identity
-- `clear()` leaves `Idle` as the final owned state
-- selector invocation occurs once per completed lookup after collection
-- the flow remains pure Kotlin and independent of Android/network types
+- `clear()` cancels active work and leaves `Idle` as the final owned state
+- selector invocation occurs only after collection and once per completed lookup
+- the flow remains pure Kotlin and independent of Android/network libraries
 
-This phase should be validation-first. Production behavior should change only if the tests reveal a genuine core boundary defect.
+No production behavior changed in this phase; all new code is validation-only.
 
 ## Next
 
