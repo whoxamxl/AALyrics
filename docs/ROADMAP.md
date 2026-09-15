@@ -35,24 +35,21 @@ Implementation code from the previous fork is still not imported before the fina
 
 This phase defines only the boundary. It does not include any concrete provider implementation.
 
+### Phase 3.1 — Lyrics state ✅
+
+- provider-independent lookup identity
+- explicit idle/loading/ready/degraded/not-found/failure states
+- pure lifecycle reduction
+- stale-result rejection by lookup identity
+- lifecycle invariants and unit tests
+
+Merged in PR #6.
+
 ## Current work
 
 ### Phase 3 — Lyrics core
 
 Build only the AALyrics-specific provider-independent core that does not already exist as mature, proven behavior in the working fork.
-
-#### 3.1 Lyrics state
-
-Define explicit state for at least:
-
-- idle / no active track
-- loading
-- resolved lyrics
-- no lyrics available
-- recoverable provider failure / degraded result
-- terminal failure when no usable result exists
-
-State must be consumable by both phone and automotive presentation layers without provider knowledge.
 
 #### 3.2 Candidate selection boundary
 
