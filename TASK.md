@@ -1,63 +1,60 @@
-# Provider Selection Migration Task
+# Provider Migration Documentation Task
 
-This branch is the first post-Core-Readiness migration slice. It adapts the mature cross-provider resolver behavior from the working `whoxamxl/auto-lyrics` fork behind AALyrics' existing `CandidateSelector` port.
+## Current branch
 
-Reference baseline re-checked before implementation:
+`docs/provider-migration-architecture`
+
+## Goal
+
+Define the provider migration/documentation policy before any concrete provider implementation resumes.
+
+This branch is documentation-only. It does **not** authorize or contain LRCLIB, PetitLyrics, Musixmatch, or SyncLRC implementation migration.
+
+Reference baseline re-checked before documenting provider profiles:
 
 - repository: `whoxamxl/auto-lyrics`
 - branch: `main`
 - commit: `8484bed2dbe8db5ca7b17dec5481b3c22714dc6f` (`v1.13.0`)
-- relevant behavior: `LyricsProviderResolver`, generic metadata matching helpers currently embedded in `LrcLibClient`, and `RecordingVersionContext`
 
-## Classification
+## Work slices
 
-- mature resolver scoring/selection semantics — **PRESERVE / REFACTOR**
-- generic title/artist/duration/version matching — **PRESERVE / REFACTOR** out of `LrcLibClient`
-- provider-specific source-confidence policy — **PRESERVE / REFACTOR** outside pure core
-- concrete provider clients — not part of this branch
-- cache, translation, demand gating, UI, provider networking — not part of this branch
+- [x] Add one shared provider architecture/migration document.
+- [x] Add concise provider profiles for LRCLIB, PetitLyrics, Musixmatch, and SyncLRC.
+- [x] Keep provider profiles focused on capabilities, provider-local behavior, quirks, invariants, and migration status rather than duplicating architecture.
+- [x] Clarify that playback sources such as Spotify are not lyrics providers, while normalized Spotify identity may be consumed by Musixmatch for stronger matching.
+- [x] Align `ARCHITECTURE.md`, `ROADMAP.md`, and `MIGRATION_INVENTORY.md` with the finalized provider migration model.
+- [x] Update `AGENTS.md` so planning/documentation approval is never inferred as authorization to begin provider implementation.
+- [x] Open a documentation PR and run CI.
+- [ ] Complete the bounded review process.
+- [ ] Stop before merge for explicit approval.
 
-## Architecture decision
+## Policy documented
 
-Keep `CandidateSelector` as a port in `:core:lyrics`. Put the production cross-provider implementation in a new pure Kotlin `:provider:selection` module so provider-specific source-confidence policy does not leak into pure application core. The selector consumes only normalized `Track` and `LyricsCandidate` values.
-
-Provider adapters may attach provider-neutral match evidence to a candidate when search context corroborates metadata. They still do not assign the final cross-provider score.
-
-## Scope
-
-1. extend normalized candidate evidence only where required by the proven resolver,
-2. add `:provider:selection` and generic matching/version utilities,
-3. adapt mature metadata/quality/source-confidence scoring behind `CandidateSelector`,
-4. interpret `preferredSyncType = WORD` as the proven near-equivalent karaoke preference,
-5. port resolver regression cases to AALyrics models,
-6. update architecture/migration roadmap documentation,
-7. open a PR, run CI, use the normal review policy, and stop before merge.
+- AALyrics architecture remains authoritative.
+- Existing mature provider implementations in the working fork are normally **PRESERVE / REFACTOR**, not gratuitous rewrites.
+- Provider migration may reuse/refactor mature implementation semantics and tested code structure where appropriate; do not force behavioral re-derivation merely to claim a rewrite.
+- Provider-local HTTP, authentication, search, parsing, and provider validation stay inside the provider adapter.
+- Cross-provider ranking remains in `:provider:selection` behind the `CandidateSelector` port.
+- Providers return normalized `LyricsCandidate` values and provider-neutral evidence, not final global scores.
+- A playback source is not automatically a lyrics provider; Spotify currently supplies normalized track identity that Musixmatch may use as corroboration while Musixmatch remains the lyrics source.
+- Each concrete provider is migrated as a bounded slice with regression coverage.
+- PetitLyrics configuration values are immutable during migration unless the user explicitly requests otherwise.
+- Documentation/planning approval is not implementation approval.
 
 ## Explicit non-goals
 
-- no LRCLIB, Musixmatch, PetitLyrics, or SyncLRC networking/client implementation,
-- no changes to PetitLyrics configuration values,
-- no cache/translation/timing-adjustment/UI work,
-- no competing scoring algorithm,
-- no application wiring that requires a concrete provider.
+- no concrete provider source migration,
+- no changes to provider network behavior,
+- no changes to selector scoring,
+- no application wiring for providers,
+- no reuse or cherry-picking from the existing experimental LRCLIB adaptation branch.
 
-## Acceptance criteria
+## Durable documents
 
-- [x] selector implementation lives outside `:core:lyrics` while implementing its existing port,
-- [x] synchronized candidates beat plain fallback candidates,
-- [x] recording-version mismatches are rejected,
-- [x] title/artist/duration/album scoring preserves the mature resolver thresholds and weights,
-- [x] cross-script artist corroboration behavior is preserved,
-- [x] Japanese/Latin interleaved transliteration quality penalty is preserved,
-- [x] provider source-confidence preferences are preserved without entering pure core,
-- [x] WORD preference only overrides the standard winner for near-equivalent metadata/quality and real word timing,
-- [x] provider execution order is not used as winner policy,
-- [x] migrated regression tests pass,
-- [x] full repository CI passes on the implementation/documentation head (`b7352d6d91` / run `34959811080`),
-- [ ] stop before merge for explicit approval.
-
-## Review status
-
-- Codex round 1 reviewed the initial implementation head and found one in-scope P2: durable architecture documentation had not yet been updated.
-- `docs/ARCHITECTURE.md`, `docs/ROADMAP.md`, and `docs/MIGRATION_INVENTORY.md` now document `:provider:selection` ownership and migration status.
-- Final-head review remains bounded by `AGENTS.md`; do not reopen an unbounded adversarial review loop.
+- `docs/PROVIDER_ARCHITECTURE.md` — shared provider architecture and migration rules.
+- `docs/providers/LRCLIB.md` — LRCLIB provider profile.
+- `docs/providers/PETITLYRICS.md` — PetitLyrics provider profile and immutable configuration rule.
+- `docs/providers/MUSIXMATCH.md` — Musixmatch mobile-flow provider profile, including Spotify-aware matching semantics.
+- `docs/providers/SYNCLRC.md` — SyncLRC karaoke-only provider profile.
+- `docs/ARCHITECTURE.md`, `docs/ROADMAP.md`, and `docs/MIGRATION_INVENTORY.md` — aligned system/migration references.
+- `AGENTS.md` — execution authorization guardrail.

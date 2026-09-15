@@ -11,6 +11,17 @@ These instructions apply to AI-assisted repository work, including implementatio
 - Always stop before merge. Merge only after explicit user authorization.
 - Prefer squash merge after approval unless a different strategy is explicitly requested.
 
+## Provider migration authorization
+
+Provider planning and provider implementation are separate authorization boundaries.
+
+- Read `docs/PROVIDER_ARCHITECTURE.md` and the relevant file under `docs/providers/` before concrete provider migration.
+- Treat mature working-fork provider code as **PRESERVE / REFACTOR** by default when the migration inventory says so; do not force a gratuitous rewrite merely to avoid reusing proven project code.
+- Do not infer permission to begin provider implementation from discussion, documentation work, migration-order agreement, or approval of a provider profile.
+- Begin a concrete provider migration slice only after the user explicitly moves the work from planning/documentation into implementation.
+- Experimental provider branches are non-canonical unless the user explicitly authorizes their reuse. Start an approved provider slice from current `main` and the approved migration documents by default.
+- PetitLyrics migration must not change `PETITLYRICS_USER_ID`, `PETITLYRICS_APP_NAME`, `PETITLYRICS_PKG_NAME`, or `PETITLYRICS_CLIENT_APP_ID` unless the user explicitly requests a change.
+
 ## Scope and acceptance criteria
 
 Before review begins, treat the pull request description, the current `TASK.md` when it describes that PR's active work, and the relevant roadmap/architecture documents as the acceptance criteria for that PR. Do not inherit a stale or unrelated `TASK.md` as scope for a different pull request.

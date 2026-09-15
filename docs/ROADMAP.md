@@ -108,58 +108,77 @@ Detailed evidence is recorded in `docs/CORE_READINESS_GATE.md`.
 
 The review process also established `AGENTS.md` review-loop discipline: lightweight architecture checks are best-effort regression guardrails, not formal static-analysis proofs, and review scope must not expand indefinitely around theoretical bypasses.
 
+### Phase 6 — Production candidate selection migration ✅
+
+Merged in PR #17.
+
+Phase 6 adapted the mature cross-provider resolver behind the existing `CandidateSelector` port without making `:core:lyrics` depend on the production implementation.
+
+Completed work includes:
+
+- pure Kotlin `:provider:selection` production selector,
+- mature metadata, payload-quality, source-confidence, synchronized/plain fallback, cross-script, recording-version, and karaoke preference behavior,
+- provider-neutral candidate evidence needed by the resolver,
+- deterministic exact-score tie breaking so provider execution order is not winner policy,
+- regression coverage adapted to AALyrics models,
+- rejection of unusable lyric candidates before selection.
+
+The working fork was re-checked against `8484bed2dbe8db5ca7b17dec5481b3c22714dc6f` (`v1.13.0`) for this migration.
+
 ## Current work
 
-### Phase 6 — Production candidate selection migration
+### Provider migration policy and profiles
 
-The Core Readiness STOP GATE has been explicitly accepted, so the first implementation-adaptation slice is the mature cross-provider resolver/matching policy.
+Before concrete provider migration resumes, the project is documenting one shared provider architecture and concise provider-specific profiles.
 
-Current branch/PR scope:
-
-- keep `CandidateSelector` as the dependency-inversion port in `:core:lyrics`,
-- add pure Kotlin `:provider:selection` as the production implementation layer,
-- refactor generic similarity/version matching out of the old LRCLIB-owned location,
-- preserve mature metadata, payload-quality, source-confidence, synchronized/plain fallback, cross-script, and karaoke preference behavior,
-- add only provider-neutral candidate evidence required by the proven resolver,
-- port resolver/version-context regression cases to AALyrics models,
-- keep provider networking/client implementations out of this phase.
-
-The working fork was re-checked before implementation and remains at `8484bed2dbe8db5ca7b17dec5481b3c22714dc6f` (`v1.13.0`).
-
-The key compile-time ownership rule is:
+The durable structure is:
 
 ```text
-:app (future wiring)
-   ↓
-:provider:selection ─────→ :core:lyrics (CandidateSelector port)
-                                  ↓
-                            :provider:api
-                                  ↓
-                             :core:model
+docs/ARCHITECTURE.md
+    overall AALyrics architecture
+
+docs/PROVIDER_ARCHITECTURE.md
+    shared provider ownership + migration rules
+
+docs/providers/*.md
+    provider-specific capabilities, quirks, invariants, and migration status
+
+docs/MIGRATION_INVENTORY.md
+    PRESERVE / REFACTOR / REWRITE / DROP classification
+
+AGENTS.md
+    execution, authorization, PR, and review rules
 ```
 
-`:core:lyrics` does not depend on `:provider:selection`.
+This documentation work does **not** authorize concrete provider implementation. Provider implementation begins only after explicit user authorization.
 
 ## Next
 
-### Concrete provider adapters
+### Phase 7 — Concrete provider adapters
 
-After the production selector migration is merged, adapt concrete providers one at a time rather than bulk-porting the old app.
+After the provider migration documentation is approved, adapt concrete providers one at a time rather than bulk-porting the old app.
 
-The provider order should be chosen from current coverage/value and migration complexity, while preserving these rules:
+Default order, subject to a fresh pre-slice check:
 
-- each provider conforms to `LyricsProvider`,
-- provider-local HTTP/search/parsing stays in its adapter,
-- providers return normalized candidates and search evidence rather than final global scores,
-- generic matching logic is not duplicated back into provider clients,
-- PetitLyrics configuration values remain unchanged unless explicitly requested,
-- every provider slice receives provider-specific regression tests before integration.
+```text
+LRCLIB
+  ↓
+PetitLyrics
+  ↓
+Musixmatch
+  ↓
+SyncLRC
+```
 
-The exact first provider is decided immediately before that slice by re-checking the then-current working fork and migration inventory.
+Migration follows `docs/PROVIDER_ARCHITECTURE.md` and the relevant provider profile. Mature provider implementations are normally PRESERVE / REFACTOR: keep proven behavior and regression knowledge while moving ownership into AALyrics boundaries rather than gratuitously rewriting working code.
+
+Each provider conforms to `LyricsProvider`; provider-local HTTP/auth/search/parsing remains inside its adapter; providers emit normalized candidates/evidence rather than final global scores; cross-provider winner selection remains in `:provider:selection`.
+
+PetitLyrics configuration values remain unchanged unless explicitly requested.
 
 ## Later phases
 
-Later work includes concrete providers, cache, translation, demand/session gating, Android Auto/phone presentation, timing controls, karaoke rendering, persistence, release/signing, and regression comparison against the previous fork.
+Later work includes cache, translation, demand/session gating, Android Auto/phone presentation, timing controls, karaoke rendering, persistence, release/signing, and regression comparison against the previous fork.
 
 These should remain separate responsibilities and topic branches. Do not use future feature needs as a reason to turn `LyricsCoordinator`, `PlaybackLyricsController`, or the production selector into a new god object.
 
@@ -171,8 +190,9 @@ Before starting any non-trivial implementation slice:
 
 1. check `docs/MIGRATION_INVENTORY.md`,
 2. inspect the current `whoxamxl/auto-lyrics` main branch for equivalent behavior,
-3. classify the behavior as PRESERVE, REFACTOR, REWRITE, or DROP,
-4. define the current PR acceptance criteria,
-5. implement only the AALyrics-specific work that is necessary,
-6. run CI and the bounded review process in `AGENTS.md`,
-7. stop before merge for explicit approval.
+3. read the relevant architecture/profile document,
+4. classify the behavior as PRESERVE, REFACTOR, REWRITE, or DROP,
+5. define the current PR acceptance criteria,
+6. implement only after the user has explicitly authorized implementation for that slice,
+7. run CI and the bounded review process in `AGENTS.md`,
+8. stop before merge for explicit approval.
