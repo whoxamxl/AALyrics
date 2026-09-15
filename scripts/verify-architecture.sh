@@ -52,7 +52,7 @@ done
 lyrics_state_declarations=$(
   (grep -RIE \
     --include='*.kt' \
-    '^[[:space:]]*(sealed[[:space:]]+(interface|class)|class|interface)[[:space:]]+LyricsState\b' \
+    '^[[:space:]]*((public|private|protected|internal|data|sealed|open|abstract|final|value|enum|annotation)[[:space:]]+)*(class|interface|object)[[:space:]]+LyricsState([^[:alnum:]_]|$)|^[[:space:]]*((public|private|protected|internal)[[:space:]]+)*typealias[[:space:]]+LyricsState([^[:alnum:]_]|$)' \
     core provider platform feature app 2>/dev/null || true) \
   | wc -l | tr -d ' '
 )
@@ -78,7 +78,7 @@ fi
 
 if grep -RInE \
   --include='*.kt' --include='*.java' \
-  '^[[:space:]]*import[[:space:]]+android\.media\.(session\.|MediaMetadata)' \
+  'android\.media\.(MediaMetadata|session\.[A-Za-z_][A-Za-z0-9_]*)' \
   app core provider feature 2>/dev/null; then
   fail "MediaSession and MediaController framework types must stay inside platform/media"
 fi
