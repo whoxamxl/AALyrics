@@ -4,9 +4,7 @@
 
 This roadmap prevents the project from drifting back into provider-driven architecture while also avoiding unnecessary reinvention of behavior that is already proven in the working Auto Lyrics fork.
 
-AALyrics is built core-first, but the previous fork is an active behavioral reference throughout development. Before implementing non-trivial behavior, check `docs/MIGRATION_INVENTORY.md` and the current fork to determine whether the behavior should be preserved, refactored, rewritten, or dropped.
-
-Implementation code from the previous fork is still not imported before the final stop gate below. Until then, the fork is used to inform boundaries, tests, and migration decisions.
+AALyrics is built core-first, but the previous fork remains an active behavioral reference throughout development. Before implementing non-trivial behavior, check `docs/MIGRATION_INVENTORY.md` and the current fork to determine whether the behavior should be preserved, refactored, rewritten, or dropped.
 
 ## Completed
 
@@ -33,8 +31,6 @@ Implementation code from the previous fork is still not imported before the fina
 - Suspending provider search contract
 - Contract tests
 
-This phase defines only the boundary. It does not include any concrete provider implementation.
-
 ### Phase 3.1 — Lyrics state ✅
 
 - provider-independent lookup identity
@@ -51,10 +47,9 @@ Merged in PR #6.
 - normalized `Track` + `LyricsCandidate` inputs
 - explicit selection preferences
 - nullable no-winner result
-- no scoring/matching implementation
 - fake-selector contract tests
 
-Merged in PR #8. The mature `LyricsProviderResolver` remains reserved for post-gate adaptation behind this boundary.
+Merged in PR #8. This phase intentionally defined only the port; the mature resolver was reserved for post-gate adaptation.
 
 ### Phase 3.3 — Lyrics coordinator ✅
 
@@ -64,23 +59,18 @@ Merged in PR #8. The mature `LyricsProviderResolver` remains reserved for post-g
 - cancellation propagation
 - no-result and terminal-failure behavior
 - cancellation/supersession on a newer lookup
-- stale-result protection through lookup identity and the reducer
+- stale-result protection through lookup identity and atomic state reduction
 - one handoff to `CandidateSelector` after candidates are collected
-- fake-provider/fake-selector tests only
 
-Merged in PR #9. Before implementation, the working fork was re-checked at `8484bed2dbe8db5ca7b17dec5481b3c22714dc6f` (`v1.13.0`) so mature behavior was not reimplemented unnecessarily.
+Merged in PR #9, with integration/readiness follow-up in PRs #10 and #11.
 
 ### Phase 3.4 — Core integration/readiness tests ✅
 
-The pure provider-independent domain flow is covered end-to-end with fake providers and a fake selector. Validated behavior includes provider-order independence, failure isolation, no-result/degraded/failure states, fresh lookup identity, clear ownership, and stale-result rejection. PR #10 added integration/readiness coverage. PR #11 then fixed and regression-tested a concurrent stale-publication race by making all `LyricsState` transitions atomic through `MutableStateFlow.update`.
-
-No concrete provider or resolver implementation was introduced.
+The pure provider-independent domain flow is covered end-to-end with fake providers and a fake selector. Validated behavior includes provider-order independence, failure isolation, no-result/degraded/failure states, fresh lookup identity, clear ownership, and stale-result rejection. PR #11 fixed and regression-tested a concurrent stale-publication race by making `LyricsState` transitions atomic through `MutableStateFlow.update`.
 
 ### Phase 4 — Playback boundary ✅
 
 Merged in PR #12.
-
-The Android playback edge is now separated from the pure lyrics core:
 
 ```text
 Android MediaController
@@ -100,59 +90,89 @@ LyricsCoordinator
 
 Phase 4 established explicit track ownership, stable-reference/source-media/metadata identity fallback, Spotify playback-reference normalization at the platform edge, and JVM tests proving that position/status/duration-only churn does not restart lyrics lookup. Android media framework types remain inside `:platform:media`.
 
-## Current work
+### Phase 5 — Core Readiness validation ✅
 
-### Phase 5 — Core Readiness validation
+Merged in PR #14 after the explicit STOP GATE review.
 
-Phase 5 is validation-first. It adds no concrete provider or resolver implementation.
-
-Current validation includes:
+Phase 5 validated, rather than expanded, the provider-independent foundation:
 
 - executable CI architecture checks for pure Kotlin/JVM core modules,
 - one shared `LyricsState` contract for phone and automotive features,
 - feature ownership guards preventing provider fetching/ranking in UI modules,
 - Android MediaSession / MediaController confinement to `:platform:media`,
 - provider-specific behavior exclusion from pure core,
-- existing regression evidence for provider order, stale-result rejection, failure isolation, and playback identity,
+- regression evidence for provider order, stale-result rejection, failure isolation, and playback identity,
 - migration-inventory re-review against `whoxamxl/auto-lyrics` `main` at `8484bed2dbe8db5ca7b17dec5481b3c22714dc6f` (`v1.13.0`).
 
 Detailed evidence is recorded in `docs/CORE_READINESS_GATE.md`.
 
-If any validation fails, the project stays in core-first development.
+The review process also established `AGENTS.md` review-loop discipline: lightweight architecture checks are best-effort regression guardrails, not formal static-analysis proofs, and review scope must not expand indefinitely around theoretical bypasses.
 
-## Next — STOP GATE
+## Current work
 
-### Concrete provider / code adaptation
+### Phase 6 — Production candidate selection migration
 
-**Stop here for explicit review.**
+The Core Readiness STOP GATE has been explicitly accepted, so the first implementation-adaptation slice is the mature cross-provider resolver/matching policy.
 
-Reaching this point means the AALyrics-specific foundation is ready to receive proven behavior from the working fork behind the new boundaries. Do not automatically continue into LRCLIB, Musixmatch, PetitLyrics, SyncLRC, or bulk code migration.
+Current branch/PR scope:
 
-At this gate we will review:
+- keep `CandidateSelector` as the dependency-inversion port in `:core:lyrics`,
+- add pure Kotlin `:provider:selection` as the production implementation layer,
+- refactor generic similarity/version matching out of the old LRCLIB-owned location,
+- preserve mature metadata, payload-quality, source-confidence, synchronized/plain fallback, cross-script, and karaoke preference behavior,
+- add only provider-neutral candidate evidence required by the proven resolver,
+- port resolver/version-context regression cases to AALyrics models,
+- keep provider networking/client implementations out of this phase.
 
-1. whether the core architecture actually matches the intended design,
-2. whether provider contracts or selector boundaries need adjustment,
-3. the current `MIGRATION_INVENTORY.md` classifications,
-4. which mature fork behaviors should be preserved with minimal semantic change,
-5. which implementations need structural refactoring to remove Android/provider coupling,
-6. which provider should be adapted first,
-7. which code must instead be rewritten or dropped.
+The working fork was re-checked before implementation and remains at `8484bed2dbe8db5ca7b17dec5481b3c22714dc6f` (`v1.13.0`).
 
-Only after that explicit review does implementation adaptation begin.
+The key compile-time ownership rule is:
 
-## Later phases — intentionally not started
+```text
+:app (future wiring)
+   ↓
+:provider:selection ─────→ :core:lyrics (CandidateSelector port)
+                                  ↓
+                            :provider:api
+                                  ↓
+                             :core:model
+```
 
-After the stop gate, likely work includes adapting the mature resolver/matching logic, concrete provider adapters, cache, translation, Android Auto/phone presentation, timing controls, karaoke behavior, persistence, release/signing, and regression comparison against the previous fork.
+`:core:lyrics` does not depend on `:provider:selection`.
 
-These are intentionally not scheduled in detail yet. The migration inventory should be refined as the working fork evolves so AALyrics does not duplicate already-proven work.
+## Next
+
+### Concrete provider adapters
+
+After the production selector migration is merged, adapt concrete providers one at a time rather than bulk-porting the old app.
+
+The provider order should be chosen from current coverage/value and migration complexity, while preserving these rules:
+
+- each provider conforms to `LyricsProvider`,
+- provider-local HTTP/search/parsing stays in its adapter,
+- providers return normalized candidates and search evidence rather than final global scores,
+- generic matching logic is not duplicated back into provider clients,
+- PetitLyrics configuration values remain unchanged unless explicitly requested,
+- every provider slice receives provider-specific regression tests before integration.
+
+The exact first provider is decided immediately before that slice by re-checking the then-current working fork and migration inventory.
+
+## Later phases
+
+Later work includes concrete providers, cache, translation, demand/session gating, Android Auto/phone presentation, timing controls, karaoke rendering, persistence, release/signing, and regression comparison against the previous fork.
+
+These should remain separate responsibilities and topic branches. Do not use future feature needs as a reason to turn `LyricsCoordinator`, `PlaybackLyricsController`, or the production selector into a new god object.
 
 ## Working method
 
-Each implementation phase should be split into small topic branches and PRs. When a phase is large, a branch-local `TASK.md` may be used as a short execution checklist, while this document remains the durable project roadmap.
+Each implementation phase is split into small topic branches and PRs. `TASK.md` records the active branch-local plan/status when relevant, while this document remains the durable project roadmap.
 
 Before starting any non-trivial implementation slice:
 
 1. check `docs/MIGRATION_INVENTORY.md`,
 2. inspect the current `whoxamxl/auto-lyrics` main branch for equivalent behavior,
 3. classify the behavior as PRESERVE, REFACTOR, REWRITE, or DROP,
-4. only then implement the AALyrics-specific work that is actually necessary.
+4. define the current PR acceptance criteria,
+5. implement only the AALyrics-specific work that is necessary,
+6. run CI and the bounded review process in `AGENTS.md`,
+7. stop before merge for explicit approval.
