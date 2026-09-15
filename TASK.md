@@ -18,15 +18,15 @@ Reference baseline re-checked before documenting provider profiles:
 
 ## Work slices
 
-- [ ] Add one shared provider architecture/migration document.
-- [ ] Add concise provider profiles for LRCLIB, PetitLyrics, Musixmatch, and SyncLRC.
-- [ ] Keep provider profiles focused on capabilities, provider-local behavior, quirks, invariants, and migration status rather than duplicating architecture.
-- [ ] Align `ARCHITECTURE.md`, `ROADMAP.md`, and `MIGRATION_INVENTORY.md` with the finalized provider migration model.
-- [ ] Update `AGENTS.md` so planning/documentation approval is never inferred as authorization to begin provider implementation.
+- [x] Add one shared provider architecture/migration document.
+- [x] Add concise provider profiles for LRCLIB, PetitLyrics, Musixmatch, and SyncLRC.
+- [x] Keep provider profiles focused on capabilities, provider-local behavior, quirks, invariants, and migration status rather than duplicating architecture.
+- [x] Align `ARCHITECTURE.md`, `ROADMAP.md`, and `MIGRATION_INVENTORY.md` with the finalized provider migration model.
+- [x] Update `AGENTS.md` so planning/documentation approval is never inferred as authorization to begin provider implementation.
 - [ ] Open a documentation PR and run the normal bounded review/CI process.
 - [ ] Stop before merge for explicit approval.
 
-## Policy being documented
+## Policy documented
 
 - AALyrics architecture remains authoritative.
 - Existing mature provider implementations in the working fork are normally **PRESERVE / REFACTOR**, not gratuitous rewrites.
@@ -36,6 +36,7 @@ Reference baseline re-checked before documenting provider profiles:
 - Providers return normalized `LyricsCandidate` values and provider-neutral evidence, not final global scores.
 - Each concrete provider is migrated as a bounded slice with regression coverage.
 - PetitLyrics configuration values are immutable during migration unless the user explicitly requests otherwise.
+- Documentation/planning approval is not implementation approval.
 
 ## Explicit non-goals
 
@@ -44,3 +45,13 @@ Reference baseline re-checked before documenting provider profiles:
 - no changes to selector scoring,
 - no application wiring for providers,
 - no reuse or cherry-picking from the existing experimental LRCLIB adaptation branch.
+
+## Durable documents
+
+- `docs/PROVIDER_ARCHITECTURE.md` — shared provider architecture and migration rules.
+- `docs/providers/LRCLIB.md` — LRCLIB provider profile.
+- `docs/providers/PETITLYRICS.md` — PetitLyrics provider profile and immutable configuration rule.
+- `docs/providers/MUSIXMATCH.md` — Musixmatch mobile-flow provider profile.
+- `docs/providers/SYNCLRC.md` — SyncLRC karaoke-only provider profile.
+- `docs/ARCHITECTURE.md`, `docs/ROADMAP.md`, and `docs/MIGRATION_INVENTORY.md` — aligned system/migration references.
+- `AGENTS.md` — execution authorization guardrail.
