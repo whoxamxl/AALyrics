@@ -32,3 +32,29 @@ for module in "${pure_modules[@]}"; do
 done
 
 echo "Pure-core architecture boundary check passed."
+
+feature_modules=(
+  "feature/phone"
+  "feature/automotive"
+)
+
+for module in "${feature_modules[@]}"; do
+  build_file="$module/build.gradle.kts"
+
+  grep -Fq 'project(":core:lyrics")' "$build_file" \
+    || fail "$module must consume the shared lyrics-core contract"
+
+  if grep -Eq 'project\(":provider:|project\(":platform:media"\)' "$build_file"; then
+    fail "$module must not depend directly on providers or the media platform adapter"
+  fi
+done
+
+lyrics_state_declarations=$(grep -RIE \
+  --include='*.kt' \
+  '^[[:space:]]*(sealed[[:space:]]+(interface|class)|class|interface)[[:space:]]+LyricsState\b' \
+  core provider platform feature app 2>/dev/null | wc -l | tr -d ' ')
+
+[[ "$lyrics_state_declarations" == "1" ]] \
+  || fail "exactly one shared LyricsState declaration is required; found $lyrics_state_declarations"
+
+echo "Shared-state feature-consumption boundary check passed."
