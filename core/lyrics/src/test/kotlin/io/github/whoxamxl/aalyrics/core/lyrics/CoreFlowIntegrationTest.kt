@@ -1,5 +1,6 @@
 package io.github.whoxamxl.aalyrics.core.lyrics
 
+import io.github.whoxamxl.aalyrics.core.model.LyricLine
 import io.github.whoxamxl.aalyrics.core.model.LyricsDocument
 import io.github.whoxamxl.aalyrics.core.model.LyricsSyncType
 import io.github.whoxamxl.aalyrics.core.model.PlainLyricLine
@@ -9,11 +10,22 @@ import io.github.whoxamxl.aalyrics.provider.api.LyricsProvider
 import io.github.whoxamxl.aalyrics.provider.api.LyricsProviderDescriptor
 import io.github.whoxamxl.aalyrics.provider.api.LyricsProviderId
 import io.github.whoxamxl.aalyrics.provider.api.LyricsRequest
+import java.util.AbstractList
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.withTimeout
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
@@ -216,6 +228,104 @@ class CoreFlowIntegrationTest {
         assertEquals(secondLookup, ready.lookup)
         assertEquals(secondCandidate.lyrics, ready.lyrics)
         assertEquals(1, selector.callCount)
+    }
+
+    @Test
+    fun `obsolete concurrent completion cannot overwrite newer loading state`() = runBlocking {
+        val firstTrack = Track(
+            title = "First Race",
+            artists = listOf("AALyrics"),
+        )
+        val secondTrack = firstTrack.copy(title = "Second Race")
+        val staleReductionEntered = CountDownLatch(1)
+        val releaseStaleReduction = CountDownLatch(1)
+        val staleLines = object : AbstractList<LyricLine>() {
+            private val delegate = listOf<LyricLine>(PlainLyricLine("obsolete lyrics"))
+
+            override val size: Int
+                get() {
+                    staleReductionEntered.countDown()
+                    check(releaseStaleReduction.await(5, TimeUnit.SECONDS)) {
+                        "Timed out waiting to release stale state reduction"
+                    }
+                    return delegate.size
+                }
+
+            override fun get(index: Int): LyricLine = delegate[index]
+        }
+        val firstCandidate = LyricsCandidate(
+            providerId = LyricsProviderId("provider"),
+            matchedTrack = firstTrack,
+            lyrics = LyricsDocument(lines = staleLines),
+        )
+        val secondCandidate = candidate("provider", secondTrack, "current lyrics")
+        val secondProviderStarted = CountDownLatch(1)
+        val releaseSecondProvider = CompletableDeferred<Unit>()
+        val provider = RecordingProvider("provider") { request ->
+            if (request.track == firstTrack) {
+                listOf(firstCandidate)
+            } else {
+                secondProviderStarted.countDown()
+                releaseSecondProvider.await()
+                listOf(secondCandidate)
+            }
+        }
+        val selector = object : CandidateSelector {
+            override fun select(
+                track: Track,
+                candidates: List<LyricsCandidate>,
+                preferences: CandidateSelectionPreferences,
+            ): LyricsCandidate? = candidates.singleOrNull()
+        }
+        val dispatcher = Executors.newSingleThreadExecutor().asCoroutineDispatcher()
+        val scope = CoroutineScope(SupervisorJob() + dispatcher)
+
+        try {
+            val coordinator = LyricsCoordinator(
+                providers = listOf(provider),
+                selector = selector,
+                scope = scope,
+            )
+
+            val firstLookup = coordinator.startLookup(firstTrack)
+            assertTrue(staleReductionEntered.await(5, TimeUnit.SECONDS))
+
+            val secondLookup = coordinator.startLookup(secondTrack)
+            assertNotEquals(firstLookup.id, secondLookup.id)
+            assertEquals(
+                secondLookup,
+                assertIs<LyricsState.Loading>(coordinator.state.value).lookup,
+            )
+
+            // The first completion already read Loading(first) before blocking in
+            // Ready construction. Let it continue only after Loading(second) owns
+            // the StateFlow. A non-atomic read/reduce/write would now overwrite it.
+            releaseStaleReduction.countDown()
+
+            // The single-thread coordinator scope cannot start the second provider
+            // until the obsolete completion has finished its publication attempt.
+            assertTrue(secondProviderStarted.await(5, TimeUnit.SECONDS))
+            assertEquals(
+                secondLookup,
+                assertIs<LyricsState.Loading>(coordinator.state.value).lookup,
+            )
+
+            releaseSecondProvider.complete(Unit)
+            val ready = assertIs<LyricsState.Ready>(
+                withTimeout(5_000L) {
+                    coordinator.state.first { state ->
+                        state is LyricsState.Ready && state.lookup == secondLookup
+                    }
+                },
+            )
+            assertEquals(secondLookup, ready.lookup)
+            assertEquals(secondCandidate.lyrics, ready.lyrics)
+        } finally {
+            releaseStaleReduction.countDown()
+            releaseSecondProvider.complete(Unit)
+            scope.cancel()
+            dispatcher.close()
+        }
     }
 
     @Test

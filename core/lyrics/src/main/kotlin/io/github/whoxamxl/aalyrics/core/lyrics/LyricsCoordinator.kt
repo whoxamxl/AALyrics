@@ -13,6 +13,7 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
 
@@ -60,7 +61,7 @@ class LyricsCoordinator(
         )
 
         activeJob?.cancel()
-        _state.value = _state.value.reduce(LyricsStateEvent.Started(lookup))
+        _state.update { current -> current.reduce(LyricsStateEvent.Started(lookup)) }
 
         activeJob = scope.launch {
             val attempts = searchProviders(
@@ -104,10 +105,11 @@ class LyricsCoordinator(
                 )
             }
 
-            // The reducer is the final stale-result guard. Even if a provider is
-            // slow or non-cooperative with cancellation, an obsolete lookup id
-            // cannot replace state belonging to a newer lookup.
-            _state.value = _state.value.reduce(completion)
+            // StateFlow.update makes the stale-result guard atomic with respect to
+            // a concurrent Started/Cleared event. If ownership changes while the
+            // reducer is running, the transform is retried against the new state
+            // and the obsolete lookup id is rejected.
+            _state.update { current -> current.reduce(completion) }
         }
 
         return lookup
@@ -117,7 +119,7 @@ class LyricsCoordinator(
     fun clear() {
         activeJob?.cancel()
         activeJob = null
-        _state.value = _state.value.reduce(LyricsStateEvent.Cleared)
+        _state.update { current -> current.reduce(LyricsStateEvent.Cleared) }
     }
 
     private suspend fun searchProviders(request: LyricsRequest): List<ProviderAttempt> = supervisorScope {
