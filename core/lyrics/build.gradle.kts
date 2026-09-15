@@ -1,0 +1,12 @@
+plugins {
+    id("org.jetbrains.kotlin.jvm")
+}
+
+kotlin {
+    jvmToolchain(17)
+}
+
+dependencies {
+    api(project(":core:model"))
+    implementation(project(":provider:api"))
+}
