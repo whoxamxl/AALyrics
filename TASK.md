@@ -43,15 +43,21 @@ Provider adapters may attach provider-neutral match evidence to a candidate when
 
 ## Acceptance criteria
 
-- [ ] selector implementation lives outside `:core:lyrics` while implementing its existing port,
-- [ ] synchronized candidates beat plain fallback candidates,
-- [ ] recording-version mismatches are rejected,
-- [ ] title/artist/duration/album scoring preserves the mature resolver thresholds and weights,
-- [ ] cross-script artist corroboration behavior is preserved,
-- [ ] Japanese/Latin interleaved transliteration quality penalty is preserved,
-- [ ] provider source-confidence preferences are preserved without entering pure core,
-- [ ] WORD preference only overrides the standard winner for near-equivalent metadata/quality and real word timing,
-- [ ] provider execution order is not used as winner policy,
-- [ ] migrated regression tests pass,
-- [ ] full repository CI passes,
+- [x] selector implementation lives outside `:core:lyrics` while implementing its existing port,
+- [x] synchronized candidates beat plain fallback candidates,
+- [x] recording-version mismatches are rejected,
+- [x] title/artist/duration/album scoring preserves the mature resolver thresholds and weights,
+- [x] cross-script artist corroboration behavior is preserved,
+- [x] Japanese/Latin interleaved transliteration quality penalty is preserved,
+- [x] provider source-confidence preferences are preserved without entering pure core,
+- [x] WORD preference only overrides the standard winner for near-equivalent metadata/quality and real word timing,
+- [x] provider execution order is not used as winner policy,
+- [x] migrated regression tests pass,
+- [x] full repository CI passes on the implementation/documentation head (`b7352d6d91` / run `34959811080`),
 - [ ] stop before merge for explicit approval.
+
+## Review status
+
+- Codex round 1 reviewed the initial implementation head and found one in-scope P2: durable architecture documentation had not yet been updated.
+- `docs/ARCHITECTURE.md`, `docs/ROADMAP.md`, and `docs/MIGRATION_INVENTORY.md` now document `:provider:selection` ownership and migration status.
+- Final-head review remains bounded by `AGENTS.md`; do not reopen an unbounded adversarial review loop.
