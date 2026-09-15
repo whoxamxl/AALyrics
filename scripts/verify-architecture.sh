@@ -22,12 +22,30 @@ for module in "${pure_modules[@]}"; do
     fail "$module build configuration must not depend on Android plugins/libraries"
   fi
 
+  production_dependencies=$(
+    (grep -En '^[[:space:]]*(api|implementation|compileOnly|runtimeOnly)[[:space:]]*\(' "$build_file" || true) \
+      | grep -Ev 'project[[:space:]]*\(|projects\.|org\.jetbrains\.kotlinx:kotlinx-coroutines-core' \
+      || true
+  )
+  if [[ -n "$production_dependencies" ]]; then
+    echo "$production_dependencies"
+    fail "$module may not add arbitrary production libraries; pure-core dependencies must remain explicitly allowlisted"
+  fi
+
   source_dir="$module/src/main"
-  if [[ -d "$source_dir" ]] && grep -RInE \
-    --include='*.kt' --include='*.java' \
-    '^[[:space:]]*import[[:space:]]+(android\.|androidx\.|okhttp3\.|retrofit2\.|java\.net\.|javax\.net\.)' \
-    "$source_dir"; then
-    fail "$module production sources must stay Android- and network-independent"
+  if [[ -d "$source_dir" ]]; then
+    forbidden_source_refs=$(
+      (grep -RInE \
+        --include='*.kt' --include='*.java' \
+        '(android\.|androidx\.|okhttp3\.|retrofit2\.|io\.ktor\.|org\.apache\.http\.|java\.net\.|javax\.net\.)' \
+        "$source_dir" 2>/dev/null || true) \
+        | grep -Ev ':[0-9]+:[[:space:]]*(//|/\*|\*)' \
+        || true
+    )
+    if [[ -n "$forbidden_source_refs" ]]; then
+      echo "$forbidden_source_refs"
+      fail "$module production sources must stay Android- and network-independent"
+    fi
   fi
 done
 
@@ -41,10 +59,10 @@ feature_modules=(
 for module in "${feature_modules[@]}"; do
   build_file="$module/build.gradle.kts"
 
-  grep -Fq 'project(":core:lyrics")' "$build_file" \
+  grep -Eq ':core:lyrics|projects\.core\.lyrics' "$build_file" \
     || fail "$module must consume the shared lyrics-core contract"
 
-  if grep -Eq 'project\(":provider:|project\(":platform:media"\)' "$build_file"; then
+  if grep -Eq ':provider:|:platform:media|projects\.provider\.|projects\.platform\.media' "$build_file"; then
     fail "$module must not depend directly on providers or the media platform adapter"
   fi
 done
