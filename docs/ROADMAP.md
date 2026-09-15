@@ -57,7 +57,9 @@ Do **not** redesign the mature scoring/selection policy from scratch.
 
 The working fork already contains a substantial `LyricsProviderResolver`, regression tests, recording-version matching, cross-script handling, payload-quality scoring, source-confidence policy, and karaoke-aware selection. That behavior is classified for later preservation/refactoring in `docs/MIGRATION_INVENTORY.md`.
 
-Before the stop gate, AALyrics should define only the narrow core boundary needed by orchestration, for example a provider-independent selector contract and selection preferences. Tests may use a fake selector.
+Before the stop gate, AALyrics defines only the narrow core boundary needed by orchestration: a provider-independent `CandidateSelector`, normalized candidates, and explicit selection preferences. Tests use a fake selector.
+
+The current Phase 3.2 implementation intentionally contains no scoring weights, metadata similarity algorithm, source preference policy, or recording-version algorithm.
 
 Goals:
 
