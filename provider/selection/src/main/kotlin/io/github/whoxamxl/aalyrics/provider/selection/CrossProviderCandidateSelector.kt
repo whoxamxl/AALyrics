@@ -7,6 +7,7 @@ import io.github.whoxamxl.aalyrics.core.model.LyricsSyncType
 import io.github.whoxamxl.aalyrics.core.model.TimedLyricLine
 import io.github.whoxamxl.aalyrics.core.model.Track
 import io.github.whoxamxl.aalyrics.provider.api.LyricsCandidate
+import java.util.Locale
 import kotlin.math.abs
 
 /**
@@ -289,17 +290,17 @@ class CrossProviderCandidateSelector : CandidateSelector {
 
     private fun stableCandidateKey(candidate: LyricsCandidate): String {
         return buildString {
-            append(candidate.providerId.value.lowercase())
+            append(candidate.providerId.value.lowercase(Locale.ROOT))
             append('|')
-            append(candidate.matchedTrack.title.lowercase())
+            append(candidate.matchedTrack.title.lowercase(Locale.ROOT))
             append('|')
-            append(candidate.matchedTrack.artists.joinToString(",").lowercase())
+            append(candidate.matchedTrack.artists.joinToString(",").lowercase(Locale.ROOT))
             append('|')
-            append(candidate.matchedTrack.album.orEmpty().lowercase())
+            append(candidate.matchedTrack.album.orEmpty().lowercase(Locale.ROOT))
             append('|')
             append(candidate.matchedTrack.durationMs ?: -1L)
             append('|')
-            append(candidate.lyrics.attribution?.sourceId.orEmpty())
+            append(candidate.lyrics.attribution?.sourceId.orEmpty().lowercase(Locale.ROOT))
         }
     }
 
