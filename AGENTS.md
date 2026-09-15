@@ -13,7 +13,7 @@ These instructions apply to AI-assisted repository work, including implementatio
 
 ## Scope and acceptance criteria
 
-Before review begins, treat the pull request description, `TASK.md`, and the relevant roadmap/architecture documents as the acceptance criteria for that PR.
+Before review begins, treat the pull request description, the current `TASK.md` when it describes that PR's active work, and the relevant roadmap/architecture documents as the acceptance criteria for that PR. Do not inherit a stale or unrelated `TASK.md` as scope for a different pull request.
 
 Do not silently expand the scope because a reviewer can imagine additional hardening, future configurations, exotic syntax, or adversarial bypasses. A review finding should change the current PR only when it materially affects the current PR's intended behavior or stated guarantees.
 
