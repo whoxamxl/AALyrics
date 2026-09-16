@@ -27,7 +27,7 @@
 - [x] Create branch from post-PR #20 main.
 - [x] Re-check working-fork main baseline.
 - [x] Align architecture, roadmap, migration inventory, provider profile, and branch task for Musixmatch.
-- [ ] Inspect `MusixmatchClient.kt`, all reference tests, and relevant call sites in the working fork.
+- [x] Inspect `MusixmatchClient.kt`, all reference tests, and relevant call sites in the working fork.
 - [ ] Implement/refactor the provider behind AALyrics boundaries.
 - [ ] Port/add regression coverage.
 - [ ] Run full validation and bounded review.
