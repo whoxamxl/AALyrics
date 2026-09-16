@@ -40,7 +40,7 @@
 - `bash scripts/verify-architecture.sh` and `git diff --check` passed.
 - Normal review found one current-scope failure-contract defect: a failed dedicated RichSync lookup could be hidden by a timestamp-only subtitle. Commit `a60801b` requires usable subtitle text before treating that local fallback as successful when an operational failure is pending.
 - Automatic Codex review found one current-scope P2: an unusable initial token response could be reported as no lyrics. Commit `449f7f5` surfaces API 401/403, `UpgradeOnly`, malformed, and missing-token responses when no cached token is available.
-- Targeted re-review and the added regressions passed. Two normal review rounds are complete and no unresolved P0/P1 or current-scope blocking P2 remains; final-head CI remains to be confirmed.
+- Targeted re-review and the added regressions passed. Two normal review rounds are complete, no unresolved P0/P1 or current-scope blocking P2 remains, and final-head CI is green. The AGENTS.md review exit condition is satisfied.
 
 ## Scope guard
 
