@@ -30,6 +30,14 @@ The following existing configuration values must not be changed during migration
 
 Migration may refactor configuration injection/ownership, but the values themselves are an invariant.
 
+## Configuration source
+
+PetitLyrics configuration values are not stored in source control.
+
+Local development reads the four keys from repository-root `secrets.properties.local`, which is ignored by the existing `*.properties.local` rule. CI supplies the same key names through GitHub Actions repository secrets, exposed to the build as environment variables. When both are available, environment variables take precedence over the local file.
+
+Never commit or log the actual values. Tests should use injected/fake configuration and must not require live PetitLyrics credentials.
+
 ## Mature discovery behavior to preserve
 
 PetitLyrics metadata often differs in script/romanization from playback metadata. The working provider therefore searches progressively:
