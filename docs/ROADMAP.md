@@ -132,7 +132,7 @@ Completed:
 
 Current:
 
-- Musixmatch — authorized on `feature/musixmatch-provider-migration`.
+- Musixmatch — implemented and validated on `feature/musixmatch-provider-migration`, pending PR review and merge.
 
 Next:
 
@@ -142,7 +142,7 @@ Next:
 
 ### Musixmatch provider migration
 
-The third concrete provider is now the active migration slice. The working-fork baseline remains `8484bed2dbe8db5ca7b17dec5481b3c22714dc6f` (`v1.13.0`), re-checked on 2026-09-16 before implementation.
+The third concrete provider is implemented and locally validated on the active migration branch. The working-fork baseline remains `8484bed2dbe8db5ca7b17dec5481b3c22714dc6f` (`v1.13.0`), re-checked on 2026-09-16 before implementation.
 
 The slice is **PRESERVE / REFACTOR** and must retain the proven anonymous mobile API flow, token/session behavior, macro subtitle lookup, embedded/dedicated RichSync handling, line-subtitle fallback, metadata validation, instrumental rejection, and Spotify-aware matching.
 

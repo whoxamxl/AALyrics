@@ -76,7 +76,7 @@ Shared provider migration rules are in `docs/PROVIDER_ARCHITECTURE.md`. Provider
 | `lyrics/LrcLibClient.kt` | **PRESERVE / REFACTOR** | `:provider:lrclib`; see `docs/providers/LRCLIB.md` | Migrated in PR #19. Preserves mature exact/structured/title-only/free-text/plain fallback and local validation. |
 | `lyrics/LrcParser.kt` | **PRESERVE / REFACTOR** | pure `:provider:lrc` shared parser | Migrated with LRCLIB. Parsing behavior is regression-covered and shared without provider networking ownership. |
 | `lyrics/PetitLyricsClient.kt` | **PRESERVE / REFACTOR** | `:provider:petitlyrics`; see `docs/providers/PETITLYRICS.md` | Migrated in PR #20. Preserves progressive search, ranking, attempted-result deduplication, WSY/LSY parsing, companion-text resolution, artist-query evidence, configuration invariants, and provider-contract failure/cancellation semantics. |
-| `lyrics/MusixmatchClient.kt` | **PRESERVE / REFACTOR** | active `:provider:musixmatch` migration on `feature/musixmatch-provider-migration`; see `docs/providers/MUSIXMATCH.md` | Preserve the proven anonymous mobile API flow, token/session behavior, macro lookup, RichSync/subtitle fallback, Spotify-aware identity validation, instrumental rejection, metadata validation, and failure isolation. Do not switch endpoint strategy as incidental cleanup. |
+| `lyrics/MusixmatchClient.kt` | **PRESERVE / REFACTOR** | `:provider:musixmatch`, implemented on `feature/musixmatch-provider-migration` pending review/merge; see `docs/providers/MUSIXMATCH.md` | Preserves the anonymous mobile API flow, token/session behavior, macro lookup, RichSync/subtitle fallback, Spotify-aware identity validation, instrumental rejection, metadata validation, and failure isolation. The endpoint strategy is unchanged. |
 | `lyrics/SyncLrcClient.kt` | **PRESERVE / REFACTOR** | future SyncLRC provider adapter; see `docs/providers/SYNCLRC.md` | Preserve its deliberate karaoke-only role, response-shape compatibility, and genuine word-timing requirement. Not authorized by the Musixmatch slice. |
 
 Provider migration is not a clean-room exercise. Mature provider implementation may be reused/refactored when it already expresses the behavior we intend to keep. The structural requirement is that legacy coupling does not cross the AALyrics provider boundary.
@@ -158,7 +158,7 @@ Do not bulk-port the old application. Each provider or subsystem remains a separ
 - Production candidate selection: migrated and merged in PR #17.
 - LRCLIB: migrated and merged in PR #19.
 - PetitLyrics: migrated and merged in PR #20.
-- Musixmatch: current explicitly authorized PRESERVE / REFACTOR slice on `feature/musixmatch-provider-migration`.
+- Musixmatch: implemented and validated on `feature/musixmatch-provider-migration`, pending review and merge.
 - SyncLRC: planned; not authorized by the current slice.
 
 ### LRCLIB implementation re-check
@@ -173,10 +173,10 @@ The PetitLyrics slice re-fetched working-fork main at `8484bed2dbe8db5ca7b17dec5
 
 Preserved: progressive discovery, local candidate ranking and sync preference, attempted-result deduplication, artist-query evidence, WSY timing/spacing, LSY protection-key/rollover decoding, lyrics-ID companion resolution, metadata companion fallback, and malformed result rejection. Structural changes: provider/config injection, normalized domain output, shared metadata plausibility, cancellable HTTP, and provider-contract failure reporting after local fallback is exhausted.
 
-### Musixmatch implementation pre-check
+### Musixmatch implementation re-check
 
-Working-fork main was re-checked at `8484bed2dbe8db5ca7b17dec5481b3c22714dc6f` on 2026-09-16 and remains the current baseline. Before implementation, inspect `MusixmatchClient.kt`, all Musixmatch regression tests, and its relevant `MediaTracker`/resolver call sites rather than relying only on this summary.
+Working-fork main was re-checked at `8484bed2dbe8db5ca7b17dec5481b3c22714dc6f` on 2026-09-16 and remains the current baseline. The slice inspected `MusixmatchClient.kt`, all Musixmatch regressions, Spotify identity tests, and the relevant `MediaTracker`/resolver call sites.
 
-Preserve the anonymous mobile `token.get` → `macro.subtitles.get` flow, embedded RichSync preference, dedicated `track.richsync.get` fallback, line-subtitle fallback, metadata/instrumental validation, Spotify-ID request/match evidence, explicit Spotify-ID conflict rejection, and artist-query corroboration. Spotify reference extraction remains in `:platform:media`; the Musixmatch adapter consumes normalized identity only.
+Preserved: the anonymous mobile `token.get` → `macro.subtitles.get` flow, TTL and rejected-token refresh, embedded RichSync preference, dedicated `track.richsync.get` fallback, line-subtitle fallback, metadata/instrumental validation, Spotify-ID request/match evidence, explicit Spotify-ID conflict rejection, artist-query corroboration, and RichSync word offsets. Structural changes: an in-memory provider session replaces Android preferences, HTTP is cancellable, failures follow the provider contract after local fallback is exhausted, and output is normalized to AALyrics models. Spotify reference extraction remains in `:platform:media`; the Musixmatch adapter consumes normalized identity only.
 
 Documentation/planning approval does not authorize unrelated provider implementation. The current explicit authorization is limited to Musixmatch on this branch.

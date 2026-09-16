@@ -2,7 +2,7 @@
 
 ## Status
 
-- Migration status: **AUTHORIZED — active migration branch, implementation pending**
+- Migration status: **IMPLEMENTED — validation passed, pending PR review and merge**
 - Branch: `feature/musixmatch-provider-migration`
 - Default migration order: third concrete provider
 - Working-fork baseline: `8484bed2dbe8db5ca7b17dec5481b3c22714dc6f` (`v1.13.0`), re-checked 2026-09-16
@@ -118,3 +118,12 @@ Outside Musixmatch:
 Musixmatch is a **PRESERVE / REFACTOR** migration. Its unofficial endpoint makes failure isolation and regression coverage particularly important. Preserve the proven mobile flow, matching behavior, and fallback semantics; structural changes should be limited to fitting AALyrics ownership and provider contracts.
 
 Implementation is explicitly authorized on `feature/musixmatch-provider-migration`. The branch must still follow `TASK.md` and `AGENTS.md`, complete bounded review, and stop before merge for explicit approval.
+
+## Implemented adaptation
+
+- `:provider:musixmatch` exposes `MusixmatchProvider` with `LINE` and `WORD` capabilities and keeps the mobile endpoint, headers, query fields, token flow, macro parsing, and RichSync fallback inside the adapter.
+- The 60-second token session is adapter-owned and in memory. A rejected HTTP/API token is invalidated, reacquired, and retried once; Android `SharedPreferences` is not part of the provider boundary.
+- Embedded RichSync remains preferred. A missing payload triggers `track.richsync.get`; an operational failure there still permits a valid macro subtitle, and is surfaced when no local lyric fallback succeeds.
+- RichSync line and word offsets are converted from seconds to domain milliseconds. Line subtitles reuse the neutral LRC parser, while Musixmatch JSON parsing remains provider-local.
+- Spotify evidence is read only from a valid normalized `TrackReference(namespace = "spotify", ...)`. Exact returned-ID conflicts are rejected; absent returned IDs retain metadata validation.
+- The shared neutral metadata score retains the working-fork 0.70 provider-local threshold. Final cross-provider scoring remains unchanged in `:provider:selection`.

@@ -80,7 +80,7 @@ Concrete providers are outer adapters implementing `LyricsProvider`.
 
 Each provider owns only its provider-local transport/authentication, query/fallback strategy, DTOs, parsing, provider-local validation, and normalization into `LyricsCandidate`. A provider may report provider-neutral evidence discovered during search, but it must not decide the final winner across providers.
 
-LRCLIB and PetitLyrics are migrated. Musixmatch is the current migration slice; its anonymous mobile token/session mechanics, macro requests, RichSync/subtitle parsing, Spotify-reference validation, and provider-local fallbacks stay inside its adapter.
+LRCLIB and PetitLyrics are merged. Musixmatch is implemented on its current migration branch pending review and merge; its anonymous mobile token/session mechanics, macro requests, RichSync/subtitle parsing, Spotify-reference validation, and provider-local fallbacks stay inside its adapter.
 
 Shared policy is defined in `docs/PROVIDER_ARCHITECTURE.md`; concise provider profiles live in `docs/providers/`.
 

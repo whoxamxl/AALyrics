@@ -28,10 +28,17 @@
 - [x] Re-check working-fork main baseline.
 - [x] Align architecture, roadmap, migration inventory, provider profile, and branch task for Musixmatch.
 - [x] Inspect `MusixmatchClient.kt`, all reference tests, and relevant call sites in the working fork.
-- [ ] Implement/refactor the provider behind AALyrics boundaries.
-- [ ] Port/add regression coverage.
+- [x] Implement/refactor the provider behind AALyrics boundaries.
+- [x] Port/add regression coverage.
 - [ ] Run full validation and bounded review.
 - [ ] Open PR and stop before merge.
+
+## Validation record
+
+- Targeted Musixmatch, production-selector, and Spotify playback-reference tests passed.
+- `./gradlew test check :app:assembleDebug` passed with 173 tests across 18 suites, Android checks, and debug APK assembly.
+- `bash scripts/verify-architecture.sh` and `git diff --check` passed.
+- Bounded PR review and final-head CI remain pending.
 
 ## Scope guard
 
