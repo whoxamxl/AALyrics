@@ -92,7 +92,8 @@ internal class MusixmatchClient(
         }
 
         val lineSync = parseSubtitleBody(match.subtitleBody)
-        if (lineSync.isNotEmpty()) {
+        val hasUsableLineText = lineSync.any { it.text.isNotBlank() && it.text != "♪" }
+        if (lineSync.isNotEmpty() && (richSyncFailure == null || hasUsableLineText)) {
             return Result(lineSync, candidate, false, requestedArtist.isNotBlank())
         }
 

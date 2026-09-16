@@ -152,6 +152,16 @@ class MusixmatchProviderTest {
     }
 
     @Test
+    fun failedDedicatedRichSyncIsNotHiddenByTimestampOnlySubtitle() = withServer { server, provider ->
+        server.enqueueJson(tokenResponse("token"))
+        server.enqueueJson(macroResponse(subtitle = "[00:01.00]"))
+        server.enqueue(MockResponse().setResponseCode(500))
+
+        val error = assertFailsWith<IOException> { provider.search(request) }
+        assertEquals("Musixmatch HTTP 500 for track.richsync.get", error.message)
+    }
+
+    @Test
     fun lineSubtitleIsUsedWhenTrackHasNoRichSync() = withServer { server, provider ->
         server.enqueueJson(tokenResponse("token"))
         server.enqueueJson(macroResponse(hasRichSync = false, subtitle = "[00:02.25]Line"))
