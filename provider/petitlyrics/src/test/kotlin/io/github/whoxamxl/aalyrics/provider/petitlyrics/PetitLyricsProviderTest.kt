@@ -76,6 +76,28 @@ class PetitLyricsProviderTest {
     }
 
     @Test
+    fun absentAlbumDoesNotRepeatTheSameTitleAndArtistRequest() = withServer { server, provider ->
+        server.enqueueXml(searchResponse())
+        server.enqueueXml(searchResponse(song(data = wordPayload("Title only"))))
+
+        val candidate = provider.search(LyricsRequest(Track("Song", listOf("Artist")))).single()
+
+        assertEquals("Title only", candidate.lyrics.lines.single().text)
+        assertEquals(setOf("key_title", "key_artist"), server.takeForm().keys.filter { it.startsWith("key_") }.toSet())
+        assertEquals(setOf("key_title"), server.takeForm().keys.filter { it.startsWith("key_") }.toSet())
+        assertEquals(2, server.requestCount)
+    }
+
+    @Test
+    fun absentArtistAndAlbumSearchesTitleOnlyOnce() = withServer { server, provider ->
+        server.enqueueXml(searchResponse())
+
+        assertTrue(provider.search(LyricsRequest(Track("Song"))).isEmpty())
+        assertEquals(setOf("key_title"), server.takeForm().keys.filter { it.startsWith("key_") }.toSet())
+        assertEquals(1, server.requestCount)
+    }
+
+    @Test
     fun ranksCandidatesLocallyInsteadOfAcceptingFirstResponse() = withServer { server, provider ->
         server.enqueueXml(searchResponse(
             song(id = "wrong", title = "Different", data = wordPayload("Wrong")),

@@ -49,7 +49,6 @@ internal class PetitLyricsClient(private val transport: PetitLyricsTransport) {
     private data class SearchQuery(
         val artist: String,
         val album: String,
-        val label: String
     )
 
     suspend fun getSyncedLyrics(
@@ -65,9 +64,9 @@ internal class PetitLyricsClient(private val transport: PetitLyricsTransport) {
         // sessions may expose romanized names. Start strict, then progressively
         // relax album/artist constraints while keeping candidate validation local.
         val queries = linkedSetOf(
-            SearchQuery(artist = artist, album = album, label = "title+artist+album"),
-            SearchQuery(artist = artist, album = "", label = "title+artist"),
-            SearchQuery(artist = "", album = "", label = "title-only")
+            SearchQuery(artist = artist, album = album),
+            SearchQuery(artist = artist, album = ""),
+            SearchQuery(artist = "", album = "")
         )
 
         val attempted = hashSetOf<String>()
@@ -79,7 +78,6 @@ internal class PetitLyricsClient(private val transport: PetitLyricsTransport) {
                 album = query.album,
                 lyricsType = 3,
                 maxCount = SEARCH_MAX_COUNT,
-                logLabel = query.label
             )
 
             val ranked = rankCandidates(
@@ -167,7 +165,6 @@ internal class PetitLyricsClient(private val transport: PetitLyricsTransport) {
             album = candidate.album,
             lyricsType = 1,
             maxCount = 3,
-            logLabel = "line-sync-text"
         )
 
         return selectPlainCompanion(candidate, byMetadata)
@@ -200,7 +197,6 @@ internal class PetitLyricsClient(private val transport: PetitLyricsTransport) {
         album: String,
         lyricsType: Int,
         maxCount: Int,
-        logLabel: String
     ): List<PetitLyricsCandidate> {
         val body = newRequestBody(lyricsType, maxCount).apply {
             add("key_title", title)
@@ -208,7 +204,7 @@ internal class PetitLyricsClient(private val transport: PetitLyricsTransport) {
             if (album.isNotBlank()) add("key_album", album)
         }.build()
 
-        val xml = executeRequest(body, logLabel) ?: return emptyList()
+        val xml = executeRequest(body) ?: return emptyList()
         return parseCandidates(xml)
     }
 
@@ -220,14 +216,14 @@ internal class PetitLyricsClient(private val transport: PetitLyricsTransport) {
             add("key_lyricsId", lyricsId)
         }.build()
 
-        val xml = executeRequest(body, "lyricsId") ?: return emptyList()
+        val xml = executeRequest(body) ?: return emptyList()
         return parseCandidates(xml)
     }
 
     private fun newRequestBody(lyricsType: Int, maxCount: Int): FormBody.Builder =
         transport.newRequestBody(lyricsType, maxCount)
 
-    private suspend fun executeRequest(body: FormBody, label: String): String? = try {
+    private suspend fun executeRequest(body: FormBody): String? = try {
         transport.execute(body)
     } catch (e: IOException) {
         // Preserve provider-local fallback, including ID-to-metadata companion lookup.
