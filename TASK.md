@@ -39,7 +39,7 @@
 - `./gradlew test check :app:assembleDebug` passed with 174 tests across 18 suites, Android checks, and debug APK assembly after the review fix.
 - `bash scripts/verify-architecture.sh` and `git diff --check` passed.
 - Normal review found one current-scope failure-contract defect: a failed dedicated RichSync lookup could be hidden by a timestamp-only subtitle. Commit `a60801b` requires usable subtitle text before treating that local fallback as successful when an operational failure is pending.
-- Targeted re-review and the added regression passed. No unresolved P0/P1 or current-scope blocking P2 remains; final-head CI remains pending.
+- Targeted re-review and the added regression passed. No unresolved P0/P1 or current-scope blocking P2 remains. Final-head CI is green, so the AGENTS.md review exit condition is satisfied.
 
 ## Scope guard
 
