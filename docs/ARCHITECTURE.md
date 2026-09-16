@@ -6,7 +6,7 @@ This document defines the architectural boundaries for AALyrics. The project was
 
 AALyrics is a greenfield codebase, but not a greenfield behavior specification. The working `whoxamxl/auto-lyrics` fork is treated as a behavioral reference and regression oracle. Proven behavior should not be re-invented merely because the new module structure is different.
 
-The Core Readiness Gate completed in PR #14. Post-gate migration now preserves mature behavior behind the boundaries established before adaptation began. Production candidate selection was migrated in PR #17; the LRCLIB migration slice adds the first concrete adapter (pending merge).
+The Core Readiness Gate completed in PR #14. Post-gate migration now preserves mature behavior behind the boundaries established before adaptation began. Production candidate selection was migrated in PR #17 and LRCLIB in PR #19; the PetitLyrics adapter is the current migration slice.
 
 ## Design goals
 
@@ -66,7 +66,7 @@ Provider-specific source-confidence policy is intentionally outside `:core:lyric
 
 Concrete provider networking, parsing, authentication, and provider-local search strategy do not belong in this module.
 
-The neutral `:provider:matching` module owns the preserved generic title, artist, duration, and recording-version semantics. It has no production dependencies. Both selection and LRCLIB use it; cross-provider weights and winner policy remain in selection.
+The neutral `:provider:matching` module owns the preserved generic title, artist, duration, recording-version, and metadata-plausibility semantics. It has no production dependencies. Selection, LRCLIB, and PetitLyrics reuse the relevant functions; payload quality, source confidence, cross-provider weights, and winner policy remain in selection.
 
 ### `:provider:matching` and `:provider:lrc`
 
@@ -113,7 +113,7 @@ Android Auto presentation only. It consumes the same application/domain state as
 
 The diagram is a compile-time dependency sketch, not a runtime call-order diagram. `:provider:selection` depends on the selector port in `:core:lyrics`; `:core:lyrics` never depends on `:provider:selection`.
 
-Concrete provider modules depend on `:provider:api` and normalized model types required by that contract. The domain must never depend on a concrete provider. LRCLIB and selection share `:provider:matching`; LRCLIB also uses `:provider:lrc`. These utilities remain outside core orchestration.
+Concrete provider modules depend on `:provider:api` and normalized model types required by that contract. The domain must never depend on a concrete provider. LRCLIB, PetitLyrics, and selection share `:provider:matching`; LRCLIB also uses `:provider:lrc`. These utilities remain outside core orchestration.
 
 ## Runtime state flow
 

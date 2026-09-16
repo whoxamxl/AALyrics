@@ -127,9 +127,9 @@ The working fork was re-checked against `8484bed2dbe8db5ca7b17dec5481b3c22714dc6
 
 ## Current work
 
-### LRCLIB provider migration
+### PetitLyrics provider migration
 
-The explicitly authorized LRCLIB PRESERVE / REFACTOR slice implements the first concrete adapter, pending merge. It preserves working-fork discovery and regression behavior, extracts neutral shared matching and LRC parsing, and conforms to provider failure/cancellation/normalization contracts. Application wiring and the remaining providers are separate work.
+LRCLIB was merged in PR #19. The explicitly authorized PetitLyrics PRESERVE / REFACTOR slice implements the second concrete adapter, pending merge. It preserves progressive discovery, WSY/LSY parsing, companion lookup, matching and fallback behavior while using injected configuration and normalized provider output. Application wiring and the remaining providers are separate work.
 
 Shared migration policy and provider profiles are already documented. This slice does not authorize implementation of the remaining providers.
 

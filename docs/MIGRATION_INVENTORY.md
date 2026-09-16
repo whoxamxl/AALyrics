@@ -54,7 +54,7 @@ The fork continues to evolve. Re-check `main` before every later migration slice
 
 | Fork implementation | Classification | AALyrics destination / rule | Notes |
 | --- | --- | --- | --- |
-| `lyrics/LyricsProviderResolver.kt` | **PRESERVE / REFACTOR** | `:provider:selection` implementation of the `:core:lyrics` `CandidateSelector` port | Migrated in PR #17. Preserve mature cross-provider metadata, payload-quality, source-confidence, synchronization, karaoke, cross-script, and fallback policy without making core depend on the implementation. |
+| `lyrics/LyricsProviderResolver.kt` | **PRESERVE / REFACTOR** | `:provider:selection` implementation of the `:core:lyrics` `CandidateSelector` port, with neutral metadata plausibility in `:provider:matching` | Migrated in PR #17. PetitLyrics migration extracted the unchanged metadata plausibility calculation so providers can validate discovery without depending on global selection. Payload quality, source confidence, synchronization, karaoke, and winner policy stay in selection. |
 | `lyrics/RecordingVersionContext.kt` | **PRESERVE / REFACTOR** | pure shared `:provider:matching` utility | Explicit live/remix/remaster/etc. context handling is heavily refined and regression-sensitive. Preserve semantics. |
 | generic similarity helpers historically in `LrcLibClient` (`stringSimilarity`, artist matching, duration similarity, version compatibility) | **PRESERVE / REFACTOR** | pure shared `:provider:matching`, used by selection and LRCLIB | Migrated as generic semantics rather than LRCLIB networking behavior. Extracted to the neutral matching module in the LRCLIB slice; no provider-to-selector implementation dependency. |
 | `lyrics/MetadataCleaner.kt` | **PRESERVE / REFACTOR** | metadata normalization utility at an appropriate domain/platform boundary | Not part of provider selection. Do not independently reinvent metadata cleanup; verify call sites/tests before choosing final ownership. |
@@ -89,7 +89,7 @@ Shared provider migration rules are in `docs/PROVIDER_ARCHITECTURE.md`. Provider
 | --- | --- | --- | --- |
 | `lyrics/LrcLibClient.kt` | **PRESERVE / REFACTOR** | `:provider:lrclib` adapter (implemented in this slice, pending merge); see `docs/providers/LRCLIB.md` | Preserve mature exact/structured/title-only/free-text/plain fallback and local validation. Keep HTTP/provider concerns separate from cross-provider ranking. |
 | `lyrics/LrcParser.kt` | **PRESERVE / REFACTOR** | pure `:provider:lrc` shared parser | Parsing behavior is already tested. Preserve semantics rather than rewriting a stable parser for novelty. |
-| `lyrics/PetitLyricsClient.kt` | **PRESERVE / REFACTOR** | future PetitLyrics provider adapter; see `docs/providers/PETITLYRICS.md` | Preserve working search, WSY/LSY parsing, companion-text resolution, and tests. PetitLyrics configuration values are immutable unless explicitly requested. |
+| `lyrics/PetitLyricsClient.kt` | **PRESERVE / REFACTOR** | `:provider:petitlyrics` adapter (implemented in this slice, pending merge); see `docs/providers/PETITLYRICS.md` | Preserves progressive search, ranking, attempted-result deduplication, WSY/LSY parsing, companion-text resolution, artist-query evidence, and tests. Configuration values remain unchanged and externally injected. |
 | `lyrics/MusixmatchClient.kt` | **PRESERVE / REFACTOR** | future Musixmatch provider adapter; see `docs/providers/MUSIXMATCH.md` | Preserve the proven anonymous mobile API flow, RichSync/subtitle fallback, identity validation, and failure isolation. Do not switch endpoint strategy as incidental migration cleanup. |
 | `lyrics/SyncLrcClient.kt` | **PRESERVE / REFACTOR** | future SyncLRC provider adapter; see `docs/providers/SYNCLRC.md` | Preserve its deliberate karaoke-only role, response-shape compatibility, and genuine word-timing requirement. |
 
@@ -170,8 +170,9 @@ Do not bulk-port the old application. Each provider or subsystem remains a separ
 
 - Core Readiness STOP GATE: accepted and merged in PR #14.
 - Production candidate selection: migrated and merged in PR #17.
-- LRCLIB: implemented in the current migration slice, pending merge; other concrete providers remain planned.
-- Current work: LRCLIB PRESERVE / REFACTOR migration with explicit user implementation authorization.
+- LRCLIB: migrated in PR #19.
+- PetitLyrics: implemented in the current migration slice, pending merge; later providers remain planned.
+- Current work: PetitLyrics PRESERVE / REFACTOR migration with explicit user implementation authorization.
 
 Documentation/planning approval does not authorize provider implementation. Concrete provider migration begins only after explicit user authorization for an implementation slice.
 
@@ -182,3 +183,9 @@ Default planned order is LRCLIB → PetitLyrics → Musixmatch → SyncLRC, subj
 The LRCLIB slice re-fetched working-fork main at `8484bed2dbe8db5ca7b17dec5481b3c22714dc6f` on 2026-09-15, inspecting `LrcLibClient`, `LrcParser`, their tests, recording-version tests, and the `MediaTracker` normalization call site. No experimental provider branch was reused.
 
 Preserved: local query sequence, scores/thresholds, deduplication, matching/version behavior, ordinary/enhanced LRC semantics, and synchronized-first fallback. Structural changes: normalized provider output, neutral shared matching/parser modules, cancellable HTTP, explicit operational failures, and payload usability before local winner acceptance. See the LRCLIB profile for the concrete deviations required by AALyrics contracts.
+
+### PetitLyrics implementation re-check
+
+The PetitLyrics slice re-fetched working-fork main at `8484bed2dbe8db5ca7b17dec5481b3c22714dc6f` on 2026-09-16, inspecting `PetitLyricsClient`, all provider tests, the resolver used by local candidate ranking, and `MediaTracker` normalization/call sites. The existing branch configuration-source documentation was retained.
+
+Preserved: progressive discovery, local candidate ranking and sync preference, attempted-result deduplication, artist-query evidence, WSY timing/spacing, LSY protection-key/rollover decoding, lyrics-ID companion resolution, metadata companion fallback, and malformed result rejection. Structural changes: provider/config injection, normalized domain output, shared metadata plausibility, cancellable HTTP, and provider-contract failure reporting after local fallback is exhausted.
