@@ -163,7 +163,7 @@ internal class MusixmatchClient(
             cachedTokenAtMs = now
             token
         } else {
-            cachedToken
+            cachedToken ?: throw IOException("Musixmatch token.get returned no usable token")
         }
     }
 

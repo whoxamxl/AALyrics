@@ -245,6 +245,26 @@ class MusixmatchProviderTest {
     }
 
     @Test
+    fun unusableInitialTokenResponsesSurfaceAsOperationalFailures() {
+        val responses = listOf(
+            Gson().toJson(apiResponse(401)),
+            Gson().toJson(apiResponse(403)),
+            Gson().toJson(tokenResponse("UpgradeOnly-token")),
+            "{broken",
+            Gson().toJson(apiResponse(200)),
+        )
+
+        responses.forEach { response ->
+            withServer { server, provider ->
+                server.enqueueJson(response)
+                val error = assertFailsWith<IOException> { provider.search(request) }
+                assertEquals("Musixmatch token.get returned no usable token", error.message)
+                assertEquals(1, server.requestCount)
+            }
+        }
+    }
+
+    @Test
     fun cancellationCancelsInFlightMacroCall() = runBlocking {
         val failed = CountDownLatch(1)
         val listener = object : EventListener() {
