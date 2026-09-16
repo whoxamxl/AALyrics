@@ -36,11 +36,12 @@
 ## Validation record
 
 - Targeted Musixmatch, production-selector, and Spotify playback-reference tests passed.
-- `./gradlew test check :app:assembleDebug` passed with 175 tests across 18 suites, Android checks, and debug APK assembly after the review fixes.
+- `./gradlew test check :app:assembleDebug` passed with 176 tests across 18 suites, Android checks, and debug APK assembly after the review fixes.
 - `bash scripts/verify-architecture.sh` and `git diff --check` passed.
 - Normal review found one current-scope failure-contract defect: a failed dedicated RichSync lookup could be hidden by a timestamp-only subtitle. Commit `a60801b` requires usable subtitle text before treating that local fallback as successful when an operational failure is pending.
 - Automatic Codex review found one current-scope P2: an unusable initial token response could be reported as no lyrics. Commit `449f7f5` surfaces API 401/403, `UpgradeOnly`, malformed, and missing-token responses when no cached token is available.
-- Targeted re-review and the added regressions passed. Two normal review rounds are complete, no unresolved P0/P1 or current-scope blocking P2 remains, and final-head CI is green. The AGENTS.md review exit condition is satisfied.
+- A user-directed targeted follow-up found the remaining API-status gap: authenticated HTTP-200/API-403 responses were treated as no result. Commit `d5b4fc1` surfaces API 403 without changing the API-401 token-refresh path and adds a valid-token macro regression.
+- Targeted/full validation passed. Two normal review rounds remain complete, no unresolved P0/P1 or current-scope blocking P2 remains, and only final-head CI needs reconfirmation.
 
 ## Scope guard
 
