@@ -2,9 +2,10 @@
 
 ## Status
 
-- Migration status: **PLANNED — not yet migrated to `main`**
+- Migration status: **AUTHORIZED — active migration branch, implementation pending**
+- Branch: `feature/musixmatch-provider-migration`
 - Default migration order: third concrete provider
-- Working-fork baseline: `8484bed2dbe8db5ca7b17dec5481b3c22714dc6f` (`v1.13.0`)
+- Working-fork baseline: `8484bed2dbe8db5ca7b17dec5481b3c22714dc6f` (`v1.13.0`), re-checked 2026-09-16
 - Reference files: `MusixmatchClient.kt`, `MusixmatchClientTest.kt`
 
 This file records Musixmatch-specific behavior only. Shared provider rules are defined in `docs/PROVIDER_ARCHITECTURE.md`.
@@ -20,7 +21,7 @@ Expected AALyrics descriptor capability: `LINE`, `WORD`.
 
 ## Spotify relationship
 
-Musixmatch is Spotify-aware, but Spotify is **not** a separate lyrics provider in the current working fork.
+Musixmatch is Spotify-aware, but Spotify is **not** a separate lyrics provider in the current working fork or this migration.
 
 When playback identity contains a valid Spotify track reference, the Musixmatch client uses the Spotify track ID as strong request/match evidence. The lyric payload still comes from Musixmatch.
 
@@ -38,11 +39,11 @@ Musixmatch RichSync / subtitle payload
 
 An explicit Spotify-ID mismatch rejects the Musixmatch candidate. Absence of a Spotify reference does not disable Musixmatch; normal metadata matching remains available.
 
-In AALyrics, Spotify resource extraction remains owned by `:platform:media`. The Musixmatch adapter consumes normalized identity/reference data only and must not depend directly on Android media APIs or the old platform helper.
+In AALyrics, Spotify resource extraction remains owned by `:platform:media`. The Musixmatch adapter consumes normalized `TrackReference` data only and must not depend directly on Android media APIs or the old platform helper.
 
 ## Current transport/authentication behavior
 
-The working implementation uses the mobile API path because the previously tested desktop endpoint produced unreliable/poisoned matches.
+The working implementation uses the anonymous mobile API path because the previously tested desktop endpoint produced unreliable/poisoned matches. Migration must preserve this strategy rather than opportunistically switching endpoints.
 
 Current high-level flow:
 
@@ -75,7 +76,7 @@ AALyrics must consume Spotify identity through normalized `TrackReference` data.
 
 ## Token/session ownership
 
-Token acquisition, TTL handling, and provider session state belong to the Musixmatch adapter/supporting provider infrastructure. The old implementation's `SharedPreferences` storage choice is not an architectural requirement.
+Token acquisition, TTL handling, and provider session state belong to the Musixmatch adapter/supporting provider infrastructure. The old implementation's `SharedPreferences` storage choice is not an architectural requirement and must not be copied into core merely to preserve storage mechanics.
 
 Do not move token/session state into `:core:lyrics` or UI modules.
 
@@ -87,11 +88,12 @@ Preserve tests/semantics around:
 - token acquisition/refresh behavior,
 - RichSync parsing and word timing,
 - line-subtitle fallback,
-- Spotify identity compatibility,
+- Spotify identity compatibility and conflict rejection,
 - instrumental rejection,
 - metadata validation,
 - malformed/missing macro sections,
-- fallback RichSync retrieval.
+- fallback RichSync retrieval,
+- provider operational failure and coroutine cancellation semantics required by AALyrics.
 
 ## AALyrics ownership
 
@@ -113,4 +115,6 @@ Outside Musixmatch:
 
 ## Migration note
 
-Musixmatch is a **PRESERVE / REFACTOR** migration, but its unofficial endpoint makes failure isolation and regression coverage particularly important. Preserve the proven mobile flow rather than switching APIs during migration unless that is separately researched and explicitly approved.
+Musixmatch is a **PRESERVE / REFACTOR** migration. Its unofficial endpoint makes failure isolation and regression coverage particularly important. Preserve the proven mobile flow, matching behavior, and fallback semantics; structural changes should be limited to fitting AALyrics ownership and provider contracts.
+
+Implementation is explicitly authorized on `feature/musixmatch-provider-migration`. The branch must still follow `TASK.md` and `AGENTS.md`, complete bounded review, and stop before merge for explicit approval.

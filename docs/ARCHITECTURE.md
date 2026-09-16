@@ -6,7 +6,7 @@ This document defines the architectural boundaries for AALyrics. The project was
 
 AALyrics is a greenfield codebase, but not a greenfield behavior specification. The working `whoxamxl/auto-lyrics` fork is treated as a behavioral reference and regression oracle. Proven behavior should not be re-invented merely because the new module structure is different.
 
-The Core Readiness Gate completed in PR #14. Post-gate migration now preserves mature behavior behind the boundaries established before adaptation began. Production candidate selection was migrated in PR #17 and LRCLIB in PR #19; the PetitLyrics adapter is the current migration slice.
+The Core Readiness Gate completed in PR #14. Production candidate selection was migrated in PR #17, LRCLIB in PR #19, and PetitLyrics in PR #20. Musixmatch is the current explicitly authorized provider-migration slice on `feature/musixmatch-provider-migration`.
 
 ## Design goals
 
@@ -60,17 +60,19 @@ Pure Kotlin AALyrics orchestration. It owns application lyrics state, provider o
 
 Pure Kotlin production implementation of the `CandidateSelector` port.
 
-This module owns cross-provider matching/ranking policy, including the mature metadata, payload-quality, source-confidence, synchronized/plain fallback, cross-script, recording-version, and karaoke-preference behavior adapted from the working fork. Generic matching/version helpers historically embedded in `LrcLibClient` live in `:provider:matching`, shared with LRCLIB without depending on selector implementation.
+This module owns cross-provider matching/ranking policy, including the mature metadata, payload-quality, source-confidence, synchronized/plain fallback, cross-script, recording-version, and karaoke-preference behavior adapted from the working fork. Generic matching/version helpers historically embedded in `LrcLibClient` live in `:provider:matching`, shared where appropriate without making providers depend on selector implementation.
 
 Provider-specific source-confidence policy is intentionally outside `:core:lyrics`. This preserves dependency inversion: core knows the selector interface, while the composition root may inject `CrossProviderCandidateSelector` without making core depend on its implementation.
 
 Concrete provider networking, parsing, authentication, and provider-local search strategy do not belong in this module.
 
-The neutral `:provider:matching` module owns the preserved generic title, artist, duration, recording-version, and metadata-plausibility semantics. It has no production dependencies. Selection, LRCLIB, and PetitLyrics reuse the relevant functions; payload quality, source confidence, cross-provider weights, and winner policy remain in selection.
+The neutral `:provider:matching` module owns preserved provider-neutral title, artist, duration, recording-version, and metadata-plausibility semantics. Selection, LRCLIB, and PetitLyrics reuse the relevant functions. Musixmatch may reuse only genuinely provider-neutral matching semantics required to preserve its local validation; payload quality, source confidence, cross-provider weights, and winner policy remain in selection.
 
 ### `:provider:matching` and `:provider:lrc`
 
 Pure Kotlin outer utilities. Matching owns shared metadata/version semantics; LRC owns the preserved ordinary/enhanced parser normalized to core model timing types. Neither utility owns provider networking or application state. The LRC parser retains enhanced word-timing regression coverage, while LRCLIB uses ordinary line parsing and advertises only PLAIN/LINE.
+
+Musixmatch RichSync is provider-native JSON timing and belongs in the Musixmatch adapter rather than being forced through the LRC parser.
 
 ### Concrete provider modules
 
@@ -78,11 +80,15 @@ Concrete providers are outer adapters implementing `LyricsProvider`.
 
 Each provider owns only its provider-local transport/authentication, query/fallback strategy, DTOs, parsing, provider-local validation, and normalization into `LyricsCandidate`. A provider may report provider-neutral evidence discovered during search, but it must not decide the final winner across providers.
 
+LRCLIB and PetitLyrics are migrated. Musixmatch is the current migration slice; its anonymous mobile token/session mechanics, macro requests, RichSync/subtitle parsing, Spotify-reference validation, and provider-local fallbacks stay inside its adapter.
+
 Shared policy is defined in `docs/PROVIDER_ARCHITECTURE.md`; concise provider profiles live in `docs/providers/`.
 
 ### `:platform:media`
 
 Android-specific media-session adaptation. Its job is to translate Android `MediaController` / `MediaMetadata` / `PlaybackState` values into provider-independent playback/domain models. It may contain source-specific playback identity extraction such as Spotify resource parsing, but it does not fetch or rank lyrics.
+
+Spotify playback identity is intentionally separate from lyrics-provider ownership. A normalized Spotify `TrackReference` may be consumed by Musixmatch as request/match evidence, but the lyric payload remains Musixmatch-owned. This does not create a Spotify lyrics provider.
 
 ### `:feature:phone`
 
@@ -113,7 +119,7 @@ Android Auto presentation only. It consumes the same application/domain state as
 
 The diagram is a compile-time dependency sketch, not a runtime call-order diagram. `:provider:selection` depends on the selector port in `:core:lyrics`; `:core:lyrics` never depends on `:provider:selection`.
 
-Concrete provider modules depend on `:provider:api` and normalized model types required by that contract. The domain must never depend on a concrete provider. LRCLIB, PetitLyrics, and selection share `:provider:matching`; LRCLIB also uses `:provider:lrc`. These utilities remain outside core orchestration.
+Concrete provider modules depend on `:provider:api` and normalized model types required by that contract. The domain must never depend on a concrete provider. Provider-neutral shared matching may be used by adapters and selection without creating provider-to-selector dependencies.
 
 ## Runtime state flow
 
@@ -207,6 +213,8 @@ The current production policy preserves these important semantics:
 - a WORD preference may choose a real word-timed candidate only when metadata and payload quality remain near-equivalent,
 - exact score ties use a stable candidate key so provider execution order does not become winner policy.
 
+Musixmatch may provide normalized facts such as Spotify identity compatibility and artist-query corroboration, but it must not add a second provider-local version of global winner scoring.
+
 ### `LyricsState`
 
 Represents the observable domain state consumed by presentation layers. Loading, resolved, unavailable, degraded, and failure states are explicit and are not inferred from UI widgets or nullable Android-specific fields.
@@ -222,6 +230,7 @@ Represents the observable domain state consumed by presentation layers. Loading,
 - Android framework types must not cross into `:core:model`, `:core:lyrics`, or `:provider:api`.
 - Existing proven matching/scoring behavior must not be replaced without explicit regression evidence and a documented reason.
 - Concrete providers surface operational failures according to the provider contract instead of silently converting every failure into a no-result outcome.
+- Provider-local cancellation should cancel underlying HTTP work where practical.
 
 ## Architecture guardrails
 
