@@ -30,15 +30,16 @@
 - [x] Inspect `MusixmatchClient.kt`, all reference tests, and relevant call sites in the working fork.
 - [x] Implement/refactor the provider behind AALyrics boundaries.
 - [x] Port/add regression coverage.
-- [ ] Run full validation and bounded review.
-- [ ] Open PR and stop before merge.
+- [x] Run full validation and bounded review.
+- [x] Open PR #21 and stop before merge.
 
 ## Validation record
 
 - Targeted Musixmatch, production-selector, and Spotify playback-reference tests passed.
-- `./gradlew test check :app:assembleDebug` passed with 173 tests across 18 suites, Android checks, and debug APK assembly.
+- `./gradlew test check :app:assembleDebug` passed with 174 tests across 18 suites, Android checks, and debug APK assembly after the review fix.
 - `bash scripts/verify-architecture.sh` and `git diff --check` passed.
-- Bounded PR review and final-head CI remain pending.
+- Normal review found one current-scope failure-contract defect: a failed dedicated RichSync lookup could be hidden by a timestamp-only subtitle. Commit `a60801b` requires usable subtitle text before treating that local fallback as successful when an operational failure is pending.
+- Targeted re-review and the added regression passed. No unresolved P0/P1 or current-scope blocking P2 remains; final-head CI remains pending.
 
 ## Scope guard
 
