@@ -1,11 +1,11 @@
-package io.github.whoxamxl.aalyrics.provider.selection
+package io.github.whoxamxl.aalyrics.provider.matching
 
 import java.text.Normalizer
 import java.util.Locale
 import kotlin.math.abs
 import kotlin.math.min
 
-internal object MetadataMatching {
+object MetadataMatching {
     private const val MAX_DURATION_DELTA_MS = 15_000L
     private const val CONTRIBUTOR_COMPONENT_SCORE = 0.95
 
@@ -39,9 +39,11 @@ internal object MetadataMatching {
         candidateTitle: String,
         requestedAlbum: String = "",
         candidateAlbum: String = "",
+        candidateInstrumental: Boolean = false,
     ): Boolean {
         val requestedTitleVersions = RecordingVersionContext.extractTitleVersionQualifiers(requestedTitle)
-        val candidateTitleVersions = RecordingVersionContext.extractTitleVersionQualifiers(candidateTitle)
+        val candidateTitleVersions = RecordingVersionContext.extractTitleVersionQualifiers(candidateTitle) +
+            if (candidateInstrumental) setOf("instrumental") else emptySet()
         if (requestedTitleVersions == candidateTitleVersions) return true
 
         if (requestedTitleVersions.isNotEmpty() && candidateTitleVersions.isNotEmpty()) {
@@ -77,6 +79,18 @@ internal object MetadataMatching {
         }
 
         val delta = abs(candidateMs - requestedMs)
+        return durationDeltaScore(delta.toDouble())
+    }
+
+    /** Provider-native seconds, retaining fractional precision at threshold boundaries. */
+    fun durationSimilaritySeconds(requestedSec: Int, candidateSec: Double?): Double? {
+        if (requestedSec <= 0 || candidateSec == null || !candidateSec.isFinite() || candidateSec <= 0) {
+            return null
+        }
+        return durationDeltaScore(abs(candidateSec - requestedSec) * 1_000)
+    }
+
+    private fun durationDeltaScore(delta: Double): Double {
         if (delta > MAX_DURATION_DELTA_MS) return -1.0
 
         return when {
@@ -213,7 +227,7 @@ internal object MetadataMatching {
             .trim()
     }
 
-    private fun stripFeaturing(value: String): String {
+    fun stripFeaturing(value: String): String {
         return value.replace(FEAT_SUFFIX, "").trim().ifBlank { value.trim() }
     }
 }

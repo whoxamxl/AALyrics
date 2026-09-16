@@ -127,30 +127,11 @@ The working fork was re-checked against `8484bed2dbe8db5ca7b17dec5481b3c22714dc6
 
 ## Current work
 
-### Provider migration policy and profiles
+### LRCLIB provider migration
 
-Before concrete provider migration resumes, the project is documenting one shared provider architecture and concise provider-specific profiles.
+The explicitly authorized LRCLIB PRESERVE / REFACTOR slice implements the first concrete adapter, pending merge. It preserves working-fork discovery and regression behavior, extracts neutral shared matching and LRC parsing, and conforms to provider failure/cancellation/normalization contracts. Application wiring and the remaining providers are separate work.
 
-The durable structure is:
-
-```text
-docs/ARCHITECTURE.md
-    overall AALyrics architecture
-
-docs/PROVIDER_ARCHITECTURE.md
-    shared provider ownership + migration rules
-
-docs/providers/*.md
-    provider-specific capabilities, quirks, invariants, and migration status
-
-docs/MIGRATION_INVENTORY.md
-    PRESERVE / REFACTOR / REWRITE / DROP classification
-
-AGENTS.md
-    execution, authorization, PR, and review rules
-```
-
-This documentation work does **not** authorize concrete provider implementation. Provider implementation begins only after explicit user authorization.
+Shared migration policy and provider profiles are already documented. This slice does not authorize implementation of the remaining providers.
 
 ## Next
 

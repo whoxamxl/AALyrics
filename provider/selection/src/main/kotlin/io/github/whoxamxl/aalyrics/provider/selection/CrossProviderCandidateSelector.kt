@@ -1,5 +1,8 @@
 package io.github.whoxamxl.aalyrics.provider.selection
 
+import io.github.whoxamxl.aalyrics.provider.matching.MetadataMatching
+import io.github.whoxamxl.aalyrics.provider.matching.RecordingVersionContext
+
 import io.github.whoxamxl.aalyrics.core.lyrics.CandidateSelectionPreferences
 import io.github.whoxamxl.aalyrics.core.lyrics.CandidateSelector
 import io.github.whoxamxl.aalyrics.core.model.LyricLine
