@@ -25,9 +25,11 @@
 
 - [x] Verify current remote branch/main and preserve configuration documentation.
 - [x] Inspect required documents and latest working-fork behavior/tests/call sites.
-- [ ] Extract shared metadata score without changing selector policy.
+- [x] Extract shared metadata score without changing selector policy.
 - [ ] Migrate PetitLyrics configuration, discovery, transport and WSY/LSY parsing.
 - [ ] Preserve/add regression coverage and update migration documents.
 - [ ] Run targeted tests and full repository validation.
 - [ ] Open PR and complete bounded review under AGENTS.md.
 - [ ] Stop before merge for explicit approval.
+
+Shared matching and selector regression suites passed after extraction. All 10 original PetitLyrics client regressions are ported with normalized domain types and injected fake configuration.

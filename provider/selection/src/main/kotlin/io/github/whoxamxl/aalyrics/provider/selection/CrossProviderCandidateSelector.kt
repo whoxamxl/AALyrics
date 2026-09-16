@@ -1,7 +1,6 @@
 package io.github.whoxamxl.aalyrics.provider.selection
 
-import io.github.whoxamxl.aalyrics.provider.matching.MetadataMatching
-import io.github.whoxamxl.aalyrics.provider.matching.RecordingVersionContext
+import io.github.whoxamxl.aalyrics.provider.matching.MetadataMatchScore
 
 import io.github.whoxamxl.aalyrics.core.lyrics.CandidateSelectionPreferences
 import io.github.whoxamxl.aalyrics.core.lyrics.CandidateSelector
@@ -77,88 +76,17 @@ class CrossProviderCandidateSelector : CandidateSelector {
         }
     }
 
-    internal fun metadataScore(track: Track, candidate: LyricsCandidate): Double? {
-        val candidateTrack = candidate.matchedTrack
-        val requestedAlbum = track.album.orEmpty()
-        val candidateAlbum = candidateTrack.album.orEmpty()
-
-        if (
-            !MetadataMatching.versionsCompatible(
-                requestedTitle = track.title,
-                candidateTitle = candidateTrack.title,
-                requestedAlbum = requestedAlbum,
-                candidateAlbum = candidateAlbum,
-            )
-        ) {
-            return null
-        }
-
-        val titleScore = MetadataMatching.stringSimilarity(track.title, candidateTrack.title)
-        if (titleScore < MIN_TITLE_SCORE) return null
-
-        val durationScore = MetadataMatching.durationSimilarity(
-            requestedMs = track.durationMs,
-            candidateMs = candidateTrack.durationMs,
-        )
-        if (durationScore != null && durationScore < 0.0) return null
-
-        val albumScore = if (
-            requestedAlbum.isNotBlank() &&
-            candidateAlbum.isNotBlank() &&
-            candidateAlbum != "-"
-        ) {
-            val raw = MetadataMatching.stringSimilarity(requestedAlbum, candidateAlbum)
-            if (raw < 0.20 && scriptsClearlyDifferent(requestedAlbum, candidateAlbum)) null else raw
-        } else {
-            null
-        }
-
-        val requestedArtist = track.artists.joinToString(", ")
-        val candidateArtist = candidateTrack.artists.joinToString(", ")
-        val rawArtistScore = if (requestedArtist.isNotBlank() && candidateArtist.isNotBlank()) {
-            MetadataMatching.artistSimilarity(
-                left = requestedArtist,
-                right = candidateArtist,
-                allowContributorComponents = titleScore >= 0.95,
-            )
-        } else {
-            null
-        }
-
-        val crossScriptArtist = rawArtistScore != null &&
-            rawArtistScore < MIN_ARTIST_SCORE &&
-            titleScore >= 0.95 &&
-            scriptsClearlyDifferent(requestedArtist, candidateArtist)
-        val secondaryEvidence =
-            candidate.evidence.artistQueryCorroborated ||
-                (albumScore != null && albumScore >= CROSS_SCRIPT_ALBUM_EVIDENCE) ||
-                (durationScore != null && durationScore >= 0.85)
-
-        val artistScore = if (crossScriptArtist && secondaryEvidence) null else rawArtistScore
-
-        if (artistScore != null && artistScore < MIN_ARTIST_SCORE) {
-            val strongTitleAndDuration = titleScore >= 0.95 && (durationScore ?: 0.0) >= 0.85
-            if (!strongTitleAndDuration) return null
-        }
-
-        var weighted = titleScore * 0.55
-        var totalWeight = 0.55
-
-        if (artistScore != null) {
-            weighted += artistScore * 0.30
-            totalWeight += 0.30
-        }
-        if (durationScore != null) {
-            weighted += durationScore * 0.12
-            totalWeight += 0.12
-        }
-        if (albumScore != null) {
-            weighted += albumScore * 0.03
-            totalWeight += 0.03
-        }
-
-        return (weighted / totalWeight).coerceIn(0.0, 1.0)
-    }
+    internal fun metadataScore(track: Track, candidate: LyricsCandidate): Double? = MetadataMatchScore.score(
+        requestedTitle = track.title,
+        candidateTitle = candidate.matchedTrack.title,
+        requestedArtist = track.artists.joinToString(", "),
+        candidateArtist = candidate.matchedTrack.artists.joinToString(", "),
+        requestedAlbum = track.album.orEmpty(),
+        candidateAlbum = candidate.matchedTrack.album.orEmpty(),
+        requestedDurationMs = track.durationMs,
+        candidateDurationMs = candidate.matchedTrack.durationMs,
+        artistQueryCorroborated = candidate.evidence.artistQueryCorroborated,
+    )
 
     internal fun lyricsQualityScore(
         candidate: LyricsCandidate,
@@ -315,17 +243,6 @@ class CrossProviderCandidateSelector : CandidateSelector {
         }
     }
 
-    private fun scriptsClearlyDifferent(left: String, right: String): Boolean {
-        if (left.isBlank() || right.isBlank()) return false
-        val leftJapanese = containsJapanese(left)
-        val rightJapanese = containsJapanese(right)
-        val leftLatin = LATIN_SCRIPT.containsMatchIn(left)
-        val rightLatin = LATIN_SCRIPT.containsMatchIn(right)
-
-        return (leftJapanese && !leftLatin && rightLatin && !rightJapanese) ||
-            (rightJapanese && !rightLatin && leftLatin && !leftJapanese)
-    }
-
     private fun containsJapanese(value: String): Boolean = JAPANESE_SCRIPT.containsMatchIn(value)
 
     internal data class CandidateScore(
@@ -344,9 +261,6 @@ class CrossProviderCandidateSelector : CandidateSelector {
 
     private companion object {
         const val MIN_METADATA_SCORE = 0.70
-        const val MIN_TITLE_SCORE = 0.60
-        const val MIN_ARTIST_SCORE = 0.40
-        const val CROSS_SCRIPT_ALBUM_EVIDENCE = 0.65
 
         const val METADATA_WEIGHT = 0.82
         const val QUALITY_WEIGHT = 0.10
