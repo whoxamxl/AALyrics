@@ -26,10 +26,12 @@
 - [x] Verify current remote branch/main and preserve configuration documentation.
 - [x] Inspect required documents and latest working-fork behavior/tests/call sites.
 - [x] Extract shared metadata score without changing selector policy.
-- [ ] Migrate PetitLyrics configuration, discovery, transport and WSY/LSY parsing.
-- [ ] Preserve/add regression coverage and update migration documents.
+- [x] Migrate PetitLyrics configuration, discovery, transport and WSY/LSY parsing.
+- [x] Preserve/add regression coverage; migration-document updates remain.
 - [ ] Run targeted tests and full repository validation.
 - [ ] Open PR and complete bounded review under AGENTS.md.
 - [ ] Stop before merge for explicit approval.
 
 Shared matching and selector regression suites passed after extraction. All 10 original PetitLyrics client regressions are ported with normalized domain types and injected fake configuration.
+
+PetitLyrics provider validation: the 10 preserved client regressions and 10 deterministic MockWebServer/configuration/cancellation tests pass. Fake CI-style environment values were verified to override the ignored local configuration source without reading or printing real values.
