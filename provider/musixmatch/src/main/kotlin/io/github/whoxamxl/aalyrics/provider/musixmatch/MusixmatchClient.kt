@@ -182,7 +182,7 @@ internal class MusixmatchClient(
         return when (val status = apiStatus(response.json)) {
             200 -> response.json
             null, 404 -> null
-            else -> if (status == 429 || status >= 500 || status == 401) {
+            else -> if (status == 429 || status >= 500 || status == 401 || status == 403) {
                 throw IOException("Musixmatch API $status for $endpoint")
             } else {
                 null

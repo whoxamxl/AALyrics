@@ -231,6 +231,17 @@ class MusixmatchProviderTest {
     }
 
     @Test
+    fun authenticatedMacroApi403SurfacesWithoutTokenRefresh() = withServer { server, provider ->
+        server.enqueueJson(tokenResponse("valid-token"))
+        server.enqueueJson(apiResponse(403))
+
+        val error = assertFailsWith<IOException> { provider.search(request) }
+
+        assertEquals("Musixmatch API 403 for macro.subtitles.get", error.message)
+        assertEquals(listOf("token.get", "macro.subtitles.get"), server.requestEndpoints())
+    }
+
+    @Test
     fun malformedMacroReturnsEmptyAndOperationalTokenFailureSurfaces() = withServer { server, provider ->
         server.enqueueJson(tokenResponse("token"))
         server.enqueue(MockResponse().setBody("{broken"))
