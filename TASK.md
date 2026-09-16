@@ -29,8 +29,8 @@
 - [x] Migrate PetitLyrics configuration, discovery, transport and WSY/LSY parsing.
 - [x] Preserve/add regression coverage and update migration documents.
 - [x] Run targeted tests and full repository validation.
-- [ ] Open PR and complete bounded review under AGENTS.md.
-- [ ] Stop before merge for explicit approval.
+- [x] Open PR #20 and complete bounded review under AGENTS.md.
+- [x] Stop before merge; explicit user approval remains required.
 
 Shared matching and selector regression suites passed after extraction. All 10 original PetitLyrics client regressions are ported with normalized domain types and injected fake configuration.
 
@@ -38,4 +38,11 @@ PetitLyrics provider validation: the 10 preserved client regressions and 10 dete
 
 Full validation passed with fake configuration: 145 tests across 16 suites, Android lint/checks, debug APK assembly, architecture guardrail, and diff whitespace checks.
 
-Bounded review round 1 found one current-scope credential exposure: repository secrets were initially available to same-repository pull-request jobs. The fix restricts secret injection to trusted `main` push builds; PR builds use empty values and provider tests continue to use fakes. A targeted re-check is required before closing review.
+## Bounded review record
+
+- PR: https://github.com/whoxamxl/AALyrics/pull/20
+- Normal round 1 reviewed the PR head against this task, the PR description, architecture, inventory, roadmap, and PetitLyrics profile.
+- One current-scope credential exposure was found: repository secrets were initially available to same-repository pull-request jobs. Commit `e84c3a9` restricts secret injection to trusted `main` push builds; PR builds use empty values and provider tests use fakes.
+- Targeted re-review rebuilt the app and reran the PetitLyrics suite with all four values empty, inspected the workflow condition and configuration documentation, and verified final-head CI at `e84c3a9` was green.
+- Discovery/ranking, WSY/LSY parsing, ID/metadata companion fallback, failure/cancellation, normalized output, shared-matching ownership, and unchanged selector regressions were reviewed. No unresolved P0/P1 or current-scope blocking P2 remains.
+- The latest targeted review has no material in-scope findings. Under the AGENTS.md exit condition, broad review stops here. No merge or application provider wiring was performed.
