@@ -41,7 +41,7 @@
 - Normal review found one current-scope failure-contract defect: a failed dedicated RichSync lookup could be hidden by a timestamp-only subtitle. Commit `a60801b` requires usable subtitle text before treating that local fallback as successful when an operational failure is pending.
 - Automatic Codex review found one current-scope P2: an unusable initial token response could be reported as no lyrics. Commit `449f7f5` surfaces API 401/403, `UpgradeOnly`, malformed, and missing-token responses when no cached token is available.
 - A user-directed targeted follow-up found the remaining API-status gap: authenticated HTTP-200/API-403 responses were treated as no result. Commit `d5b4fc1` surfaces API 403 without changing the API-401 token-refresh path and adds a valid-token macro regression.
-- Targeted/full validation passed. Two normal review rounds remain complete, no unresolved P0/P1 or current-scope blocking P2 remains, and only final-head CI needs reconfirmation.
+- Targeted/full validation and final-head CI passed. Two normal review rounds remain complete, no unresolved P0/P1 or current-scope blocking P2 remains, and the review exit condition is satisfied.
 
 ## Scope guard
 
