@@ -122,7 +122,7 @@ Implementation is explicitly authorized on `feature/musixmatch-provider-migratio
 ## Implemented adaptation
 
 - `:provider:musixmatch` exposes `MusixmatchProvider` with `LINE` and `WORD` capabilities and keeps the mobile endpoint, headers, query fields, token flow, macro parsing, and RichSync fallback inside the adapter.
-- The 60-second token session is adapter-owned and in memory. A rejected HTTP/API token is invalidated, reacquired, and retried once; Android `SharedPreferences` is not part of the provider boundary.
+- The 60-second token session is adapter-owned and in memory. A rejected HTTP/API token is invalidated, reacquired, and retried once; an unusable initial token response is an operational failure when no cached token exists. Android `SharedPreferences` is not part of the provider boundary.
 - Embedded RichSync remains preferred. A missing payload triggers `track.richsync.get`; an operational failure there still permits a valid macro subtitle, and is surfaced when no local lyric fallback succeeds.
 - RichSync line and word offsets are converted from seconds to domain milliseconds. Line subtitles reuse the neutral LRC parser, while Musixmatch JSON parsing remains provider-local.
 - Spotify evidence is read only from a valid normalized `TrackReference(namespace = "spotify", ...)`. Exact returned-ID conflicts are rejected; absent returned IDs retain metadata validation.
