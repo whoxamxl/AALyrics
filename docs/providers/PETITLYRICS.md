@@ -2,7 +2,7 @@
 
 ## Status
 
-- Migration status: **PLANNED — not yet migrated to `main`**
+- Migration status: **IMPLEMENTED in PetitLyrics migration slice — pending merge**
 - Default migration order: second concrete provider
 - Working-fork baseline: `8484bed2dbe8db5ca7b17dec5481b3c22714dc6f` (`v1.13.0`)
 - Reference files: `PetitLyricsClient.kt`, `PetitLyricsClientTest.kt`
@@ -94,3 +94,15 @@ Outside PetitLyrics:
 ## Migration note
 
 PetitLyrics is a **PRESERVE / REFACTOR** migration. Do not simplify away mature fallback or decoding behavior merely to make the adapter smaller. Structural cleanup is welcome only when regression semantics remain covered.
+
+## Implemented adapter and intentional adaptations
+
+- `:provider:petitlyrics` exposes `PetitLyricsProvider`, implementing `LyricsProvider` with `LINE` and `WORD` capabilities. Configuration, HTTP client, endpoint, and app version metadata are injected for deterministic tests and later composition-root wiring.
+- The four immutable configuration keys are generated into the app BuildConfig from environment variables first, then ignored root `secrets.properties.local`. CI exposes the same repository-secret names to both build and test steps. Actual values are never committed or logged; configuration string output reports only completeness.
+- Discovery preserves title+artist+album, title+artist, and title-only order, local metadata ranking, word-before-line tie preference, attempted-result deduplication, and artist-query corroboration evidence.
+- WSY preserves word text spacing, absolute start/end timing, timed blank lines, ordering, and duplicate-line removal. LSY preserves protection-key permutation, centisecond rollover, line/text pairing, blank-line markers, and malformed payload rejection.
+- Type-2 companion text is still resolved by lyrics ID first. Missing, unusable, or failed ID lookup falls back to provider-native metadata and locally ranks the type-1 candidates rather than trusting response order.
+- Neutral metadata plausibility moved from the production selector into `:provider:matching` without changing its calculation. PetitLyrics keeps duration out of local/global matching because its response units are ambiguous.
+- Individual request failures do not prevent the mature provider-local fallback sequence. When discovery exhausts without a usable candidate, the first operational failure is surfaced; coroutine cancellation cancels the in-flight OkHttp call. Malformed provider data remains a rejected result rather than an operational failure.
+- Provider response metadata is normalized without inventing missing artist, album, or duration. Candidates missing the required title are rejected, and attribution retains the PetitLyrics lyrics ID.
+- Application provider wiring and later providers remain separate work.
