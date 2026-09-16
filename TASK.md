@@ -1,48 +1,41 @@
-# Musixmatch Provider Migration
+# SyncLRC Provider Migration
 
 ## Branch and baseline
 
-- Branch: `feature/musixmatch-provider-migration`.
-- Base: main `839d2bd` after PetitLyrics PR #20 merged.
+- Branch: `feature/synclrc-provider-migration`.
+- Base: main `a90b525` after Musixmatch PR #21 merged.
 - Working fork: `whoxamxl/auto-lyrics` main `8484bed2dbe8db5ca7b17dec5481b3c22714dc6f` (`v1.13.0`), re-checked on 2026-09-16 before implementation.
 - Classification: **PRESERVE / REFACTOR**.
-- Read `AGENTS.md`, `docs/ARCHITECTURE.md`, `docs/ROADMAP.md`, `docs/MIGRATION_INVENTORY.md`, `docs/PROVIDER_ARCHITECTURE.md`, and `docs/providers/MUSIXMATCH.md` before changing production code.
-- User explicitly authorized Musixmatch implementation on this branch.
+- Read `AGENTS.md`, `docs/ARCHITECTURE.md`, `docs/ROADMAP.md`, `docs/MIGRATION_INVENTORY.md`, `docs/PROVIDER_ARCHITECTURE.md`, and `docs/providers/SYNCLRC.md` before changing production code.
+- User explicitly authorized SyncLRC implementation on this branch.
 
 ## Acceptance criteria
 
-- Preserve the proven anonymous mobile API flow; do not switch endpoint strategy during migration.
-- Implement Musixmatch behind `LyricsProvider` with `LINE` and `WORD` capabilities.
-- Preserve token acquisition/refresh, `macro.subtitles.get`, embedded RichSync, dedicated `track.richsync.get` fallback, and subtitle fallback.
-- Consume Spotify identity only through normalized `TrackReference`; Spotify is not a lyrics provider.
-- Use Spotify ID as strong match evidence when present and reject explicit Spotify-ID conflicts.
-- Preserve metadata validation, instrumental rejection, artist-query corroboration, malformed/missing-response handling, and cancellation/failure isolation.
-- Normalize RichSync word timing and line subtitles into AALyrics domain models without moving provider logic into core or UI.
-- Port working-fork Musixmatch regression coverage and add deterministic transport/cancellation/failure tests where required by AALyrics contracts.
-- Do not change global candidate-selection policy, LRCLIB, PetitLyrics, SyncLRC, application wiring, cache, translation, or UI except where a neutral shared helper is genuinely required.
-- Run targeted tests plus `./gradlew test check :app:assembleDebug`, architecture checks, and bounded review. Stop before merge for explicit user approval.
+- Preserve SyncLRC's deliberately narrow karaoke-only role; do not broaden it into a generic plain/line provider.
+- Implement SyncLRC behind `LyricsProvider` with descriptor capability `WORD` only.
+- Preserve request gating from the working fork: only perform the network lookup when `LyricsRequest.preferredSyncType == WORD`; otherwise return no candidates without calling SyncLRC.
+- Preserve the public `GET /lyrics` request shape: nonblank track + artist, `type=karaoke`, optional album, and duration rounded to seconds.
+- Preserve compatibility with the current `karaoke` field and the legacy `lyrics` + `type=karaoke` response shape.
+- Reject synced/plain-only responses from a karaoke request, instrumental responses, malformed payloads, empty/placeholder lyric content, and karaoke payloads without genuine timed word tokens.
+- Reuse the shared `:provider:lrc` Enhanced-LRC parser (`LrcParser.parseKaraoke`) rather than creating provider-local timing syntax.
+- Preserve provider metadata when supplied; fall back to requested title/artist/album where the API omits them. Normalize duration seconds to domain milliseconds and report artist-query corroboration when an artist constraint was sent.
+- Keep global metadata scoring, source confidence, WORD-vs-LINE preference, and final winner policy in `:provider:selection`; SyncLRC must not introduce a second selector.
+- Follow the provider contract: no acceptable karaoke result -> empty list; operational/network/service failure -> exception; coroutine cancellation propagates and cancels underlying HTTP work where practical.
+- Port all working-fork SyncLRC regressions and add deterministic AALyrics coverage for request construction/preference gating, transport/service failure, normalization, and cancellation.
+- Do not change LRCLIB, PetitLyrics, Musixmatch, global candidate-selection policy, application wiring, cache, translation, UI, or karaoke rendering except for a genuinely neutral shared helper if required.
+- Run targeted tests plus `./gradlew test check :app:assembleDebug`, `bash scripts/verify-architecture.sh`, and `git diff --check`. Open a PR, complete bounded review, and stop before merge for explicit user approval.
 
 ## Plan/status
 
-- [x] Create branch from post-PR #20 main.
-- [x] Re-check working-fork main baseline.
-- [x] Align architecture, roadmap, migration inventory, provider profile, and branch task for Musixmatch.
-- [x] Inspect `MusixmatchClient.kt`, all reference tests, and relevant call sites in the working fork.
-- [x] Implement/refactor the provider behind AALyrics boundaries.
-- [x] Port/add regression coverage.
-- [x] Run full validation and bounded review.
-- [x] Open PR #21 and stop before merge.
-
-## Validation record
-
-- Targeted Musixmatch, production-selector, and Spotify playback-reference tests passed.
-- `./gradlew test check :app:assembleDebug` passed with 176 tests across 18 suites, Android checks, and debug APK assembly after the review fixes.
-- `bash scripts/verify-architecture.sh` and `git diff --check` passed.
-- Normal review found one current-scope failure-contract defect: a failed dedicated RichSync lookup could be hidden by a timestamp-only subtitle. Commit `a60801b` requires usable subtitle text before treating that local fallback as successful when an operational failure is pending.
-- Automatic Codex review found one current-scope P2: an unusable initial token response could be reported as no lyrics. Commit `449f7f5` surfaces API 401/403, `UpgradeOnly`, malformed, and missing-token responses when no cached token is available.
-- A user-directed targeted follow-up found the remaining API-status gap: authenticated HTTP-200/API-403 responses were treated as no result. Commit `d5b4fc1` surfaces API 403 without changing the API-401 token-refresh path and adds a valid-token macro regression.
-- Targeted/full validation and final-head CI passed. Two normal review rounds remain complete, no unresolved P0/P1 or current-scope blocking P2 remains, and the review exit condition is satisfied.
+- [x] Create branch from post-PR #21 main.
+- [x] Re-check working-fork main baseline and current public SyncLRC API contract.
+- [x] Inspect `SyncLrcClient.kt`, all reference tests, the shared karaoke parser, and relevant `MediaTracker` call sites.
+- [x] Align architecture, roadmap, migration inventory, provider profile, README, and branch task for SyncLRC.
+- [ ] Implement/refactor the provider behind AALyrics boundaries.
+- [ ] Port/add regression coverage.
+- [ ] Run full validation and bounded review.
+- [ ] Open PR and stop before merge.
 
 ## Scope guard
 
-This branch is a Musixmatch provider migration, not a general application-wiring or UI branch. Preserve mature behavior where it is already proven; change ownership only where required by AALyrics architecture.
+This branch is a SyncLRC karaoke-provider migration, not a general karaoke-rendering, application-wiring, or UI branch. Preserve mature provider behavior and move only the ownership required by AALyrics architecture.

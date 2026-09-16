@@ -2,8 +2,8 @@
 
 ## Status
 
-- Migration status: **IMPLEMENTED — validation passed, pending PR review and merge**
-- Branch: `feature/musixmatch-provider-migration`
+- Migration status: **MIGRATED — merged in PR #21**
+- Migration branch: `feature/musixmatch-provider-migration`
 - Default migration order: third concrete provider
 - Working-fork baseline: `8484bed2dbe8db5ca7b17dec5481b3c22714dc6f` (`v1.13.0`), re-checked 2026-09-16
 - Reference files: `MusixmatchClient.kt`, `MusixmatchClientTest.kt`
@@ -43,7 +43,7 @@ In AALyrics, Spotify resource extraction remains owned by `:platform:media`. The
 
 ## Current transport/authentication behavior
 
-The working implementation uses the anonymous mobile API path because the previously tested desktop endpoint produced unreliable/poisoned matches. Migration must preserve this strategy rather than opportunistically switching endpoints.
+The working implementation uses the anonymous mobile API path because the previously tested desktop endpoint produced unreliable/poisoned matches. Migration preserved this strategy rather than switching endpoints.
 
 Current high-level flow:
 
@@ -59,9 +59,9 @@ matcher metadata + subtitle / optional RichSync
 track.richsync.get fallback when required
 ```
 
-The endpoint is unofficial and must remain isolated as a provider implementation detail. Failure of this provider must not destabilize the rest of the application.
+The endpoint is unofficial and remains isolated as a provider implementation detail. Failure of this provider must not destabilize the rest of the application.
 
-## Mature validation behavior to preserve
+## Mature validation behavior preserved
 
 - validate matched metadata before emitting a candidate,
 - reject instrumental matches for a vocal request,
@@ -72,17 +72,17 @@ The endpoint is unofficial and must remain isolated as a provider implementation
 - fall back to line-synchronized subtitle content when RichSync is unavailable,
 - report whether an artist-constrained request corroborated the result.
 
-AALyrics must consume Spotify identity through normalized `TrackReference` data. The provider must not depend on Android `MediaSession` metadata or the old `SpotifyTrackIdentity` platform helper directly.
+AALyrics consumes Spotify identity through normalized `TrackReference` data. The provider does not depend on Android `MediaSession` metadata or the old `SpotifyTrackIdentity` platform helper directly.
 
 ## Token/session ownership
 
-Token acquisition, TTL handling, and provider session state belong to the Musixmatch adapter/supporting provider infrastructure. The old implementation's `SharedPreferences` storage choice is not an architectural requirement and must not be copied into core merely to preserve storage mechanics.
+Token acquisition, TTL handling, and provider session state belong to the Musixmatch adapter/supporting provider infrastructure. The old implementation's `SharedPreferences` storage choice was not retained as an architectural requirement.
 
 Do not move token/session state into `:core:lyrics` or UI modules.
 
 ## Regression-sensitive behavior
 
-Preserve tests/semantics around:
+Preserved tests/semantics include:
 
 - mobile macro query construction,
 - token acquisition/refresh behavior,
@@ -115,9 +115,9 @@ Outside Musixmatch:
 
 ## Migration note
 
-Musixmatch is a **PRESERVE / REFACTOR** migration. Its unofficial endpoint makes failure isolation and regression coverage particularly important. Preserve the proven mobile flow, matching behavior, and fallback semantics; structural changes should be limited to fitting AALyrics ownership and provider contracts.
+Musixmatch was a **PRESERVE / REFACTOR** migration. Its unofficial endpoint makes failure isolation and regression coverage particularly important. The proven mobile flow, matching behavior, and fallback semantics were preserved while ownership was adapted to AALyrics boundaries.
 
-Implementation is explicitly authorized on `feature/musixmatch-provider-migration`. The branch must still follow `TASK.md` and `AGENTS.md`, complete bounded review, and stop before merge for explicit approval.
+The provider migration is complete in PR #21. Application composition/wiring remains separate later work.
 
 ## Implemented adaptation
 

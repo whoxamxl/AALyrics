@@ -29,9 +29,10 @@ Completed foundation includes:
 - production cross-provider candidate selection,
 - shared metadata/version matching and LRC parsing,
 - LRCLIB provider migration (PR #19),
-- PetitLyrics provider migration (PR #20).
+- PetitLyrics provider migration (PR #20),
+- Musixmatch provider migration (PR #21).
 
-Musixmatch is the current authorized provider migration on `feature/musixmatch-provider-migration`; SyncLRC remains planned. Application composition, cache, translation, phone UI, Android Auto UI, timing controls, and karaoke rendering remain later phases.
+SyncLRC is the current authorized provider migration on `feature/synclrc-provider-migration`. Application composition, cache, translation, phone UI, Android Auto UI, timing controls, and karaoke rendering remain later phases.
 
 ## Modules
 
@@ -45,6 +46,7 @@ provider:lrc           Shared LRC parsing
 provider:selection     Production cross-provider candidate selection
 provider:lrclib        LRCLIB adapter
 provider:petitlyrics   PetitLyrics adapter
+provider:musixmatch    Musixmatch adapter
 platform:media         Android media-session / playback integration
 feature:phone          Phone presentation boundary
 feature:automotive     Android Auto presentation boundary

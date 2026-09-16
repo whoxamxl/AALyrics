@@ -6,7 +6,7 @@ This document defines the architectural boundaries for AALyrics. The project was
 
 AALyrics is a greenfield codebase, but not a greenfield behavior specification. The working `whoxamxl/auto-lyrics` fork is treated as a behavioral reference and regression oracle. Proven behavior should not be re-invented merely because the new module structure is different.
 
-The Core Readiness Gate completed in PR #14. Production candidate selection was migrated in PR #17, LRCLIB in PR #19, and PetitLyrics in PR #20. Musixmatch is the current explicitly authorized provider-migration slice on `feature/musixmatch-provider-migration`.
+The Core Readiness Gate completed in PR #14. Production candidate selection was migrated in PR #17, LRCLIB in PR #19, PetitLyrics in PR #20, and Musixmatch in PR #21. SyncLRC is the current explicitly authorized provider-migration slice on `feature/synclrc-provider-migration`.
 
 ## Design goals
 
@@ -66,13 +66,13 @@ Provider-specific source-confidence policy is intentionally outside `:core:lyric
 
 Concrete provider networking, parsing, authentication, and provider-local search strategy do not belong in this module.
 
-The neutral `:provider:matching` module owns preserved provider-neutral title, artist, duration, recording-version, and metadata-plausibility semantics. Selection, LRCLIB, and PetitLyrics reuse the relevant functions. Musixmatch may reuse only genuinely provider-neutral matching semantics required to preserve its local validation; payload quality, source confidence, cross-provider weights, and winner policy remain in selection.
+The neutral `:provider:matching` module owns preserved provider-neutral title, artist, duration, recording-version, and metadata-plausibility semantics. Selection, LRCLIB, PetitLyrics, and Musixmatch reuse the relevant functions where appropriate. SyncLRC should normalize returned metadata and karaoke payloads without inventing a second provider-local copy of global winner scoring; payload quality, source confidence, cross-provider weights, and winner policy remain in selection.
 
 ### `:provider:matching` and `:provider:lrc`
 
 Pure Kotlin outer utilities. Matching owns shared metadata/version semantics; LRC owns the preserved ordinary/enhanced parser normalized to core model timing types. Neither utility owns provider networking or application state. The LRC parser retains enhanced word-timing regression coverage, while LRCLIB uses ordinary line parsing and advertises only PLAIN/LINE.
 
-Musixmatch RichSync is provider-native JSON timing and belongs in the Musixmatch adapter rather than being forced through the LRC parser.
+Musixmatch RichSync is provider-native JSON timing and belongs in the Musixmatch adapter rather than being forced through the LRC parser. SyncLRC Enhanced-LRC karaoke syntax is already covered by shared `LrcParser.parseKaraoke` and should reuse that parser rather than introducing provider-local timing syntax.
 
 ### Concrete provider modules
 
@@ -80,7 +80,7 @@ Concrete providers are outer adapters implementing `LyricsProvider`.
 
 Each provider owns only its provider-local transport/authentication, query/fallback strategy, DTOs, parsing, provider-local validation, and normalization into `LyricsCandidate`. A provider may report provider-neutral evidence discovered during search, but it must not decide the final winner across providers.
 
-LRCLIB and PetitLyrics are merged. Musixmatch is implemented on its current migration branch pending review and merge; its anonymous mobile token/session mechanics, macro requests, RichSync/subtitle parsing, Spotify-reference validation, and provider-local fallbacks stay inside its adapter.
+LRCLIB, PetitLyrics, and Musixmatch are merged. SyncLRC is the current active migration target. Its public HTTP request/DTO handling, WORD-preference request gate, current/legacy karaoke response compatibility, karaoke-only acceptance policy, and provider-local normalization stay inside the adapter; Enhanced-LRC parsing stays in the shared parser.
 
 Shared policy is defined in `docs/PROVIDER_ARCHITECTURE.md`; concise provider profiles live in `docs/providers/`.
 
@@ -214,6 +214,8 @@ The current production policy preserves these important semantics:
 - exact score ties use a stable candidate key so provider execution order does not become winner policy.
 
 Musixmatch may provide normalized facts such as Spotify identity compatibility and artist-query corroboration, but it must not add a second provider-local version of global winner scoring.
+
+SyncLRC may use `LyricsRequest.preferredSyncType == WORD` to preserve the working fork's decision not to query the karaoke-only source in standard mode. That request gate does not decide the winner; any returned WORD candidate still passes through the same central selector and its metadata/quality/source-confidence policy.
 
 ### `LyricsState`
 
