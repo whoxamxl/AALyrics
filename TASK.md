@@ -37,3 +37,5 @@ Shared matching and selector regression suites passed after extraction. All 10 o
 PetitLyrics provider validation: the 10 preserved client regressions and 10 deterministic MockWebServer/configuration/cancellation tests pass. Fake CI-style environment values were verified to override the ignored local configuration source without reading or printing real values.
 
 Full validation passed with fake configuration: 145 tests across 16 suites, Android lint/checks, debug APK assembly, architecture guardrail, and diff whitespace checks.
+
+Bounded review round 1 found one current-scope credential exposure: repository secrets were initially available to same-repository pull-request jobs. The fix restricts secret injection to trusted `main` push builds; PR builds use empty values and provider tests continue to use fakes. A targeted re-check is required before closing review.

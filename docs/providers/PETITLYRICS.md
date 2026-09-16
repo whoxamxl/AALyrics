@@ -34,7 +34,7 @@ Migration may refactor configuration injection/ownership, but the values themsel
 
 PetitLyrics configuration values are not stored in source control.
 
-Local development reads the four keys from repository-root `secrets.properties.local`, which is ignored by the existing `*.properties.local` rule. CI supplies the same key names through GitHub Actions repository secrets, exposed to the build as environment variables. When both are available, environment variables take precedence over the local file.
+Local development reads the four keys from repository-root `secrets.properties.local`, which is ignored by the existing `*.properties.local` rule. Trusted `main` push builds supply the same key names through GitHub Actions repository secrets, exposed to the build as environment variables. Pull-request builds receive empty values so unreviewed code cannot read provider credentials. When both environment values and the local file are available, environment variables take precedence.
 
 Never commit or log the actual values. Tests should use injected/fake configuration and must not require live PetitLyrics credentials.
 
@@ -98,7 +98,7 @@ PetitLyrics is a **PRESERVE / REFACTOR** migration. Do not simplify away mature 
 ## Implemented adapter and intentional adaptations
 
 - `:provider:petitlyrics` exposes `PetitLyricsProvider`, implementing `LyricsProvider` with `LINE` and `WORD` capabilities. Configuration, HTTP client, endpoint, and app version metadata are injected for deterministic tests and later composition-root wiring.
-- The four immutable configuration keys are generated into the app BuildConfig from environment variables first, then ignored root `secrets.properties.local`. CI exposes the same repository-secret names to both build and test steps. Actual values are never committed or logged; configuration string output reports only completeness.
+- The four immutable configuration keys are generated into the app BuildConfig from environment variables first, then ignored root `secrets.properties.local`. Trusted `main` push CI exposes the same repository-secret names to build and test steps; pull-request CI uses empty values. Actual values are never committed or logged; configuration string output reports only completeness.
 - Discovery preserves title+artist+album, title+artist, and title-only order, local metadata ranking, word-before-line tie preference, attempted-result deduplication, and artist-query corroboration evidence.
 - WSY preserves word text spacing, absolute start/end timing, timed blank lines, ordering, and duplicate-line removal. LSY preserves protection-key permutation, centisecond rollover, line/text pairing, blank-line markers, and malformed payload rejection.
 - Type-2 companion text is still resolved by lyrics ID first. Missing, unusable, or failed ID lookup falls back to provider-native metadata and locally ranks the type-1 candidates rather than trusting response order.
