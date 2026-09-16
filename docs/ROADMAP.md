@@ -106,8 +106,6 @@ Phase 5 validated, rather than expanded, the provider-independent foundation:
 
 Detailed evidence is recorded in `docs/CORE_READINESS_GATE.md`.
 
-The review process also established `AGENTS.md` review-loop discipline: lightweight architecture checks are best-effort regression guardrails, not formal static-analysis proofs, and review scope must not expand indefinitely around theoretical bypasses.
-
 ### Phase 6 — Production candidate selection migration ✅
 
 Merged in PR #17.
@@ -123,45 +121,40 @@ Completed work includes:
 - regression coverage adapted to AALyrics models,
 - rejection of unusable lyric candidates before selection.
 
-The working fork was re-checked against `8484bed2dbe8db5ca7b17dec5481b3c22714dc6f` (`v1.13.0`) for this migration.
+### Phase 7 — Concrete provider adapters
+
+Provider migration proceeds one adapter at a time behind `LyricsProvider`.
+
+Completed:
+
+- LRCLIB — merged in PR #19.
+- PetitLyrics — merged in PR #20.
+
+Current:
+
+- Musixmatch — implemented and validated on `feature/musixmatch-provider-migration`, pending PR review and merge.
+
+Next:
+
+- SyncLRC — remains planned and is not authorized by the Musixmatch slice.
 
 ## Current work
 
-### PetitLyrics provider migration
+### Musixmatch provider migration
 
-LRCLIB was merged in PR #19. The explicitly authorized PetitLyrics PRESERVE / REFACTOR slice implements the second concrete adapter, pending merge. It preserves progressive discovery, WSY/LSY parsing, companion lookup, matching and fallback behavior while using injected configuration and normalized provider output. Application wiring and the remaining providers are separate work.
+The third concrete provider is implemented and locally validated on the active migration branch. The working-fork baseline remains `8484bed2dbe8db5ca7b17dec5481b3c22714dc6f` (`v1.13.0`), re-checked on 2026-09-16 before implementation.
 
-Shared migration policy and provider profiles are already documented. This slice does not authorize implementation of the remaining providers.
+The slice is **PRESERVE / REFACTOR** and must retain the proven anonymous mobile API flow, token/session behavior, macro subtitle lookup, embedded/dedicated RichSync handling, line-subtitle fallback, metadata validation, instrumental rejection, and Spotify-aware matching.
 
-## Next
+Spotify remains playback identity evidence, not a separate lyrics provider. `:platform:media` owns Spotify reference extraction; Musixmatch consumes normalized `TrackReference` values and remains the source of the lyric payload.
 
-### Phase 7 — Concrete provider adapters
-
-After the provider migration documentation is approved, adapt concrete providers one at a time rather than bulk-porting the old app.
-
-Default order, subject to a fresh pre-slice check:
-
-```text
-LRCLIB
-  ↓
-PetitLyrics
-  ↓
-Musixmatch
-  ↓
-SyncLRC
-```
-
-Migration follows `docs/PROVIDER_ARCHITECTURE.md` and the relevant provider profile. Mature provider implementations are normally PRESERVE / REFACTOR: keep proven behavior and regression knowledge while moving ownership into AALyrics boundaries rather than gratuitously rewriting working code.
-
-Each provider conforms to `LyricsProvider`; provider-local HTTP/auth/search/parsing remains inside its adapter; providers emit normalized candidates/evidence rather than final global scores; cross-provider winner selection remains in `:provider:selection`.
-
-PetitLyrics configuration values remain unchanged unless explicitly requested.
+Application wiring, SyncLRC, cache, translation, phone/Android Auto presentation, and global selection-policy changes are outside this slice.
 
 ## Later phases
 
-Later work includes cache, translation, demand/session gating, Android Auto/phone presentation, timing controls, karaoke rendering, persistence, release/signing, and regression comparison against the previous fork.
+After concrete providers are stable, later work includes application composition/wiring, cache, translation, demand/session gating, Android Auto/phone presentation, timing controls, karaoke rendering, persistence, release/signing, and regression comparison against the previous fork.
 
-These should remain separate responsibilities and topic branches. Do not use future feature needs as a reason to turn `LyricsCoordinator`, `PlaybackLyricsController`, or the production selector into a new god object.
+These should remain separate responsibilities and topic branches. Do not use future feature needs as a reason to turn `LyricsCoordinator`, `PlaybackLyricsController`, the production selector, or concrete providers into new god objects.
 
 ## Working method
 

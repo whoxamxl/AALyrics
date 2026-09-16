@@ -28,10 +28,10 @@ Completed foundation includes:
 - playback identity and playback-to-lyrics ownership,
 - production cross-provider candidate selection,
 - shared metadata/version matching and LRC parsing,
-- LRCLIB provider migration,
-- PetitLyrics provider migration in PR #20.
+- LRCLIB provider migration (PR #19),
+- PetitLyrics provider migration (PR #20).
 
-The next planned concrete providers are Musixmatch and SyncLRC. Application composition, cache, translation, phone UI, Android Auto UI, timing controls, and karaoke rendering remain later phases.
+Musixmatch is the current authorized provider migration on `feature/musixmatch-provider-migration`; SyncLRC remains planned. Application composition, cache, translation, phone UI, Android Auto UI, timing controls, and karaoke rendering remain later phases.
 
 ## Modules
 

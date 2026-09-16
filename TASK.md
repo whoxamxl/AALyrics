@@ -1,49 +1,48 @@
-# PetitLyrics Provider Migration
+# Musixmatch Provider Migration
 
 ## Branch and baseline
 
-- Branch: `feature/petitlyrics-provider-migration` (existing remote branch).
-- Current main: `a696083` (LRCLIB PR #19 merged); verified it is an ancestor of the branch.
-- Preserved branch commit `a6a65ed`: PetitLyrics configuration-source documentation.
-- Re-fetched auto-lyrics main on 2026-09-16: `8484bed2dbe8db5ca7b17dec5481b3c22714dc6f`.
-- Read required architecture/profile/roadmap/inventory and AGENTS.md; inspected PetitLyricsClient, all 10 reference tests, MediaTracker call sites, and the metadata resolver used by discovery.
-- User explicitly authorized PetitLyrics implementation. The inherited LRCLIB TASK.md is not this PR's scope.
+- Branch: `feature/musixmatch-provider-migration`.
+- Base: main `839d2bd` after PetitLyrics PR #20 merged.
+- Working fork: `whoxamxl/auto-lyrics` main `8484bed2dbe8db5ca7b17dec5481b3c22714dc6f` (`v1.13.0`), re-checked on 2026-09-16 before implementation.
+- Classification: **PRESERVE / REFACTOR**.
+- Read `AGENTS.md`, `docs/ARCHITECTURE.md`, `docs/ROADMAP.md`, `docs/MIGRATION_INVENTORY.md`, `docs/PROVIDER_ARCHITECTURE.md`, and `docs/providers/MUSIXMATCH.md` before changing production code.
+- User explicitly authorized Musixmatch implementation on this branch.
 
 ## Acceptance criteria
 
-- Preserve progressive title/artist/album discovery, candidate ranking/timing preference, attempted-result deduplication and artist-query corroboration.
-- Preserve WSY word spacing/timestamps/end times, LSY key permutation/rollover, lyrics-ID companion selection and metadata fallback.
-- Share metadata matching semantics with selection without depending on global selector implementation; keep global winner policy unchanged.
-- Normalize provider metadata, attribution and LINE/WORD timing through LyricsProvider. Ambiguous PetitLyrics duration remains unknown; no fabricated missing metadata.
-- Preserve all reference regressions; add transport, fallback, malformed payload, configuration and cancellation coverage with fake configuration only.
-- Keep all four configured values unchanged. Build reads environment before ignored root secrets.properties.local; never log or commit actual values. Provider receives configuration by injection; no live credentials needed for tests.
-- Preserve successful provider-local fallback after individual request failures, while surfacing an operational exception when discovery exhausts without a usable result; propagate cancellation.
-- No other provider migration, UI, playback, cache, translation or application provider wiring.
-- Targeted tests, full repository validation, PR CI and bounded review; STOP before merge.
+- Preserve the proven anonymous mobile API flow; do not switch endpoint strategy during migration.
+- Implement Musixmatch behind `LyricsProvider` with `LINE` and `WORD` capabilities.
+- Preserve token acquisition/refresh, `macro.subtitles.get`, embedded RichSync, dedicated `track.richsync.get` fallback, and subtitle fallback.
+- Consume Spotify identity only through normalized `TrackReference`; Spotify is not a lyrics provider.
+- Use Spotify ID as strong match evidence when present and reject explicit Spotify-ID conflicts.
+- Preserve metadata validation, instrumental rejection, artist-query corroboration, malformed/missing-response handling, and cancellation/failure isolation.
+- Normalize RichSync word timing and line subtitles into AALyrics domain models without moving provider logic into core or UI.
+- Port working-fork Musixmatch regression coverage and add deterministic transport/cancellation/failure tests where required by AALyrics contracts.
+- Do not change global candidate-selection policy, LRCLIB, PetitLyrics, SyncLRC, application wiring, cache, translation, or UI except where a neutral shared helper is genuinely required.
+- Run targeted tests plus `./gradlew test check :app:assembleDebug`, architecture checks, and bounded review. Stop before merge for explicit user approval.
 
 ## Plan/status
 
-- [x] Verify current remote branch/main and preserve configuration documentation.
-- [x] Inspect required documents and latest working-fork behavior/tests/call sites.
-- [x] Extract shared metadata score without changing selector policy.
-- [x] Migrate PetitLyrics configuration, discovery, transport and WSY/LSY parsing.
-- [x] Preserve/add regression coverage and update migration documents.
-- [x] Run targeted tests and full repository validation.
-- [x] Open PR #20 and complete bounded review under AGENTS.md.
-- [x] Stop before merge; explicit user approval remains required.
+- [x] Create branch from post-PR #20 main.
+- [x] Re-check working-fork main baseline.
+- [x] Align architecture, roadmap, migration inventory, provider profile, and branch task for Musixmatch.
+- [x] Inspect `MusixmatchClient.kt`, all reference tests, and relevant call sites in the working fork.
+- [x] Implement/refactor the provider behind AALyrics boundaries.
+- [x] Port/add regression coverage.
+- [x] Run full validation and bounded review.
+- [x] Open PR #21 and stop before merge.
 
-Shared matching and selector regression suites passed after extraction. All 10 original PetitLyrics client regressions are ported with normalized domain types and injected fake configuration.
+## Validation record
 
-PetitLyrics provider validation: the 10 preserved client regressions and 10 deterministic MockWebServer/configuration/cancellation tests pass. Fake CI-style environment values were verified to override the ignored local configuration source without reading or printing real values.
+- Targeted Musixmatch, production-selector, and Spotify playback-reference tests passed.
+- `./gradlew test check :app:assembleDebug` passed with 176 tests across 18 suites, Android checks, and debug APK assembly after the review fixes.
+- `bash scripts/verify-architecture.sh` and `git diff --check` passed.
+- Normal review found one current-scope failure-contract defect: a failed dedicated RichSync lookup could be hidden by a timestamp-only subtitle. Commit `a60801b` requires usable subtitle text before treating that local fallback as successful when an operational failure is pending.
+- Automatic Codex review found one current-scope P2: an unusable initial token response could be reported as no lyrics. Commit `449f7f5` surfaces API 401/403, `UpgradeOnly`, malformed, and missing-token responses when no cached token is available.
+- A user-directed targeted follow-up found the remaining API-status gap: authenticated HTTP-200/API-403 responses were treated as no result. Commit `d5b4fc1` surfaces API 403 without changing the API-401 token-refresh path and adds a valid-token macro regression.
+- Targeted/full validation and final-head CI passed. Two normal review rounds remain complete, no unresolved P0/P1 or current-scope blocking P2 remains, and the review exit condition is satisfied.
 
-Full validation passed with fake configuration: 145 tests across 16 suites, Android lint/checks, debug APK assembly, architecture guardrail, and diff whitespace checks.
+## Scope guard
 
-## Bounded review record
-
-- PR: https://github.com/whoxamxl/AALyrics/pull/20
-- Normal round 1 reviewed the PR head against this task, the PR description, architecture, inventory, roadmap, and PetitLyrics profile.
-- One current-scope credential exposure was found: repository secrets were initially available to same-repository pull-request jobs. Commit `e84c3a9` restricts secret injection to trusted `main` push builds; PR builds use empty values and provider tests use fakes.
-- Targeted re-review rebuilt the app and reran the PetitLyrics suite with all four values empty, inspected the workflow condition and configuration documentation, and verified final-head CI at `e84c3a9` was green.
-- Automatic Codex review then found a current-scope P2: the inherited query labels prevented `linkedSetOf` from deduplicating identical requests when album/artist metadata was absent. The fix deduplicates on the actual artist/album request fields and adds both missing-album and title-only regressions without removing any distinct discovery stage.
-- Discovery/ranking, WSY/LSY parsing, ID/metadata companion fallback, failure/cancellation, normalized output, shared-matching ownership, and unchanged selector regressions were reviewed. No unresolved P0/P1 or current-scope blocking P2 remains.
-- The latest targeted review has no material in-scope findings. Under the AGENTS.md exit condition, broad review stops here. No merge or application provider wiring was performed.
+This branch is a Musixmatch provider migration, not a general application-wiring or UI branch. Preserve mature behavior where it is already proven; change ownership only where required by AALyrics architecture.
