@@ -2,34 +2,55 @@
 
 AALyrics is a new Android project for synchronized lyrics on phone and Android Auto.
 
-> **Status:** early foundation. The project is being built from a new codebase and is not yet intended for daily use.
+> **Status:** active architecture and provider migration. The core lyrics pipeline is established, but application wiring and end-user UI are not yet complete enough for daily use.
 
 ## Project direction
 
-AALyrics is designed around a few strict boundaries from the start:
+AALyrics is built around strict ownership boundaries:
 
-- playback tracking is separate from lyrics retrieval
-- lyrics providers are isolated behind provider contracts
-- provider selection is centralized in the lyrics domain
-- phone and automotive presentation consume shared application state
-- platform-specific code does not leak into provider/domain code
-- timing, translation, caching, and provider implementations remain independently replaceable
+- playback tracking is separate from lyrics retrieval,
+- lyrics providers are isolated behind `LyricsProvider`,
+- provider fan-out and lifecycle live in the lyrics core,
+- cross-provider winner selection is centralized behind `CandidateSelector`,
+- phone and automotive presentation consume shared domain state,
+- platform-specific code does not leak into provider/domain code,
+- timing, translation, caching, and provider implementations remain independently replaceable.
 
-The current repository contains only the new project foundation. No implementation code has been imported from the previous Auto Lyrics fork.
+The codebase is greenfield in structure, while proven behavior from `whoxamxl/auto-lyrics` is used as the migration and regression reference. Mature behavior is preserved/refactored into the new boundaries rather than reimplemented without reason.
 
-## Planned modules
+## Current implementation status
+
+Completed foundation includes:
+
+- provider-independent track/playback/lyrics models,
+- explicit lyrics state lifecycle and stale-result protection,
+- concurrent provider orchestration with failure isolation,
+- playback identity and playback-to-lyrics ownership,
+- production cross-provider candidate selection,
+- shared metadata/version matching and LRC parsing,
+- LRCLIB provider migration,
+- PetitLyrics provider migration in PR #20.
+
+The next planned concrete providers are Musixmatch and SyncLRC. Application composition, cache, translation, phone UI, Android Auto UI, timing controls, and karaoke rendering remain later phases.
+
+## Modules
 
 ```text
-app                  Android application / composition root
-core:model           Shared domain models
-core:lyrics          Lyrics orchestration and selection domain
-provider:api         Provider contracts only
-platform:media       Android media-session / playback integration
-feature:phone        Phone UI
-feature:automotive   Android Auto presentation
+app                    Android application / composition root
+core:model             Shared domain models
+core:lyrics            Lyrics state, orchestration, playback ownership, selector port
+provider:api           Provider contracts
+provider:matching      Shared provider-neutral matching semantics
+provider:lrc           Shared LRC parsing
+provider:selection     Production cross-provider candidate selection
+provider:lrclib        LRCLIB adapter
+provider:petitlyrics   PetitLyrics adapter
+platform:media         Android media-session / playback integration
+feature:phone          Phone presentation boundary
+feature:automotive     Android Auto presentation boundary
 ```
 
-Provider implementations, translation, caching, karaoke timing, and other application features will be added incrementally after the foundation is stable.
+See `docs/ARCHITECTURE.md`, `docs/ROADMAP.md`, and `docs/PROVIDER_ARCHITECTURE.md` for the authoritative architecture and migration plan.
 
 ## Package
 
