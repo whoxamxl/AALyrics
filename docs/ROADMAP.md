@@ -133,17 +133,17 @@ Completed:
 
 Current:
 
-- SyncLRC — explicitly authorized on `feature/synclrc-provider-migration`; implementation pending.
+- SyncLRC — implemented on `feature/synclrc-provider-migration`; validation and review pending.
 
 ## Current work
 
 ### SyncLRC provider migration
 
-The fourth concrete provider is the active migration slice. The working-fork baseline remains `8484bed2dbe8db5ca7b17dec5481b3c22714dc6f` (`v1.13.0`), re-checked on 2026-09-16 before implementation. The public SyncLRC API contract was also re-checked on 2026-09-16 and still matches the mature request/response assumptions used by the fork.
+The fourth concrete provider is implemented on the active migration branch pending validation and review. The working-fork baseline remains `8484bed2dbe8db5ca7b17dec5481b3c22714dc6f` (`v1.13.0`), re-checked on 2026-09-16 before implementation. The public SyncLRC API contract was also re-checked on 2026-09-16 and still matches the mature request/response assumptions used by the fork.
 
-The slice is **PRESERVE / REFACTOR** and keeps SyncLRC deliberately narrow: it is an opportunistic karaoke/WORD source, not a generic plain/line provider. Preserve WORD-preference request gating, the `track` + `artist` + `type=karaoke` request shape with optional album/duration, current and legacy karaoke response compatibility, instrumental rejection, and the requirement for genuine Enhanced-LRC timed word tokens.
+The **PRESERVE / REFACTOR** adapter keeps SyncLRC deliberately narrow: it is an opportunistic karaoke/WORD source, not a generic plain/line provider. It preserves WORD-preference request gating, the `track` + `artist` + `type=karaoke` request shape with optional album/duration, current and legacy karaoke response compatibility, instrumental rejection, and the requirement for genuine Enhanced-LRC timed word tokens.
 
-Shared Enhanced-LRC parsing already lives in `:provider:lrc`; SyncLRC must reuse it. Cross-provider metadata scoring, source confidence, and WORD-vs-LINE winner policy remain in `:provider:selection`.
+Shared Enhanced-LRC parsing remains in `:provider:lrc` and is reused by SyncLRC. Cross-provider metadata scoring, source confidence, and WORD-vs-LINE winner policy remain in `:provider:selection`.
 
 Application wiring, cache, translation, phone/Android Auto presentation, karaoke rendering, and global selection-policy changes are outside this slice.
 

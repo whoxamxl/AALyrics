@@ -31,8 +31,8 @@
 - [x] Re-check working-fork main baseline and current public SyncLRC API contract.
 - [x] Inspect `SyncLrcClient.kt`, all reference tests, the shared karaoke parser, and relevant `MediaTracker` call sites.
 - [x] Align architecture, roadmap, migration inventory, provider profile, README, and branch task for SyncLRC.
-- [ ] Implement/refactor the provider behind AALyrics boundaries.
-- [ ] Port/add regression coverage.
+- [x] Implement/refactor the provider behind AALyrics boundaries.
+- [x] Port/add regression coverage.
 - [ ] Run full validation and bounded review.
 - [ ] Open PR and stop before merge.
 

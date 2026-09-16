@@ -74,10 +74,10 @@ Shared provider migration rules are in `docs/PROVIDER_ARCHITECTURE.md`. Provider
 | Fork implementation | Classification | AALyrics destination / rule | Notes |
 | --- | --- | --- | --- |
 | `lyrics/LrcLibClient.kt` | **PRESERVE / REFACTOR** | `:provider:lrclib`; see `docs/providers/LRCLIB.md` | Migrated in PR #19. Preserves mature exact/structured/title-only/free-text/plain fallback and local validation. |
-| `lyrics/LrcParser.kt` | **PRESERVE / REFACTOR** | pure `:provider:lrc` shared parser | Migrated with LRCLIB. Parsing behavior is regression-covered and shared without provider networking ownership. Enhanced-LRC `parseKaraoke` is the parser SyncLRC should reuse. |
+| `lyrics/LrcParser.kt` | **PRESERVE / REFACTOR** | pure `:provider:lrc` shared parser | Migrated with LRCLIB. Parsing behavior is regression-covered and shared without provider networking ownership. SyncLRC reuses Enhanced-LRC `parseKaraoke`. |
 | `lyrics/PetitLyricsClient.kt` | **PRESERVE / REFACTOR** | `:provider:petitlyrics`; see `docs/providers/PETITLYRICS.md` | Migrated in PR #20. Preserves progressive search, ranking, attempted-result deduplication, WSY/LSY parsing, companion-text resolution, artist-query evidence, configuration invariants, and provider-contract failure/cancellation semantics. |
 | `lyrics/MusixmatchClient.kt` | **PRESERVE / REFACTOR** | `:provider:musixmatch`; see `docs/providers/MUSIXMATCH.md` | Migrated in PR #21. Preserves the anonymous mobile API flow, token/session behavior, macro lookup, RichSync/subtitle fallback, Spotify-aware identity validation, instrumental rejection, metadata validation, and failure isolation. |
-| `lyrics/SyncLrcClient.kt` | **PRESERVE / REFACTOR** | `:provider:synclrc` on `feature/synclrc-provider-migration`; see `docs/providers/SYNCLRC.md` | Active migration slice. Preserve its deliberate karaoke-only role, WORD-preference request gating, current/legacy response-shape compatibility, instrumental rejection, and genuine word-timing requirement. |
+| `lyrics/SyncLrcClient.kt` | **PRESERVE / REFACTOR** | `:provider:synclrc` on `feature/synclrc-provider-migration`; see `docs/providers/SYNCLRC.md` | Implemented pending review. Preserves its deliberate karaoke-only role, WORD-preference request gating, current/legacy response-shape compatibility, instrumental rejection, and genuine word-timing requirement. |
 
 Provider migration is not a clean-room exercise. Mature provider implementation may be reused/refactored when it already expresses the behavior we intend to keep. The structural requirement is that legacy coupling does not cross the AALyrics provider boundary.
 
@@ -159,7 +159,7 @@ Do not bulk-port the old application. Each provider or subsystem remains a separ
 - LRCLIB: migrated and merged in PR #19.
 - PetitLyrics: migrated and merged in PR #20.
 - Musixmatch: migrated and merged in PR #21.
-- SyncLRC: current explicitly authorized provider slice on `feature/synclrc-provider-migration`; implementation pending.
+- SyncLRC: implemented on `feature/synclrc-provider-migration`; validation and review pending.
 
 ### LRCLIB implementation re-check
 
@@ -183,8 +183,8 @@ Preserved: the anonymous mobile `token.get` → `macro.subtitles.get` flow, TTL 
 
 Working-fork main was re-checked at `8484bed2dbe8db5ca7b17dec5481b3c22714dc6f` on 2026-09-16 and remains current. The slice inspected `SyncLrcClient.kt`, all eight SyncLRC regressions, shared `LrcParser.parseKaraoke`, and the relevant `MediaTracker` fan-out/normalization call sites. The current public SyncLRC API documentation was also re-checked and still matches the mature endpoint/query/response assumptions.
 
-Preserve: request execution only when karaoke/WORD timing is preferred; required nonblank track/artist; `type=karaoke`; optional album/duration; current `karaoke` and legacy `lyrics` + `type=karaoke` compatibility; rejection of synced/plain-only and instrumental responses; Enhanced-LRC parsing; genuine timed-word requirement; response-metadata fallback; fine-grained Japanese timing; and artist-query corroboration.
+Preserved: request execution only when karaoke/WORD timing is preferred; required nonblank track/artist; `type=karaoke`; optional album/duration; current `karaoke` and legacy `lyrics` + `type=karaoke` compatibility; rejection of synced/plain-only and instrumental responses; Enhanced-LRC parsing; genuine timed-word requirement; response-metadata fallback; fine-grained Japanese timing; and artist-query corroboration.
 
-Structural adaptation: expose a `WORD`-only `LyricsProvider`, gate transport with normalized `LyricsRequest.preferredSyncType`, reuse shared `:provider:lrc` parsing, normalize duration seconds to domain milliseconds, use cancellable HTTP, and surface operational failures according to the provider contract. Final metadata scoring, source confidence, karaoke preference, and winner selection remain unchanged in `:provider:selection`.
+Structural adaptation: a `WORD`-only `LyricsProvider` gates transport with normalized `LyricsRequest.preferredSyncType`, reuses shared `:provider:lrc` parsing, normalizes duration seconds to domain milliseconds, uses cancellable HTTP, and surfaces operational failures according to the provider contract. Final metadata scoring, source confidence, karaoke preference, and winner selection remain unchanged in `:provider:selection`.
 
 Documentation/planning approval does not authorize unrelated provider implementation. The current explicit authorization is limited to SyncLRC on `feature/synclrc-provider-migration`.

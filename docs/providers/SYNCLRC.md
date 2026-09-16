@@ -2,7 +2,7 @@
 
 ## Status
 
-- Migration status: **AUTHORIZED — active migration branch, implementation pending**
+- Migration status: **IMPLEMENTED — validation and review pending**
 - Branch: `feature/synclrc-provider-migration`
 - Default migration order: fourth concrete provider
 - Working-fork baseline: `8484bed2dbe8db5ca7b17dec5481b3c22714dc6f` (`v1.13.0`), re-checked 2026-09-16
@@ -15,9 +15,9 @@ This file records SyncLRC-specific behavior only. Shared provider rules are defi
 
 SyncLRC is intentionally a karaoke/word-timing provider, not a second source for ordinary plain or line-synchronized lyrics already covered by LRCLIB, PetitLyrics, and Musixmatch.
 
-Expected AALyrics descriptor capability: `WORD` only.
+AALyrics descriptor capability: `WORD` only.
 
-The working fork invokes SyncLRC only when karaoke/word synchronization is preferred. AALyrics already carries that preference through `LyricsRequest.preferredSyncType`, so the migration should preserve the same request gate: when the preference is not `WORD`, return no candidates without making a SyncLRC network request.
+The working fork invokes SyncLRC only when karaoke/word synchronization is preferred. AALyrics carries that preference through `LyricsRequest.preferredSyncType` and preserves the same request gate: when the preference is not `WORD`, return no candidates without making a SyncLRC network request.
 
 This gate is provider-local request behavior, not cross-provider winner policy. The production `CandidateSelector` still decides whether a returned WORD candidate beats other synchronized candidates.
 
@@ -118,4 +118,4 @@ Outside SyncLRC:
 
 SyncLRC is a **PRESERVE / REFACTOR** migration. Its narrow karaoke-only role is intentional. Do not broaden it into a generic plain/line provider merely because the API also exposes those payloads, and do not move karaoke rendering concerns into the provider.
 
-Implementation is explicitly authorized on `feature/synclrc-provider-migration`. Follow `TASK.md` and `AGENTS.md`, complete bounded review, and stop before merge for explicit approval.
+Implementation is complete on `feature/synclrc-provider-migration`. Follow `TASK.md` and `AGENTS.md`, complete bounded review, and stop before merge for explicit approval.
