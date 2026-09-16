@@ -3,7 +3,7 @@
 ## Branch and baseline
 
 - Branch: `feature/synclrc-provider-migration`.
-- Base: main `a90b525` after Musixmatch PR #21 merged.
+- Base: main `f5a7263` after Musixmatch PR #21 and launcher icon PR #23 merged.
 - Working fork: `whoxamxl/auto-lyrics` main `8484bed2dbe8db5ca7b17dec5481b3c22714dc6f` (`v1.13.0`), re-checked on 2026-09-16 before implementation.
 - Classification: **PRESERVE / REFACTOR**.
 - Read `AGENTS.md`, `docs/ARCHITECTURE.md`, `docs/ROADMAP.md`, `docs/MIGRATION_INVENTORY.md`, `docs/PROVIDER_ARCHITECTURE.md`, and `docs/providers/SYNCLRC.md` before changing production code.
@@ -27,7 +27,7 @@
 
 ## Plan/status
 
-- [x] Create branch from post-PR #21 main.
+- [x] Rebase the existing branch onto current main (`f5a7263`).
 - [x] Re-check working-fork main baseline and current public SyncLRC API contract.
 - [x] Inspect `SyncLrcClient.kt`, all reference tests, the shared karaoke parser, and relevant `MediaTracker` call sites.
 - [x] Align architecture, roadmap, migration inventory, provider profile, README, and branch task for SyncLRC.
