@@ -32,9 +32,9 @@ Define the durable Phone UI information architecture and source ownership before
 
 - [x] Create `feature/phone-ui-architecture` from current `main`.
 - [x] Define scope and no-implementation guard in `TASK.md`.
-- [ ] Add `docs/PHONE_UI_SPEC.md`.
-- [ ] Reshape `ui/phone` package/folder ownership using placeholders only.
-- [ ] Align `docs/UI_ARCHITECTURE.md` with the Phone package model and shell boundary.
+- [x] Add `docs/PHONE_UI_SPEC.md`.
+- [x] Reshape `ui/phone` package/folder ownership using placeholders only.
+- [x] Align `docs/UI_ARCHITECTURE.md` with the Phone package model and shell boundary.
 - [ ] Validate CI/build and architecture checks.
 - [ ] Review the complete branch diff.
 - [ ] Open PR and stop before merge.
