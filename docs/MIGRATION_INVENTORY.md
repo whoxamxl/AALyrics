@@ -25,12 +25,12 @@ Initial review baseline:
 - Branch: `main`
 - Reviewed commit: `6ad450213f1896a5a65e217f15d1544c6e646d0e`
 
-Core Readiness Gate and current provider/runtime baseline:
+Core Readiness Gate and current provider/runtime/lifecycle baseline:
 
 - Repository: `whoxamxl/auto-lyrics`
 - Branch: `main`
 - Reviewed commit: `8484bed2dbe8db5ca7b17dec5481b3c22714dc6f` (`v1.13.0`)
-- Re-checked for the SyncLRC slice on 2026-09-16 and for the live media-session runtime on 2026-09-17; it remains current working-fork `main`.
+- Re-checked for the SyncLRC slice on 2026-09-16, for the live media-session runtime on 2026-09-17, and for the lyrics-demand-gating planning slice on 2026-09-17; it remains current working-fork `main`.
 
 The mature resolver/provider clients remain present, `MediaTracker` still combines Android media, provider, cache, translation, timing, and presentation responsibilities, and the explicit Spotify playback identity and lyrics-demand helpers remain separate behaviors.
 
@@ -86,7 +86,8 @@ Provider migration is not a clean-room exercise. Mature provider implementation 
 | Fork implementation | Classification | AALyrics destination / rule | Notes |
 | --- | --- | --- | --- |
 | `media/SpotifyTrackIdentity.kt` | **PRESERVE / REFACTOR** | `:platform:media` identity normalization feeding `core:model` references | Phase 4 preserves Spotify-specific robustness while keeping platform details outside lyrics core. Musixmatch consumes only normalized `TrackReference` identity. |
-| `media/LyricsDemandController.kt` | **PRESERVE / REFACTOR** | future playback/application demand-gating lifecycle slice | Preserve the proven phone/Android Auto demand policy, but keep it separate from the completed live-session runtime. |
+| `media/LyricsDemandController.kt` | **PRESERVE / REFACTOR** | current Phase 10 application/runtime lifecycle slice; see `docs/LYRICS_DEMAND_GATING.md` | Preserve the proven `phone foreground OR Android Auto projection connected` demand semantics. Rewrite ownership so demand gates normalized playback before `PlaybackLyricsController` rather than being coupled to legacy `MediaTracker`. |
+| `AutoLyricsApp.kt` demand wiring | **PRESERVE / REFACTOR** | `:app` lifecycle adapters feeding the demand gate | Preserve process-level phone foreground semantics through `ProcessLifecycleOwner` and projection-wide automotive demand through `CarConnection.CONNECTION_TYPE_PROJECTION`; do not migrate unrelated translation/UI/service startup responsibilities from the old application object. |
 | `media/LyricsVariantTransition.kt` | **PRESERVE / REFACTOR** | future state/variant transition policy if still required | Small but potentially regression-sensitive. Inspect call sites before migration. |
 | `media/MediaTracker.kt` | **REWRITE** | split across `:platform:media`, `:core:lyrics`, composition root, and later feature-specific services | Preserve observable behavior through tests/reference, but do not migrate the monolithic ownership model. |
 | `media/MediaListenerService.kt` | **REWRITE / REFACTOR** | thin Android adapter in `:platform:media` | Implemented in PR #29 as `MediaSessionListenerService` plus testable selection/observation/runtime ownership; domain orchestration remains outside the service. |
@@ -132,6 +133,7 @@ Provider migration is not a clean-room exercise. Mature provider implementation 
 | deterministic exact-score tie break | Preserves the architecture invariant that provider completion/execution order cannot silently determine the winner. |
 | explicit playback identity and `PlaybackLyricsController` | Separates track ownership from position/status updates so media churn does not restart lyrics lookup. |
 | live media-session runtime | Preserves mature session-selection behavior while splitting Android discovery/callback ownership from lyrics orchestration and presentation. |
+| lyrics demand gating | Preserves the mature phone/Android Auto demand policy while moving the gate to a narrow application/runtime boundary that can clear/replay normalized playback without stopping MediaSession observation. |
 
 ## Migration rule after the Core Readiness Gate
 
@@ -163,7 +165,8 @@ Do not bulk-port the old application. Each provider or subsystem remains a separ
 - SyncLRC: migrated and merged in PR #24.
 - Phase 7 concrete-provider migration: complete.
 - Application composition: merged in PR #25.
-- Live media-session runtime: implemented, validated, and reviewed in PR #29; merge approval is complete.
+- Live media-session runtime: merged in PR #29.
+- Lyrics demand gating: explicitly authorized and documented on `feature/lyrics-demand-gating`; production implementation has not started yet.
 
 ### LRCLIB implementation re-check
 
@@ -191,4 +194,4 @@ Preserved: request execution only when karaoke/WORD timing is preferred; require
 
 Structural adaptation: a `WORD`-only `LyricsProvider` gates transport with normalized `LyricsRequest.preferredSyncType`, reuses shared `:provider:lrc` parsing, normalizes duration seconds to domain milliseconds, uses cancellable HTTP, and surfaces operational failures according to the provider contract. Final metadata scoring, source confidence, karaoke preference, and winner selection remain unchanged in `:provider:selection`.
 
-Each later implementation slice still requires explicit authorization. PR #29 was explicitly authorized and completed within its documented scope; demand gating, cache, translation, timing, finished presentation, and rendering remain separate future slices.
+Each later implementation slice still requires explicit authorization. The current explicit authorization is limited to lyrics demand gating on `feature/lyrics-demand-gating`; cache, translation, timing, finished presentation, and rendering remain separate later slices.
