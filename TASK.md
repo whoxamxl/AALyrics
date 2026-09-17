@@ -37,7 +37,8 @@
 - [x] Wire Android Auto projection demand without adding finished automotive UI.
 - [x] Add deterministic regressions.
 - [x] Update durable docs with the implementation result.
-- [ ] Run validation and bounded review.
+- [x] Run the required repository validation.
+- [ ] Complete the bounded PR review.
 - [ ] Open PR and stop before merge.
 
 ## Scope guard
