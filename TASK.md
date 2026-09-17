@@ -7,7 +7,7 @@
 - Working fork: `whoxamxl/auto-lyrics` main `8484bed2dbe8db5ca7b17dec5481b3c22714dc6f` (`v1.13.0`), re-checked on 2026-09-17 and still current.
 - Classification: **PRESERVE / REFACTOR** for mature session-selection behavior and **REWRITE** for integration ownership.
 - Read `AGENTS.md`, `docs/ARCHITECTURE.md`, `docs/ROADMAP.md`, `docs/MIGRATION_INVENTORY.md`, `docs/APPLICATION_COMPOSITION.md`, and `docs/MEDIA_SESSION_RUNTIME.md` before changing production code.
-- This branch is currently **documentation/planning only**. Media-session runtime implementation is not yet authorized.
+- The user explicitly authorized media-session runtime implementation on this branch.
 
 ## Acceptance criteria for the later implementation slice
 
@@ -33,7 +33,7 @@
 - [x] Re-check current working-fork `main` and the relevant `MediaListenerService`, `LyricsDemandController`, `MediaTracker`, and manifest behavior.
 - [x] Re-check current Android notification-listener / active-media-session API requirements.
 - [x] Define runtime ownership, session-selection semantics, callback lifecycle, permission boundary, STOP gate, and explicit no-UI scope in `docs/MEDIA_SESSION_RUNTIME.md`.
-- [ ] Obtain explicit authorization before production implementation.
+- [x] Obtain explicit authorization before production implementation.
 - [ ] Implement the live media-session runtime behind the documented platform/application boundary.
 - [ ] Add deterministic regressions and update durable docs with the implementation result.
 - [ ] Run final validation and bounded review.
