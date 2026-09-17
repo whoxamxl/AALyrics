@@ -35,9 +35,18 @@ Define the durable Phone UI information architecture and source ownership before
 - [x] Add `docs/PHONE_UI_SPEC.md`.
 - [x] Reshape `ui/phone` package/folder ownership using placeholders only.
 - [x] Align `docs/UI_ARCHITECTURE.md` with the Phone package model and shell boundary.
-- [ ] Validate CI/build and architecture checks.
-- [ ] Review the complete branch diff.
-- [ ] Open PR and stop before merge.
+- [x] Validate CI/build and architecture checks.
+- [x] Review the complete branch diff.
+- [x] Open PR #31 and stop before merge.
+
+## Validation/review record
+
+- GitHub Actions branch-name validation passed.
+- Architecture-boundary verification passed.
+- Debug APK build passed.
+- Unit tests passed.
+- Complete diff review confirmed that source changes are package/comment placeholders only; no Compose layout, runtime navigation, media wiring, provider logic, or screen behavior is introduced.
+- PR #31 is the review/integration gate for this architecture-only slice.
 
 ## Scope guard
 
