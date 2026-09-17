@@ -29,10 +29,10 @@ Establish a clear boundary between the shared AALyrics Compose design system, An
 
 - [x] Create `feature/automotive-design-system` from current `main`.
 - [x] Define scope and ownership rules in `TASK.md`.
-- [ ] Reshape the automotive source tree into `designsystem/`, `screen/`, and `state/`.
-- [ ] Add placeholder files that make the intended ownership visible without inventing behavior.
-- [ ] Update `docs/UI_ARCHITECTURE.md` with shared-vs-automotive design-system rules.
-- [ ] Update durable architecture documentation if the module-level wording needs clarification.
+- [x] Reshape the automotive source tree into `designsystem/`, `screen/`, and `state/`.
+- [x] Add placeholder files that make the intended ownership visible without inventing behavior.
+- [x] Update `docs/UI_ARCHITECTURE.md` with shared-vs-automotive design-system rules.
+- [x] Re-check `docs/ARCHITECTURE.md`; its module-level boundary remains accurate, while the package-level ownership detail belongs in `docs/UI_ARCHITECTURE.md`.
 - [ ] Run CI/build validation.
 - [ ] Review the complete branch diff.
 - [ ] Open PR and stop before merge.
