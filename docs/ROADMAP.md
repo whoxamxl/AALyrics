@@ -97,8 +97,8 @@ Merged in PR #14 after the explicit STOP GATE review.
 Phase 5 validated, rather than expanded, the provider-independent foundation:
 
 - executable CI architecture checks for pure Kotlin/JVM core modules,
-- one shared `LyricsState` contract for phone and automotive features,
-- feature ownership guards preventing provider fetching/ranking in UI modules,
+- one shared `LyricsState` contract for phone and automotive presentation,
+- presentation ownership guards preventing provider fetching/ranking in UI modules,
 - Android MediaSession / MediaController confinement to `:platform:media`,
 - provider-specific behavior exclusion from pure core,
 - regression evidence for provider order, stale-result rejection, failure isolation, and playback identity,
@@ -121,34 +121,43 @@ Completed work includes:
 - regression coverage adapted to AALyrics models,
 - rejection of unusable lyric candidates before selection.
 
-### Phase 7 — Concrete provider adapters
+### Phase 7 — Concrete provider adapters ✅
 
-Provider migration proceeds one adapter at a time behind `LyricsProvider`.
-
-Completed:
+Provider migration proceeded one adapter at a time behind `LyricsProvider`.
 
 - LRCLIB — merged in PR #19.
 - PetitLyrics — merged in PR #20.
 - Musixmatch — merged in PR #21.
 - SyncLRC — merged in PR #24.
 
-Phase 7 is complete.
+### Phase 8 — Application composition ✅
+
+Merged in PR #25.
+
+The application now constructs the first process-level production graph in `:app` from all four providers, the production selector, `LyricsCoordinator`, and `PlaybackLyricsController`. Composition remains explicit/manual, and candidate-selection preferences participate in playback-to-lookup ownership.
 
 ## Current work
 
-### Application composition
+### UI foundation
 
-The active slice constructs the first process-level production graph in `:app` from all four providers, the production selector, `LyricsCoordinator`, and `PlaybackLyricsController`. Composition remains explicit and manual, with one application-owned coroutine scope and the existing BuildConfig values supplying PetitLyrics configuration.
+The active slice establishes Compose presentation boundaries before final screen design:
 
-Lookup ownership now includes both playback identity and candidate-selection preferences. The production boundary initially requests `WORD` timing to preserve the working fork's karaoke-enabled default, while timeline/status/rate/duration churn remains outside lookup identity.
+- `:ui:designsystem` for shared tokens/components,
+- `:ui:phone` for phone-specific composition,
+- `:ui:automotive` for automotive-specific composition,
+- production UI in `src/main`,
+- deterministic Preview/development fixtures in `src/debug`,
+- Preview rendering the same production composables used at runtime.
 
-Phone and Android Auto presentation, live media-session discovery/callbacks, cache, translation, timing controls, and karaoke rendering remain separate later slices.
+The previous empty `:feature:phone` / `:feature:automotive` shells are removed rather than carried forward.
+
+This foundation intentionally does not finalize the Lyrics screen layout. The next UI slice should first lock the screen map, state matrix, and interactions, then implement the production composables and edge-case previews against those decisions.
 
 ## Later phases
 
-After application composition is stable, later work includes cache, translation, demand/session gating, Android Auto/phone presentation, timing controls, karaoke rendering, persistence, release/signing, and regression comparison against the previous fork.
+After the UI foundation is stable, later work includes screen/state specification, phone presentation, automotive presentation, live media-session discovery/callbacks, cache, translation, demand/session gating, timing controls, karaoke rendering, persistence, release/signing, and regression comparison against the previous fork.
 
-These should remain separate responsibilities and topic branches. Do not use future feature needs as a reason to turn `LyricsCoordinator`, `PlaybackLyricsController`, the production selector, or concrete providers into new god objects.
+These should remain separate responsibilities and topic branches. Do not use future needs as a reason to turn `LyricsCoordinator`, `PlaybackLyricsController`, the production selector, concrete providers, or the shared design system into god objects.
 
 ## Working method
 
@@ -157,9 +166,9 @@ Each implementation phase is split into small topic branches and PRs. `TASK.md` 
 Before starting any non-trivial implementation slice:
 
 1. check `docs/MIGRATION_INVENTORY.md`,
-2. inspect the current `whoxamxl/auto-lyrics` main branch for equivalent behavior,
+2. inspect the current `whoxamxl/auto-lyrics` main branch for equivalent behavior when relevant,
 3. read the relevant architecture/profile document,
-4. classify the behavior as PRESERVE, REFACTOR, REWRITE, or DROP,
+4. classify inherited behavior as PRESERVE, REFACTOR, REWRITE, or DROP when migration is involved,
 5. define the current PR acceptance criteria,
 6. implement only after the user has explicitly authorized implementation for that slice,
 7. run CI and the bounded review process in `AGENTS.md`,
