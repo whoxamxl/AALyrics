@@ -7,30 +7,40 @@ import io.github.whoxamxl.aalyrics.core.model.PlaybackTrackIdentity
  * Pure boundary between normalized playback snapshots and lyrics lookup work.
  *
  * Timeline/status updates do not restart a lookup because ownership is keyed by
- * [PlaybackSnapshot.trackIdentity], not by whole-snapshot equality. Android
- * framework types remain in `:platform:media`.
+ * [PlaybackSnapshot.trackIdentity] and [CandidateSelectionPreferences], not by
+ * whole-snapshot equality. Android framework types remain in `:platform:media`.
  */
 class PlaybackLyricsController(
     private val lookupLifecycle: LyricsLookupLifecycle,
+    private val defaultPreferences: CandidateSelectionPreferences = CandidateSelectionPreferences(),
 ) {
-    private var activeIdentity: PlaybackTrackIdentity? = null
+    private var activeLookup: LookupOwnership? = null
 
     @Synchronized
-    fun onPlayback(snapshot: PlaybackSnapshot) {
+    fun onPlayback(
+        snapshot: PlaybackSnapshot,
+        preferences: CandidateSelectionPreferences = defaultPreferences,
+    ) {
         val track = snapshot.track
         val nextIdentity = snapshot.trackIdentity
 
         if (track == null || nextIdentity == null) {
-            if (activeIdentity != null) {
-                activeIdentity = null
+            if (activeLookup != null) {
+                activeLookup = null
                 lookupLifecycle.clear()
             }
             return
         }
 
-        if (nextIdentity == activeIdentity) return
+        val nextLookup = LookupOwnership(nextIdentity, preferences)
+        if (nextLookup == activeLookup) return
 
-        activeIdentity = nextIdentity
-        lookupLifecycle.startLookup(track)
+        activeLookup = nextLookup
+        lookupLifecycle.startLookup(track, preferences)
     }
+
+    private data class LookupOwnership(
+        val trackIdentity: PlaybackTrackIdentity,
+        val preferences: CandidateSelectionPreferences,
+    )
 }
