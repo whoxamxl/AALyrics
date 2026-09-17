@@ -51,7 +51,7 @@ Do **not** implement in this slice:
 
 - [x] Create `feature/phone-app-shell` from current `main`.
 - [x] Define this implementation slice in `TASK.md`.
-- [ ] Implement minimal shell presentation contracts.
+- [x] Implement minimal shell presentation contracts.
 - [ ] Implement `PhoneTopBar`.
 - [ ] Implement `PlaybackControlsBar`.
 - [ ] Implement `PhoneNavigationBar`.

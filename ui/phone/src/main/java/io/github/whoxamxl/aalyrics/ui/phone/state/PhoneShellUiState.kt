@@ -1,3 +1,21 @@
 package io.github.whoxamxl.aalyrics.ui.phone.state
 
-// Shell-level presentation state belongs here when persistent Phone chrome is implemented.
+import androidx.compose.runtime.Immutable
+import io.github.whoxamxl.aalyrics.ui.phone.navigation.PhoneDestination
+
+/** Presentation-only state for persistent Phone shell chrome. */
+@Immutable
+data class PhoneShellUiState(
+    val selectedDestination: PhoneDestination = PhoneDestination.Home,
+    val statusText: String? = null,
+    val playbackControls: PlaybackControlsUiState? = null,
+)
+
+/** Presentation-only transport availability. Platform transport ownership stays outside UI. */
+@Immutable
+data class PlaybackControlsUiState(
+    val isPlaying: Boolean,
+    val previousEnabled: Boolean = true,
+    val playPauseEnabled: Boolean = true,
+    val nextEnabled: Boolean = true,
+)
