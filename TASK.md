@@ -52,10 +52,10 @@ Do **not** implement in this slice:
 - [x] Create `feature/phone-app-shell` from current `main`.
 - [x] Define this implementation slice in `TASK.md`.
 - [x] Implement minimal shell presentation contracts.
-- [ ] Implement `PhoneTopBar`.
-- [ ] Implement `PlaybackControlsBar`.
-- [ ] Implement `PhoneNavigationBar`.
-- [ ] Compose `PhoneAppShell`.
+- [x] Implement `PhoneTopBar`.
+- [x] Implement `PlaybackControlsBar`.
+- [x] Implement `PhoneNavigationBar`.
+- [x] Compose `PhoneAppShell`.
 - [ ] Add deterministic debug-only shell previews.
 - [ ] Validate vertical space with a sample Lyrics preview body.
 - [ ] Run `./gradlew test check :app:assembleDebug`.
