@@ -89,6 +89,7 @@ AALyrics-specific deterministic coverage must additionally verify:
 - normalized `WORD` output and milliseconds;
 - operational HTTP/service failure surfaces as an exception instead of "not found";
 - malformed/unusable provider payloads remain no-result rather than operational failures;
+- an HTTP 404 no-match remains no-result while rate-limit and service failures surface as exceptions;
 - coroutine cancellation cancels in-flight HTTP work where practical.
 
 ## AALyrics ownership

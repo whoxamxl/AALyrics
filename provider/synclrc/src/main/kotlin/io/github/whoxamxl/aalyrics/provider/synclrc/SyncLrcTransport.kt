@@ -49,6 +49,7 @@ internal class SyncLrcTransport(
                 override fun onResponse(call: Call, response: Response) {
                     try {
                         val body = response.use {
+                            if (it.code == 404) return@use ""
                             if (!it.isSuccessful) throw IOException("SyncLRC HTTP ${it.code}")
                             it.body?.string().orEmpty()
                         }

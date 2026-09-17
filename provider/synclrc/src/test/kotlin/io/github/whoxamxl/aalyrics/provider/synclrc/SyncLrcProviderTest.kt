@@ -105,6 +105,14 @@ class SyncLrcProviderTest {
     }
 
     @Test
+    fun notFoundResponseIsNoResult() = withServer { server, provider ->
+        server.enqueue(MockResponse().setResponseCode(404))
+
+        assertTrue(provider.search(request).isEmpty())
+        assertEquals(1, server.requestCount)
+    }
+
+    @Test
     fun serviceFailureSurfacesAsOperationalFailure() = withServer { server, provider ->
         server.enqueue(MockResponse().setResponseCode(503))
 
