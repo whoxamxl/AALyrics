@@ -36,7 +36,7 @@ Completed foundation includes:
 - shared/phone/automotive UI foundation (PRs #27 and #28),
 - live Android MediaSession runtime (PR #29).
 
-The current `feature/lyrics-demand-gating` branch implements the next runtime slice and is under review: MediaSession observation stays alive, while provider lookup runs only when phone-process foreground or Android Auto projection demand is active. Demand deactivation clears lyrics work; reactivation resumes immediately from the latest already-observed playback snapshot. Finished phone/Android Auto presentation, cache, translation, timing controls, persistence, and karaoke rendering remain separate later work.
+PR #30 implements the next runtime slice and is ready for explicit merge approval: MediaSession observation stays alive, while provider lookup runs only when phone-process foreground or Android Auto projection demand is active. Demand deactivation clears lyrics work; reactivation resumes immediately from the latest already-observed playback snapshot. Finished phone/Android Auto presentation, cache, translation, timing controls, persistence, and karaoke rendering remain separate later work.
 
 ## Modules
 

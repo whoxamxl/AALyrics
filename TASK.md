@@ -38,8 +38,8 @@
 - [x] Add deterministic regressions.
 - [x] Update durable docs with the implementation result.
 - [x] Run the required repository validation.
-- [ ] Complete the bounded PR review.
-- [ ] Open PR and stop before merge.
+- [x] Complete the bounded PR review: one stale README status was fixed in `bd7bab1`; targeted re-review found no major issues.
+- [x] Open PR #30 and stop before merge.
 
 ## Scope guard
 
