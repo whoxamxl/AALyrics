@@ -58,10 +58,10 @@ Do **not** implement in this slice:
 - [x] Compose `PhoneAppShell`.
 - [x] Add deterministic debug-only shell previews.
 - [x] Validate vertical space with a sample Lyrics preview body.
-- [ ] Run `./gradlew test check :app:assembleDebug`.
-- [ ] Run `bash scripts/verify-architecture.sh`.
-- [ ] Run `git diff --check`.
-- [ ] Review the complete branch diff.
+- [x] Run `./gradlew test check :app:assembleDebug`.
+- [x] Run `bash scripts/verify-architecture.sh`.
+- [x] Run `git diff --check`.
+- [x] Review the complete branch diff.
 - [ ] Open PR against `main` and stop before merge.
 
 ## Scope guard
