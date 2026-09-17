@@ -6,7 +6,7 @@
 - Base: main `3ea97ce` after application-composition PR #25 merged.
 - Working-fork behavioral reference: `whoxamxl/auto-lyrics` main `8484bed2dbe8db5ca7b17dec5481b3c22714dc6f` (`v1.13.0`), re-checked on 2026-09-17 and still current.
 - Classification: **PRESERVE / REFACTOR** for session-selection behavior, **REWRITE** for ownership/integration.
-- State: **IMPLEMENTED — validation and bounded review are active.**
+- State: **IMPLEMENTED — PR #29 validation and bounded review are complete; explicit merge approval is pending.**
 
 ## Purpose
 

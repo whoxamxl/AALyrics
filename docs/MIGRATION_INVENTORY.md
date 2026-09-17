@@ -162,7 +162,7 @@ Do not bulk-port the old application. Each provider or subsystem remains a separ
 - SyncLRC: migrated and merged in PR #24.
 - Phase 7 concrete-provider migration: complete.
 - Application composition: merged in PR #25.
-- Live media-session runtime: implemented on `feature/media-session-runtime`; validation and bounded review are active.
+- Live media-session runtime: implemented in PR #29; validation and bounded review are complete, with explicit merge approval pending.
 
 ### LRCLIB implementation re-check
 

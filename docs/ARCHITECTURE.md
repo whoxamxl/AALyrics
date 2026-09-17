@@ -13,7 +13,7 @@ Completed milestones:
 - Compose UI foundation — PR #27
 - automotive design-system boundary — PR #28
 
-The live Android media-session runtime is implemented on `feature/media-session-runtime` and is undergoing validation/review. It is documented in `docs/MEDIA_SESSION_RUNTIME.md`. Presentation remains in the dedicated `:ui` boundary: a shared Compose design system plus separate phone and automotive screen-composition modules.
+The live Android media-session runtime is implemented and has completed validation/bounded review in PR #29; explicit merge approval is pending. It is documented in `docs/MEDIA_SESSION_RUNTIME.md`. Presentation remains in the dedicated `:ui` boundary: a shared Compose design system plus separate phone and automotive screen-composition modules.
 
 ## Design goals
 

@@ -36,8 +36,18 @@
 - [x] Obtain explicit authorization before production implementation.
 - [x] Implement the live media-session runtime behind the documented platform/application boundary.
 - [x] Add deterministic regressions and update durable docs with the implementation result.
-- [ ] Run final validation and bounded review.
-- [ ] Open PR and stop before merge.
+- [x] Run final validation and bounded review.
+- [x] Open PR #29 and stop before merge.
+
+## Validation/review record
+
+- Targeted `SelectedMediaSessionRuntimeTest` passed after the review fix.
+- `./gradlew test check :app:assembleDebug` passed against current `main` after conflict reconciliation and again after the review fix.
+- `bash scripts/verify-architecture.sh` and `git diff --check` passed.
+- GitHub Actions branch-name and build checks passed on the reviewed implementation.
+- Codex review round 1 found one current-scope P2: a selected session leaving `PLAYING` did not refresh selection for an already-playing replacement. Commit `7a5e82f` fixes it with a deterministic regression.
+- Codex review round 2 targeted the original concern at `7a5e82f` and reported no major issues; the addressed thread is resolved.
+- PR #29 is ready for the explicit pre-merge approval gate and has not been merged.
 
 ## Scope guard
 

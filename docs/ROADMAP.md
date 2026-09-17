@@ -148,7 +148,7 @@ Presentation now uses `:ui:designsystem` for shared tokens/components, `:ui:phon
 
 ### Phase 9 — Live MediaSession runtime implementation
 
-The runtime documented in `docs/MEDIA_SESSION_RUNTIME.md` is implemented on `feature/media-session-runtime` and is undergoing validation/review.
+The runtime documented in `docs/MEDIA_SESSION_RUNTIME.md` is implemented in PR #29. Validation and bounded review are complete; explicit merge approval is pending.
 
 Its purpose is to connect Android's live active media sessions to the already-composed lyrics engine:
 
