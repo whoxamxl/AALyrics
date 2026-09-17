@@ -25,12 +25,12 @@ Initial review baseline:
 - Branch: `main`
 - Reviewed commit: `6ad450213f1896a5a65e217f15d1544c6e646d0e`
 
-Core Readiness Gate and current provider baseline:
+Core Readiness Gate and current provider/runtime baseline:
 
 - Repository: `whoxamxl/auto-lyrics`
 - Branch: `main`
 - Reviewed commit: `8484bed2dbe8db5ca7b17dec5481b3c22714dc6f` (`v1.13.0`)
-- Re-checked for the SyncLRC slice on 2026-09-16; it remains current working-fork `main`.
+- Re-checked for the SyncLRC slice on 2026-09-16 and for the live media-session runtime on 2026-09-17; it remains current working-fork `main`.
 
 The mature resolver/provider clients remain present, `MediaTracker` still combines Android media, provider, cache, translation, timing, and presentation responsibilities, and the explicit Spotify playback identity and lyrics-demand helpers remain separate behaviors.
 
@@ -77,7 +77,7 @@ Shared provider migration rules are in `docs/PROVIDER_ARCHITECTURE.md`. Provider
 | `lyrics/LrcParser.kt` | **PRESERVE / REFACTOR** | pure `:provider:lrc` shared parser | Migrated with LRCLIB. Parsing behavior is regression-covered and shared without provider networking ownership. SyncLRC reuses Enhanced-LRC `parseKaraoke`. |
 | `lyrics/PetitLyricsClient.kt` | **PRESERVE / REFACTOR** | `:provider:petitlyrics`; see `docs/providers/PETITLYRICS.md` | Migrated in PR #20. Preserves progressive search, ranking, attempted-result deduplication, WSY/LSY parsing, companion-text resolution, artist-query evidence, configuration invariants, and provider-contract failure/cancellation semantics. |
 | `lyrics/MusixmatchClient.kt` | **PRESERVE / REFACTOR** | `:provider:musixmatch`; see `docs/providers/MUSIXMATCH.md` | Migrated in PR #21. Preserves the anonymous mobile API flow, token/session behavior, macro lookup, RichSync/subtitle fallback, Spotify-aware identity validation, instrumental rejection, metadata validation, and failure isolation. |
-| `lyrics/SyncLrcClient.kt` | **PRESERVE / REFACTOR** | `:provider:synclrc` in PR #24; see `docs/providers/SYNCLRC.md` | Implemented and reviewed pending merge approval. Preserves its deliberate karaoke-only role, WORD-preference request gating, current/legacy response-shape compatibility, instrumental rejection, and genuine word-timing requirement. |
+| `lyrics/SyncLrcClient.kt` | **PRESERVE / REFACTOR** | `:provider:synclrc`; see `docs/providers/SYNCLRC.md` | Migrated and merged in PR #24. Preserves its deliberate karaoke-only role, WORD-preference request gating, current/legacy response-shape compatibility, instrumental rejection, and genuine word-timing requirement. |
 
 Provider migration is not a clean-room exercise. Mature provider implementation may be reused/refactored when it already expresses the behavior we intend to keep. The structural requirement is that legacy coupling does not cross the AALyrics provider boundary.
 
@@ -86,18 +86,18 @@ Provider migration is not a clean-room exercise. Mature provider implementation 
 | Fork implementation | Classification | AALyrics destination / rule | Notes |
 | --- | --- | --- | --- |
 | `media/SpotifyTrackIdentity.kt` | **PRESERVE / REFACTOR** | `:platform:media` identity normalization feeding `core:model` references | Phase 4 preserves Spotify-specific robustness while keeping platform details outside lyrics core. Musixmatch consumes only normalized `TrackReference` identity. |
-| `media/LyricsDemandController.kt` | **PRESERVE / REFACTOR** | playback/application demand boundary after provider/core wiring is stable | Review proven demand/lifecycle behavior before creating a replacement. |
+| `media/LyricsDemandController.kt` | **PRESERVE / REFACTOR** | future playback/application demand-gating lifecycle slice | Preserve the proven phone/Android Auto demand policy, but keep it separate from the completed live-session runtime. |
 | `media/LyricsVariantTransition.kt` | **PRESERVE / REFACTOR** | future state/variant transition policy if still required | Small but potentially regression-sensitive. Inspect call sites before migration. |
 | `media/MediaTracker.kt` | **REWRITE** | split across `:platform:media`, `:core:lyrics`, composition root, and later feature-specific services | Preserve observable behavior through tests/reference, but do not migrate the monolithic ownership model. |
-| `media/MediaListenerService.kt` | **REWRITE / REFACTOR** | thin Android adapter in `:platform:media` | Preserve required Android behavior, but keep domain orchestration outside the service. |
+| `media/MediaListenerService.kt` | **REWRITE / REFACTOR** | thin Android adapter in `:platform:media` | Implemented in PR #29 as `MediaSessionListenerService` plus testable selection/observation/runtime ownership; domain orchestration remains outside the service. |
 
 ## State and presentation
 
 | Fork implementation | Classification | AALyrics destination / rule | Notes |
 | --- | --- | --- | --- |
 | `model/Models.kt` legacy `LyricsState` | **REWRITE** | AALyrics `:core:model` + `:core:lyrics` state types | Old state mixes Android `Bitmap`, playback, lyrics, translation, UI indices, offset, and colors. Preserve required capabilities later, but not the monolithic DTO. |
-| `MainActivity.kt` | **REWRITE** | `:feature:phone` | Use as behavioral/UI reference only. New UI consumes shared domain state and does not own provider orchestration. |
-| `auto/LyricsBrowserService.kt` | **REWRITE** | `:feature:automotive` plus thin Android service boundary | Preserve useful Android Auto UX/behavior, but the service must not fetch/rank lyrics. |
+| `MainActivity.kt` | **REWRITE** | `:ui:phone` | Use as behavioral/UI reference only. New UI consumes shared domain state and does not own provider orchestration. |
+| `auto/LyricsBrowserService.kt` | **REWRITE** | `:ui:automotive` plus thin Android service boundary | Preserve useful Android Auto UX/behavior, but the service must not fetch/rank lyrics. |
 | `PerformanceActivity.kt` / `PerformanceLyricsView.kt` | **REVIEW BEFORE DECISION** | future phone feature if retained | Do not reimplement until product intent is explicitly decided. |
 
 ## Timing, karaoke, and calibration
@@ -131,6 +131,7 @@ Provider migration is not a clean-room exercise. Mature provider implementation 
 | normalized `LyricsCandidateEvidence` | Lets providers report search corroboration as facts without assigning cross-provider scores. |
 | deterministic exact-score tie break | Preserves the architecture invariant that provider completion/execution order cannot silently determine the winner. |
 | explicit playback identity and `PlaybackLyricsController` | Separates track ownership from position/status updates so media churn does not restart lyrics lookup. |
+| live media-session runtime | Preserves mature session-selection behavior while splitting Android discovery/callback ownership from lyrics orchestration and presentation. |
 
 ## Migration rule after the Core Readiness Gate
 
@@ -162,7 +163,7 @@ Do not bulk-port the old application. Each provider or subsystem remains a separ
 - SyncLRC: migrated and merged in PR #24.
 - Phase 7 concrete-provider migration: complete.
 - Application composition: merged in PR #25.
-- Live media-session runtime: implemented in PR #29; validation and bounded review are complete, with explicit merge approval pending.
+- Live media-session runtime: implemented, validated, and reviewed in PR #29; merge approval is complete.
 
 ### LRCLIB implementation re-check
 
@@ -190,4 +191,4 @@ Preserved: request execution only when karaoke/WORD timing is preferred; require
 
 Structural adaptation: a `WORD`-only `LyricsProvider` gates transport with normalized `LyricsRequest.preferredSyncType`, reuses shared `:provider:lrc` parsing, normalizes duration seconds to domain milliseconds, uses cancellable HTTP, and surfaces operational failures according to the provider contract. Final metadata scoring, source confidence, karaoke preference, and winner selection remain unchanged in `:provider:selection`.
 
-Documentation/planning approval does not authorize unrelated implementation. The current explicit authorization is limited to the first manual application object graph on `feature/application-composition`; presentation and live media-session work remain separate slices.
+Each later implementation slice still requires explicit authorization. PR #29 was explicitly authorized and completed within its documented scope; demand gating, cache, translation, timing, finished presentation, and rendering remain separate future slices.
