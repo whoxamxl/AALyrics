@@ -14,6 +14,8 @@ import io.github.whoxamxl.aalyrics.provider.petitlyrics.PetitLyricsConfig
 import io.github.whoxamxl.aalyrics.provider.petitlyrics.PetitLyricsProvider
 import io.github.whoxamxl.aalyrics.provider.selection.CrossProviderCandidateSelector
 import io.github.whoxamxl.aalyrics.provider.synclrc.SyncLrcProvider
+import io.github.whoxamxl.aalyrics.platform.media.MediaSessionRuntimeHost
+import io.github.whoxamxl.aalyrics.platform.media.PlaybackSnapshotSink
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -34,9 +36,11 @@ class AALyricsApplication : Application() {
     override fun onCreate() {
         super.onCreate()
         graph = createProductionApplicationGraph(applicationScope)
+        MediaSessionRuntimeHost.attach(graph.playbackSnapshotSink)
     }
 
     override fun onTerminate() {
+        MediaSessionRuntimeHost.detach(graph.playbackSnapshotSink)
         applicationScope.cancel()
         super.onTerminate()
     }
@@ -55,6 +59,9 @@ internal class ApplicationGraph(
         lookupLifecycle = coordinator,
         defaultPreferences = selectionPreferences,
     )
+    val playbackSnapshotSink = PlaybackSnapshotSink { snapshot ->
+        playbackLyricsController.onPlayback(snapshot)
+    }
     val lyricsState: StateFlow<LyricsState> = coordinator.state
 }
 

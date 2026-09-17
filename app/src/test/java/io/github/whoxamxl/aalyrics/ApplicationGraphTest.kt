@@ -4,6 +4,7 @@ import io.github.whoxamxl.aalyrics.core.lyrics.CandidateSelectionPreferences
 import io.github.whoxamxl.aalyrics.core.lyrics.CandidateSelector
 import io.github.whoxamxl.aalyrics.core.model.LyricsSyncType
 import io.github.whoxamxl.aalyrics.core.model.PlaybackSnapshot
+import io.github.whoxamxl.aalyrics.core.model.PlaybackStatus
 import io.github.whoxamxl.aalyrics.core.model.Track
 import io.github.whoxamxl.aalyrics.provider.api.LyricsCandidate
 import io.github.whoxamxl.aalyrics.provider.api.LyricsProvider
@@ -53,7 +54,15 @@ class ApplicationGraphTest {
         )
         val track = Track(title = "Song", artists = listOf("Artist"))
 
-        graph.playbackLyricsController.onPlayback(PlaybackSnapshot(track = track))
+        graph.playbackSnapshotSink.onPlaybackSnapshot(PlaybackSnapshot(track = track))
+        advanceUntilIdle()
+        graph.playbackSnapshotSink.onPlaybackSnapshot(
+            PlaybackSnapshot(
+                track = track.copy(durationMs = 200_000L),
+                status = PlaybackStatus.PLAYING,
+                positionMs = 42_000L,
+            ),
+        )
         advanceUntilIdle()
 
         assertEquals(listOf(LyricsSyncType.WORD), provider.requests.map { it.preferredSyncType })
