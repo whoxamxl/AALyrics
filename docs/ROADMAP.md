@@ -144,11 +144,9 @@ Merged in PRs #27 and #28.
 
 Presentation now uses `:ui:designsystem` for shared tokens/components, `:ui:phone` for phone-specific composition, and `:ui:automotive` for automotive-specific composition. Production UI lives in `src/main`; deterministic Preview/development fixtures live in `src/debug` and render the production composables.
 
-## Current work
+### Phase 9 — Live MediaSession runtime ✅
 
-### Phase 9 — Live MediaSession runtime implementation
-
-The runtime documented in `docs/MEDIA_SESSION_RUNTIME.md` is implemented in PR #29. Validation and bounded review are complete; explicit merge approval is pending.
+Implemented, validated, and reviewed in PR #29.
 
 Its purpose is to connect Android's live active media sessions to the already-composed lyrics engine:
 
@@ -170,11 +168,15 @@ LyricsState
 
 The runtime preserves/refactors the mature working-fork session-selection behavior while keeping Android framework ownership in `:platform:media` and avoiding the old `MediaTracker` monolith. It retains token-based ownership and the platform-owned 600 ms track-metadata stabilization, and hands normalized snapshots to the existing application graph through a narrow host/sink boundary.
 
-The STOP gate for this phase is deliberately UI-free: with notification-listener access granted and a media app playing, real playback should be able to drive the production provider/selection pipeline and update `LyricsState`.
+The phase STOP gate is deliberately UI-free: with notification-listener access granted and a media app playing, real playback can drive the production provider/selection pipeline and update `LyricsState`.
+
+## Current work
+
+No next implementation slice is active in this roadmap after PR #29. Select and authorize the next responsibility explicitly before implementation.
 
 ## Later phases
 
-After live media-session runtime is stable, later work includes process-wide lyrics-demand gating, screen/state specification, finished Android Auto/phone presentation, cache, translation, timing controls, karaoke rendering, persistence/settings, release/signing, and regression comparison against the previous fork.
+Later work includes process-wide lyrics-demand gating, screen/state specification, finished Android Auto/phone presentation, cache, translation, timing controls, karaoke rendering, persistence/settings, release/signing, and regression comparison against the previous fork.
 
 These should remain separate responsibilities and topic branches. Do not use future feature needs as a reason to turn `LyricsCoordinator`, `PlaybackLyricsController`, the media-session runtime, the production selector, concrete providers, or the shared design system into god objects.
 
