@@ -50,8 +50,8 @@ dependencies {
     implementation(project(":provider:petitlyrics"))
     implementation(project(":provider:musixmatch"))
     implementation(project(":provider:synclrc"))
-    implementation(project(":feature:phone"))
-    implementation(project(":feature:automotive"))
+    implementation(project(":ui:phone"))
+    implementation(project(":ui:automotive"))
     testImplementation(kotlin("test-junit"))
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.11.0")
 }

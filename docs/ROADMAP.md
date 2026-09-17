@@ -97,8 +97,8 @@ Merged in PR #14 after the explicit STOP GATE review.
 Phase 5 validated, rather than expanded, the provider-independent foundation:
 
 - executable CI architecture checks for pure Kotlin/JVM core modules,
-- one shared `LyricsState` contract for phone and automotive features,
-- feature ownership guards preventing provider fetching/ranking in UI modules,
+- one shared `LyricsState` contract for phone and automotive presentation,
+- presentation ownership guards preventing provider fetching/ranking in UI modules,
 - Android MediaSession / MediaController confinement to `:platform:media`,
 - provider-specific behavior exclusion from pure core,
 - regression evidence for provider order, stale-result rejection, failure isolation, and playback identity,
@@ -123,7 +123,7 @@ Completed work includes:
 
 ### Phase 7 — Concrete provider adapters ✅
 
-Completed:
+Provider migration proceeded one adapter at a time behind `LyricsProvider`.
 
 - LRCLIB — merged in PR #19.
 - PetitLyrics — merged in PR #20.
@@ -137,6 +137,12 @@ Merged in PR #25.
 The application now constructs one production object graph containing all four providers, `CrossProviderCandidateSelector`, `LyricsCoordinator`, and `PlaybackLyricsController`. The graph is process-owned by `AALyricsApplication`, exposes the shared `LyricsState`, uses existing BuildConfig values for PetitLyrics, and preserves the karaoke-enabled production default through `preferredSyncType = WORD`.
 
 Playback lookup ownership now includes both track identity and candidate-selection preferences. Same-track preference changes trigger a fresh lookup while position/status/rate/duration churn does not.
+
+### Phase 8.1 — UI foundation ✅
+
+Merged in PRs #27 and #28.
+
+Presentation now uses `:ui:designsystem` for shared tokens/components, `:ui:phone` for phone-specific composition, and `:ui:automotive` for automotive-specific composition. Production UI lives in `src/main`; deterministic Preview/development fixtures live in `src/debug` and render the production composables.
 
 ## Current work
 
@@ -168,9 +174,9 @@ The STOP gate for this phase is deliberately UI-free: with notification-listener
 
 ## Later phases
 
-After live media-session runtime is stable, later work includes process-wide lyrics-demand gating, cache, translation, Android Auto/phone presentation, timing controls, karaoke rendering, persistence/settings, release/signing, and regression comparison against the previous fork.
+After live media-session runtime is stable, later work includes process-wide lyrics-demand gating, screen/state specification, finished Android Auto/phone presentation, cache, translation, timing controls, karaoke rendering, persistence/settings, release/signing, and regression comparison against the previous fork.
 
-These should remain separate responsibilities and topic branches. Do not use future feature needs as a reason to turn `LyricsCoordinator`, `PlaybackLyricsController`, media-session runtime, the production selector, or concrete providers into new god objects.
+These should remain separate responsibilities and topic branches. Do not use future feature needs as a reason to turn `LyricsCoordinator`, `PlaybackLyricsController`, the media-session runtime, the production selector, concrete providers, or the shared design system into god objects.
 
 ## Working method
 
@@ -179,9 +185,9 @@ Each implementation phase is split into small topic branches and PRs. `TASK.md` 
 Before starting any non-trivial implementation slice:
 
 1. check `docs/MIGRATION_INVENTORY.md`,
-2. inspect the current `whoxamxl/auto-lyrics` main branch for equivalent behavior,
+2. inspect the current `whoxamxl/auto-lyrics` main branch for equivalent behavior when relevant,
 3. read the relevant architecture/profile document,
-4. classify the behavior as PRESERVE, REFACTOR, REWRITE, or DROP,
+4. classify inherited behavior as PRESERVE, REFACTOR, REWRITE, or DROP when migration is involved,
 5. define the current PR acceptance criteria,
 6. implement only after the user has explicitly authorized implementation for that slice,
 7. run CI and the bounded review process in `AGENTS.md`,
