@@ -1,46 +1,42 @@
-# Lyrics Demand Gating
+# Lyrics Capability Architecture Foundation
 
 ## Branch and baseline
 
-- Branch: `feature/lyrics-demand-gating`.
-- Base: main `c0bfb15` after PR #29 merged.
-- Working-fork reference: `whoxamxl/auto-lyrics` main `8484bed2dbe8db5ca7b17dec5481b3c22714dc6f` (`v1.13.0`).
-- Classification: **PRESERVE / REFACTOR** for demand semantics; **REWRITE** for AALyrics ownership/integration.
-- Authoritative scope: `docs/LYRICS_DEMAND_GATING.md`.
-- The user explicitly authorized production implementation of this slice; implementation is active on this branch.
+- Branch: `architecture/lyrics-capability-foundation`.
+- Base: main `55f918896df501ffc3c196a0cda92c88b6a159d8` after PR #30 merged.
+- Scope: documentation-only architecture foundation for cache, translation, timing/calibration, karaoke projection, and presentation state.
+- No production implementation is authorized in this slice.
+
+## Goal
+
+Define stable responsibility boundaries and dependency direction before feature implementation begins, while deliberately leaving algorithm, storage, provider, UI, and API details open where implementation evidence is still missing.
+
+This slice should make later implementations difficult to place in the wrong layer without prematurely locking the project into interfaces that may prove unsuitable.
 
 ## Acceptance criteria
 
-- Preserve `phone process foreground OR Android Auto projection connected` as the demand rule.
-- Keep MediaSession discovery/selection running independently of lyrics demand.
-- Gate only the handoff from normalized playback into lyrics lookup/provider work.
-- Retain the latest `PlaybackSnapshot` while demand is off.
-- `OFF -> ON` immediately replays the latest retained snapshot once.
-- `ON -> OFF` clears current lookup ownership once and stops/cancels provider work.
-- Phone and automotive demand sources remain independently composable; removing one source must not disable demand while the other remains active.
-- Preserve process-level phone lifecycle semantics so configuration changes do not cause provider-work flapping.
-- Preserve Android Auto projection-level demand for the whole projection session, not only while AALyrics is the foreground automotive surface.
-- Do not make `:platform:media`, providers, `LyricsCoordinator`, or UI composables own demand policy.
-- Do not change MediaSession selection, provider behavior, candidate scoring, cache, translation, timing, karaoke rendering, or finished phone/Android Auto presentation.
-- Add deterministic regressions defined in `docs/LYRICS_DEMAND_GATING.md`.
-- Run `./gradlew test check :app:assembleDebug`, `bash scripts/verify-architecture.sh`, and `git diff --check` before PR review.
-- Open a PR, complete bounded review, and stop before merge for explicit approval.
+- Document each capability independently.
+- Define ownership, allowed dependencies, forbidden dependencies, invariants, and deferred decisions.
+- Keep provider/network/storage/platform details outside pure transformation logic.
+- Preserve source lyrics and source timing as canonical inputs; later features should derive views/projections rather than mutating provider truth in place.
+- Keep Phone and Android Auto surface state separate while allowing shared presentation-ready facts where semantics are genuinely shared.
+- Keep karaoke/timing calculations UI-framework-independent.
+- Keep cache storage replaceable and prevent UI/provider modules from directly owning persistence policy.
+- Keep translation independent of `LyricsCoordinator` orchestration and concrete provider adapters.
+- Do not create speculative modules, interfaces, DTOs, databases, or production code in this branch.
+- Record unresolved choices explicitly instead of deciding them without implementation evidence.
 
-## Plan/status
+## Planned documents
 
-- [x] Merge live MediaSession runtime in PR #29.
-- [x] Create `feature/lyrics-demand-gating` from main `c0bfb15`.
-- [x] Re-check working-fork `LyricsDemandController` and `AutoLyricsApp` lifecycle wiring.
-- [x] Define demand semantics, ownership, snapshot replay/clear behavior, scope, regressions, and STOP gate in `docs/LYRICS_DEMAND_GATING.md`.
-- [x] Implement demand aggregation and gating behind the documented application/runtime boundary.
-- [x] Wire process-level phone demand without adding finished phone UI.
-- [x] Wire Android Auto projection demand without adding finished automotive UI.
-- [x] Add deterministic regressions.
-- [x] Update durable docs with the implementation result.
-- [x] Run the required repository validation.
-- [x] Complete the bounded PR review: one stale README status was fixed in `bd7bab1`; targeted re-review found no major issues.
-- [x] Open PR #30 and stop before merge.
+- [ ] `docs/CACHE_ARCHITECTURE.md`
+- [ ] `docs/TRANSLATION_ARCHITECTURE.md`
+- [ ] `docs/TIMING_ARCHITECTURE.md`
+- [ ] `docs/KARAOKE_ARCHITECTURE.md`
+- [ ] `docs/PRESENTATION_STATE_ARCHITECTURE.md`
+- [ ] `docs/LYRICS_CAPABILITY_FOUNDATION.md`
 
 ## Scope guard
 
-This is a background/runtime lifecycle slice. It is not a presentation, cache, translation, timing, karaoke-rendering, provider, candidate-selection, or MediaSession-selection slice.
+This branch establishes seams, not implementation contracts. It must not add production dependencies, Gradle modules, framework integrations, persistence engines, translation engines, timing algorithms, karaoke rendering code, or finished Phone/Android Auto state models.
+
+Each future implementation capability remains a separate topic branch and PR with its own migration re-check, acceptance criteria, tests, review, and merge approval.
