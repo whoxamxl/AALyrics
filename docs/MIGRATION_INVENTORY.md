@@ -166,7 +166,7 @@ Do not bulk-port the old application. Each provider or subsystem remains a separ
 - Phase 7 concrete-provider migration: complete.
 - Application composition: merged in PR #25.
 - Live media-session runtime: merged in PR #29.
-- Lyrics demand gating: explicitly authorized and active on `feature/lyrics-demand-gating`.
+- Lyrics demand gating: implemented on `feature/lyrics-demand-gating`; validation and bounded review are active.
 
 ### LRCLIB implementation re-check
 

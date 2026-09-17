@@ -32,11 +32,11 @@
 - [x] Create `feature/lyrics-demand-gating` from main `c0bfb15`.
 - [x] Re-check working-fork `LyricsDemandController` and `AutoLyricsApp` lifecycle wiring.
 - [x] Define demand semantics, ownership, snapshot replay/clear behavior, scope, regressions, and STOP gate in `docs/LYRICS_DEMAND_GATING.md`.
-- [ ] Implement demand aggregation and gating behind the documented application/runtime boundary.
-- [ ] Wire process-level phone demand without adding finished phone UI.
-- [ ] Wire Android Auto projection demand without adding finished automotive UI.
-- [ ] Add deterministic regressions.
-- [ ] Update durable docs with the implementation result.
+- [x] Implement demand aggregation and gating behind the documented application/runtime boundary.
+- [x] Wire process-level phone demand without adding finished phone UI.
+- [x] Wire Android Auto projection demand without adding finished automotive UI.
+- [x] Add deterministic regressions.
+- [x] Update durable docs with the implementation result.
 - [ ] Run validation and bounded review.
 - [ ] Open PR and stop before merge.
 

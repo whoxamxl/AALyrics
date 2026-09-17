@@ -6,7 +6,7 @@
 - Base: main `c0bfb15` after live MediaSession runtime PR #29 merged.
 - Working-fork reference: `whoxamxl/auto-lyrics` main `8484bed2dbe8db5ca7b17dec5481b3c22714dc6f` (`v1.13.0`).
 - Classification: **PRESERVE / REFACTOR** for the proven demand semantics; **REWRITE** for ownership/integration into the AALyrics architecture.
-- The user explicitly authorized production implementation of this slice; implementation is active.
+- State: **IMPLEMENTED — validation and bounded review are active.**
 
 ## Purpose
 
@@ -160,3 +160,16 @@ This slice is complete when:
 > Media sessions continue to be tracked in the background, but provider lookup occurs only while phone-process foreground or Android Auto projection demand is active; disabling the final demand source clears active lyrics work, and re-enabling demand immediately resumes from the latest already-observed playback snapshot without requiring a track change.
 
 Run the normal repository validation and bounded review from `AGENTS.md`, then stop before merge for explicit approval.
+
+## Implementation result
+
+The implemented application boundary preserves the working-fork demand rule without moving lifecycle policy into media or presentation modules:
+
+- `LyricsDemandGate` retains every normalized `PlaybackSnapshot` received from `MediaSessionRuntimeHost` and forwards it to `PlaybackLyricsController` only while combined demand is active;
+- phone-process and automotive-projection inputs are stored independently and combined with logical OR;
+- activation replays the retained snapshot once, final deactivation sends one empty snapshot through the existing playback boundary, and unchanged source/aggregate states are no-ops;
+- `ProcessLifecycleOwner` supplies phone demand, preserving its delayed process-stop behavior across brief Activity recreation;
+- `CarConnection.CONNECTION_TYPE_PROJECTION` supplies projection-wide automotive demand through an application-owned observer;
+- MediaSession discovery, selected-controller callbacks, normalization, providers, selection, and UI modules are unchanged.
+
+Deterministic tests cover all gate transitions, independent sources, retained/newest/empty snapshots, active playback churn, process-lifecycle idempotence, application preference ownership, and cancellation of in-flight provider work when the final demand source turns off.

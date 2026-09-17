@@ -14,7 +14,7 @@ Completed milestones:
 - automotive design-system boundary — PR #28
 - live Android media-session runtime — PR #29
 
-The live Android media-session runtime is implemented and merged in PR #29. Process-wide lyrics-demand gating is the current background/runtime slice on `feature/lyrics-demand-gating` and is specified in `docs/LYRICS_DEMAND_GATING.md`. Presentation remains in the dedicated `:ui` boundary: a shared Compose design system plus separate phone and automotive screen-composition modules.
+The live Android media-session runtime is implemented and merged in PR #29. Process-wide lyrics-demand gating is implemented on `feature/lyrics-demand-gating` and is undergoing validation/review; its boundary is specified in `docs/LYRICS_DEMAND_GATING.md`. Presentation remains in the dedicated `:ui` boundary: a shared Compose design system plus separate phone and automotive screen-composition modules.
 
 ## Design goals
 
@@ -259,7 +259,7 @@ Detailed runtime behavior is in `docs/MEDIA_SESSION_RUNTIME.md`.
 
 ## Demand gating boundary
 
-Demand gating is the current lifecycle slice and is specified in `docs/LYRICS_DEMAND_GATING.md`.
+Demand gating is implemented at the application lifecycle boundary and is specified in `docs/LYRICS_DEMAND_GATING.md`.
 
 Preserve the mature working-fork rule:
 

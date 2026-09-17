@@ -176,6 +176,8 @@ The phase STOP gate is deliberately UI-free: with notification-listener access g
 
 Active branch: `feature/lyrics-demand-gating`.
 
+Implementation is complete on the branch; validation and bounded review are active.
+
 This background/runtime slice preserves the working fork's proven demand rule while moving ownership into the AALyrics application lifecycle boundary:
 
 ```text
