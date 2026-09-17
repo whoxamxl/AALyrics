@@ -6,7 +6,7 @@ This document defines the architectural boundaries for AALyrics. The project was
 
 AALyrics is a greenfield codebase, but not a greenfield behavior specification. The working `whoxamxl/auto-lyrics` fork is treated as a behavioral reference and regression oracle. Proven behavior should not be re-invented merely because the new module structure is different.
 
-The Core Readiness Gate completed in PR #14. Production candidate selection was migrated in PR #17, and all four concrete providers were migrated through SyncLRC in PR #24. The active application-composition slice now connects those boundaries into the first production object graph without starting presentation or live media-session work.
+The Core Readiness Gate completed in PR #14. Production candidate selection was migrated in PR #17, all four concrete providers were migrated through SyncLRC in PR #24, and the first production application graph was composed in PR #25. Presentation now begins from a dedicated `:ui` boundary: a shared Compose design system plus separate phone and automotive screen-composition modules.
 
 ## Design goals
 
@@ -20,6 +20,7 @@ The Core Readiness Gate completed in PR #14. Production candidate selection was 
 8. Ensure AALyrics core behavior can be tested entirely with fake providers.
 9. Preserve proven fork behavior unless there is a concrete architectural, correctness, or maintainability reason to change it.
 10. Separate semantic migration from structural refactoring: behavior may stay the same even when ownership and module boundaries change.
+11. Keep reusable visual tokens/components independent from phone- or automotive-specific screen composition.
 
 ## Migration principle
 
@@ -80,9 +81,7 @@ Concrete providers are outer adapters implementing `LyricsProvider`.
 
 Each provider owns only its provider-local transport/authentication, query/fallback strategy, DTOs, parsing, provider-local validation, and normalization into `LyricsCandidate`. A provider may report provider-neutral evidence discovered during search, but it must not decide the final winner across providers.
 
-LRCLIB, PetitLyrics, and Musixmatch are merged. SyncLRC is implemented on its active migration branch. Its public HTTP request/DTO handling, WORD-preference request gate, current/legacy karaoke response compatibility, karaoke-only acceptance policy, and provider-local normalization stay inside the adapter; Enhanced-LRC parsing stays in the shared parser.
-
-Shared policy is defined in `docs/PROVIDER_ARCHITECTURE.md`; concise provider profiles live in `docs/providers/`.
+LRCLIB, PetitLyrics, Musixmatch, and SyncLRC are migrated behind the provider contract. Shared policy is defined in `docs/PROVIDER_ARCHITECTURE.md`; concise provider profiles live in `docs/providers/`.
 
 ### `:platform:media`
 
@@ -90,13 +89,21 @@ Android-specific media-session adaptation. Its job is to translate Android `Medi
 
 Spotify playback identity is intentionally separate from lyrics-provider ownership. A normalized Spotify `TrackReference` may be consumed by Musixmatch as request/match evidence, but the lyric payload remains Musixmatch-owned. This does not create a Spotify lyrics provider.
 
-### `:feature:phone`
+### `:ui:designsystem`
 
-Phone presentation only. It consumes application/domain state and must not talk directly to provider implementations.
+Shared Compose visual foundation for all AALyrics surfaces. It owns theme tokens, typography, dimensions, shapes, icons, and reusable presentation components. It must not depend on `:core`, provider modules, `:platform:media`, `:ui:phone`, or `:ui:automotive`.
 
-### `:feature:automotive`
+Production design-system code lives under `src/main`; debug-only catalogs and previews live under `src/debug`. Preview code renders production composables rather than maintaining a second UI implementation.
 
-Android Auto presentation only. It consumes the same application/domain state as the phone UI and must not own lyrics fetching or provider selection.
+### `:ui:phone`
+
+Phone-specific presentation and screen composition. It consumes the shared lyrics-core contract and `:ui:designsystem`, maps domain state into phone UI state, and must not talk directly to provider implementations or the media platform adapter.
+
+### `:ui:automotive`
+
+Automotive-specific presentation and screen composition. It consumes the same application/domain state as the phone UI plus `:ui:designsystem`. It must not own lyrics fetching, provider selection, or Android media-session adaptation.
+
+Detailed presentation/source-set rules are defined in `docs/UI_ARCHITECTURE.md`.
 
 ## Intended dependency direction
 
@@ -105,19 +112,23 @@ Android Auto presentation only. It consumes the same application/domain state as
                                   |       :app        |
                                   +---------+---------+
                                             |
-        +----------------+------------------+------------------+----------------+
-        |                |                  |                  |                |
-        v                v                  v                  v                v
-:feature:phone  :feature:automotive  :platform:media  :provider:selection  provider adapters
-        |                |                  |                  |                |
-        +--------+-------+                  v                  v                v
-                 v                    :core:model        :core:lyrics      :provider:api
-           :core:lyrics                                      |                |
-                 |                                           v                v
-                 +------------------------------------> :provider:api ----> :core:model
+       +-----------------+------------------+------------------+----------------+
+       |                 |                  |                  |                |
+       v                 v                  v                  v                v
+  :ui:phone       :ui:automotive     :platform:media   :provider:selection  provider adapters
+       |                 |                  |                  |                |
+       +--------+--------+                  v                  v                v
+                |                      :core:model        :core:lyrics      :provider:api
+                v                                              |                |
+       :ui:designsystem                                        v                v
+                |                                       :provider:api ----> :core:model
+                +---- no dependency on core/provider/platform
+
+  :ui:phone -------> :core:lyrics
+  :ui:automotive --> :core:lyrics
 ```
 
-The diagram is a compile-time dependency sketch, not a runtime call-order diagram. `:provider:selection` depends on the selector port in `:core:lyrics`; `:core:lyrics` never depends on `:provider:selection`.
+The diagram is a compile-time dependency sketch, not a runtime call-order diagram. `:provider:selection` depends on the selector port in `:core:lyrics`; `:core:lyrics` never depends on `:provider:selection`. `:ui:designsystem` is intentionally lower-level than both screen-composition modules and is isolated from application/domain ownership.
 
 Concrete provider modules depend on `:provider:api` and normalized model types required by that contract. The domain must never depend on a concrete provider. Provider-neutral shared matching may be used by adapters and selection without creating provider-to-selector dependencies.
 
@@ -156,12 +167,15 @@ LyricsCoordinator
         |
         v
 LyricsState
-   |          |
-   v          v
-Phone UI   Android Auto UI
+   |                         |
+   v                         v
+Phone UI (:ui:phone)   Automotive UI (:ui:automotive)
+        \                 /
+         v               v
+           :ui:designsystem
 ```
 
-The central direction is deliberate: platform and provider adapters feed normalized inputs into AALyrics core; they do not own application state. Selection is injected behind a core port rather than being embedded in provider execution order.
+The central direction is deliberate: platform and provider adapters feed normalized inputs into AALyrics core; they do not own application state. Selection is injected behind a core port rather than being embedded in provider execution order. Presentation converts shared domain state into surface-specific UI state and reusable visual components.
 
 ## Playback boundary
 
@@ -229,17 +243,18 @@ Represents the observable domain state consumed by presentation layers. Loading,
 - Position, duration, playback-status, and playback-rate updates must not restart lyrics lookup by themselves.
 - Source-specific playback identity parsing must remain outside lyrics core.
 - UI layers must not retry, rank, merge, or fetch provider results directly.
-- Android framework types must not cross into `:core:model`, `:core:lyrics`, or `:provider:api`.
+- Reusable design-system code must not import app/domain/provider/platform ownership merely for convenience.
+- Android framework media types must not cross into `:core:model`, `:core:lyrics`, or `:provider:api`.
 - Existing proven matching/scoring behavior must not be replaced without explicit regression evidence and a documented reason.
 - Concrete providers surface operational failures according to the provider contract instead of silently converting every failure into a no-result outcome.
 - Provider-local cancellation should cancel underlying HTTP work where practical.
 
 ## Architecture guardrails
 
-`scripts/verify-architecture.sh` is a best-effort regression guardrail for common accidental boundary violations. It is not a formal Kotlin/Gradle static-analysis proof and should not be expanded indefinitely to enumerate every theoretical bypass. Stronger structural enforcement, if later needed, should use appropriate Gradle/static-analysis tooling as separate work.
+`scripts/verify-architecture.sh` is a best-effort regression guardrail for common accidental boundary violations. It checks the new `ui/*` presentation ownership along with the established pure-core/provider/media boundaries. It is not a formal Kotlin/Gradle static-analysis proof and should not be expanded indefinitely to enumerate every theoretical bypass. Stronger structural enforcement, if later needed, should use appropriate Gradle/static-analysis tooling as separate work.
 
 ## Future extension points
 
-Translation, caching, timing adjustment, demand gating, session selection, karaoke rendering, and other features may be introduced later behind explicit contracts. Their future existence must not be used as a reason to mix those responsibilities into `LyricsCoordinator`, `PlaybackLyricsController`, provider selection, or concrete provider adapters.
+Translation, caching, timing adjustment, demand gating, session selection, karaoke rendering, and other features may be introduced later behind explicit contracts. Their future existence must not be used as a reason to mix those responsibilities into `LyricsCoordinator`, `PlaybackLyricsController`, provider selection, concrete provider adapters, or shared design-system components.
 
 The roadmap and the completed Core Readiness Gate are defined in `docs/ROADMAP.md` and `docs/CORE_READINESS_GATE.md`. Migration classifications are defined in `docs/MIGRATION_INVENTORY.md`; concrete-provider migration policy is defined in `docs/PROVIDER_ARCHITECTURE.md`.

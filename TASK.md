@@ -1,50 +1,47 @@
-# Application Composition
+# UI Foundation
 
 ## Branch and baseline
 
-- Branch: `feature/application-composition`.
-- Base: main `56eb43c` after SyncLRC PR #24 merged.
-- Working fork behavioral reference: `whoxamxl/auto-lyrics` main `8484bed2dbe8db5ca7b17dec5481b3c22714dc6f` (`v1.13.0`).
-- Classification: **REWRITE / REFACTOR** at the application boundary.
-- Read `AGENTS.md`, `docs/ARCHITECTURE.md`, `docs/ROADMAP.md`, `docs/MIGRATION_INVENTORY.md`, `docs/PROVIDER_ARCHITECTURE.md`, and `docs/APPLICATION_COMPOSITION.md` before changing production code.
-- User explicitly authorized this composition slice.
+- Branch: `feature/ui-foundation`.
+- Base: `main` at `3ea97ce` after application-composition PR #25 merged.
+- Classification: **REFACTOR / NEW UI FOUNDATION**.
+- User explicitly authorized the UI foundation and module cleanup.
+- Read `AGENTS.md`, `docs/ARCHITECTURE.md`, and `docs/UI_ARCHITECTURE.md` before extending production UI.
 
 ## Acceptance criteria
 
-- Keep `:app` as the manual composition root; do not add a DI framework for this slice.
-- Add `:app` dependencies on `:provider:selection`, `:provider:lrclib`, `:provider:petitlyrics`, `:provider:musixmatch`, and `:provider:synclrc`.
-- Create one process-lifetime application graph/scope and construct the four providers, `CrossProviderCandidateSelector`, `LyricsCoordinator`, and `PlaybackLyricsController` through their existing boundaries.
-- Build `PetitLyricsConfig` only from the existing BuildConfig values. Missing configuration must remain safe and must not expose secrets.
-- Preserve each provider's own default transport/session behavior; do not replace provider-local clients with a new global networking policy.
-- Carry `CandidateSelectionPreferences` through playback-to-lookup ownership so a preference change on the same track causes a fresh lookup while timeline/status churn does not.
-- Keep the initial production preference at the application boundary and preserve the working fork's karaoke-enabled default as `preferredSyncType = WORD` until settings/persistence are implemented later.
-- Expose the shared `LyricsCoordinator.state` for later consumers without building any phone or Android Auto presentation.
-- Add deterministic tests for graph/preference wiring and preserve existing playback lifecycle regressions.
-- Do not implement live MediaSession discovery/listeners, NotificationListenerService, demand gating, cache, translation, timing/calibration, karaoke rendering, or any UI in this branch.
-- Do not change provider search/transport behavior or the production candidate-selection policy.
-- Run `./gradlew test check :app:assembleDebug`, `bash scripts/verify-architecture.sh`, and `git diff --check`.
-- Open a PR, complete bounded review, and stop before merge for explicit user approval.
+- Replace the empty `:feature:phone` / `:feature:automotive` presentation modules with `:ui:phone` / `:ui:automotive`.
+- Add a shared `:ui:designsystem` Compose module.
+- Preserve the established AALyrics dark/cyan/blue visual direction as initial theme tokens.
+- Establish typography, spacing, radius, stroke, theme, icon, and reusable-component ownership.
+- Put production code under `src/main` and Preview / deterministic development fixtures under `src/debug`.
+- Ensure Preview renders production composables rather than introducing a second UI implementation.
+- Create enough placeholder source files to make intended ownership/file structure obvious without inventing unapproved screen behavior.
+- Keep `:ui:designsystem` independent of core/provider/platform modules.
+- Keep phone/automotive presentation on the shared `LyricsState` boundary; UI must not fetch/rank providers or depend directly on `:platform:media`.
+- Update architecture guardrails and durable documentation for the new module names/boundaries.
+- Do not implement the final phone/automotive screen design in this branch.
+- Do not merge without explicit user approval.
+- Run `./gradlew test check :app:assembleDebug`, `bash scripts/verify-architecture.sh`, and `git diff --check` through normal validation/CI.
 
 ## Plan/status
 
-- [x] Merge all four concrete provider migrations through SyncLRC PR #24.
-- [x] Create `feature/application-composition` from post-PR #24 main.
-- [x] Define application-composition ownership and explicit no-UI scope.
-- [x] Inspect current core playback/lookup APIs and the working-fork preference/fan-out call sites.
-- [x] Implement the manual application object graph.
-- [x] Wire playback selection preferences without introducing settings persistence or UI.
-- [x] Add/adjust deterministic tests.
-- [x] Update durable architecture/roadmap/migration docs to record Phase 7 completion and composition status.
-- [x] Run full validation and bounded review.
-- [x] Open PR #25 and stop before merge.
-
-## Validation/review record
-
-- `./gradlew test check :app:assembleDebug` passed locally.
-- `bash scripts/verify-architecture.sh` passed.
-- `git diff --check` passed.
-- PR #25 CI passed. The first Codex review identified the missing application Internet permission; commit `75e984d` fixed it, and the second bounded review found no major issues.
+- [x] Create `feature/ui-foundation` from current `main`.
+- [x] Confirm the old feature modules contain no production implementation requiring migration.
+- [x] Replace `:feature:phone` / `:feature:automotive` with `:ui:phone` / `:ui:automotive`.
+- [x] Add `:ui:designsystem` and Compose build configuration.
+- [x] Add AALyrics color, typography, spacing, radius, stroke, and theme foundation.
+- [x] Add focused Palette / Typography previews and a combined Design System preview.
+- [x] Add phone/automotive production and debug-preview file skeletons.
+- [x] Remove obsolete empty `feature/` module files.
+- [x] Update architecture guardrails for `ui/*` ownership.
+- [x] Add durable UI architecture/source-set/Preview documentation.
+- [ ] Run CI/build validation.
+- [ ] Review the complete branch diff.
+- [ ] Open PR and stop before merge.
 
 ## Scope guard
 
-This branch proves that the completed core, selector, and provider adapters can be composed into one production object graph. It is deliberately **not** the MediaSession runtime branch and **not** a presentation/UI branch.
+This branch creates the presentation foundation only. It intentionally does not decide the final Lyrics screen layout, Settings UI, navigation model, live media-session wiring, or detailed component APIs beyond the shared foundation already needed for UI work.
+
+Screen implementation should begin from a screen/state/interaction specification and then grow reusable components from demonstrated product needs.

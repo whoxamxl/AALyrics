@@ -116,27 +116,36 @@ done
 
 echo "Pure-core architecture boundary check passed."
 
-feature_modules=(
-  "feature/phone"
-  "feature/automotive"
+presentation_modules=(
+  "ui/phone"
+  "ui/automotive"
 )
 
-feature_source_dirs=()
-for module in "${feature_modules[@]}"; do
+ui_source_dirs=("ui/designsystem/src/main")
+for module in "${presentation_modules[@]}"; do
   build_file="$module/build.gradle.kts"
-  feature_dependencies="$(production_dependency_expressions "$build_file")"
+  presentation_dependencies="$(production_dependency_expressions "$build_file")"
 
-  printf '%s\n' "$feature_dependencies" \
+  printf '%s\n' "$presentation_dependencies" \
     | grep -Eq "${dependency_prefix}${core_lyrics_target}${dependency_suffix}" \
     || fail "$module must consume the shared lyrics-core contract"
 
-  if printf '%s\n' "$feature_dependencies" \
+  if printf '%s\n' "$presentation_dependencies" \
     | grep -Eq 'project[[:space:]]*\([[:space:]]*(path[[:space:]]*=[[:space:]]*)?":(provider:[^"]+|platform:media)"|projects\.(provider\.|platform\.media)'; then
     fail "$module must not depend directly on providers or the media platform adapter"
   fi
 
   source_dir="$module/src/main"
-  feature_source_dirs+=("$source_dir")
+  ui_source_dirs+=("$source_dir")
+done
+
+designsystem_dependencies="$(production_dependency_expressions "ui/designsystem/build.gradle.kts")"
+if printf '%s\n' "$designsystem_dependencies" \
+  | grep -Eq 'project[[:space:]]*\([[:space:]]*(path[[:space:]]*=[[:space:]]*)?":(core|provider|platform|ui:(phone|automotive))'; then
+  fail "ui/designsystem must remain independent of app/domain/provider/platform modules"
+fi
+
+for source_dir in "${ui_source_dirs[@]}"; do
   if [[ -d "$source_dir" ]]; then
     forbidden_network_refs=$(
       (grep -RInE \
@@ -148,7 +157,7 @@ for module in "${feature_modules[@]}"; do
     )
     if [[ -n "$forbidden_network_refs" ]]; then
       echo "$forbidden_network_refs"
-      fail "$module presentation sources must not perform networking directly"
+      fail "$source_dir must not perform networking directly"
     fi
   fi
 done
@@ -156,7 +165,7 @@ done
 production_source_dirs=()
 while IFS= read -r -d '' source_dir; do
   production_source_dirs+=("$source_dir")
-done < <(find core provider platform feature app -type d -path '*/src/main' -print0 2>/dev/null)
+done < <(find core provider platform ui app -type d -path '*/src/main' -print0 2>/dev/null)
 
 [[ "${#production_source_dirs[@]}" -gt 0 ]] \
   || fail "no production source directories found"
@@ -172,13 +181,13 @@ lyrics_state_declarations=$(
 [[ "$lyrics_state_declarations" == "1" ]] \
   || fail "exactly one shared LyricsState declaration is required; found $lyrics_state_declarations"
 
-echo "Shared-state feature-consumption boundary check passed."
+echo "Shared-state UI-consumption boundary check passed."
 
 if grep -RInE \
   --include='*.kt' --include='*.java' \
   '^[[:space:]]*import[[:space:]]+io\.github\.whoxamxl\.aalyrics\.provider\.|\b(LyricsProvider|CandidateSelector)\b' \
-  "${feature_source_dirs[@]}" 2>/dev/null; then
-  fail "UI feature modules must not fetch from providers or rank candidates"
+  "${ui_source_dirs[@]}" 2>/dev/null; then
+  fail "UI modules must not fetch from providers or rank candidates"
 fi
 
 if grep -RInE \
