@@ -133,7 +133,7 @@ Completed:
 
 Current:
 
-- SyncLRC — implemented on `feature/synclrc-provider-migration`; validation and review pending.
+- SyncLRC — implemented and reviewed in PR #24; merge approval pending.
 
 ## Current work
 

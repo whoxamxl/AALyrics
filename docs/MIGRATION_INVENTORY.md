@@ -77,7 +77,7 @@ Shared provider migration rules are in `docs/PROVIDER_ARCHITECTURE.md`. Provider
 | `lyrics/LrcParser.kt` | **PRESERVE / REFACTOR** | pure `:provider:lrc` shared parser | Migrated with LRCLIB. Parsing behavior is regression-covered and shared without provider networking ownership. SyncLRC reuses Enhanced-LRC `parseKaraoke`. |
 | `lyrics/PetitLyricsClient.kt` | **PRESERVE / REFACTOR** | `:provider:petitlyrics`; see `docs/providers/PETITLYRICS.md` | Migrated in PR #20. Preserves progressive search, ranking, attempted-result deduplication, WSY/LSY parsing, companion-text resolution, artist-query evidence, configuration invariants, and provider-contract failure/cancellation semantics. |
 | `lyrics/MusixmatchClient.kt` | **PRESERVE / REFACTOR** | `:provider:musixmatch`; see `docs/providers/MUSIXMATCH.md` | Migrated in PR #21. Preserves the anonymous mobile API flow, token/session behavior, macro lookup, RichSync/subtitle fallback, Spotify-aware identity validation, instrumental rejection, metadata validation, and failure isolation. |
-| `lyrics/SyncLrcClient.kt` | **PRESERVE / REFACTOR** | `:provider:synclrc` on `feature/synclrc-provider-migration`; see `docs/providers/SYNCLRC.md` | Implemented pending review. Preserves its deliberate karaoke-only role, WORD-preference request gating, current/legacy response-shape compatibility, instrumental rejection, and genuine word-timing requirement. |
+| `lyrics/SyncLrcClient.kt` | **PRESERVE / REFACTOR** | `:provider:synclrc` in PR #24; see `docs/providers/SYNCLRC.md` | Implemented and reviewed pending merge approval. Preserves its deliberate karaoke-only role, WORD-preference request gating, current/legacy response-shape compatibility, instrumental rejection, and genuine word-timing requirement. |
 
 Provider migration is not a clean-room exercise. Mature provider implementation may be reused/refactored when it already expresses the behavior we intend to keep. The structural requirement is that legacy coupling does not cross the AALyrics provider boundary.
 
@@ -159,7 +159,7 @@ Do not bulk-port the old application. Each provider or subsystem remains a separ
 - LRCLIB: migrated and merged in PR #19.
 - PetitLyrics: migrated and merged in PR #20.
 - Musixmatch: migrated and merged in PR #21.
-- SyncLRC: implemented on `feature/synclrc-provider-migration`; validation and review pending.
+- SyncLRC: implemented and reviewed in PR #24; merge approval pending.
 
 ### LRCLIB implementation re-check
 

@@ -31,7 +31,7 @@ Completed foundation includes:
 - LRCLIB provider migration (PR #19),
 - PetitLyrics provider migration (PR #20),
 - Musixmatch provider migration (PR #21),
-- SyncLRC provider migration implemented on `feature/synclrc-provider-migration` (review pending).
+- SyncLRC provider migration implemented and reviewed in PR #24 (merge approval pending).
 
 Application composition, cache, translation, phone UI, Android Auto UI, timing controls, and karaoke rendering remain later phases.
 

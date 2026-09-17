@@ -6,7 +6,7 @@ This document defines the architectural boundaries for AALyrics. The project was
 
 AALyrics is a greenfield codebase, but not a greenfield behavior specification. The working `whoxamxl/auto-lyrics` fork is treated as a behavioral reference and regression oracle. Proven behavior should not be re-invented merely because the new module structure is different.
 
-The Core Readiness Gate completed in PR #14. Production candidate selection was migrated in PR #17, LRCLIB in PR #19, PetitLyrics in PR #20, and Musixmatch in PR #21. SyncLRC is implemented on the current provider-migration branch pending review.
+The Core Readiness Gate completed in PR #14. Production candidate selection was migrated in PR #17, LRCLIB in PR #19, PetitLyrics in PR #20, and Musixmatch in PR #21. SyncLRC is implemented and reviewed in PR #24 pending merge approval.
 
 ## Design goals
 

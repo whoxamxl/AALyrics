@@ -2,7 +2,7 @@
 
 ## Status
 
-- Migration status: **IMPLEMENTED — validation and review pending**
+- Migration status: **READY FOR APPROVAL — PR #24, do not merge without explicit approval**
 - Branch: `feature/synclrc-provider-migration`
 - Default migration order: fourth concrete provider
 - Working-fork baseline: `8484bed2dbe8db5ca7b17dec5481b3c22714dc6f` (`v1.13.0`), re-checked 2026-09-16

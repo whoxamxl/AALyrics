@@ -33,9 +33,9 @@
 - [x] Align architecture, roadmap, migration inventory, provider profile, README, and branch task for SyncLRC.
 - [x] Implement/refactor the provider behind AALyrics boundaries.
 - [x] Port/add regression coverage.
-- [ ] Run final validation after the bounded-review 404 no-match fix.
-- [x] Open PR #24 and complete the first bounded review round.
-- [ ] Stop before merge after final CI and review-record checks.
+- [x] Run final validation after the bounded-review 404 no-match fix.
+- [x] Open PR #24 and complete both bounded review rounds.
+- [x] Stop before merge after final CI and review-record checks.
 
 ## Scope guard
 
