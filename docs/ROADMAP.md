@@ -129,26 +129,23 @@ Completed:
 
 - LRCLIB — merged in PR #19.
 - PetitLyrics — merged in PR #20.
+- Musixmatch — merged in PR #21.
 
 Current:
 
-- Musixmatch — implemented and validated on `feature/musixmatch-provider-migration`, pending PR review and merge.
-
-Next:
-
-- SyncLRC — remains planned and is not authorized by the Musixmatch slice.
+- SyncLRC — implemented and reviewed in PR #24; merge approval pending.
 
 ## Current work
 
-### Musixmatch provider migration
+### SyncLRC provider migration
 
-The third concrete provider is implemented and locally validated on the active migration branch. The working-fork baseline remains `8484bed2dbe8db5ca7b17dec5481b3c22714dc6f` (`v1.13.0`), re-checked on 2026-09-16 before implementation.
+The fourth concrete provider is implemented on the active migration branch pending validation and review. The working-fork baseline remains `8484bed2dbe8db5ca7b17dec5481b3c22714dc6f` (`v1.13.0`), re-checked on 2026-09-16 before implementation. The public SyncLRC API contract was also re-checked on 2026-09-16 and still matches the mature request/response assumptions used by the fork.
 
-The slice is **PRESERVE / REFACTOR** and must retain the proven anonymous mobile API flow, token/session behavior, macro subtitle lookup, embedded/dedicated RichSync handling, line-subtitle fallback, metadata validation, instrumental rejection, and Spotify-aware matching.
+The **PRESERVE / REFACTOR** adapter keeps SyncLRC deliberately narrow: it is an opportunistic karaoke/WORD source, not a generic plain/line provider. It preserves WORD-preference request gating, the `track` + `artist` + `type=karaoke` request shape with optional album/duration, current and legacy karaoke response compatibility, instrumental rejection, and the requirement for genuine Enhanced-LRC timed word tokens.
 
-Spotify remains playback identity evidence, not a separate lyrics provider. `:platform:media` owns Spotify reference extraction; Musixmatch consumes normalized `TrackReference` values and remains the source of the lyric payload.
+Shared Enhanced-LRC parsing remains in `:provider:lrc` and is reused by SyncLRC. Cross-provider metadata scoring, source confidence, and WORD-vs-LINE winner policy remain in `:provider:selection`.
 
-Application wiring, SyncLRC, cache, translation, phone/Android Auto presentation, and global selection-policy changes are outside this slice.
+Application wiring, cache, translation, phone/Android Auto presentation, karaoke rendering, and global selection-policy changes are outside this slice.
 
 ## Later phases
 
