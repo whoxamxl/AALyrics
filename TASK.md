@@ -1,42 +1,43 @@
-# SyncLRC Provider Migration
+# Application Composition
 
 ## Branch and baseline
 
-- Branch: `feature/synclrc-provider-migration`.
-- Base: main `f5a7263` after Musixmatch PR #21 and launcher icon PR #23 merged.
-- Working fork: `whoxamxl/auto-lyrics` main `8484bed2dbe8db5ca7b17dec5481b3c22714dc6f` (`v1.13.0`), re-checked on 2026-09-16 before implementation.
-- Classification: **PRESERVE / REFACTOR**.
-- Read `AGENTS.md`, `docs/ARCHITECTURE.md`, `docs/ROADMAP.md`, `docs/MIGRATION_INVENTORY.md`, `docs/PROVIDER_ARCHITECTURE.md`, and `docs/providers/SYNCLRC.md` before changing production code.
-- User explicitly authorized SyncLRC implementation on this branch.
+- Branch: `feature/application-composition`.
+- Base: main `56eb43c` after SyncLRC PR #24 merged.
+- Working fork behavioral reference: `whoxamxl/auto-lyrics` main `8484bed2dbe8db5ca7b17dec5481b3c22714dc6f` (`v1.13.0`).
+- Classification: **REWRITE / REFACTOR** at the application boundary.
+- Read `AGENTS.md`, `docs/ARCHITECTURE.md`, `docs/ROADMAP.md`, `docs/MIGRATION_INVENTORY.md`, `docs/PROVIDER_ARCHITECTURE.md`, and `docs/APPLICATION_COMPOSITION.md` before changing production code.
+- User explicitly authorized this composition slice.
 
 ## Acceptance criteria
 
-- Preserve SyncLRC's deliberately narrow karaoke-only role; do not broaden it into a generic plain/line provider.
-- Implement SyncLRC behind `LyricsProvider` with descriptor capability `WORD` only.
-- Preserve request gating from the working fork: only perform the network lookup when `LyricsRequest.preferredSyncType == WORD`; otherwise return no candidates without calling SyncLRC.
-- Preserve the public `GET /lyrics` request shape: nonblank track + artist, `type=karaoke`, optional album, and duration rounded to seconds.
-- Preserve compatibility with the current `karaoke` field and the legacy `lyrics` + `type=karaoke` response shape.
-- Reject synced/plain-only responses from a karaoke request, instrumental responses, malformed payloads, empty/placeholder lyric content, and karaoke payloads without genuine timed word tokens.
-- Reuse the shared `:provider:lrc` Enhanced-LRC parser (`LrcParser.parseKaraoke`) rather than creating provider-local timing syntax.
-- Preserve provider metadata when supplied; fall back to requested title/artist/album where the API omits them. Normalize duration seconds to domain milliseconds and report artist-query corroboration when an artist constraint was sent.
-- Keep global metadata scoring, source confidence, WORD-vs-LINE preference, and final winner policy in `:provider:selection`; SyncLRC must not introduce a second selector.
-- Follow the provider contract: no acceptable karaoke result -> empty list; operational/network/service failure -> exception; coroutine cancellation propagates and cancels underlying HTTP work where practical.
-- Port all working-fork SyncLRC regressions and add deterministic AALyrics coverage for request construction/preference gating, transport/service failure, normalization, and cancellation.
-- Do not change LRCLIB, PetitLyrics, Musixmatch, global candidate-selection policy, application wiring, cache, translation, UI, or karaoke rendering except for a genuinely neutral shared helper if required.
-- Run targeted tests plus `./gradlew test check :app:assembleDebug`, `bash scripts/verify-architecture.sh`, and `git diff --check`. Open a PR, complete bounded review, and stop before merge for explicit user approval.
+- Keep `:app` as the manual composition root; do not add a DI framework for this slice.
+- Add `:app` dependencies on `:provider:selection`, `:provider:lrclib`, `:provider:petitlyrics`, `:provider:musixmatch`, and `:provider:synclrc`.
+- Create one process-lifetime application graph/scope and construct the four providers, `CrossProviderCandidateSelector`, `LyricsCoordinator`, and `PlaybackLyricsController` through their existing boundaries.
+- Build `PetitLyricsConfig` only from the existing BuildConfig values. Missing configuration must remain safe and must not expose secrets.
+- Preserve each provider's own default transport/session behavior; do not replace provider-local clients with a new global networking policy.
+- Carry `CandidateSelectionPreferences` through playback-to-lookup ownership so a preference change on the same track causes a fresh lookup while timeline/status churn does not.
+- Keep the initial production preference at the application boundary and preserve the working fork's karaoke-enabled default as `preferredSyncType = WORD` until settings/persistence are implemented later.
+- Expose the shared `LyricsCoordinator.state` for later consumers without building any phone or Android Auto presentation.
+- Add deterministic tests for graph/preference wiring and preserve existing playback lifecycle regressions.
+- Do not implement live MediaSession discovery/listeners, NotificationListenerService, demand gating, cache, translation, timing/calibration, karaoke rendering, or any UI in this branch.
+- Do not change provider search/transport behavior or the production candidate-selection policy.
+- Run `./gradlew test check :app:assembleDebug`, `bash scripts/verify-architecture.sh`, and `git diff --check`.
+- Open a PR, complete bounded review, and stop before merge for explicit user approval.
 
 ## Plan/status
 
-- [x] Rebase the existing branch onto current main (`f5a7263`).
-- [x] Re-check working-fork main baseline and current public SyncLRC API contract.
-- [x] Inspect `SyncLrcClient.kt`, all reference tests, the shared karaoke parser, and relevant `MediaTracker` call sites.
-- [x] Align architecture, roadmap, migration inventory, provider profile, README, and branch task for SyncLRC.
-- [x] Implement/refactor the provider behind AALyrics boundaries.
-- [x] Port/add regression coverage.
-- [x] Run final validation after the bounded-review 404 no-match fix.
-- [x] Open PR #24 and complete both bounded review rounds.
-- [x] Stop before merge after final CI and review-record checks.
+- [x] Merge all four concrete provider migrations through SyncLRC PR #24.
+- [x] Create `feature/application-composition` from post-PR #24 main.
+- [x] Define application-composition ownership and explicit no-UI scope.
+- [ ] Inspect current core playback/lookup APIs and the working-fork preference/fan-out call sites.
+- [ ] Implement the manual application object graph.
+- [ ] Wire playback selection preferences without introducing settings persistence or UI.
+- [ ] Add/adjust deterministic tests.
+- [ ] Update durable architecture/roadmap/migration docs to record Phase 7 completion and composition status.
+- [ ] Run full validation and bounded review.
+- [ ] Open PR and stop before merge.
 
 ## Scope guard
 
-This branch is a SyncLRC karaoke-provider migration, not a general karaoke-rendering, application-wiring, or UI branch. Preserve mature provider behavior and move only the ownership required by AALyrics architecture.
+This branch proves that the completed core, selector, and provider adapters can be composed into one production object graph. It is deliberately **not** the MediaSession runtime branch and **not** a presentation/UI branch.
