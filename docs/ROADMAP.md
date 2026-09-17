@@ -121,9 +121,7 @@ Completed work includes:
 - regression coverage adapted to AALyrics models,
 - rejection of unusable lyric candidates before selection.
 
-### Phase 7 — Concrete provider adapters
-
-Provider migration proceeds one adapter at a time behind `LyricsProvider`.
+### Phase 7 — Concrete provider adapters ✅
 
 Completed:
 
@@ -132,23 +130,47 @@ Completed:
 - Musixmatch — merged in PR #21.
 - SyncLRC — merged in PR #24.
 
-Phase 7 is complete.
+### Phase 8 — Application composition ✅
+
+Merged in PR #25.
+
+The application now constructs one production object graph containing all four providers, `CrossProviderCandidateSelector`, `LyricsCoordinator`, and `PlaybackLyricsController`. The graph is process-owned by `AALyricsApplication`, exposes the shared `LyricsState`, uses existing BuildConfig values for PetitLyrics, and preserves the karaoke-enabled production default through `preferredSyncType = WORD`.
+
+Playback lookup ownership now includes both track identity and candidate-selection preferences. Same-track preference changes trigger a fresh lookup while position/status/rate/duration churn does not.
 
 ## Current work
 
-### Application composition
+### Phase 9 — Live MediaSession runtime planning
 
-The active slice constructs the first process-level production graph in `:app` from all four providers, the production selector, `LyricsCoordinator`, and `PlaybackLyricsController`. Composition remains explicit and manual, with one application-owned coroutine scope and the existing BuildConfig values supplying PetitLyrics configuration.
+The next slice is documented in `docs/MEDIA_SESSION_RUNTIME.md` and is currently planning-only on `feature/media-session-runtime`; production implementation is not yet authorized.
 
-Lookup ownership now includes both playback identity and candidate-selection preferences. The production boundary initially requests `WORD` timing to preserve the working fork's karaoke-enabled default, while timeline/status/rate/duration churn remains outside lookup identity.
+Its purpose is to connect Android's live active media sessions to the already-composed lyrics engine:
 
-Phone and Android Auto presentation, live media-session discovery/callbacks, cache, translation, timing controls, and karaoke rendering remain separate later slices.
+```text
+NotificationListenerService
+        ↓
+MediaSessionManager
+        ↓
+selected MediaController
+        ↓
+MediaControllerSnapshotAdapter
+        ↓
+PlaybackSnapshot
+        ↓
+PlaybackLyricsController
+        ↓
+LyricsState
+```
+
+The runtime should preserve/refactor the mature working-fork session-selection behavior while keeping Android framework ownership in `:platform:media` and avoiding the old `MediaTracker` monolith.
+
+The STOP gate for this phase is deliberately UI-free: with notification-listener access granted and a media app playing, real playback should be able to drive the production provider/selection pipeline and update `LyricsState`.
 
 ## Later phases
 
-After application composition is stable, later work includes cache, translation, demand/session gating, Android Auto/phone presentation, timing controls, karaoke rendering, persistence, release/signing, and regression comparison against the previous fork.
+After live media-session runtime is stable, later work includes process-wide lyrics-demand gating, cache, translation, Android Auto/phone presentation, timing controls, karaoke rendering, persistence/settings, release/signing, and regression comparison against the previous fork.
 
-These should remain separate responsibilities and topic branches. Do not use future feature needs as a reason to turn `LyricsCoordinator`, `PlaybackLyricsController`, the production selector, or concrete providers into new god objects.
+These should remain separate responsibilities and topic branches. Do not use future feature needs as a reason to turn `LyricsCoordinator`, `PlaybackLyricsController`, media-session runtime, the production selector, or concrete providers into new god objects.
 
 ## Working method
 
