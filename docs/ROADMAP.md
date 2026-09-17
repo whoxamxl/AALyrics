@@ -146,7 +146,7 @@ Presentation now uses `:ui:designsystem` for shared tokens/components, `:ui:phon
 
 ### Phase 9 — Live MediaSession runtime ✅
 
-Implemented, validated, and reviewed in PR #29.
+Merged in PR #29.
 
 Its purpose is to connect Android's live active media sessions to the already-composed lyrics engine:
 
@@ -172,13 +172,37 @@ The phase STOP gate is deliberately UI-free: with notification-listener access g
 
 ## Current work
 
-No next implementation slice is active in this roadmap after PR #29. Select and authorize the next responsibility explicitly before implementation.
+### Phase 10 — Lyrics demand gating
+
+Active branch: `feature/lyrics-demand-gating`.
+
+This background/runtime slice preserves the working fork's proven demand rule while moving ownership into the AALyrics application lifecycle boundary:
+
+```text
+phone process foreground ─────┐
+                              ├──> lyrics demand active
+Android Auto projection ──────┘
+
+MediaSession runtime
+        ↓
+latest PlaybackSnapshot
+        ↓
+Lyrics demand gate
+        ↓ when active
+PlaybackLyricsController
+        ↓
+provider lookup
+```
+
+MediaSession discovery and selected-controller callbacks remain alive even when demand is inactive. The gate controls only lyrics work. While demand is off it retains the latest normalized playback snapshot but does not start provider lookup; deactivation clears current lookup ownership, and reactivation immediately replays the latest snapshot without requiring another track change.
+
+The detailed scope, ownership, lifecycle semantics, regressions, and STOP gate are defined in `docs/LYRICS_DEMAND_GATING.md`.
 
 ## Later phases
 
-Later work includes process-wide lyrics-demand gating, screen/state specification, finished Android Auto/phone presentation, cache, translation, timing controls, karaoke rendering, persistence/settings, release/signing, and regression comparison against the previous fork.
+After demand gating, later work includes screen/state specification, finished Android Auto/phone presentation, cache, translation, timing controls, karaoke rendering, persistence/settings, release/signing, and regression comparison against the previous fork.
 
-These should remain separate responsibilities and topic branches. Do not use future feature needs as a reason to turn `LyricsCoordinator`, `PlaybackLyricsController`, the media-session runtime, the production selector, concrete providers, or the shared design system into god objects.
+These should remain separate responsibilities and topic branches. Do not use future feature needs as a reason to turn `LyricsCoordinator`, `PlaybackLyricsController`, the media-session runtime, demand gate, production selector, concrete providers, or the shared design system into god objects.
 
 ## Working method
 
