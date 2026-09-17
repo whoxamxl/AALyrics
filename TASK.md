@@ -26,14 +26,18 @@ This slice should make later implementations difficult to place in the wrong lay
 - Do not create speculative modules, interfaces, DTOs, databases, or production code in this branch.
 - Record unresolved choices explicitly instead of deciding them without implementation evidence.
 
-## Planned documents
+## Completed documents
 
-- [ ] `docs/CACHE_ARCHITECTURE.md`
-- [ ] `docs/TRANSLATION_ARCHITECTURE.md`
-- [ ] `docs/TIMING_ARCHITECTURE.md`
-- [ ] `docs/KARAOKE_ARCHITECTURE.md`
-- [ ] `docs/PRESENTATION_STATE_ARCHITECTURE.md`
-- [ ] `docs/LYRICS_CAPABILITY_FOUNDATION.md`
+- [x] `docs/CACHE_ARCHITECTURE.md`
+- [x] `docs/TRANSLATION_ARCHITECTURE.md`
+- [x] `docs/TIMING_ARCHITECTURE.md`
+- [x] `docs/KARAOKE_ARCHITECTURE.md`
+- [x] `docs/PRESENTATION_STATE_ARCHITECTURE.md`
+- [x] `docs/LYRICS_PIPELINE_ARCHITECTURE.md`
+- [x] integrate the foundation into `docs/ARCHITECTURE.md`
+- [x] define Phase 11.x implementation slices in `docs/ROADMAP.md`
+- [x] align `docs/MIGRATION_INVENTORY.md` with the capability foundation
+- [x] complete docs review; stale TASK completion/file-name metadata was corrected before merge
 
 ## Scope guard
 
