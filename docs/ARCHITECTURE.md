@@ -14,7 +14,7 @@ Completed milestones:
 - automotive design-system boundary — PR #28
 - live Android media-session runtime — PR #29
 
-The live Android media-session runtime is implemented, validated, and reviewed in PR #29. It is documented in `docs/MEDIA_SESSION_RUNTIME.md`. Presentation remains in the dedicated `:ui` boundary: a shared Compose design system plus separate phone and automotive screen-composition modules.
+The live Android media-session runtime is implemented and merged in PR #29. Process-wide lyrics-demand gating is implemented, validated, and reviewed in PR #30 and awaits explicit merge approval; its boundary is specified in `docs/LYRICS_DEMAND_GATING.md`. Presentation remains in the dedicated `:ui` boundary: a shared Compose design system plus separate phone and automotive screen-composition modules.
 
 ## Design goals
 
@@ -22,9 +22,9 @@ The live Android media-session runtime is implemented, validated, and reviewed i
 2. Keep provider-specific behavior out of application state management.
 3. Centralize provider selection instead of allowing providers to compete through call order.
 4. Expose one stable application/domain state to both phone and automotive presentation layers.
-5. Make timing, translation, caching, provider implementations, and media runtime independently replaceable.
+5. Make timing, translation, caching, provider implementations, media runtime, and demand lifecycle independently replaceable.
 6. Keep pure domain modules free of Android framework dependencies.
-7. Make track changes, cancellation, provider failures, stale results, and playback ownership explicit concerns rather than incidental UI behavior.
+7. Make track changes, cancellation, provider failures, stale results, playback ownership, and lyrics demand explicit concerns rather than incidental UI behavior.
 8. Ensure AALyrics core behavior can be tested entirely with fakes.
 9. Preserve proven fork behavior unless there is a concrete architectural, correctness, or maintainability reason to change it.
 10. Separate semantic migration from structural refactoring: behavior may stay the same even when ownership and module boundaries change.
@@ -45,7 +45,7 @@ The classification is tracked in `docs/MIGRATION_INVENTORY.md`. Re-check working
 
 ### `:app`
 
-Android application and composition root. It owns process-level object wiring, application identity, and the process coroutine scope. It may depend on concrete outer adapters, but should contain very little feature logic.
+Android application and composition root. It owns process-level object wiring, application identity, the process coroutine scope, and application/runtime lifecycle composition. It may depend on concrete outer adapters, but should contain very little feature logic.
 
 `AALyricsApplication` currently composes:
 
@@ -63,6 +63,8 @@ PlaybackLyricsController
         ↓
 LyricsState
 ```
+
+The demand-gating slice adds an application-lifecycle boundary in front of `PlaybackLyricsController`; it does not move provider or media-session ownership into `:app`.
 
 ### `:core:model`
 
@@ -110,9 +112,9 @@ Current implemented responsibilities:
 - safe normalization/forwarding of live controller state
 - platform-owned 600 ms track-metadata stabilization
 
-It must not fetch/rank lyrics, depend on concrete providers, own `LyricsState`, or implement presentation.
+It must not fetch/rank lyrics, depend on concrete providers, own `LyricsState`, implement presentation, or decide whether phone/automotive lifecycle currently demands lyrics.
 
-Because Android constructs `NotificationListenerService`, constructor injection from `:app` is not available. The live runtime uses the narrow platform-defined `MediaSessionRuntimeHost`/`PlaybackSnapshotSink` boundary, which the application composition root attaches to the existing `PlaybackLyricsController`. `:platform:media` delivers only normalized `PlaybackSnapshot` values through that boundary and does not know `LyricsCoordinator` or provider implementations.
+Because Android constructs `NotificationListenerService`, constructor injection from `:app` is not available. The live runtime uses the narrow platform-defined `MediaSessionRuntimeHost`/`PlaybackSnapshotSink` boundary. `:platform:media` delivers only normalized `PlaybackSnapshot` values through that boundary and does not know `LyricsCoordinator`, provider implementations, or demand policy.
 
 ### `:ui:designsystem`
 
@@ -124,9 +126,13 @@ Production design-system code lives under `src/main`; debug-only catalogs and pr
 
 Phone-specific presentation and screen composition. It consumes the shared lyrics-core contract and `:ui:designsystem`, maps domain state into phone UI state, and must not talk directly to provider implementations or the media platform adapter.
 
+Phone lyrics demand is process-lifecycle state owned/wired above the presentation module; individual composables must not start or cancel provider work directly.
+
 ### `:ui:automotive`
 
 Automotive-specific presentation and screen composition. It consumes the same application/domain state as the phone UI plus `:ui:designsystem`. It must not own lyrics fetching, provider selection, or Android media-session adaptation.
+
+Android Auto lyrics demand is projection-connection lifecycle state owned/wired above the presentation module; the automotive composables do not own that policy.
 
 Detailed presentation/source-set rules are defined in `docs/UI_ARCHITECTURE.md`.
 
@@ -173,8 +179,12 @@ MediaControllerSnapshotAdapter       (:platform:media)
 PlaybackSnapshot                     (:core:model)
         |
         v
-application/platform host boundary
+MediaSessionRuntimeHost
         |
+        v
+LyricsDemandGate                     (:app / lifecycle boundary)
+        |
+        | demand active
         v
 PlaybackLyricsController             (:core:lyrics)
         |
@@ -198,7 +208,7 @@ Phone UI (:ui:phone)   Automotive UI (:ui:automotive)
            :ui:designsystem
 ```
 
-The central direction is deliberate: platform and provider adapters feed normalized inputs into AALyrics core; they do not own application state. Selection is injected behind a core port rather than being embedded in provider execution order. Presentation converts shared domain state into surface-specific UI state and reusable visual components.
+The central direction is deliberate: platform and provider adapters feed normalized inputs into AALyrics core; they do not own application state. Demand gating controls whether observed playback owns lyrics work, but it does not change playback normalization, track identity, provider execution, or candidate selection. Presentation converts shared domain state into surface-specific UI state and reusable visual components.
 
 ## Playback identity and lookup ownership
 
@@ -245,13 +255,36 @@ The selected controller alone owns a runtime callback. Switching selection detac
 
 Android notification-listener access is a platform concern. The service must be declared with `BIND_NOTIFICATION_LISTENER_SERVICE`, must wait for `onListenerConnected()`, and should pass its component to active-session APIs rather than depending on privileged `MEDIA_CONTENT_CONTROL`.
 
-Detailed acceptance criteria are in `docs/MEDIA_SESSION_RUNTIME.md`.
+Detailed runtime behavior is in `docs/MEDIA_SESSION_RUNTIME.md`.
 
 ## Demand gating boundary
 
-The working fork gates provider work based on phone foreground or Android Auto projection demand. That policy remains valuable but is intentionally a later lifecycle slice.
+Demand gating is implemented at the application lifecycle boundary and is specified in `docs/LYRICS_DEMAND_GATING.md`.
 
-The media-session runtime may establish the UI-free end-to-end STOP gate first. Demand gating must be introduced before release/presentation work so provider lookup is not permanently active in the background. Do not mix phone/automotive lifecycle ownership into the initial live-session adapter merely to reproduce the old `LyricsDemandController` object shape.
+Preserve the mature working-fork rule:
+
+```text
+phone process foreground
+        OR
+Android Auto projection connected
+        =
+lyrics demand active
+```
+
+Demand policy is application/runtime lifecycle state, not presentation state and not MediaSession selection state.
+
+The MediaSession runtime continues observing and normalizing playback regardless of demand. The gate retains the newest normalized `PlaybackSnapshot` while inactive but does not forward provider-owning playback to `PlaybackLyricsController`.
+
+Required transitions:
+
+- `OFF -> ON`: replay the latest retained snapshot exactly once so lyrics start immediately without waiting for another track event;
+- `ON -> OFF`: clear current lookup ownership once so in-flight/background provider work is cancelled;
+- repeated same-value demand updates: no-op;
+- one source turning off while the other remains active: demand stays on.
+
+Phone demand uses process-level lifecycle semantics so ordinary Activity recreation does not flap demand. Automotive demand represents the whole Android Auto projection connection, even while another AA app is foreground.
+
+The gate must not reach into provider jobs, change `PlaybackTrackIdentity`, or teach `:platform:media` about UI/application lifecycle policy.
 
 ## Core responsibilities
 
@@ -265,7 +298,7 @@ Narrow provider-independent start/clear boundary used by playback ownership.
 
 ### `PlaybackLyricsController`
 
-Owns the pure transition from normalized playback identity/preferences to lyrics-request ownership. It does not normalize Android metadata, discover media sessions, fetch providers, or render UI.
+Owns the pure transition from normalized playback identity/preferences to lyrics-request ownership. It does not normalize Android metadata, discover media sessions, decide application demand, fetch providers directly, or render UI.
 
 ### `CandidateSelector`
 
@@ -273,7 +306,7 @@ Port between core orchestration and winner selection. The production implementat
 
 ### `LyricsState`
 
-Provider-independent observable domain state for future phone and automotive presentation. Loading, ready/degraded, not-found, and failure states are explicit domain outcomes.
+Provider-independent observable domain state for phone and automotive presentation. Loading, ready/degraded, not-found, and failure states are explicit domain outcomes.
 
 ## Failure and lifecycle rules
 
@@ -285,7 +318,9 @@ Provider-independent observable domain state for future phone and automotive pre
 - Missing notification-listener access or `SecurityException` from active-session APIs must fail safely.
 - No eligible live session must clear playback ownership instead of leaving stale lyrics active.
 - Selected-controller callbacks/listeners must be detached when ownership ends.
-- UI layers must not retry, rank, merge, fetch, or select media sessions directly.
+- With no lyrics demand, provider-owning playback must not be forwarded even though media-session observation continues.
+- Losing the final demand source must clear current lookup ownership; losing only one of multiple active demand sources must not.
+- UI layers must not retry, rank, merge, fetch, select media sessions, or directly start/cancel provider jobs.
 - Reusable design-system code must not import app/domain/provider/platform ownership merely for convenience.
 - Android framework media types must not cross into `:core:model`, `:core:lyrics`, or `:provider:api`.
 - Existing proven matching/scoring behavior must not be replaced without explicit regression evidence and a documented reason.
@@ -298,6 +333,6 @@ Provider-independent observable domain state for future phone and automotive pre
 
 ## Future extension points
 
-Translation, caching, timing adjustment, demand gating, settings/persistence, karaoke rendering, and other features may be introduced later behind explicit contracts. Their future existence must not be used as a reason to mix those responsibilities into `LyricsCoordinator`, `PlaybackLyricsController`, the media-session runtime, provider selection, concrete provider adapters, or shared design-system components.
+Translation, caching, timing adjustment, settings/persistence, karaoke rendering, and other features may be introduced later behind explicit contracts. Their future existence must not be used as a reason to mix those responsibilities into `LyricsCoordinator`, `PlaybackLyricsController`, the media-session runtime, demand gate, provider selection, concrete provider adapters, or shared design-system components.
 
-See `docs/ROADMAP.md`, `docs/CORE_READINESS_GATE.md`, `docs/MIGRATION_INVENTORY.md`, `docs/APPLICATION_COMPOSITION.md`, `docs/MEDIA_SESSION_RUNTIME.md`, and `docs/PROVIDER_ARCHITECTURE.md`.
+See `docs/ROADMAP.md`, `docs/CORE_READINESS_GATE.md`, `docs/MIGRATION_INVENTORY.md`, `docs/APPLICATION_COMPOSITION.md`, `docs/MEDIA_SESSION_RUNTIME.md`, `docs/LYRICS_DEMAND_GATING.md`, and `docs/PROVIDER_ARCHITECTURE.md`.

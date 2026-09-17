@@ -2,7 +2,7 @@
 
 AALyrics is a new Android project for synchronized lyrics on phone and Android Auto.
 
-> **Status:** the core lyrics engine, all four providers, production selection, application composition, and the UI foundation are established. The live Android media-session runtime is implemented in PR #29 and is pending merge; finished end-user presentation remains later work.
+> **Status:** the core lyrics engine, all four providers, production selection, application composition, UI foundation, and live Android media-session runtime are established. Process-wide lyrics-demand gating is the current background/runtime slice; finished end-user presentation remains later work.
 
 ## Project direction
 
@@ -33,9 +33,10 @@ Completed foundation includes:
 - Musixmatch provider migration (PR #21),
 - SyncLRC provider migration (PR #24),
 - manual production application composition (PR #25),
-- shared/phone/automotive UI foundation (PRs #27 and #28).
+- shared/phone/automotive UI foundation (PRs #27 and #28),
+- live Android MediaSession runtime (PR #29).
 
-The current `feature/media-session-runtime` branch implements live Android media-session discovery, token-based session selection, selected-controller callback ownership, playback normalization, and handoff into the existing production lyrics graph. Phone/Android Auto feature completion, demand gating, cache, translation, timing controls, persistence, and karaoke rendering remain separate later work.
+PR #30 implements the next runtime slice and is ready for explicit merge approval: MediaSession observation stays alive, while provider lookup runs only when phone-process foreground or Android Auto projection demand is active. Demand deactivation clears lyrics work; reactivation resumes immediately from the latest already-observed playback snapshot. Finished phone/Android Auto presentation, cache, translation, timing controls, persistence, and karaoke rendering remain separate later work.
 
 ## Modules
 
@@ -57,7 +58,7 @@ ui:phone               Phone presentation composition
 ui:automotive          Android Auto presentation composition
 ```
 
-See `docs/ARCHITECTURE.md`, `docs/ROADMAP.md`, `docs/APPLICATION_COMPOSITION.md`, `docs/MEDIA_SESSION_RUNTIME.md`, `docs/UI_ARCHITECTURE.md`, and `docs/PROVIDER_ARCHITECTURE.md` for the authoritative architecture and migration plan.
+See `docs/ARCHITECTURE.md`, `docs/ROADMAP.md`, `docs/APPLICATION_COMPOSITION.md`, `docs/MEDIA_SESSION_RUNTIME.md`, `docs/LYRICS_DEMAND_GATING.md`, `docs/UI_ARCHITECTURE.md`, and `docs/PROVIDER_ARCHITECTURE.md` for the authoritative architecture and migration plan.
 
 ## Package
 

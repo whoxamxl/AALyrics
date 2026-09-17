@@ -26,6 +26,7 @@ import kotlinx.coroutines.flow.StateFlow
 class AALyricsApplication : Application() {
     private val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private lateinit var graph: ApplicationGraph
+    private lateinit var demandLifecycle: LyricsDemandLifecycle
 
     val playbackLyricsController: PlaybackLyricsController
         get() = graph.playbackLyricsController
@@ -37,9 +38,11 @@ class AALyricsApplication : Application() {
         super.onCreate()
         graph = createProductionApplicationGraph(applicationScope)
         MediaSessionRuntimeHost.attach(graph.playbackSnapshotSink)
+        demandLifecycle = LyricsDemandLifecycle(this, graph.lyricsDemandGate).also { it.start() }
     }
 
     override fun onTerminate() {
+        demandLifecycle.stop()
         MediaSessionRuntimeHost.detach(graph.playbackSnapshotSink)
         applicationScope.cancel()
         super.onTerminate()
@@ -59,8 +62,9 @@ internal class ApplicationGraph(
         lookupLifecycle = coordinator,
         defaultPreferences = selectionPreferences,
     )
+    val lyricsDemandGate = LyricsDemandGate(playbackLyricsController::onPlayback)
     val playbackSnapshotSink = PlaybackSnapshotSink { snapshot ->
-        playbackLyricsController.onPlayback(snapshot)
+        lyricsDemandGate.onPlaybackSnapshot(snapshot)
     }
     val lyricsState: StateFlow<LyricsState> = coordinator.state
 }

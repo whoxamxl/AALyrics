@@ -1,53 +1,46 @@
-# Phone UI Architecture
+# Lyrics Demand Gating
 
 ## Branch and baseline
 
-- Branch: `feature/phone-ui-architecture`.
-- Base: `main` at `c0bfb15` after media-session runtime PR #29 merged.
-- Classification: **PRESENTATION ARCHITECTURE / DOCUMENTATION**.
-- User explicitly authorized documentation, package/folder structure, and architecture work only.
-- Read `AGENTS.md`, `docs/ARCHITECTURE.md`, and `docs/UI_ARCHITECTURE.md` before extending phone UI.
-
-## Goal
-
-Define the durable Phone UI information architecture and source ownership before any Compose screen implementation. The slice should make the intended shell, destinations, state boundaries, and package structure obvious so later UI implementation can proceed incrementally without moving responsibilities again.
+- Branch: `feature/lyrics-demand-gating`.
+- Base: main `c0bfb15` after PR #29 merged.
+- Working-fork reference: `whoxamxl/auto-lyrics` main `8484bed2dbe8db5ca7b17dec5481b3c22714dc6f` (`v1.13.0`).
+- Classification: **PRESERVE / REFACTOR** for demand semantics; **REWRITE** for AALyrics ownership/integration.
+- Authoritative scope: `docs/LYRICS_DEMAND_GATING.md`.
+- The user explicitly authorized production implementation of this slice; implementation is active on this branch.
 
 ## Acceptance criteria
 
-- Add a dedicated `docs/PHONE_UI_SPEC.md` describing the approved Phone shell and information architecture.
-- Define four primary destinations: `Lyrics`, `Sync`, `Details`, and `Settings`, with `Lyrics` as home.
-- Define a persistent compact top status bar for app identity plus runtime status.
-- Define a persistent compact playback-controls bar above bottom navigation, exposing Previous / Play-Pause / Next without duplicating track artwork/title metadata.
-- Define a persistent four-destination bottom navigation bar.
-- Keep the richer Track Card inside the Lyrics destination, with artwork, title, artist, and lyrics/provider/sync metadata.
-- Treat the Lyrics viewport as the primary content area and preserve vertical space; exact dp values are intentionally deferred to Preview/implementation work.
-- Reshape the `:ui:phone` source tree into clear `shell`, `navigation`, destination, and `state` packages using architecture-only placeholders.
-- Keep UI callbacks/platform boundaries explicit: phone UI must not directly own `MediaController`, provider lookup, networking, or candidate selection.
-- Keep phone-specific components local first; promote them to `:ui:designsystem` only after their APIs are demonstrated and stable.
-- Update `docs/UI_ARCHITECTURE.md` so the shared architecture and Phone-specific spec agree.
-- Do **not** implement Compose layouts, navigation runtime, playback commands, ViewModels, media wiring, screen behavior, or final visual dimensions in this slice.
-- Run repository CI/build validation, review the complete diff, open a PR, and stop before merge for explicit approval.
+- Preserve `phone process foreground OR Android Auto projection connected` as the demand rule.
+- Keep MediaSession discovery/selection running independently of lyrics demand.
+- Gate only the handoff from normalized playback into lyrics lookup/provider work.
+- Retain the latest `PlaybackSnapshot` while demand is off.
+- `OFF -> ON` immediately replays the latest retained snapshot once.
+- `ON -> OFF` clears current lookup ownership once and stops/cancels provider work.
+- Phone and automotive demand sources remain independently composable; removing one source must not disable demand while the other remains active.
+- Preserve process-level phone lifecycle semantics so configuration changes do not cause provider-work flapping.
+- Preserve Android Auto projection-level demand for the whole projection session, not only while AALyrics is the foreground automotive surface.
+- Do not make `:platform:media`, providers, `LyricsCoordinator`, or UI composables own demand policy.
+- Do not change MediaSession selection, provider behavior, candidate scoring, cache, translation, timing, karaoke rendering, or finished phone/Android Auto presentation.
+- Add deterministic regressions defined in `docs/LYRICS_DEMAND_GATING.md`.
+- Run `./gradlew test check :app:assembleDebug`, `bash scripts/verify-architecture.sh`, and `git diff --check` before PR review.
+- Open a PR, complete bounded review, and stop before merge for explicit approval.
 
 ## Plan/status
 
-- [x] Create `feature/phone-ui-architecture` from current `main`.
-- [x] Define scope and no-implementation guard in `TASK.md`.
-- [x] Add `docs/PHONE_UI_SPEC.md`.
-- [x] Reshape `ui/phone` package/folder ownership using placeholders only.
-- [x] Align `docs/UI_ARCHITECTURE.md` with the Phone package model and shell boundary.
-- [x] Validate CI/build and architecture checks.
-- [x] Review the complete branch diff.
-- [x] Open PR #31 and stop before merge.
-
-## Validation/review record
-
-- GitHub Actions branch-name validation passed.
-- Architecture-boundary verification passed.
-- Debug APK build passed.
-- Unit tests passed.
-- Complete diff review confirmed that source changes are package/comment placeholders only; no Compose layout, runtime navigation, media wiring, provider logic, or screen behavior is introduced.
-- PR #31 is the review/integration gate for this architecture-only slice.
+- [x] Merge live MediaSession runtime in PR #29.
+- [x] Create `feature/lyrics-demand-gating` from main `c0bfb15`.
+- [x] Re-check working-fork `LyricsDemandController` and `AutoLyricsApp` lifecycle wiring.
+- [x] Define demand semantics, ownership, snapshot replay/clear behavior, scope, regressions, and STOP gate in `docs/LYRICS_DEMAND_GATING.md`.
+- [x] Implement demand aggregation and gating behind the documented application/runtime boundary.
+- [x] Wire process-level phone demand without adding finished phone UI.
+- [x] Wire Android Auto projection demand without adding finished automotive UI.
+- [x] Add deterministic regressions.
+- [x] Update durable docs with the implementation result.
+- [x] Run the required repository validation.
+- [x] Complete the bounded PR review: one stale README status was fixed in `bd7bab1`; targeted re-review found no major issues.
+- [x] Open PR #30 and stop before merge.
 
 ## Scope guard
 
-This branch is architecture scaffolding only. Placeholder Kotlin files may document intended ownership, but they must not add production behavior. Actual Compose components, navigation, runtime state mapping, playback transport integration, and visual tuning belong to later implementation slices after this architecture is reviewed and merged.
+This is a background/runtime lifecycle slice. It is not a presentation, cache, translation, timing, karaoke-rendering, provider, candidate-selection, or MediaSession-selection slice.

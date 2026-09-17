@@ -2,6 +2,7 @@ package io.github.whoxamxl.aalyrics
 
 import io.github.whoxamxl.aalyrics.core.lyrics.CandidateSelectionPreferences
 import io.github.whoxamxl.aalyrics.core.lyrics.CandidateSelector
+import io.github.whoxamxl.aalyrics.core.lyrics.LyricsState
 import io.github.whoxamxl.aalyrics.core.model.LyricsSyncType
 import io.github.whoxamxl.aalyrics.core.model.PlaybackSnapshot
 import io.github.whoxamxl.aalyrics.core.model.PlaybackStatus
@@ -13,11 +14,15 @@ import io.github.whoxamxl.aalyrics.provider.api.LyricsProviderId
 import io.github.whoxamxl.aalyrics.provider.api.LyricsRequest
 import io.github.whoxamxl.aalyrics.provider.petitlyrics.PetitLyricsProvider
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertIs
 import kotlin.test.assertSame
+import kotlin.test.assertTrue
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class ApplicationGraphTest {
@@ -56,6 +61,10 @@ class ApplicationGraphTest {
 
         graph.playbackSnapshotSink.onPlaybackSnapshot(PlaybackSnapshot(track = track))
         advanceUntilIdle()
+        assertEquals(emptyList(), provider.requests)
+
+        graph.lyricsDemandGate.setPhoneProcessForeground(true)
+        advanceUntilIdle()
         graph.playbackSnapshotSink.onPlaybackSnapshot(
             PlaybackSnapshot(
                 track = track.copy(durationMs = 200_000L),
@@ -67,6 +76,37 @@ class ApplicationGraphTest {
 
         assertEquals(listOf(LyricsSyncType.WORD), provider.requests.map { it.preferredSyncType })
         assertEquals(listOf(preferences), selector.preferences)
+    }
+
+    @Test
+    fun `removing final demand source clears state and cancels provider work`() = runTest {
+        val provider = BlockingProvider()
+        val graph = ApplicationGraph(
+            providers = listOf(provider),
+            selector = RecordingSelector(),
+            applicationScope = this,
+            selectionPreferences = CandidateSelectionPreferences(),
+        )
+        graph.playbackSnapshotSink.onPlaybackSnapshot(
+            PlaybackSnapshot(track = Track(title = "Song", artists = listOf("Artist"))),
+        )
+
+        graph.lyricsDemandGate.setPhoneProcessForeground(true)
+        runCurrent()
+
+        assertIs<LyricsState.Loading>(graph.lyricsState.value)
+        assertTrue(provider.started)
+
+        graph.lyricsDemandGate.setAutomotiveProjectionConnected(true)
+        graph.lyricsDemandGate.setPhoneProcessForeground(false)
+        runCurrent()
+        assertIs<LyricsState.Loading>(graph.lyricsState.value)
+
+        graph.lyricsDemandGate.setAutomotiveProjectionConnected(false)
+        advanceUntilIdle()
+
+        assertIs<LyricsState.Idle>(graph.lyricsState.value)
+        assertTrue(provider.cancelled)
     }
 
     private class RecordingProvider : LyricsProvider {
@@ -93,6 +133,25 @@ class ApplicationGraphTest {
         ): LyricsCandidate? {
             this.preferences += preferences
             return null
+        }
+    }
+
+    private class BlockingProvider : LyricsProvider {
+        override val descriptor = LyricsProviderDescriptor(
+            id = LyricsProviderId("blocking"),
+            displayName = "Blocking",
+            supportedSyncTypes = setOf(LyricsSyncType.LINE),
+        )
+        var started = false
+        var cancelled = false
+
+        override suspend fun search(request: LyricsRequest): List<LyricsCandidate> {
+            started = true
+            try {
+                awaitCancellation()
+            } finally {
+                cancelled = true
+            }
         }
     }
 }
