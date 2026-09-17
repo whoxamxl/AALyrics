@@ -6,7 +6,7 @@
 - Original base: main `3ea97ce` after application-composition PR #25 merged; reconciled onto current main `1c8a875` before final PR review.
 - Working-fork behavioral reference: `whoxamxl/auto-lyrics` main `8484bed2dbe8db5ca7b17dec5481b3c22714dc6f` (`v1.13.0`), re-checked on 2026-09-17 and still current.
 - Classification: **PRESERVE / REFACTOR** for session-selection behavior, **REWRITE** for ownership/integration.
-- State: **IMPLEMENTED — PR #29 validation and bounded review are complete; explicit merge approval has been received.**
+- State: **IMPLEMENTED AND MERGED — PR #29.**
 
 ## Purpose
 
@@ -100,13 +100,15 @@ Deterministic regressions verify the delay, replacement of older pending metadat
 
 Artwork, current-line timing, transport controls, cache, translation, and legacy `MediaTracker` state are intentionally not part of this stabilization logic.
 
-## Demand gating
+## Demand gating handoff
 
-The working fork keeps session monitoring alive but forwards sessions to lyrics work only while phone or Android Auto demand is active.
+The MediaSession runtime deliberately keeps session monitoring independent from lyrics-demand policy. PR #29 therefore forwards normalized playback whenever the listener runtime is connected.
 
-That demand policy is deliberately **not** part of this slice because phone foreground and Android Auto projection ownership are separate lifecycle concerns. `LyricsDemandController` was not migrated into this runtime.
+The next dedicated lifecycle slice is `feature/lyrics-demand-gating`, documented in `docs/LYRICS_DEMAND_GATING.md`. That slice preserves the working fork's `phone process foreground OR Android Auto projection connected` demand rule while keeping MediaSession discovery/selection alive.
 
-For the runtime STOP gate, the selected live session may feed the production playback controller while the notification listener is connected. Before end-user release work, demand gating should be added as its own explicit lifecycle slice so provider work does not remain permanently active in the background.
+Demand gating belongs between the platform playback sink and `PlaybackLyricsController`: when demand is inactive, the latest normalized snapshot is retained but provider-owning playback is not forwarded; deactivation clears current lyrics work, and reactivation immediately replays the latest snapshot.
+
+`:platform:media` must remain unaware of phone/automotive demand policy.
 
 ## Failure and lifecycle rules
 
@@ -117,15 +119,15 @@ For the runtime STOP gate, the selected live session may feed the production pla
 - Session-list reordering alone does not switch away from a currently playing selected session.
 - A destroyed selected session does not leave a dead callback/controller attached.
 - Android framework objects do not leak into pure core/provider APIs.
-- Live runtime callbacks do not start provider work directly; they feed normalized playback into the existing `PlaybackLyricsController` boundary.
+- Live runtime callbacks do not start provider work directly; they feed normalized playback through the application boundary.
 
 ## Explicitly out of scope
 
-The following remain separate work:
+The following remain separate work from the MediaSession runtime itself:
 
+- lyrics-demand gating implementation, now specified separately in `docs/LYRICS_DEMAND_GATING.md`;
 - finished phone lyrics UI;
 - finished Android Auto presentation/service browsing UI;
-- process-wide phone/Android Auto demand gating;
 - settings/persistence UI;
 - cache;
 - translation;
@@ -171,7 +173,7 @@ The implemented runtime keeps all Android session access in `:platform:media`:
 - `MediaSessionListenerService` waits for `onListenerConnected()`, observes active sessions through its notification-listener component, and retains notification-posted refresh as a compatibility fallback;
 - `SelectedMediaSessionRuntime` owns token-based selection, the single selected callback, clear/re-selection behavior, stopped-session handoff, and the retained 600 ms metadata stabilization;
 - `MediaControllerSnapshotAdapter` remains the exclusive Android-to-`PlaybackSnapshot` normalization path;
-- `MediaSessionRuntimeHost` is the narrow platform/application handoff, and `AALyricsApplication` attaches a sink that forwards snapshots into the existing `PlaybackLyricsController`;
+- `MediaSessionRuntimeHost` is the narrow platform/application handoff;
 - disconnect and `SecurityException` paths detach ownership and clear stale playback state.
 
-The runtime implementation does not add demand gating, provider changes, selection-policy changes, or finished presentation behavior.
+PR #29 intentionally did not add demand gating, provider changes, selection-policy changes, or finished presentation behavior.
