@@ -30,11 +30,11 @@
 - [x] Merge all four concrete provider migrations through SyncLRC PR #24.
 - [x] Create `feature/application-composition` from post-PR #24 main.
 - [x] Define application-composition ownership and explicit no-UI scope.
-- [ ] Inspect current core playback/lookup APIs and the working-fork preference/fan-out call sites.
-- [ ] Implement the manual application object graph.
-- [ ] Wire playback selection preferences without introducing settings persistence or UI.
-- [ ] Add/adjust deterministic tests.
-- [ ] Update durable architecture/roadmap/migration docs to record Phase 7 completion and composition status.
+- [x] Inspect current core playback/lookup APIs and the working-fork preference/fan-out call sites.
+- [x] Implement the manual application object graph.
+- [x] Wire playback selection preferences without introducing settings persistence or UI.
+- [x] Add/adjust deterministic tests.
+- [x] Update durable architecture/roadmap/migration docs to record Phase 7 completion and composition status.
 - [ ] Run full validation and bounded review.
 - [ ] Open PR and stop before merge.
 

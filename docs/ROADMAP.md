@@ -130,26 +130,23 @@ Completed:
 - LRCLIB — merged in PR #19.
 - PetitLyrics — merged in PR #20.
 - Musixmatch — merged in PR #21.
+- SyncLRC — merged in PR #24.
 
-Current:
-
-- SyncLRC — implemented and reviewed in PR #24; merge approval pending.
+Phase 7 is complete.
 
 ## Current work
 
-### SyncLRC provider migration
+### Application composition
 
-The fourth concrete provider is implemented on the active migration branch pending validation and review. The working-fork baseline remains `8484bed2dbe8db5ca7b17dec5481b3c22714dc6f` (`v1.13.0`), re-checked on 2026-09-16 before implementation. The public SyncLRC API contract was also re-checked on 2026-09-16 and still matches the mature request/response assumptions used by the fork.
+The active slice constructs the first process-level production graph in `:app` from all four providers, the production selector, `LyricsCoordinator`, and `PlaybackLyricsController`. Composition remains explicit and manual, with one application-owned coroutine scope and the existing BuildConfig values supplying PetitLyrics configuration.
 
-The **PRESERVE / REFACTOR** adapter keeps SyncLRC deliberately narrow: it is an opportunistic karaoke/WORD source, not a generic plain/line provider. It preserves WORD-preference request gating, the `track` + `artist` + `type=karaoke` request shape with optional album/duration, current and legacy karaoke response compatibility, instrumental rejection, and the requirement for genuine Enhanced-LRC timed word tokens.
+Lookup ownership now includes both playback identity and candidate-selection preferences. The production boundary initially requests `WORD` timing to preserve the working fork's karaoke-enabled default, while timeline/status/rate/duration churn remains outside lookup identity.
 
-Shared Enhanced-LRC parsing remains in `:provider:lrc` and is reused by SyncLRC. Cross-provider metadata scoring, source confidence, and WORD-vs-LINE winner policy remain in `:provider:selection`.
-
-Application wiring, cache, translation, phone/Android Auto presentation, karaoke rendering, and global selection-policy changes are outside this slice.
+Phone and Android Auto presentation, live media-session discovery/callbacks, cache, translation, timing controls, and karaoke rendering remain separate later slices.
 
 ## Later phases
 
-After concrete providers are stable, later work includes application composition/wiring, cache, translation, demand/session gating, Android Auto/phone presentation, timing controls, karaoke rendering, persistence, release/signing, and regression comparison against the previous fork.
+After application composition is stable, later work includes cache, translation, demand/session gating, Android Auto/phone presentation, timing controls, karaoke rendering, persistence, release/signing, and regression comparison against the previous fork.
 
 These should remain separate responsibilities and topic branches. Do not use future feature needs as a reason to turn `LyricsCoordinator`, `PlaybackLyricsController`, the production selector, or concrete providers into new god objects.
 

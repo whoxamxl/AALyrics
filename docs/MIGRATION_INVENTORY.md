@@ -159,7 +159,9 @@ Do not bulk-port the old application. Each provider or subsystem remains a separ
 - LRCLIB: migrated and merged in PR #19.
 - PetitLyrics: migrated and merged in PR #20.
 - Musixmatch: migrated and merged in PR #21.
-- SyncLRC: implemented and reviewed in PR #24; merge approval pending.
+- SyncLRC: migrated and merged in PR #24.
+- Phase 7 concrete-provider migration: complete.
+- Application composition: active on `feature/application-composition`.
 
 ### LRCLIB implementation re-check
 
@@ -187,4 +189,4 @@ Preserved: request execution only when karaoke/WORD timing is preferred; require
 
 Structural adaptation: a `WORD`-only `LyricsProvider` gates transport with normalized `LyricsRequest.preferredSyncType`, reuses shared `:provider:lrc` parsing, normalizes duration seconds to domain milliseconds, uses cancellable HTTP, and surfaces operational failures according to the provider contract. Final metadata scoring, source confidence, karaoke preference, and winner selection remain unchanged in `:provider:selection`.
 
-Documentation/planning approval does not authorize unrelated provider implementation. The current explicit authorization is limited to SyncLRC on `feature/synclrc-provider-migration`.
+Documentation/planning approval does not authorize unrelated implementation. The current explicit authorization is limited to the first manual application object graph on `feature/application-composition`; presentation and live media-session work remain separate slices.
