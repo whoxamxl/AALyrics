@@ -1,0 +1,276 @@
+# AALyrics Phone UI Specification
+
+## Status
+
+Architecture/specification only. This document defines the intended Phone UI structure before Compose implementation begins. Exact visual dimensions, component APIs, navigation runtime, and state-mapping code are deliberately deferred.
+
+## Product intent
+
+The Phone surface should keep lyrics as the primary content while making app state, playback controls, and destination switching consistently reachable with one hand.
+
+The approved shell is:
+
+```text
+┌──────────────────────────────┐
+│ Top Status Bar               │  persistent
+├──────────────────────────────┤
+│                              │
+│ Current Destination          │
+│                              │
+├──────────────────────────────┤
+│ Playback Controls Bar        │  persistent when media is available
+├──────────────────────────────┤
+│ Lyrics  Sync  Details  Settings │ persistent
+└──────────────────────────────┘
+```
+
+The shell owns persistent chrome. Destination-specific content owns its own screen composition.
+
+## Primary destinations
+
+The primary navigation has four destinations:
+
+```text
+Lyrics   Sync   Details   Settings
+```
+
+`Lyrics` is the home destination.
+
+### Lyrics
+
+Primary now-playing lyrics experience.
+
+Owns:
+
+- Track Card
+- Lyrics viewport
+- current-line emphasis
+- follow/manual-browse presentation
+- lyrics-specific empty/loading/error presentation
+
+The Track Card is destination-specific rather than shell-level so non-Lyrics destinations do not duplicate large track metadata.
+
+### Sync
+
+Reserved for synchronization-focused controls and status. Likely responsibilities include timing mode/status and manual timing correction/calibration, but the exact interaction model is not frozen by this architecture slice.
+
+### Details
+
+Reserved for current track/lyrics metadata and diagnostics that are useful to a user without turning the main Lyrics screen into a dense status panel. Candidate information includes provider, lyrics format, lookup/match information, and related current-result details. Exact fields are deferred.
+
+### Settings
+
+Owns application configuration. Provider preferences, appearance, behavior, Android Auto preferences, and About/diagnostics may live here as later product requirements are approved.
+
+## Persistent top status bar
+
+The top bar is compact and persistent across primary destinations.
+
+Purpose:
+
+- left: AALyrics app identity/icon
+- remaining/right area: concise runtime status
+
+Examples of runtime status intent include media connection and lyrics/sync state, such as `WORD SYNC`, `LINE`, `Loading`, or a compact connected/degraded state. The bar should not duplicate full current-track metadata.
+
+The exact status vocabulary and priority rules are implementation decisions to be validated with real states and available width.
+
+## Lyrics Track Card
+
+The richer current-track presentation belongs inside the Lyrics destination.
+
+Intended content:
+
+- artwork
+- title
+- artist
+- compact lyrics/provider/sync metadata
+
+Conceptually:
+
+```text
+┌──────────────────────────────┐
+│ [Artwork]  Track title       │
+│            Artist            │
+│            Provider • Sync   │
+└──────────────────────────────┘
+```
+
+The card is informational. Playback transport actions stay in the persistent Playback Controls Bar so information and actions have separate, predictable locations.
+
+## Lyrics viewport
+
+The Lyrics viewport is the visual priority of the Lyrics destination.
+
+Goals:
+
+- current lyric remains visually dominant
+- previous and next lines provide context
+- normal phone layouts should preserve roughly five to six visible lyric lines where practical
+- fixed shell elements should remain compact enough not to consume the majority of vertical space
+
+This is a layout target, not a hard line-count guarantee. Exact typography, spacing, and dp values must be tuned in Compose Preview and device testing rather than frozen in this architecture document.
+
+## Persistent playback controls
+
+A compact playback-controls bar sits immediately above bottom navigation when an active/controllable media session is available.
+
+It exposes only the high-frequency transport controls:
+
+```text
+Previous    Play/Pause    Next
+```
+
+The bar intentionally does **not** duplicate:
+
+- artwork
+- title
+- artist
+- provider metadata
+
+Those already belong to the Lyrics Track Card or destination content.
+
+The center Play/Pause action may receive stronger visual emphasis than Previous/Next during implementation, but exact sizing/styling is deferred.
+
+When no controllable media session exists, the final implementation may hide or disable the bar; that behavior is not fixed here.
+
+## Bottom navigation
+
+The bottom navigation is persistent and optimized for one-handed reachability.
+
+Destinations:
+
+```text
+Lyrics   Sync   Details   Settings
+```
+
+The navigation bar performs destination switching only. Playback actions belong to the Playback Controls Bar and current-track information belongs to destination content.
+
+## Phone shell ownership
+
+The intended ownership model is:
+
+```text
+PhoneAppShell
+├─ PhoneTopBar
+├─ CurrentDestination
+│  ├─ Lyrics
+│  │  ├─ TrackCard
+│  │  └─ LyricsViewport
+│  ├─ Sync
+│  ├─ Details
+│  └─ Settings
+├─ PlaybackControlsBar
+└─ PhoneNavigationBar
+```
+
+The shell controls composition of persistent chrome and the selected destination. It should not own provider lookup, media-session discovery, or lyrics selection policy.
+
+## Presentation state boundary
+
+The Phone UI receives presentation state and emits actions/callbacks. It does not directly manipulate Android media framework objects or provider implementations.
+
+Conceptually:
+
+```text
+Application/domain state
+        ↓
+Phone presentation mapping
+        ↓
+Phone shell + destination state
+        ↓
+Production composables
+```
+
+Transport UI should depend on callbacks such as:
+
+```text
+onPrevious
+onPlayPause
+onNext
+```
+
+rather than a `MediaController` reference.
+
+Likewise, lyrics screens consume presentation-ready values/state rather than provider DTOs or networking clients.
+
+## Local-first component extraction
+
+Phone-specific components should begin inside `:ui:phone` while their behavior and API are still being proven.
+
+Examples:
+
+- `PhoneTopBar`
+- `PlaybackControlsBar`
+- `PhoneNavigationBar`
+- `TrackCard`
+- `LyricsViewport`
+
+A component should move to `:ui:designsystem` only when it is genuinely reusable, has a stable presentation API, and does not pull Phone-specific navigation/runtime ownership into the shared module.
+
+This follows the project rule: screen needs demonstrate reusable design-system APIs; the component library should not be grown speculatively.
+
+## Intended source structure
+
+```text
+ui/phone/src/main/java/io/github/whoxamxl/aalyrics/ui/phone/
+├─ shell/
+│  ├─ PhoneAppShell.kt
+│  ├─ PhoneTopBar.kt
+│  ├─ PlaybackControlsBar.kt
+│  └─ PhoneNavigationBar.kt
+├─ navigation/
+│  └─ PhoneDestination.kt
+├─ lyrics/
+│  ├─ LyricsRoute.kt
+│  ├─ LyricsScreen.kt
+│  ├─ LyricsUiState.kt
+│  ├─ LyricsAction.kt
+│  ├─ TrackCard.kt
+│  └─ LyricsViewport.kt
+├─ sync/
+│  └─ SyncScreen.kt
+├─ details/
+│  └─ DetailsScreen.kt
+├─ settings/
+│  └─ SettingsScreen.kt
+└─ state/
+   └─ PhoneShellUiState.kt
+```
+
+During architecture-only work these files may be placeholders containing no production behavior. Later implementation slices should replace only the placeholders needed by the approved screen slice.
+
+## Preview and validation direction
+
+Once implementation starts, production composables remain in `src/main` and deterministic Preview fixtures stay in `src/debug`.
+
+Preview coverage should eventually exercise at least:
+
+- active media / no media
+- long title and artist
+- no artwork
+- loading / ready / degraded / not found / failed lyrics states
+- line-synced / word-synced / unsynced lyrics
+- long lyric lines
+- first/last-line boundaries
+- follow vs manual browse
+- playback-control enabled/disabled states
+- narrow and typical phone widths
+
+Implementation should validate that the persistent top bar, playback controls, and bottom navigation still leave adequate room for the lyrics viewport.
+
+## Explicitly deferred
+
+This architecture slice does not decide or implement:
+
+- exact dp heights or typography sizes for shell elements
+- final icons or animation
+- navigation framework/runtime
+- ViewModels or state-mapper classes
+- playback transport integration
+- media-session ownership
+- provider behavior
+- final Sync interaction model
+- final Details fields
+- final Settings taxonomy
+- screen implementation or Compose component APIs

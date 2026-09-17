@@ -2,9 +2,11 @@
 
 ## Purpose
 
-This document defines the UI module layout, source-set rules, Compose design-system ownership, Android Auto host-rendered presentation ownership, and Preview workflow for AALyrics.
+This document defines the UI module layout, source-set rules, Compose design-system ownership, Phone presentation ownership, Android Auto host-rendered presentation ownership, and Preview workflow for AALyrics.
 
 The project uses Jetpack Compose itself as the executable design specification for Compose surfaces. Static design artifacts may inform visual decisions, but production UI code is the source of truth for behavior and appearance. Android Auto host-rendered templates are a distinct presentation technology and adapt the same semantic design intent through automotive-local builders/components.
+
+Surface-specific product structure is documented separately when useful. The current Phone information architecture is defined in `docs/PHONE_UI_SPEC.md`.
 
 ## Modules
 
@@ -40,17 +42,23 @@ Must not own:
 
 ### `:ui:phone`
 
-Phone-specific screen composition and presentation state.
+Phone-specific shell, screen composition, navigation presentation, and presentation state.
 
 Owns:
 
-- phone routes/screens
-- phone UI state mapping
-- phone-specific user actions
-- settings/navigation that are specific to the phone surface
-- debug-only phone previews and preview fixtures
+- persistent Phone shell composition
+- compact top status bar presentation
+- persistent playback-controls presentation
+- primary bottom-navigation presentation
+- Phone destination definitions
+- Phone routes/screens
+- Phone UI state mapping and UI actions/callbacks
+- destination-specific components while their APIs are still Phone-local
+- debug-only Phone previews and preview fixtures
 
-It may depend on `:core:model`, `:core:lyrics`, and `:ui:designsystem`. It must not call provider implementations or `:platform:media` directly.
+It may depend on `:core:model`, `:core:lyrics`, and `:ui:designsystem`. It must not call provider implementations, networking, or `:platform:media` directly.
+
+Phone-specific components are local-first. A component should move to `:ui:designsystem` only after real screen use demonstrates a reusable and stable API without Phone-specific runtime/navigation ownership.
 
 ### `:ui:automotive`
 
@@ -64,6 +72,48 @@ Owns:
 - automotive previews/fixtures or DHU-oriented demo support when useful
 
 It shares the core state contracts and semantic design intent with the phone UI but does not need to mirror phone composition or Compose components one-to-one.
+
+## Phone shell and package ownership
+
+The Phone surface has persistent shell chrome around one selected destination:
+
+```text
+PhoneAppShell
+├─ PhoneTopBar
+├─ CurrentDestination
+│  ├─ Lyrics
+│  ├─ Sync
+│  ├─ Details
+│  └─ Settings
+├─ PlaybackControlsBar
+└─ PhoneNavigationBar
+```
+
+The approved primary destinations are:
+
+```text
+Lyrics   Sync   Details   Settings
+```
+
+`Lyrics` is the home destination.
+
+Ownership is divided by package:
+
+```text
+ui/phone/shell       persistent Phone chrome/composition
+ui/phone/navigation  destination identity/navigation presentation contracts
+ui/phone/lyrics      Lyrics destination and Lyrics-local components/state
+ui/phone/sync        Sync destination
+ui/phone/details     Details destination
+ui/phone/settings    Settings destination
+ui/phone/state       shell-level presentation state
+```
+
+The shell may compose the selected destination and expose presentation-ready transport callbacks, but it does not discover media sessions, own `MediaController`, perform provider lookup, or select lyrics candidates.
+
+The richer current-track card is Lyrics-destination content, not persistent shell chrome. Persistent playback controls remain compact and do not duplicate artwork/title/artist metadata.
+
+Exact layout dimensions, component APIs, navigation runtime, and transport integration are intentionally deferred to later implementation slices. See `docs/PHONE_UI_SPEC.md` for the product-level structure and deferred decisions.
 
 ## Shared vs automotive design system
 
@@ -191,10 +241,28 @@ ui/
 │  └─ src/
 │     ├─ main/
 │     │  └─ java/io/github/whoxamxl/aalyrics/ui/phone/
-│     │     ├─ LyricsRoute.kt
-│     │     ├─ LyricsScreen.kt
-│     │     ├─ LyricsUiState.kt
-│     │     └─ LyricsAction.kt
+│     │     ├─ shell/
+│     │     │  ├─ PhoneAppShell.kt
+│     │     │  ├─ PhoneTopBar.kt
+│     │     │  ├─ PlaybackControlsBar.kt
+│     │     │  └─ PhoneNavigationBar.kt
+│     │     ├─ navigation/
+│     │     │  └─ PhoneDestination.kt
+│     │     ├─ lyrics/
+│     │     │  ├─ LyricsRoute.kt
+│     │     │  ├─ LyricsScreen.kt
+│     │     │  ├─ LyricsUiState.kt
+│     │     │  ├─ LyricsAction.kt
+│     │     │  ├─ TrackCard.kt
+│     │     │  └─ LyricsViewport.kt
+│     │     ├─ sync/
+│     │     │  └─ SyncScreen.kt
+│     │     ├─ details/
+│     │     │  └─ DetailsScreen.kt
+│     │     ├─ settings/
+│     │     │  └─ SettingsScreen.kt
+│     │     └─ state/
+│     │        └─ PhoneShellUiState.kt
 │     └─ debug/
 │        └─ java/io/github/whoxamxl/aalyrics/ui/phone/preview/
 │           ├─ LyricsScreenPreviews.kt
@@ -272,11 +340,15 @@ No artwork
 Long title / artist
 Long lyrics lines
 First / last lyric boundary
+Playback controls enabled / disabled
+Narrow / typical Phone width
 ```
 
-This list is a coverage target, not a requirement to implement all screen behavior in the foundation branch.
+This list is a coverage target, not a requirement to implement all screen behavior in an architecture-only branch.
 
-For automotive, the equivalent edge cases should be exercised with deterministic presentation state and DHU/emulator/device validation, especially host-dependent row limits, wrapping, current-line emphasis, full/split layouts, and template refresh/scroll behavior.
+Phone Preview work should specifically verify that persistent top status, playback controls, and bottom navigation still leave useful vertical space for the Lyrics viewport. The product target is roughly five to six visible lyric lines on normal phone layouts where practical, not a hard line-count guarantee.
+
+For automotive, equivalent edge cases should be exercised with deterministic presentation state and DHU/emulator/device validation, especially host-dependent row limits, wrapping, current-line emphasis, full/split layouts, and template refresh/scroll behavior.
 
 ## Screen-first workflow
 
@@ -286,11 +358,12 @@ For each Compose UI slice:
 
 1. Define the screen and its state matrix.
 2. Define important interactions and edge cases.
-3. Extract reusable visual components that the screen actually needs.
-4. Add or refine design-system tokens only when required by those components.
-5. Build the production composable under `src/main`.
-6. Render normal and edge-case states under `src/debug` Preview.
-7. Validate on emulator/device after the Preview shape is stable.
+3. Build/prove surface-local components first when ownership is still specific to that screen/surface.
+4. Extract reusable visual components into `:ui:designsystem` only when the screen demonstrates a stable reusable API.
+5. Add or refine design-system tokens only when required by demonstrated components.
+6. Build the production composable under `src/main`.
+7. Render normal and edge-case states under `src/debug` Preview.
+8. Validate on emulator/device after the Preview shape is stable.
 
 For each automotive host-template slice:
 
@@ -306,18 +379,24 @@ This keeps both design-system layers useful without turning them into abstract c
 
 `LyricsState` remains a shared domain/application contract in `:core:lyrics`.
 
-Presentation modules may map it into surface-specific state when needed:
+Presentation modules may map domain/application state into surface-specific state when needed:
 
 ```text
+Application/domain state
+        ↓
+Phone presentation mapping
+        ├─> PhoneShellUiState ------> PhoneAppShell
+        └─> LyricsUiState ----------> LyricsScreen
+
 LyricsState
-   ↓
-Phone LyricsUiState ----------> LyricsScreen
-   ↓
+        ↓
 AutomotiveLyricsUiState ------> NowPlayingScreen
                          \-----> ExpandedLyricsScreen
 ```
 
-The UI may decide how a state is presented. It must not decide provider ranking, request fan-out, stale-result ownership, or networking behavior.
+The UI may decide how a state is presented. It must not decide provider ranking, request fan-out, stale-result ownership, networking behavior, or active-media-session ownership.
+
+Phone playback controls should receive presentation state plus callbacks such as `onPrevious`, `onPlayPause`, and `onNext`; they should not receive or own a platform `MediaController`.
 
 ## Dependency rules
 
@@ -328,6 +407,10 @@ Allowed direction:
 :ui:automotive -----> :ui:designsystem
 :ui:phone ----------> :core:lyrics / :core:model
 :ui:automotive -----> :core:lyrics / :core:model
+
+ui/phone/shell ------> ui/phone/navigation
+ui/phone/shell ------> ui/phone/state
+ui/phone/shell ------> selected Phone destination composition
 
 ui/automotive/screen -------> ui/automotive/designsystem
 ui/automotive/screen -------> ui/automotive/state
@@ -343,6 +426,9 @@ Forbidden direction:
 :ui:*            -X-> concrete providers
 :ui:*            -X-> direct networking
 :ui:phone/auto   -X-> :platform:media
+
+phone destination code -X-> media-session discovery/ownership
+phone local component   -X-> provider selection/networking
 
 automotive/designsystem -X-> automotive/screen lifecycle/navigation
 ```
@@ -360,12 +446,16 @@ The initial shared UI foundation uses:
 
 The BOM is intentionally pinned to the stable Compose 1.11 generation while the project remains on `compileSdk = 36`. Updating Compose or compileSdk should be a deliberate dependency slice rather than an incidental UI change.
 
-Android Auto host-template dependencies are intentionally not selected by this architecture-only slice. The planned `SectionedItemTemplate` experiment should introduce its Car App Library version deliberately in its own implementation slice and validate the actual DHU host behavior before that dependency becomes part of durable production assumptions.
+Android Auto host-template dependencies are intentionally not selected by the automotive architecture-only slice. The planned `SectionedItemTemplate` experiment should introduce its Car App Library version deliberately in its own implementation slice and validate the actual DHU host behavior before that dependency becomes part of durable production assumptions.
 
 ## Naming and package rules
 
 - Shared design-system APIs use `AALyrics` prefixes where a generic name would be ambiguous (`AALyricsTheme`, `AALyricsColors`).
-- Phone screen-specific code stays in the phone surface module.
+- Phone persistent shell code stays under `.phone.shell`.
+- Phone destination identity/navigation presentation contracts stay under `.phone.navigation`.
+- Lyrics-specific Phone code stays under `.phone.lyrics`; Sync, Details, and Settings stay under their matching destination packages.
+- Shell-level Phone presentation state stays under `.phone.state`.
+- Phone-local components remain in `:ui:phone` until demonstrated reusable APIs justify promotion to `:ui:designsystem`.
 - Automotive host-screen code stays under `.automotive.screen`.
 - Reusable automotive host-model adapters/builders stay under `.automotive.designsystem`.
 - Automotive presentation state stays under `.automotive.state`.
