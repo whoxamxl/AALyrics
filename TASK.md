@@ -1,47 +1,44 @@
-# UI Foundation
+# Automotive Design System Boundary
 
 ## Branch and baseline
 
-- Branch: `feature/ui-foundation`.
-- Base: `main` at `3ea97ce` after application-composition PR #25 merged.
-- Classification: **REFACTOR / NEW UI FOUNDATION**.
-- User explicitly authorized the UI foundation and module cleanup.
-- Read `AGENTS.md`, `docs/ARCHITECTURE.md`, and `docs/UI_ARCHITECTURE.md` before extending production UI.
+- Branch: `feature/automotive-design-system`.
+- Base: `main` at `772519a` after UI foundation PR #27 merged.
+- Classification: **REFACTOR / PRESENTATION ARCHITECTURE**.
+- User explicitly authorized this automotive design-system boundary slice.
+- Read `AGENTS.md`, `docs/ARCHITECTURE.md`, and `docs/UI_ARCHITECTURE.md` before extending automotive UI.
+
+## Goal
+
+Establish a clear boundary between the shared AALyrics Compose design system, Android Auto host-rendered design adapters/components, and concrete automotive screens before implementing the `SectionedItemTemplate` lyrics prototype.
 
 ## Acceptance criteria
 
-- Replace the empty `:feature:phone` / `:feature:automotive` presentation modules with `:ui:phone` / `:ui:automotive`.
-- Add a shared `:ui:designsystem` Compose module.
-- Preserve the established AALyrics dark/cyan/blue visual direction as initial theme tokens.
-- Establish typography, spacing, radius, stroke, theme, icon, and reusable-component ownership.
-- Put production code under `src/main` and Preview / deterministic development fixtures under `src/debug`.
-- Ensure Preview renders production composables rather than introducing a second UI implementation.
-- Create enough placeholder source files to make intended ownership/file structure obvious without inventing unapproved screen behavior.
-- Keep `:ui:designsystem` independent of core/provider/platform modules.
-- Keep phone/automotive presentation on the shared `LyricsState` boundary; UI must not fetch/rank providers or depend directly on `:platform:media`.
-- Update architecture guardrails and durable documentation for the new module names/boundaries.
-- Do not implement the final phone/automotive screen design in this branch.
-- Do not merge without explicit user approval.
-- Run `./gradlew test check :app:assembleDebug`, `bash scripts/verify-architecture.sh`, and `git diff --check` through normal validation/CI.
+- Keep `:ui:designsystem` as the shared semantic/Compose visual foundation.
+- Add an automotive-local `designsystem/` package for reusable Android Auto presentation adapters and component builders.
+- Keep Car App Library screen/template composition under `ui/automotive/screen/`, not inside the design system.
+- Move automotive presentation state under `ui/automotive/state/`.
+- Represent the intended main surfaces as `NowPlayingScreen` and `ExpandedLyricsScreen` skeletons without inventing final interaction behavior.
+- Document that `SectionedItemTemplate`, `Screen.onGetTemplate()`, navigation, invalidation, and scroll/follow orchestration are screen/host-contract concerns rather than design-system primitives.
+- Document that reusable automotive representations such as lyrics rows, current-line sections, headers, and semantic color adaptation belong to the automotive-local design-system layer.
+- Keep provider access, networking, media-session adaptation, and candidate selection outside `:ui:automotive`.
+- Do not implement the final `SectionedItemTemplate` prototype in this slice; prepare the ownership model for that next experiment.
+- Run CI/build validation and stop before merge for explicit approval.
 
 ## Plan/status
 
-- [x] Create `feature/ui-foundation` from current `main`.
-- [x] Confirm the old feature modules contain no production implementation requiring migration.
-- [x] Replace `:feature:phone` / `:feature:automotive` with `:ui:phone` / `:ui:automotive`.
-- [x] Add `:ui:designsystem` and Compose build configuration.
-- [x] Add AALyrics color, typography, spacing, radius, stroke, and theme foundation.
-- [x] Add focused Palette / Typography previews and a combined Design System preview.
-- [x] Add phone/automotive production and debug-preview file skeletons.
-- [x] Remove obsolete empty `feature/` module files.
-- [x] Update architecture guardrails for `ui/*` ownership.
-- [x] Add durable UI architecture/source-set/Preview documentation.
+- [x] Create `feature/automotive-design-system` from current `main`.
+- [x] Define scope and ownership rules in `TASK.md`.
+- [ ] Reshape the automotive source tree into `designsystem/`, `screen/`, and `state/`.
+- [ ] Add placeholder files that make the intended ownership visible without inventing behavior.
+- [ ] Update `docs/UI_ARCHITECTURE.md` with shared-vs-automotive design-system rules.
+- [ ] Update durable architecture documentation if the module-level wording needs clarification.
 - [ ] Run CI/build validation.
 - [ ] Review the complete branch diff.
 - [ ] Open PR and stop before merge.
 
 ## Scope guard
 
-This branch creates the presentation foundation only. It intentionally does not decide the final Lyrics screen layout, Settings UI, navigation model, live media-session wiring, or detailed component APIs beyond the shared foundation already needed for UI work.
+This branch defines automotive presentation ownership. It does not yet add Car App Library dependencies, `SectionedItemTemplate`, media-template registration, Android Auto service wiring, follow/manual-scroll behavior, or final visual styling.
 
-Screen implementation should begin from a screen/state/interaction specification and then grow reusable components from demonstrated product needs.
+The next automotive prototype should be able to add those pieces without moving responsibilities again.
