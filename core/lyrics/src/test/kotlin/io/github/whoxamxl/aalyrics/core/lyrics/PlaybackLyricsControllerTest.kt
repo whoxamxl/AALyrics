@@ -1,5 +1,6 @@
 package io.github.whoxamxl.aalyrics.core.lyrics
 
+import io.github.whoxamxl.aalyrics.core.model.LyricsSyncType
 import io.github.whoxamxl.aalyrics.core.model.PlaybackSnapshot
 import io.github.whoxamxl.aalyrics.core.model.PlaybackSource
 import io.github.whoxamxl.aalyrics.core.model.PlaybackStatus
@@ -19,6 +20,7 @@ class PlaybackLyricsControllerTest {
         controller.onPlayback(PlaybackSnapshot(track = track))
 
         assertEquals(listOf(track), lifecycle.startedTracks)
+        assertEquals(listOf(CandidateSelectionPreferences()), lifecycle.startedPreferences)
         assertEquals(0, lifecycle.clearCount)
     }
 
@@ -44,6 +46,36 @@ class PlaybackLyricsControllerTest {
         )
 
         assertEquals(listOf(track), lifecycle.startedTracks)
+    }
+
+    @Test
+    fun `same track and same preferences do not restart current lookup`() {
+        val lifecycle = RecordingLifecycle()
+        val controller = PlaybackLyricsController(lifecycle)
+        val track = Track(title = "Song", artists = listOf("Artist"))
+        val preferences = CandidateSelectionPreferences(preferredSyncType = LyricsSyncType.WORD)
+
+        controller.onPlayback(PlaybackSnapshot(track = track), preferences)
+        controller.onPlayback(PlaybackSnapshot(track = track), preferences.copy())
+
+        assertEquals(listOf(track), lifecycle.startedTracks)
+        assertEquals(listOf(preferences), lifecycle.startedPreferences)
+    }
+
+    @Test
+    fun `same track and changed preferences start a fresh lookup`() {
+        val lifecycle = RecordingLifecycle()
+        val controller = PlaybackLyricsController(lifecycle)
+        val track = Track(title = "Song", artists = listOf("Artist"))
+        val standard = CandidateSelectionPreferences()
+        val karaoke = CandidateSelectionPreferences(preferredSyncType = LyricsSyncType.WORD)
+
+        controller.onPlayback(PlaybackSnapshot(track = track), standard)
+        controller.onPlayback(PlaybackSnapshot(track = track), karaoke)
+
+        assertEquals(listOf(track, track), lifecycle.startedTracks)
+        assertEquals(listOf(standard, karaoke), lifecycle.startedPreferences)
+        assertTrue(lifecycle.lookups[0].id != lifecycle.lookups[1].id)
     }
 
     @Test
@@ -105,6 +137,7 @@ class PlaybackLyricsControllerTest {
 
     private class RecordingLifecycle : LyricsLookupLifecycle {
         val startedTracks = mutableListOf<Track>()
+        val startedPreferences = mutableListOf<CandidateSelectionPreferences>()
         val lookups = mutableListOf<LyricsLookup>()
         var clearCount = 0
         private var nextId = 0L
@@ -114,6 +147,7 @@ class PlaybackLyricsControllerTest {
             preferences: CandidateSelectionPreferences,
         ): LyricsLookup {
             startedTracks += track
+            startedPreferences += preferences
             return LyricsLookup(
                 id = LyricsLookupId(nextId++),
                 track = track,
