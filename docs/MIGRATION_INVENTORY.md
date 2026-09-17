@@ -6,7 +6,7 @@ This file prevents AALyrics from reimplementing behavior that is already mature 
 
 Before starting a non-trivial implementation slice, inspect the current fork and update this inventory. The classifications below describe **behavioral migration intent** and ownership in the AALyrics architecture.
 
-Concrete-provider migration additionally follows `docs/PROVIDER_ARCHITECTURE.md` and the relevant profile under `docs/providers/`.
+Concrete-provider migration additionally follows `docs/PROVIDER_ARCHITECTURE.md` and the relevant profile under `docs/providers/`. Future cache, translation, timing/calibration, karaoke, and presentation-state migration also follows `docs/LYRICS_PIPELINE_ARCHITECTURE.md` plus the relevant capability-specific architecture document.
 
 ## Classification
 
@@ -30,11 +30,11 @@ Core Readiness Gate and current provider/runtime/lifecycle baseline:
 - Repository: `whoxamxl/auto-lyrics`
 - Branch: `main`
 - Reviewed commit: `8484bed2dbe8db5ca7b17dec5481b3c22714dc6f` (`v1.13.0`)
-- Re-checked for the SyncLRC slice on 2026-09-16, for the live media-session runtime on 2026-09-17, and for the lyrics-demand-gating planning slice on 2026-09-17; it remains current working-fork `main`.
+- Re-checked for the SyncLRC slice on 2026-09-16, for the live media-session runtime on 2026-09-17, and for the lyrics-demand-gating planning slice on 2026-09-17; it remains the latest working-fork baseline explicitly reviewed for those implementation slices.
 
-The mature resolver/provider clients remain present, `MediaTracker` still combines Android media, provider, cache, translation, timing, and presentation responsibilities, and the explicit Spotify playback identity and lyrics-demand helpers remain separate behaviors.
+The mature resolver/provider clients remain present in that baseline, `MediaTracker` combines Android media, provider, cache, translation, timing, and presentation responsibilities, and the explicit Spotify playback identity and lyrics-demand helpers remain separate behaviors.
 
-The fork continues to evolve. Re-check `main` before every later migration slice rather than assuming this snapshot remains current.
+The Phase 11 lyrics-capability architecture foundation intentionally does not treat this baseline as implementation evidence for cache, translation, timing/calibration, karaoke, or presentation state. Each Phase 11.x implementation slice must re-check current working-fork `main`, active call sites, and tests before selecting concrete behavior or signatures.
 
 ## Selection and metadata matching
 
@@ -86,38 +86,42 @@ Provider migration is not a clean-room exercise. Mature provider implementation 
 | Fork implementation | Classification | AALyrics destination / rule | Notes |
 | --- | --- | --- | --- |
 | `media/SpotifyTrackIdentity.kt` | **PRESERVE / REFACTOR** | `:platform:media` identity normalization feeding `core:model` references | Phase 4 preserves Spotify-specific robustness while keeping platform details outside lyrics core. Musixmatch consumes only normalized `TrackReference` identity. |
-| `media/LyricsDemandController.kt` | **PRESERVE / REFACTOR** | current Phase 10 application/runtime lifecycle slice; see `docs/LYRICS_DEMAND_GATING.md` | Preserve the proven `phone foreground OR Android Auto projection connected` demand semantics. Rewrite ownership so demand gates normalized playback before `PlaybackLyricsController` rather than being coupled to legacy `MediaTracker`. |
-| `AutoLyricsApp.kt` demand wiring | **PRESERVE / REFACTOR** | `:app` lifecycle adapters feeding the demand gate | Preserve process-level phone foreground semantics through `ProcessLifecycleOwner` and projection-wide automotive demand through `CarConnection.CONNECTION_TYPE_PROJECTION`; do not migrate unrelated translation/UI/service startup responsibilities from the old application object. |
-| `media/LyricsVariantTransition.kt` | **PRESERVE / REFACTOR** | future state/variant transition policy if still required | Small but potentially regression-sensitive. Inspect call sites before migration. |
-| `media/MediaTracker.kt` | **REWRITE** | split across `:platform:media`, `:core:lyrics`, composition root, and later feature-specific services | Preserve observable behavior through tests/reference, but do not migrate the monolithic ownership model. |
+| `media/LyricsDemandController.kt` | **PRESERVE / REFACTOR** | implemented application/runtime lifecycle boundary; see `docs/LYRICS_DEMAND_GATING.md` | Migrated in PR #30. Preserves `phone foreground OR Android Auto projection connected` while gating normalized playback before `PlaybackLyricsController` instead of coupling demand to legacy `MediaTracker`. |
+| `AutoLyricsApp.kt` demand wiring | **PRESERVE / REFACTOR** | `:app` lifecycle adapters feeding the demand gate | Migrated in PR #30. Preserves process-level phone foreground semantics through `ProcessLifecycleOwner` and projection-wide automotive demand through `CarConnection.CONNECTION_TYPE_PROJECTION`; unrelated translation/UI/service startup ownership was not migrated into the application object. |
+| `media/LyricsVariantTransition.kt` | **PRESERVE / REFACTOR** | future state/variant transition policy if still required | Small but potentially regression-sensitive. Inspect current call sites before migration and fit any retained semantics into the capability/presentation boundaries rather than reviving mixed state ownership. |
+| `media/MediaTracker.kt` | **REWRITE** | split across `:platform:media`, `:core:lyrics`, composition root, demand lifecycle, and later capability-specific services | Preserve observable behavior through tests/reference, but do not migrate the monolithic ownership model. Phase 11 explicitly keeps cache/translation/timing/presentation out of a replacement monolith. |
 | `media/MediaListenerService.kt` | **REWRITE / REFACTOR** | thin Android adapter in `:platform:media` | Implemented in PR #29 as `MediaSessionListenerService` plus testable selection/observation/runtime ownership; domain orchestration remains outside the service. |
 
 ## State and presentation
 
 | Fork implementation | Classification | AALyrics destination / rule | Notes |
 | --- | --- | --- | --- |
-| `model/Models.kt` legacy `LyricsState` | **REWRITE** | AALyrics `:core:model` + `:core:lyrics` state types | Old state mixes Android `Bitmap`, playback, lyrics, translation, UI indices, offset, and colors. Preserve required capabilities later, but not the monolithic DTO. |
-| `MainActivity.kt` | **REWRITE** | `:ui:phone` | Use as behavioral/UI reference only. New UI consumes shared domain state and does not own provider orchestration. |
-| `auto/LyricsBrowserService.kt` | **REWRITE** | `:ui:automotive` plus thin Android service boundary | Preserve useful Android Auto UX/behavior, but the service must not fetch/rank lyrics. |
+| `model/Models.kt` legacy `LyricsState` | **REWRITE** | existing normalized core state plus future capability-specific application facts and surface-specific presentation mapping; see `docs/PRESENTATION_STATE_ARCHITECTURE.md` | Old state mixes Android `Bitmap`, playback, lyrics, translation, UI indices, offset, and colors. Phase 11 explicitly rejects recreating one giant state object. Shared semantic facts may be reused, but Phone and automotive keep independent surface state. |
+| `MainActivity.kt` | **REWRITE** | `:ui:phone` | Use as behavioral/UI reference only. New UI consumes shared application/domain facts and does not own provider, cache, translation, timing, or karaoke orchestration. |
+| `auto/LyricsBrowserService.kt` | **REWRITE** | `:ui:automotive` plus thin Android service boundary | Preserve useful Android Auto UX/behavior, but the service must not fetch/rank lyrics or duplicate timing/karaoke semantics owned below presentation. |
 | `PerformanceActivity.kt` / `PerformanceLyricsView.kt` | **REVIEW BEFORE DECISION** | future phone feature if retained | Do not reimplement until product intent is explicitly decided. |
 
 ## Timing, karaoke, and calibration
 
+Phase 11 establishes the ownership seam in `docs/TIMING_ARCHITECTURE.md` and `docs/KARAOKE_ARCHITECTURE.md`; it does not yet select concrete APIs or migrate implementation code.
+
 | Fork implementation | Classification | AALyrics destination / rule | Notes |
 | --- | --- | --- | --- |
-| `lyrics/KaraokeTiming.kt` | **PRESERVE / REFACTOR** | future pure timing utility | Keep tested word-timing semantics when karaoke work begins. This is distinct from SyncLRC payload parsing and from the selector's already-migrated WORD-candidate preference. |
-| `util/SyncCalibration.kt` | **PRESERVE / REFACTOR** | future pure timing/calibration utility | Preserve tested calibration semantics; do not duplicate during provider migration. |
-| `util/LyricWordLayout.kt` | **PRESERVE / REFACTOR** | presentation/timing utility later | Valuable tested behavior, but not part of provider selection. |
-| `ui/KaraokeSweepSpan.kt` | **REWRITE / REFACTOR** | Android phone presentation only | Rendering is Android-specific; preserve visual behavior where useful but isolate it from timing/domain logic. |
+| `lyrics/KaraokeTiming.kt` | **PRESERVE / REFACTOR** | future framework-neutral timing/karaoke capability; see timing and karaoke architecture docs | Re-check current implementation/tests before Phase 11.3/11.4. Preserve proven boundary semantics where still applicable, but separate canonical source timing, effective calibration, and karaoke projection. |
+| `util/SyncCalibration.kt` | **PRESERVE / REFACTOR** | future framework-neutral timing/calibration boundary; see `docs/TIMING_ARCHITECTURE.md` | Preserve tested calibration semantics after re-check. Calibration must derive effective timing rather than mutate provider timestamps or live only in UI state. |
+| `util/LyricWordLayout.kt` | **PRESERVE / REFACTOR** | future karaoke/presentation support after responsibility re-check | Valuable tested behavior may survive, but semantic karaoke projection and surface text layout are separate responsibilities. Do not assume the legacy utility's final module/API before implementation evidence. |
+| `ui/KaraokeSweepSpan.kt` | **REWRITE / REFACTOR** | Phone rendering downstream of framework-neutral karaoke projection | Rendering is Android-specific. Preserve useful visual behavior where desired, but do not migrate it as timing/domain logic or make Android Auto share Android span primitives. |
 
 ## Translation, cache, artwork, and other later features
 
+Phase 11 defines the architectural seams in `docs/CACHE_ARCHITECTURE.md` and `docs/TRANSLATION_ARCHITECTURE.md`; concrete migration decisions remain Phase 11.1/11.2 implementation work.
+
 | Fork implementation | Classification | AALyrics destination / rule | Notes |
 | --- | --- | --- | --- |
-| `lyrics/LyricsTranslator.kt` | **REFACTOR** | future translation service/feature boundary | Preserve working translation behavior and status handling, but do not put it in `LyricsCoordinator`. |
-| `lyrics/TranslationLanguages.kt` | **PRESERVE** | future translation model/config | Small stable domain/config behavior. |
-| `lyrics/LyricsCache.kt` | **REFACTOR** | future cache port + storage adapter | Preserve cache semantics where useful, but core should depend on a cache abstraction rather than Android storage details. |
-| `util/AlbumColorExtractor.kt` | **PRESERVE / REFACTOR** | presentation/platform utility | Android-specific feature; not part of lyrics core. |
+| `lyrics/LyricsTranslator.kt` | **REFACTOR** | future replaceable translation capability; see `docs/TRANSLATION_ARCHITECTURE.md` | Re-check implementation/status/cancellation/call sites before Phase 11.2. Preserve useful behavior without putting translation execution in providers, `LyricsCoordinator`, or UI. Original lyrics remain canonical and usable on translation failure. |
+| `lyrics/TranslationLanguages.kt` | **PRESERVE** | future translation language/config semantics | Small stable behavior is a likely preserve candidate, but Phase 11.2 must confirm the current fork and actual product requirements before freezing a new type/API. |
+| `lyrics/LyricsCache.kt` | **REFACTOR** | future replaceable cache boundary + storage adapter; see `docs/CACHE_ARCHITECTURE.md` | Re-check implementation and call sites before Phase 11.1. Preserve useful semantics without fixing provider-result versus selected-result cache placement, storage engine, schema, TTL, or invalidation in the foundation. UI and providers must not own global storage policy. |
+| `util/AlbumColorExtractor.kt` | **PRESERVE / REFACTOR** | presentation/platform utility | Android-specific feature; not part of lyrics core or the current Phase 11 capability foundation. |
 | `util/AudioSyncHelper.kt` | **DROP unless proven used** | none by default | Previous inspection found no clear current usage. Do not migrate dead auto-sync logic without an active call path and explicit product requirement. |
 
 ## Current AALyrics work versus fork behavior
@@ -125,35 +129,42 @@ Provider migration is not a clean-room exercise. Mature provider implementation 
 | AALyrics work | Why it remains new or structurally different |
 | --- | --- |
 | explicit `LyricsLookupId` / request identity | Makes stale-result rejection a first-class core invariant rather than incidental asynchronous behavior. |
-| sealed provider-independent `LyricsState` lifecycle | Replaces the old Android/UI-heavy state DTO and creates one shared contract for phone and automotive presentation. |
+| sealed provider-independent `LyricsState` lifecycle | Replaces the old Android/UI-heavy state DTO and creates one shared contract for lyrics lookup outcomes without absorbing every later capability. |
 | pure reducer/state transitions | Provides testable lifecycle semantics independent of Android, providers, cache, translation, and UI. |
-| `LyricsCoordinator` boundary | Replaces orchestration responsibilities currently mixed into `MediaTracker`. |
+| `LyricsCoordinator` boundary | Replaces provider orchestration responsibilities currently mixed into `MediaTracker` while explicitly excluding future cache/translation/timing/presentation ownership from a new god object. |
 | `CandidateSelector` port + `:provider:selection` implementation | Keeps core dependent on a stable port while adapting the proven resolver in an outer module. |
 | normalized `LyricsCandidateEvidence` | Lets providers report search corroboration as facts without assigning cross-provider scores. |
 | deterministic exact-score tie break | Preserves the architecture invariant that provider completion/execution order cannot silently determine the winner. |
 | explicit playback identity and `PlaybackLyricsController` | Separates track ownership from position/status updates so media churn does not restart lyrics lookup. |
 | live media-session runtime | Preserves mature session-selection behavior while splitting Android discovery/callback ownership from lyrics orchestration and presentation. |
 | lyrics demand gating | Preserves the mature phone/Android Auto demand policy while moving the gate to a narrow application/runtime boundary that can clear/replay normalized playback without stopping MediaSession observation. |
+| lyrics capability architecture foundation | Splits the legacy monolithic cache/translation/timing/karaoke/presentation ownership into explicit future seams while deliberately deferring concrete signatures until each implementation slice has evidence. See `docs/LYRICS_PIPELINE_ARCHITECTURE.md`. |
 
 ## Migration rule after the Core Readiness Gate
 
 ```text
 Inspect current fork behavior and tests
         ↓
-Read/update migration inventory + relevant provider profile
+Read/update migration inventory
         ↓
-Choose the existing AALyrics boundary
+Read the relevant architecture document(s)
         ↓
-PRESERVE / REFACTOR mature implementation and regression knowledge
+Choose the existing AALyrics seam
         ↓
-Keep provider/platform quirks outside pure core
+PRESERVE / REFACTOR / REWRITE / DROP with regression evidence
+        ↓
+Introduce only the smallest implementation-specific contract
+        ↓
+Keep provider/platform/storage/UI quirks outside unrelated pure capabilities
         ↓
 CI + bounded review
         ↓
 STOP before merge
 ```
 
-Do not bulk-port the old application. Each provider or subsystem remains a separate migration slice with explicit acceptance criteria. At the same time, do not invent a clean-room rewrite step for mature provider code when PRESERVE / REFACTOR is the documented classification.
+For Phase 11.x work, read `docs/LYRICS_PIPELINE_ARCHITECTURE.md` plus the relevant cache, translation, timing, karaoke, or presentation-state document before writing production code.
+
+Do not bulk-port the old application. Each provider or subsystem remains a separate migration slice with explicit acceptance criteria. At the same time, do not invent a clean-room rewrite step for mature code when PRESERVE / REFACTOR is the documented classification, and do not pre-create speculative abstractions merely because the foundation identifies a future seam.
 
 ## Current migration status
 
@@ -166,7 +177,8 @@ Do not bulk-port the old application. Each provider or subsystem remains a separ
 - Phase 7 concrete-provider migration: complete.
 - Application composition: merged in PR #25.
 - Live media-session runtime: merged in PR #29.
-- Lyrics demand gating: implemented, validated, and reviewed in PR #30; awaiting explicit merge approval.
+- Lyrics demand gating: migrated and merged in PR #30.
+- Lyrics capability architecture foundation: defined as docs-only work on `architecture/lyrics-capability-foundation`; no Phase 11.x production capability implementation is active or implied by this foundation.
 
 ### LRCLIB implementation re-check
 
@@ -188,10 +200,10 @@ Preserved: the anonymous mobile `token.get` → `macro.subtitles.get` flow, TTL 
 
 ### SyncLRC implementation re-check
 
-Working-fork main was re-checked at `8484bed2dbe8db5ca7b17dec5481b3c22714dc6f` on 2026-09-16 and remains current. The slice inspected `SyncLrcClient.kt`, all eight SyncLRC regressions, shared `LrcParser.parseKaraoke`, and the relevant `MediaTracker` fan-out/normalization call sites. The current public SyncLRC API documentation was also re-checked and still matches the mature endpoint/query/response assumptions.
+Working-fork main was re-checked at `8484bed2dbe8db5ca7b17dec5481b3c22714dc6f` on 2026-09-16 and was current at that review point. The slice inspected `SyncLrcClient.kt`, all eight SyncLRC regressions, shared `LrcParser.parseKaraoke`, and the relevant `MediaTracker` fan-out/normalization call sites. The public SyncLRC API documentation was also re-checked and matched the mature endpoint/query/response assumptions at implementation time.
 
 Preserved: request execution only when karaoke/WORD timing is preferred; required nonblank track/artist; `type=karaoke`; optional album/duration; current `karaoke` and legacy `lyrics` + `type=karaoke` compatibility; rejection of synced/plain-only and instrumental responses; Enhanced-LRC parsing; genuine timed-word requirement; response-metadata fallback; fine-grained Japanese timing; and artist-query corroboration.
 
 Structural adaptation: a `WORD`-only `LyricsProvider` gates transport with normalized `LyricsRequest.preferredSyncType`, reuses shared `:provider:lrc` parsing, normalizes duration seconds to domain milliseconds, uses cancellable HTTP, and surfaces operational failures according to the provider contract. Final metadata scoring, source confidence, karaoke preference, and winner selection remain unchanged in `:provider:selection`.
 
-Each later implementation slice still requires explicit authorization. The current explicit authorization is limited to lyrics demand gating on `feature/lyrics-demand-gating`; cache, translation, timing, finished presentation, and rendering remain separate later slices.
+Each later implementation slice still requires explicit authorization. The current Phase 11 work is documentation/architecture only; cache, translation, timing/calibration, karaoke projection, and production presentation-state implementation remain separate future slices until explicitly authorized.
