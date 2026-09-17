@@ -3,16 +3,16 @@
 ## Status
 
 - Branch: `feature/media-session-runtime`
-- Base: main `3ea97ce` after application-composition PR #25 merged.
+- Original base: main `3ea97ce` after application-composition PR #25 merged; reconciled onto current main `1c8a875` before final PR review.
 - Working-fork behavioral reference: `whoxamxl/auto-lyrics` main `8484bed2dbe8db5ca7b17dec5481b3c22714dc6f` (`v1.13.0`), re-checked on 2026-09-17 and still current.
 - Classification: **PRESERVE / REFACTOR** for session-selection behavior, **REWRITE** for ownership/integration.
-- State: **IMPLEMENTED — PR #29 validation and bounded review are complete; explicit merge approval is pending.**
+- State: **IMPLEMENTED — PR #29 validation and bounded review are complete; explicit merge approval has been received.**
 
 ## Purpose
 
-Application composition now produces a real production lyrics object graph, but no Android runtime currently feeds live playback into it. This slice should connect Android's active media sessions to the existing `PlaybackLyricsController` without starting phone or Android Auto presentation work.
+The production application graph already composes the lyrics engine, and this runtime now connects Android's active media sessions to the existing `PlaybackLyricsController` without coupling media ownership to phone or Android Auto presentation.
 
-Target runtime path:
+Implemented runtime path:
 
 ```text
 NotificationListenerService
@@ -42,15 +42,15 @@ PlaybackLyricsController             (:core:lyrics)
 LyricsCoordinator -> LyricsState
 ```
 
-The STOP gate for this slice is runtime integration, not rendering: with notification-listener access enabled and a supported media app playing, real playback must be able to drive the existing production lookup pipeline and update `LyricsState` even though no lyrics UI exists yet.
+The STOP gate for this slice is runtime integration, not rendering: with notification-listener access enabled and a supported media app playing, real playback can drive the existing production lookup pipeline and update `LyricsState` even though finished lyrics presentation is a separate later concern.
 
 ## Android access boundary
 
-AALyrics should use an enabled `NotificationListenerService` as the permission path for reading other apps' active media sessions. The service must be declared with `android.permission.BIND_NOTIFICATION_LISTENER_SERVICE` and the `android.service.notification.NotificationListenerService` intent action.
+AALyrics uses an enabled `NotificationListenerService` as the permission path for reading other apps' active media sessions. The service is declared with `android.permission.BIND_NOTIFICATION_LISTENER_SERVICE` and the `android.service.notification.NotificationListenerService` intent action.
 
-The service must wait for `onListenerConnected()` before using notification-listener-backed APIs. `MediaSessionManager.getActiveSessions(...)` and `addOnActiveSessionsChangedListener(...)` should receive the notification-listener component so the app does not depend on privileged `MEDIA_CONTENT_CONTROL` permission.
+The service waits for `onListenerConnected()` before using notification-listener-backed APIs. `MediaSessionManager.getActiveSessions(...)` and `addOnActiveSessionsChangedListener(...)` receive the notification-listener component so the app does not depend on privileged `MEDIA_CONTENT_CONTROL` permission.
 
-Notification access itself is user-controlled system access. This slice may provide the runtime/service and testable access-state helpers if needed, but must not build a settings screen or other presentation UI.
+Notification access itself is user-controlled system access. This slice provides the runtime/service boundary but intentionally does not add a settings screen or other presentation UI for that access.
 
 ## Ownership and module boundary
 
@@ -58,13 +58,13 @@ Android media framework types remain in `:platform:media`.
 
 `NotificationListenerService`, `MediaSessionManager`, `MediaController`, session tokens, callbacks, and session-selection implementation belong in `:platform:media`, not `:core:lyrics` and not provider modules.
 
-The Android-created service cannot constructor-inject the app graph directly. Keep dependency direction clean by exposing a narrow platform-defined callback/host boundary that the `:app` composition root can implement or attach to. The platform layer may deliver normalized `PlaybackSnapshot` values through that boundary; it must not know `LyricsCoordinator`, concrete providers, candidate scoring, or presentation state.
+The Android-created service cannot constructor-inject the app graph directly. A narrow platform-defined host/sink boundary delivers normalized `PlaybackSnapshot` values to the application composition root; the platform layer does not know `LyricsCoordinator`, concrete providers, candidate scoring, or presentation state.
 
-The application boundary then forwards normalized snapshots into the already-composed `PlaybackLyricsController`. Do not make `:platform:media` depend on concrete provider modules or `:provider:selection`.
+The application boundary forwards normalized snapshots into the already-composed `PlaybackLyricsController`. `:platform:media` does not depend on concrete provider modules or `:provider:selection`.
 
 ## Session selection behavior
 
-Preserve the mature working-fork policy unless testing reveals a concrete defect:
+The runtime preserves the mature working-fork policy:
 
 1. ignore AALyrics' own media session if one exists;
 2. keep the currently selected session while it is still active and `PLAYING`;
@@ -73,59 +73,58 @@ Preserve the mature working-fork policy unless testing reveals a concrete defect
 5. when no eligible session remains, clear selected-session ownership and forward an empty/no-track playback state;
 6. retain the selected session by `MediaSession.Token`, not list position, so harmless active-session reordering does not switch sources.
 
-The platform's active-session list is priority ordered, but provider lookup ownership must not depend purely on transient list ordering when the already-selected controller is still playing.
+The platform's active-session list is priority ordered, but provider lookup ownership does not depend purely on transient list ordering when the already-selected controller is still playing.
 
-Re-evaluate sessions when the active-session listener fires. Preserve the working fork's notification-posted refresh as a compatibility fallback unless deterministic tests or platform behavior show it is unnecessary.
+Sessions are re-evaluated when the active-session listener fires. The working fork's notification-posted refresh is retained as a compatibility fallback. Playback-state callbacks also trigger re-evaluation when the selected controller leaves `PLAYING`, allowing an already-active playing replacement to take ownership.
 
 ## Selected controller lifecycle
 
-Only the selected controller should have the runtime callback attached.
+Only the selected controller has the runtime callback attached.
 
-When ownership changes:
+When ownership changes, the runtime:
 
-- unregister the old `MediaController.Callback`;
-- register the callback on the new controller;
-- immediately normalize and forward the new controller's current snapshot;
-- forward relevant metadata/playback-state changes through `MediaControllerSnapshotAdapter`;
-- when the selected session is destroyed, re-evaluate active sessions so another valid session can take ownership rather than leaving stale controller state;
-- unregister callbacks/listeners when the notification listener disconnects or the service is destroyed.
+- unregisters the old `MediaController.Callback`;
+- registers the callback on the new controller;
+- immediately normalizes and forwards the new controller's current snapshot;
+- forwards relevant metadata/playback-state changes through `MediaControllerSnapshotAdapter`;
+- re-evaluates active sessions when the selected session is destroyed;
+- unregisters callbacks/listeners when the notification listener disconnects or the service is destroyed.
 
-Normal callback churn must rely on the existing `PlaybackLyricsController` identity rules: position, status, rate, and duration changes alone do not start a new lyrics lookup, while a real track-identity change does.
+Normal callback churn relies on the existing `PlaybackLyricsController` identity rules: position, status, rate, and duration changes alone do not start a new lyrics lookup, while a real track-identity change does.
 
 ## Metadata stabilization
 
-The runtime retains the working fork's 600 ms delay for track-changing metadata because some media apps publish transient/intermediate metadata while changing tracks. The delay is owned by `SelectedMediaSessionRuntime` in `:platform:media`; playback status and position continue to update immediately against the last stable track identity. Deterministic regressions verify the delay, replacement of older pending metadata, and callback ordering where playback-state notification arrives before metadata notification.
+The runtime retains the working fork's 600 ms delay for track-changing metadata because some media apps publish transient/intermediate metadata while changing tracks. The delay is owned by `SelectedMediaSessionRuntime` in `:platform:media`; playback status and position continue to update immediately against the last stable track identity.
 
-During implementation, preserve a platform-owned metadata stabilization/debounce only if it is required to prevent transient identity lookups with real or deterministic regression cases. It must remain outside `PlaybackLyricsController` and must not delay or redefine core lookup identity semantics. Document and test whichever behavior is retained.
+Deterministic regressions verify the delay, replacement of older pending metadata, and callback ordering where playback-state notification arrives before metadata notification. The stabilization remains outside `PlaybackLyricsController` and does not redefine core lookup identity semantics.
 
-Do not introduce artwork, current-line timing, transport controls, cache, translation, or legacy `MediaTracker` state while solving metadata stabilization.
+Artwork, current-line timing, transport controls, cache, translation, and legacy `MediaTracker` state are intentionally not part of this stabilization logic.
 
 ## Demand gating
 
 The working fork keeps session monitoring alive but forwards sessions to lyrics work only while phone or Android Auto demand is active.
 
-That demand policy is deliberately **not** part of this slice because phone foreground and Android Auto projection ownership are not implemented yet. Do not migrate `LyricsDemandController` or invent UI lifecycle dependencies here.
+That demand policy is deliberately **not** part of this slice because phone foreground and Android Auto projection ownership are separate lifecycle concerns. `LyricsDemandController` was not migrated into this runtime.
 
-For this runtime STOP gate, the selected live session may feed the production playback controller while the notification listener is connected. Before end-user presentation/release work, demand gating must be added as its own explicit lifecycle slice so provider work does not remain permanently active in the background.
+For the runtime STOP gate, the selected live session may feed the production playback controller while the notification listener is connected. Before end-user release work, demand gating should be added as its own explicit lifecycle slice so provider work does not remain permanently active in the background.
 
 ## Failure and lifecycle rules
 
-- Missing/disabled notification access must fail safely without crashing the process.
-- `SecurityException` from active-session APIs must not crash the service; clear/detach runtime ownership as appropriate.
-- A disconnected notification listener must stop active-session observation and selected-controller callbacks.
-- No eligible session must clear the current playback lookup instead of leaving stale lyrics ownership.
-- Session-list reordering alone must not switch away from a currently playing selected session.
-- A destroyed selected session must not leave a dead callback/controller attached.
-- Android framework objects must not leak into pure core/provider APIs.
-- Live runtime callbacks must not start provider work directly; they feed normalized playback into the existing `PlaybackLyricsController` boundary.
+- Missing/disabled notification access fails safely without crashing the process.
+- `SecurityException` from active-session APIs does not crash the service; runtime ownership is cleared/detached.
+- A disconnected notification listener stops active-session observation and selected-controller callbacks.
+- No eligible session clears the current playback lookup instead of leaving stale lyrics ownership.
+- Session-list reordering alone does not switch away from a currently playing selected session.
+- A destroyed selected session does not leave a dead callback/controller attached.
+- Android framework objects do not leak into pure core/provider APIs.
+- Live runtime callbacks do not start provider work directly; they feed normalized playback into the existing `PlaybackLyricsController` boundary.
 
 ## Explicitly out of scope
 
-Do **not** implement any of the following in this branch:
+The following remain separate work:
 
-- phone lyrics UI or `MainActivity` presentation changes;
-- Android Auto presentation/service browsing UI;
-- Compose or another UI toolkit;
+- finished phone lyrics UI;
+- finished Android Auto presentation/service browsing UI;
 - process-wide phone/Android Auto demand gating;
 - settings/persistence UI;
 - cache;
@@ -140,22 +139,22 @@ Do **not** implement any of the following in this branch:
 
 ## Tests and validation
 
-Prefer deterministic tests around extracted session-selection/ownership policy and runtime callback boundaries rather than relying only on manual device behavior.
+Deterministic coverage includes:
 
-At minimum cover:
-
-- current selected playing session is retained across list reorder;
-- a new playing session is selected when the previous selection is no longer playing/available;
+- current selected playing session retained across list reorder;
+- a new playing session selected when the previous selection is no longer playing/available;
 - fallback to the first active session when none is playing;
-- self-package sessions are ignored;
+- self-package sessions ignored;
 - empty session list clears ownership;
 - selected-session change detaches the previous controller callback and attaches the new one;
 - session destruction triggers re-selection/clear behavior;
 - normalized snapshots reach the playback-controller/application boundary;
-- non-identity playback churn still does not restart lookup;
-- missing permission / `SecurityException` paths fail safely.
+- non-identity playback churn does not restart lookup;
+- missing permission / `SecurityException` paths fail safely;
+- stopped selected session refreshes to an already-active playing replacement;
+- metadata stabilization and callback ordering regressions.
 
-Run the repository's full validation before PR review:
+Repository validation for PR #29 includes:
 
 ```text
 ./gradlew test check :app:assembleDebug
@@ -163,16 +162,16 @@ bash scripts/verify-architecture.sh
 git diff --check
 ```
 
-Complete the bounded review process in `AGENTS.md` and stop before merge for explicit approval.
+The bounded review process in `AGENTS.md` completed with one P2 fixed in `7a5e82f`; the targeted second review reported no major issues.
 
 ## Implementation result
 
 The implemented runtime keeps all Android session access in `:platform:media`:
 
 - `MediaSessionListenerService` waits for `onListenerConnected()`, observes active sessions through its notification-listener component, and retains notification-posted refresh as a compatibility fallback;
-- `SelectedMediaSessionRuntime` owns token-based selection, the single selected callback, clear/re-selection behavior, and the retained 600 ms metadata stabilization;
+- `SelectedMediaSessionRuntime` owns token-based selection, the single selected callback, clear/re-selection behavior, stopped-session handoff, and the retained 600 ms metadata stabilization;
 - `MediaControllerSnapshotAdapter` remains the exclusive Android-to-`PlaybackSnapshot` normalization path;
 - `MediaSessionRuntimeHost` is the narrow platform/application handoff, and `AALyricsApplication` attaches a sink that forwards snapshots into the existing `PlaybackLyricsController`;
 - disconnect and `SecurityException` paths detach ownership and clear stale playback state.
 
-The implementation adds deterministic coverage for selection order and token retention, self filtering, callback attachment/detachment, empty and destroyed sessions, stabilization, permission failure, connection lifecycle, normalized application handoff, and non-identity playback churn.
+The runtime implementation does not add demand gating, provider changes, selection-policy changes, or finished presentation behavior.
