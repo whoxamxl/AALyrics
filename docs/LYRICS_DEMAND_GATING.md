@@ -6,7 +6,7 @@
 - Base: main `c0bfb15` after live MediaSession runtime PR #29 merged.
 - Working-fork reference: `whoxamxl/auto-lyrics` main `8484bed2dbe8db5ca7b17dec5481b3c22714dc6f` (`v1.13.0`).
 - Classification: **PRESERVE / REFACTOR** for the proven demand semantics; **REWRITE** for ownership/integration into the AALyrics architecture.
-- The user explicitly authorized this implementation slice. Production implementation has not started yet.
+- The user explicitly authorized production implementation of this slice; implementation is active.
 
 ## Purpose
 

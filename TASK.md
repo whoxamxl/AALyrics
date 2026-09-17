@@ -7,7 +7,7 @@
 - Working-fork reference: `whoxamxl/auto-lyrics` main `8484bed2dbe8db5ca7b17dec5481b3c22714dc6f` (`v1.13.0`).
 - Classification: **PRESERVE / REFACTOR** for demand semantics; **REWRITE** for AALyrics ownership/integration.
 - Authoritative scope: `docs/LYRICS_DEMAND_GATING.md`.
-- The user explicitly authorized this implementation slice. This branch is currently documentation-only; production implementation has not started.
+- The user explicitly authorized production implementation of this slice; implementation is active on this branch.
 
 ## Acceptance criteria
 
