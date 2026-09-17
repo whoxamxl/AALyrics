@@ -52,6 +52,8 @@ dependencies {
     implementation(project(":provider:synclrc"))
     implementation(project(":ui:phone"))
     implementation(project(":ui:automotive"))
+    implementation("androidx.lifecycle:lifecycle-process:2.7.0")
+    implementation("androidx.car.app:app:1.7.0")
     testImplementation(kotlin("test-junit"))
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.11.0")
 }
