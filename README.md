@@ -2,7 +2,7 @@
 
 AALyrics is a new Android project for synchronized lyrics on phone and Android Auto.
 
-> **Status:** core, production selection, and all four concrete provider adapters are established. Application composition is the active slice; live media-session runtime and end-user UI are intentionally not started yet.
+> **Status:** the core lyrics engine, all four providers, production selection, and the first application composition are established. Live Android media-session runtime is the next planned slice; end-user UI has intentionally not started yet.
 
 ## Project direction
 
@@ -31,9 +31,10 @@ Completed foundation includes:
 - LRCLIB provider migration (PR #19),
 - PetitLyrics provider migration (PR #20),
 - Musixmatch provider migration (PR #21),
-- SyncLRC provider migration (PR #24).
+- SyncLRC provider migration (PR #24),
+- manual production application composition (PR #25).
 
-The current `feature/application-composition` slice connects the existing providers, selector, coordinator, playback ownership, and selection preferences into the first production object graph. It deliberately excludes live MediaSession discovery, cache, translation, phone UI, Android Auto UI, timing controls, and karaoke rendering.
+The current `feature/media-session-runtime` branch is documentation/planning for the next runtime slice: discover and select live Android media sessions, normalize the selected `MediaController`, and feed playback into the existing production graph. Phone UI, Android Auto presentation, demand gating, cache, translation, timing controls, and karaoke rendering remain separate later work.
 
 ## Modules
 
@@ -54,7 +55,7 @@ feature:phone          Phone presentation boundary
 feature:automotive     Android Auto presentation boundary
 ```
 
-See `docs/ARCHITECTURE.md`, `docs/ROADMAP.md`, `docs/PROVIDER_ARCHITECTURE.md`, and `docs/APPLICATION_COMPOSITION.md` for the authoritative architecture and migration plan.
+See `docs/ARCHITECTURE.md`, `docs/ROADMAP.md`, `docs/APPLICATION_COMPOSITION.md`, `docs/MEDIA_SESSION_RUNTIME.md`, and `docs/PROVIDER_ARCHITECTURE.md` for the authoritative architecture and migration plan.
 
 ## Package
 
