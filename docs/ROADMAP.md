@@ -134,30 +134,51 @@ Provider migration proceeded one adapter at a time behind `LyricsProvider`.
 
 Merged in PR #25.
 
-The application now constructs the first process-level production graph in `:app` from all four providers, the production selector, `LyricsCoordinator`, and `PlaybackLyricsController`. Composition remains explicit/manual, and candidate-selection preferences participate in playback-to-lookup ownership.
+The application now constructs one production object graph containing all four providers, `CrossProviderCandidateSelector`, `LyricsCoordinator`, and `PlaybackLyricsController`. The graph is process-owned by `AALyricsApplication`, exposes the shared `LyricsState`, uses existing BuildConfig values for PetitLyrics, and preserves the karaoke-enabled production default through `preferredSyncType = WORD`.
+
+Playback lookup ownership now includes both track identity and candidate-selection preferences. Same-track preference changes trigger a fresh lookup while position/status/rate/duration churn does not.
+
+### Phase 8.1 — UI foundation ✅
+
+Merged in PRs #27 and #28.
+
+Presentation now uses `:ui:designsystem` for shared tokens/components, `:ui:phone` for phone-specific composition, and `:ui:automotive` for automotive-specific composition. Production UI lives in `src/main`; deterministic Preview/development fixtures live in `src/debug` and render the production composables.
+
+### Phase 9 — Live MediaSession runtime ✅
+
+Implemented, validated, and reviewed in PR #29.
+
+Its purpose is to connect Android's live active media sessions to the already-composed lyrics engine:
+
+```text
+NotificationListenerService
+        ↓
+MediaSessionManager
+        ↓
+selected MediaController
+        ↓
+MediaControllerSnapshotAdapter
+        ↓
+PlaybackSnapshot
+        ↓
+PlaybackLyricsController
+        ↓
+LyricsState
+```
+
+The runtime preserves/refactors the mature working-fork session-selection behavior while keeping Android framework ownership in `:platform:media` and avoiding the old `MediaTracker` monolith. It retains token-based ownership and the platform-owned 600 ms track-metadata stabilization, and hands normalized snapshots to the existing application graph through a narrow host/sink boundary.
+
+The phase STOP gate is deliberately UI-free: with notification-listener access granted and a media app playing, real playback can drive the production provider/selection pipeline and update `LyricsState`.
 
 ## Current work
 
-### UI foundation
-
-The active slice establishes Compose presentation boundaries before final screen design:
-
-- `:ui:designsystem` for shared tokens/components,
-- `:ui:phone` for phone-specific composition,
-- `:ui:automotive` for automotive-specific composition,
-- production UI in `src/main`,
-- deterministic Preview/development fixtures in `src/debug`,
-- Preview rendering the same production composables used at runtime.
-
-The previous empty `:feature:phone` / `:feature:automotive` shells are removed rather than carried forward.
-
-This foundation intentionally does not finalize the Lyrics screen layout. The next UI slice should first lock the screen map, state matrix, and interactions, then implement the production composables and edge-case previews against those decisions.
+No next implementation slice is active in this roadmap after PR #29. Select and authorize the next responsibility explicitly before implementation.
 
 ## Later phases
 
-After the UI foundation is stable, later work includes screen/state specification, phone presentation, automotive presentation, live media-session discovery/callbacks, cache, translation, demand/session gating, timing controls, karaoke rendering, persistence, release/signing, and regression comparison against the previous fork.
+Later work includes process-wide lyrics-demand gating, screen/state specification, finished Android Auto/phone presentation, cache, translation, timing controls, karaoke rendering, persistence/settings, release/signing, and regression comparison against the previous fork.
 
-These should remain separate responsibilities and topic branches. Do not use future needs as a reason to turn `LyricsCoordinator`, `PlaybackLyricsController`, the production selector, concrete providers, or the shared design system into god objects.
+These should remain separate responsibilities and topic branches. Do not use future feature needs as a reason to turn `LyricsCoordinator`, `PlaybackLyricsController`, the media-session runtime, the production selector, concrete providers, or the shared design system into god objects.
 
 ## Working method
 

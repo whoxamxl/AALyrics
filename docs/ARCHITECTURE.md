@@ -2,11 +2,19 @@
 
 ## Status
 
-This document defines the architectural boundaries for AALyrics. The project was built core-first through the Core Readiness Gate before implementation code from the working fork was adapted.
+This document defines the architectural boundaries for AALyrics. The project was built core-first through the Core Readiness Gate before mature behavior from the working `whoxamxl/auto-lyrics` fork was adapted behind the new boundaries.
 
-AALyrics is a greenfield codebase, but not a greenfield behavior specification. The working `whoxamxl/auto-lyrics` fork is treated as a behavioral reference and regression oracle. Proven behavior should not be re-invented merely because the new module structure is different.
+Completed milestones:
 
-The Core Readiness Gate completed in PR #14. Production candidate selection was migrated in PR #17, all four concrete providers were migrated through SyncLRC in PR #24, and the first production application graph was composed in PR #25. Presentation now begins from a dedicated `:ui` boundary: a shared Compose design system plus separate phone and automotive screen-composition modules.
+- Core Readiness Gate — PR #14
+- production candidate selection — PR #17
+- all four concrete providers through SyncLRC — PR #24
+- first production application composition — PR #25
+- Compose UI foundation — PR #27
+- automotive design-system boundary — PR #28
+- live Android media-session runtime — PR #29
+
+The live Android media-session runtime is implemented, validated, and reviewed in PR #29. It is documented in `docs/MEDIA_SESSION_RUNTIME.md`. Presentation remains in the dedicated `:ui` boundary: a shared Compose design system plus separate phone and automotive screen-composition modules.
 
 ## Design goals
 
@@ -14,70 +22,73 @@ The Core Readiness Gate completed in PR #14. Production candidate selection was 
 2. Keep provider-specific behavior out of application state management.
 3. Centralize provider selection instead of allowing providers to compete through call order.
 4. Expose one stable application/domain state to both phone and automotive presentation layers.
-5. Make timing, translation, caching, and provider implementations independently replaceable.
+5. Make timing, translation, caching, provider implementations, and media runtime independently replaceable.
 6. Keep pure domain modules free of Android framework dependencies.
-7. Make track changes, cancellation, provider failures, and stale results explicit domain concerns rather than incidental UI behavior.
-8. Ensure AALyrics core behavior can be tested entirely with fake providers.
+7. Make track changes, cancellation, provider failures, stale results, and playback ownership explicit concerns rather than incidental UI behavior.
+8. Ensure AALyrics core behavior can be tested entirely with fakes.
 9. Preserve proven fork behavior unless there is a concrete architectural, correctness, or maintainability reason to change it.
 10. Separate semantic migration from structural refactoring: behavior may stay the same even when ownership and module boundaries change.
 11. Keep reusable visual tokens/components independent from phone- or automotive-specific screen composition.
 
 ## Migration principle
 
-Every significant behavior from the working fork is classified before implementation work begins:
+Every significant working-fork behavior is classified before implementation:
 
-- **PRESERVE** — behavior is already correct and should migrate with minimal semantic change.
-- **REFACTOR** — behavior should stay, but ownership/dependencies should change to fit AALyrics. Mature implementation code may be reused/refactored where appropriate; REFACTOR does not imply a gratuitous rewrite.
-- **REWRITE** — existing implementation is too coupled, obsolete, or unsuitable; reimplement the behavior against the new contracts.
-- **DROP** — behavior is unused, superseded, or intentionally excluded.
+- **PRESERVE** — keep behavior with minimal semantic change.
+- **REFACTOR** — preserve behavior but move ownership/dependencies to fit AALyrics.
+- **REWRITE** — preserve the requirement where appropriate but replace unsuitable coupling/implementation.
+- **DROP** — do not migrate unless later evidence shows it is required.
 
-The classification is tracked in `docs/MIGRATION_INVENTORY.md`. Classification can change when evidence changes, but silent reinvention is not allowed.
+The classification is tracked in `docs/MIGRATION_INVENTORY.md`. Re-check working-fork `main` before each non-trivial migration slice rather than relying on an old snapshot.
 
-Before every non-trivial migration slice, re-check the current working-fork `main` rather than relying only on an older snapshot.
-
-Concrete-provider ownership and migration rules are defined in `docs/PROVIDER_ARCHITECTURE.md`; provider-specific capabilities and quirks are recorded under `docs/providers/`. Provider-profile or migration-policy approval is not by itself authorization to start provider implementation.
-
-## Modules
+## Modules and ownership
 
 ### `:app`
 
-Android application and composition root. It owns process-level wiring and application identity, but should contain very little feature logic.
+Android application and composition root. It owns process-level object wiring, application identity, and the process coroutine scope. It may depend on concrete outer adapters, but should contain very little feature logic.
+
+`AALyricsApplication` currently composes:
+
+```text
+LRCLIB
+PetitLyrics
+Musixmatch
+SyncLRC
+        ↓
+CrossProviderCandidateSelector
+        ↓
+LyricsCoordinator
+        ↓
+PlaybackLyricsController
+        ↓
+LyricsState
+```
 
 ### `:core:model`
 
-Pure Kotlin domain types shared across the project. It owns normalized track, playback, playback identity, and lyrics representations. Provider-specific response types and Android media types do not belong here.
+Pure Kotlin normalized track, playback, playback identity, and lyrics representations. Provider DTOs and Android framework types do not belong here.
 
 ### `:provider:api`
 
-Pure Kotlin contracts implemented by lyrics providers. It defines what a provider may return to AALyrics, not how a concrete provider performs HTTP/search/parsing.
-
-A normalized `LyricsCandidate` may include provider-neutral search evidence such as whether an artist-constrained query corroborated the candidate. Providers report facts; they do not convert those facts into the final cross-provider winner score.
+Pure Kotlin provider contracts. Concrete providers normalize results into `LyricsCandidate` and may report provider-neutral search evidence, but do not decide the final cross-provider winner.
 
 ### `:core:lyrics`
 
-Pure Kotlin AALyrics orchestration. It owns application lyrics state, provider orchestration policy, request lifecycle, stale-result rejection, playback-to-lookup ownership, the `CandidateSelector` port, and domain-level state transitions. It depends on provider contracts, never concrete providers or the production selector implementation.
+Pure Kotlin application lyrics orchestration. It owns `LyricsState`, lookup identity/lifecycle, provider fan-out, stale-result protection, playback-to-lookup ownership, and the `CandidateSelector` port. It depends on provider contracts, never concrete providers or the production selector implementation.
 
 ### `:provider:selection`
 
-Pure Kotlin production implementation of the `CandidateSelector` port.
+Production implementation of the `CandidateSelector` port. It owns cross-provider ranking policy including metadata plausibility, payload quality, source confidence, synchronized/plain fallback, recording-version handling, and WORD/karaoke preference behavior.
 
-This module owns cross-provider matching/ranking policy, including the mature metadata, payload-quality, source-confidence, synchronized/plain fallback, cross-script, recording-version, and karaoke-preference behavior adapted from the working fork. Generic matching/version helpers historically embedded in `LrcLibClient` live in `:provider:matching`, shared where appropriate without making providers depend on selector implementation.
-
-Provider-specific source-confidence policy is intentionally outside `:core:lyrics`. This preserves dependency inversion: core knows the selector interface, while the composition root may inject `CrossProviderCandidateSelector` without making core depend on its implementation.
-
-Concrete provider networking, parsing, authentication, and provider-local search strategy do not belong in this module.
-
-The neutral `:provider:matching` module owns preserved provider-neutral title, artist, duration, recording-version, and metadata-plausibility semantics. Selection, LRCLIB, PetitLyrics, and Musixmatch reuse the relevant functions where appropriate. SyncLRC normalizes returned metadata and karaoke payloads without inventing a second provider-local copy of global winner scoring; payload quality, source confidence, cross-provider weights, and winner policy remain in selection.
+`:core:lyrics` never depends on this implementation; `:app` injects it through the core port.
 
 ### `:provider:matching` and `:provider:lrc`
 
-Pure Kotlin outer utilities. Matching owns shared metadata/version semantics; LRC owns the preserved ordinary/enhanced parser normalized to core model timing types. Neither utility owns provider networking or application state. The LRC parser retains enhanced word-timing regression coverage, while LRCLIB uses ordinary line parsing and advertises only PLAIN/LINE.
-
-Musixmatch RichSync is provider-native JSON timing and belongs in the Musixmatch adapter rather than being forced through the LRC parser. SyncLRC reuses shared `LrcParser.parseKaraoke` for Enhanced-LRC karaoke syntax rather than introducing provider-local timing syntax.
+Pure shared utilities. Matching owns genuinely provider-neutral metadata/version semantics. LRC owns ordinary/enhanced LRC parsing normalized to core timing types. Neither owns networking or application state.
 
 ### Concrete provider modules
 
-Concrete providers are outer adapters implementing `LyricsProvider`.
+`:provider:lrclib`, `:provider:petitlyrics`, `:provider:musixmatch`, and `:provider:synclrc` are outer adapters implementing `LyricsProvider`.
 
 Each provider owns only its provider-local transport/authentication, query/fallback strategy, DTOs, parsing, provider-local validation, and normalization into `LyricsCandidate`. A provider may report provider-neutral evidence discovered during search, but it must not decide the final winner across providers.
 
@@ -85,9 +96,23 @@ LRCLIB, PetitLyrics, Musixmatch, and SyncLRC are migrated behind the provider co
 
 ### `:platform:media`
 
-Android-specific media-session adaptation. Its job is to translate Android `MediaController` / `MediaMetadata` / `PlaybackState` values into provider-independent playback/domain models. It may contain source-specific playback identity extraction such as Spotify resource parsing, but it does not fetch or rank lyrics.
+Android media-session and playback adaptation. It owns Android framework interaction required to turn live playback into normalized `PlaybackSnapshot` values.
 
-Spotify playback identity is intentionally separate from lyrics-provider ownership. A normalized Spotify `TrackReference` may be consumed by Musixmatch as request/match evidence, but the lyric payload remains Musixmatch-owned. This does not create a Spotify lyrics provider.
+Current implemented responsibilities:
+
+- `MediaControllerSnapshotAdapter`
+- `MediaSessionSnapshotNormalizer`
+- Spotify-specific playback reference extraction
+- `NotificationListenerService` access boundary
+- `MediaSessionManager` active-session discovery
+- selected-session ownership and token-based retention
+- selected `MediaController.Callback` lifecycle
+- safe normalization/forwarding of live controller state
+- platform-owned 600 ms track-metadata stabilization
+
+It must not fetch/rank lyrics, depend on concrete providers, own `LyricsState`, or implement presentation.
+
+Because Android constructs `NotificationListenerService`, constructor injection from `:app` is not available. The live runtime uses the narrow platform-defined `MediaSessionRuntimeHost`/`PlaybackSnapshotSink` boundary, which the application composition root attaches to the existing `PlaybackLyricsController`. `:platform:media` delivers only normalized `PlaybackSnapshot` values through that boundary and does not know `LyricsCoordinator` or provider implementations.
 
 ### `:ui:designsystem`
 
@@ -105,7 +130,7 @@ Automotive-specific presentation and screen composition. It consumes the same ap
 
 Detailed presentation/source-set rules are defined in `docs/UI_ARCHITECTURE.md`.
 
-## Intended dependency direction
+## Compile-time dependency direction
 
 ```text
                                   +-------------------+
@@ -130,12 +155,16 @@ Detailed presentation/source-set rules are defined in `docs/UI_ARCHITECTURE.md`.
 
 The diagram is a compile-time dependency sketch, not a runtime call-order diagram. `:provider:selection` depends on the selector port in `:core:lyrics`; `:core:lyrics` never depends on `:provider:selection`. `:ui:designsystem` is intentionally lower-level than both screen-composition modules and is isolated from application/domain ownership.
 
-Concrete provider modules depend on `:provider:api` and normalized model types required by that contract. The domain must never depend on a concrete provider. Provider-neutral shared matching may be used by adapters and selection without creating provider-to-selector dependencies.
-
-## Runtime state flow
+## Runtime flow
 
 ```text
-Android MediaController
+NotificationListenerService          (:platform:media)
+        |
+        v
+MediaSessionManager
+        |
+        v
+selected MediaController
         |
         v
 MediaControllerSnapshotAdapter       (:platform:media)
@@ -144,22 +173,16 @@ MediaControllerSnapshotAdapter       (:platform:media)
 PlaybackSnapshot                     (:core:model)
         |
         v
-PlaybackTrackIdentity                (:core:model)
+application/platform host boundary
         |
         v
 PlaybackLyricsController             (:core:lyrics)
         |
         v
-LyricsLookupLifecycle
-        |
-        v
 LyricsCoordinator
         |
         +----> LyricsProvider contracts ----> provider adapters
-        |                  |
-        |                  v
-        |          List<LyricsCandidate>
-        |                  |
+        |
         +----> CandidateSelector port
                     ^
                     |
@@ -177,63 +200,80 @@ Phone UI (:ui:phone)   Automotive UI (:ui:automotive)
 
 The central direction is deliberate: platform and provider adapters feed normalized inputs into AALyrics core; they do not own application state. Selection is injected behind a core port rather than being embedded in provider execution order. Presentation converts shared domain state into surface-specific UI state and reusable visual components.
 
-## Playback boundary
+## Playback identity and lookup ownership
 
-`PlaybackSnapshot` represents current playback facts. It is intentionally broader than track-change identity: position, playback status, rate, and late duration updates may change continuously without implying a new lyrics request.
+`PlaybackSnapshot` represents current playback facts and is broader than track-change identity. Position, playback status, rate, and late duration updates may change continuously without implying a new lyrics request.
 
-`PlaybackTrackIdentity` is the pure decision key used to determine whether lyrics ownership should change. Identity is selected in this order:
+`PlaybackTrackIdentity` selects ownership in this order:
 
 1. explicit stable `TrackReference` values,
 2. playback-source media id/URI,
 3. identifying metadata fallback (source, title, artists, album).
 
-Duration, position, playback status, and playback rate are excluded from identity. This prevents normal timeline/state updates from restarting provider work.
+Duration, position, status, and playback rate are excluded from track identity.
 
-Source-specific extraction remains in `:platform:media`. For example, Spotify playback may add a `TrackReference(namespace = "spotify", ...)` only when the source is the Spotify Android package and metadata explicitly identifies a track resource. A bare 22-character media id is not assumed to be a Spotify track id because the resource type is ambiguous.
+`PlaybackLyricsController` now keys lookup ownership by both:
 
-`PlaybackLyricsController` consumes only normalized `PlaybackSnapshot` values. It starts a new `LyricsLookupLifecycle` when identity changes, preserves the current lookup for non-identity updates, and clears lookup ownership when no track remains. It has no Android or provider-specific dependency.
+```text
+PlaybackTrackIdentity
++
+CandidateSelectionPreferences
+```
 
-Session selection, process-wide lyrics demand gating, metadata debounce, artwork, transport controls, and presentation behavior remain outside this boundary and are not responsibilities of `PlaybackLyricsController`.
+Therefore:
+
+- same track + same preferences -> preserve current lookup;
+- same track + changed preferences -> fresh lookup;
+- track identity change -> fresh lookup;
+- position/status/rate/duration churn -> no refetch;
+- no active track -> clear lookup ownership.
+
+Source-specific identity extraction stays in `:platform:media`. Spotify may add `TrackReference(namespace = "spotify", ...)` only when the source/package and resource metadata actually identify a Spotify track.
+
+## Live media-session selection boundary
+
+The implemented runtime preserves/refactors the mature session-selection semantics from the working fork while removing its monolithic ownership:
+
+1. ignore AALyrics' own session;
+2. retain the currently selected session while it remains `PLAYING`;
+3. otherwise choose the first playing active session;
+4. otherwise use the first active session;
+5. when no eligible session remains, clear playback ownership;
+6. retain by `MediaSession.Token` so harmless active-session reorder does not switch sources.
+
+The selected controller alone owns a runtime callback. Switching selection detaches the old callback and attaches the new one. Session destruction re-evaluates active sessions.
+
+Android notification-listener access is a platform concern. The service must be declared with `BIND_NOTIFICATION_LISTENER_SERVICE`, must wait for `onListenerConnected()`, and should pass its component to active-session APIs rather than depending on privileged `MEDIA_CONTENT_CONTROL`.
+
+Detailed acceptance criteria are in `docs/MEDIA_SESSION_RUNTIME.md`.
+
+## Demand gating boundary
+
+The working fork gates provider work based on phone foreground or Android Auto projection demand. That policy remains valuable but is intentionally a later lifecycle slice.
+
+The media-session runtime may establish the UI-free end-to-end STOP gate first. Demand gating must be introduced before release/presentation work so provider lookup is not permanently active in the background. Do not mix phone/automotive lifecycle ownership into the initial live-session adapter merely to reproduce the old `LyricsDemandController` object shape.
 
 ## Core responsibilities
 
 ### `LyricsCoordinator`
 
-Owns the lifecycle of a lyrics request for the current track. It coordinates providers through contracts, handles cancellation, ignores stale results, and publishes domain state. State transitions are applied atomically so a concurrent stale completion cannot overwrite a newer lookup.
+Owns one active lyrics-request lifecycle: provider fan-out, cancellation/supersession, failure isolation, candidate handoff, stale-result rejection, and publication of `LyricsState`.
 
 ### `LyricsLookupLifecycle`
 
-Narrow provider-independent lifecycle used by playback-driven code. It exposes only start/clear operations, so playback ownership does not depend on provider fan-out, ranking, or observable-state implementation details.
+Narrow provider-independent start/clear boundary used by playback ownership.
 
 ### `PlaybackLyricsController`
 
-Owns the pure transition from playback identity to lyrics-request ownership. It does not normalize Android metadata and does not decide provider behavior.
+Owns the pure transition from normalized playback identity/preferences to lyrics-request ownership. It does not normalize Android metadata, discover media sessions, fetch providers, or render UI.
 
-### Candidate-selection port
+### `CandidateSelector`
 
-`CandidateSelector` owns the dependency boundary between orchestration and winner selection. The coordinator supplies a track, normalized candidates, and explicit selection preferences; a selector returns the selected candidate/result.
-
-The production implementation is `CrossProviderCandidateSelector` in `:provider:selection`. It is adapted from the mature working-fork resolver rather than being a second independently invented scoring system.
-
-The current production policy preserves these important semantics:
-
-- metadata identity dominates the final score,
-- incompatible recording versions are rejected,
-- title/artist/duration/album evidence is weighted consistently,
-- cross-script artist mismatches require independent corroboration,
-- payload quality can penalize likely Japanese/romanization interleaving,
-- source confidence may differ by provider and track/script context,
-- synchronized candidates beat plain fallback candidates,
-- a WORD preference may choose a real word-timed candidate only when metadata and payload quality remain near-equivalent,
-- exact score ties use a stable candidate key so provider execution order does not become winner policy.
-
-Musixmatch may provide normalized facts such as Spotify identity compatibility and artist-query corroboration, but it must not add a second provider-local version of global winner scoring.
-
-SyncLRC may use `LyricsRequest.preferredSyncType == WORD` to preserve the working fork's decision not to query the karaoke-only source in standard mode. That request gate does not decide the winner; any returned WORD candidate still passes through the same central selector and its metadata/quality/source-confidence policy.
+Port between core orchestration and winner selection. The production implementation is `CrossProviderCandidateSelector` in `:provider:selection`.
 
 ### `LyricsState`
 
-Represents the observable domain state consumed by presentation layers. Loading, resolved, unavailable, degraded, and failure states are explicit and are not inferred from UI widgets or nullable Android-specific fields.
+Provider-independent observable domain state for future phone and automotive presentation. Loading, ready/degraded, not-found, and failure states are explicit domain outcomes.
 
 ## Failure and lifecycle rules
 
@@ -241,8 +281,11 @@ Represents the observable domain state consumed by presentation layers. Loading,
 - Results belonging to an obsolete track/request must never replace state for the current track.
 - Provider execution order must not implicitly determine the winning candidate.
 - Position, duration, playback-status, and playback-rate updates must not restart lyrics lookup by themselves.
-- Source-specific playback identity parsing must remain outside lyrics core.
-- UI layers must not retry, rank, merge, or fetch provider results directly.
+- Source-specific playback identity parsing and Android session ownership must remain outside lyrics core.
+- Missing notification-listener access or `SecurityException` from active-session APIs must fail safely.
+- No eligible live session must clear playback ownership instead of leaving stale lyrics active.
+- Selected-controller callbacks/listeners must be detached when ownership ends.
+- UI layers must not retry, rank, merge, fetch, or select media sessions directly.
 - Reusable design-system code must not import app/domain/provider/platform ownership merely for convenience.
 - Android framework media types must not cross into `:core:model`, `:core:lyrics`, or `:provider:api`.
 - Existing proven matching/scoring behavior must not be replaced without explicit regression evidence and a documented reason.
@@ -251,10 +294,10 @@ Represents the observable domain state consumed by presentation layers. Loading,
 
 ## Architecture guardrails
 
-`scripts/verify-architecture.sh` is a best-effort regression guardrail for common accidental boundary violations. It checks the new `ui/*` presentation ownership along with the established pure-core/provider/media boundaries. It is not a formal Kotlin/Gradle static-analysis proof and should not be expanded indefinitely to enumerate every theoretical bypass. Stronger structural enforcement, if later needed, should use appropriate Gradle/static-analysis tooling as separate work.
+`scripts/verify-architecture.sh` is a best-effort regression guardrail for common accidental boundary violations. It checks the `ui/*` presentation ownership along with the established pure-core/provider/media boundaries. It is not a formal Kotlin/Gradle static-analysis proof and should not be expanded indefinitely to enumerate every theoretical bypass. Stronger structural enforcement, if later needed, should use appropriate Gradle/static-analysis tooling as separate work.
 
 ## Future extension points
 
-Translation, caching, timing adjustment, demand gating, session selection, karaoke rendering, and other features may be introduced later behind explicit contracts. Their future existence must not be used as a reason to mix those responsibilities into `LyricsCoordinator`, `PlaybackLyricsController`, provider selection, concrete provider adapters, or shared design-system components.
+Translation, caching, timing adjustment, demand gating, settings/persistence, karaoke rendering, and other features may be introduced later behind explicit contracts. Their future existence must not be used as a reason to mix those responsibilities into `LyricsCoordinator`, `PlaybackLyricsController`, the media-session runtime, provider selection, concrete provider adapters, or shared design-system components.
 
-The roadmap and the completed Core Readiness Gate are defined in `docs/ROADMAP.md` and `docs/CORE_READINESS_GATE.md`. Migration classifications are defined in `docs/MIGRATION_INVENTORY.md`; concrete-provider migration policy is defined in `docs/PROVIDER_ARCHITECTURE.md`.
+See `docs/ROADMAP.md`, `docs/CORE_READINESS_GATE.md`, `docs/MIGRATION_INVENTORY.md`, `docs/APPLICATION_COMPOSITION.md`, `docs/MEDIA_SESSION_RUNTIME.md`, and `docs/PROVIDER_ARCHITECTURE.md`.

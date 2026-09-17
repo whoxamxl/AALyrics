@@ -1,51 +1,55 @@
-# Automotive Design System Boundary
+# Media Session Runtime
 
 ## Branch and baseline
 
-- Branch: `feature/automotive-design-system`.
-- Base: `main` at `772519a` after UI foundation PR #27 merged.
-- Classification: **REFACTOR / PRESENTATION ARCHITECTURE**.
-- User explicitly authorized this automotive design-system boundary slice.
-- Read `AGENTS.md`, `docs/ARCHITECTURE.md`, and `docs/UI_ARCHITECTURE.md` before extending automotive UI.
-
-## Goal
-
-Establish a clear boundary between the shared AALyrics Compose design system, Android Auto host-rendered design adapters/components, and concrete automotive screens before implementing the `SectionedItemTemplate` lyrics prototype.
+- Branch: `feature/media-session-runtime`.
+- Original base: main `3ea97ce` after application-composition PR #25 merged; the branch was reconciled onto current main `1c8a875` before final PR review.
+- Working fork: `whoxamxl/auto-lyrics` main `8484bed2dbe8db5ca7b17dec5481b3c22714dc6f` (`v1.13.0`), re-checked on 2026-09-17 and still current.
+- Classification: **PRESERVE / REFACTOR** for mature session-selection behavior and **REWRITE** for integration ownership.
+- Read `AGENTS.md`, `docs/ARCHITECTURE.md`, `docs/ROADMAP.md`, `docs/MIGRATION_INVENTORY.md`, `docs/APPLICATION_COMPOSITION.md`, and `docs/MEDIA_SESSION_RUNTIME.md` before changing production code.
+- The user explicitly authorized media-session runtime implementation and has approved the final doc alignment + merge gate.
 
 ## Acceptance criteria
 
-- Keep `:ui:designsystem` as the shared semantic/Compose visual foundation.
-- Add an automotive-local `designsystem/` package for reusable Android Auto presentation adapters and component builders.
-- Keep Car App Library screen/template composition under `ui/automotive/screen/`, not inside the design system.
-- Move automotive presentation state under `ui/automotive/state/`.
-- Represent the intended main surfaces as `NowPlayingScreen` and `ExpandedLyricsScreen` skeletons without inventing final interaction behavior.
-- Document that `SectionedItemTemplate`, `Screen.onGetTemplate()`, navigation, invalidation, and scroll/follow orchestration are screen/host-contract concerns rather than design-system primitives.
-- Document that reusable automotive representations such as lyrics rows, current-line sections, headers, and semantic color adaptation belong to the automotive-local design-system layer.
-- Keep provider access, networking, media-session adaptation, and candidate selection outside `:ui:automotive`.
-- Do not implement the final `SectionedItemTemplate` prototype in this slice; prepare the ownership model for that next experiment.
-- Run CI/build validation and stop before merge for explicit approval.
+- Keep Android `MediaSession`/`MediaController`/`NotificationListenerService` concerns inside `:platform:media`.
+- Use notification-listener access rather than privileged `MEDIA_CONTENT_CONTROL` for other apps' active sessions.
+- Register the notification-listener service correctly and wait for `onListenerConnected()` before using listener-backed active-session APIs.
+- Preserve the working fork's mature session-selection semantics: ignore self, retain the current selected session while it is playing, otherwise prefer the first playing session, otherwise fall back to the first active session, and clear when no session remains.
+- Track selection by `MediaSession.Token` so active-session list reorder does not become source-switch policy.
+- Attach callbacks only to the selected controller; detach old callbacks on ownership changes/disconnect/destruction.
+- Normalize selected-controller state exclusively through `MediaControllerSnapshotAdapter` and forward normalized `PlaybackSnapshot` values through a narrow application/platform boundary into the existing `PlaybackLyricsController`.
+- Re-evaluate active sessions when the selected session is destroyed.
+- Preserve or deliberately reject the working fork's 600 ms metadata stabilization only after regression-focused review; any retained debounce belongs in `:platform:media`, not lyrics core.
+- Missing notification access and `SecurityException` paths must fail safely without crashing or leaving stale lookup ownership.
+- Add deterministic regression coverage for session selection, ownership, callback attachment, clear behavior, and snapshot handoff.
+- Do **not** implement phone UI, Android Auto UI, Compose, demand gating, cache, translation, artwork, transport controls, timing/calibration, karaoke rendering, provider changes, or candidate-selection changes in this branch.
+- Run `./gradlew test check :app:assembleDebug`, `bash scripts/verify-architecture.sh`, and `git diff --check` before PR review.
+- Open a PR, complete bounded review, and stop before merge for explicit user approval.
 
 ## Plan/status
 
-- [x] Create `feature/automotive-design-system` from current `main`.
-- [x] Define scope and ownership rules in `TASK.md`.
-- [x] Reshape the automotive source tree into `designsystem/`, `screen/`, and `state/`.
-- [x] Add placeholder files that make the intended ownership visible without inventing behavior.
-- [x] Update `docs/UI_ARCHITECTURE.md` with shared-vs-automotive design-system rules.
-- [x] Re-check `docs/ARCHITECTURE.md`; its module-level boundary remains accurate, while the package-level ownership detail belongs in `docs/UI_ARCHITECTURE.md`.
-- [x] Run CI/build validation successfully on PR #28.
-- [x] Review the complete branch diff; no blocking issue found in this architecture-only slice.
-- [x] Open draft PR #28 and stop before merge.
+- [x] Merge application composition in PR #25.
+- [x] Create `feature/media-session-runtime` from post-PR #25 main (`3ea97ce`).
+- [x] Re-check current working-fork `main` and the relevant `MediaListenerService`, `LyricsDemandController`, `MediaTracker`, and manifest behavior.
+- [x] Re-check current Android notification-listener / active-media-session API requirements.
+- [x] Define runtime ownership, session-selection semantics, callback lifecycle, permission boundary, STOP gate, and explicit no-UI scope in `docs/MEDIA_SESSION_RUNTIME.md`.
+- [x] Obtain explicit authorization before production implementation.
+- [x] Implement the live media-session runtime behind the documented platform/application boundary.
+- [x] Add deterministic regressions and update durable docs with the implementation result.
+- [x] Run final validation and bounded review.
+- [x] Open PR #29 and stop before merge.
+- [x] Receive explicit pre-merge approval and align final documentation.
 
 ## Validation/review record
 
-- GitHub Actions architecture-boundary check passed.
-- `:app:assembleDebug` passed.
-- Unit tests passed.
-- Diff review confirmed that this slice changes presentation ownership/documentation only and does not add Car App Library runtime behavior.
+- Targeted `SelectedMediaSessionRuntimeTest` passed after the review fix.
+- `./gradlew test check :app:assembleDebug` passed against current `main` after conflict reconciliation and again after the review fix.
+- `bash scripts/verify-architecture.sh` and `git diff --check` passed.
+- GitHub Actions branch-name and build checks passed on the reviewed implementation.
+- Codex review round 1 found one current-scope P2: a selected session leaving `PLAYING` did not refresh selection for an already-playing replacement. Commit `7a5e82f` fixes it with a deterministic regression.
+- Codex review round 2 targeted the original concern at `7a5e82f` and reported no major issues; the addressed thread is resolved.
+- The only changes after the final code review are documentation alignment; production runtime code is unchanged.
 
 ## Scope guard
 
-This branch defines automotive presentation ownership. It does not yet add Car App Library dependencies, `SectionedItemTemplate`, media-template registration, Android Auto service wiring, follow/manual-scroll behavior, or final visual styling.
-
-The next automotive prototype should be able to add those pieces without moving responsibilities again.
+This branch exists to connect real Android playback to the already-composed lyrics engine. It is **not** a phone UI branch, **not** an Android Auto presentation branch, and **not** the demand-gating/cache/translation/karaoke-rendering branch.

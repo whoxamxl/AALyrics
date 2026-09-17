@@ -2,16 +2,16 @@
 
 ## Status
 
-- Branch: `feature/application-composition`
-- Base: main `56eb43c` after SyncLRC PR #24 merged.
+- Merged in PR #25.
+- Main baseline after merge: `3ea97ce`.
 - Classification: **REWRITE / REFACTOR** at the application boundary. Reuse the completed core/provider contracts; do not recreate the old `MediaTracker` monolith.
-- This slice is explicitly authorized for implementation.
+- The production graph is now established and is the input boundary for later live-media/runtime and presentation work.
 
 ## Purpose
 
-The provider and core layers are complete enough to build the first real application object graph. This slice connects those existing parts without starting presentation work or live Android media-session tracking.
+The provider and core layers are composed into the first real application object graph. This slice connected those existing parts without starting presentation work or live Android media-session tracking.
 
-The target object graph is:
+The production object graph is:
 
 ```text
 :app composition root
@@ -33,18 +33,18 @@ PlaybackLyricsController
 LyricsState
 ```
 
-No UI consumes that state in this slice.
+No UI currently consumes that state.
 
-## Required composition behavior
+## Composition behavior
 
-- `:app` is the composition root and may depend on all four concrete provider modules plus `:provider:selection`.
-- Prefer explicit/manual construction over adding a DI framework. Hilt/Koin is not required for this object graph.
-- Create one process-lifetime application graph and one application-owned coroutine scope for the coordinator.
-- Instantiate LRCLIB, PetitLyrics, Musixmatch, and SyncLRC behind the existing `LyricsProvider` contract.
-- Instantiate `CrossProviderCandidateSelector` behind the existing `CandidateSelector` port.
-- Construct `LyricsCoordinator` from the concrete providers, selector, and application scope.
-- Construct `PlaybackLyricsController` from the `LyricsLookupLifecycle` boundary rather than teaching it about concrete providers.
-- Expose the shared coordinator `LyricsState`/`StateFlow` to later presentation work without adding phone or automotive rendering now.
+- `:app` is the composition root and depends on all four concrete provider modules plus `:provider:selection`.
+- Composition is explicit/manual; no DI framework was added.
+- One process-lifetime application graph and application-owned coroutine scope are used for the coordinator.
+- LRCLIB, PetitLyrics, Musixmatch, and SyncLRC are instantiated behind the existing `LyricsProvider` contract.
+- `CrossProviderCandidateSelector` is injected behind the existing `CandidateSelector` port.
+- `LyricsCoordinator` is constructed from providers, selector, and application scope.
+- `PlaybackLyricsController` depends on `LyricsLookupLifecycle`, not concrete providers.
+- The shared coordinator `LyricsState` / `StateFlow` is exposed for later runtime and presentation work.
 
 ## PetitLyrics configuration
 
@@ -55,13 +55,13 @@ The existing `BuildConfig` injection remains authoritative:
 - `PETITLYRICS_PKG_NAME`
 - `PETITLYRICS_CLIENT_APP_ID`
 
-Build the existing `PetitLyricsConfig` from those values. Do not move secrets into source, logs, tests, or committed configuration. An unconfigured PetitLyrics provider must remain a safe no-result source rather than preventing graph construction.
+`PetitLyricsConfig` is built from those values. Secrets remain outside source/logs/tests, and an unconfigured PetitLyrics provider remains a safe no-result source rather than preventing graph construction.
 
 ## Playback preference wiring
 
-SyncLRC intentionally performs no request unless `LyricsRequest.preferredSyncType == WORD`, so application composition must not discard the selection preference.
+SyncLRC intentionally performs no request unless `LyricsRequest.preferredSyncType == WORD`, so application composition carries the selection preference through playback-to-lookup ownership.
 
-Update the pure playback-to-lookup boundary so `CandidateSelectionPreferences` is part of lookup ownership:
+Current behavior:
 
 - same track identity + same preferences -> do not restart lookup;
 - same track identity + changed preferences -> start a fresh lookup;
@@ -69,35 +69,28 @@ Update the pure playback-to-lookup boundary so `CandidateSelectionPreferences` i
 - position/status/rate/duration-only churn -> do not restart lookup;
 - no active track -> clear lookup ownership.
 
-Do not put preference persistence, Android settings, SharedPreferences, or UI controls into `PlaybackLyricsController`.
+The working fork defaults karaoke preference to enabled. Until a later settings/persistence slice exists, the application boundary initializes production selection with `preferredSyncType = WORD`. The default remains outside provider and selector implementations.
 
-The working fork defaults karaoke preference to enabled. Until a later settings/persistence slice exists, application composition should define the initial production preference as `preferredSyncType = WORD` so real word-timed providers can participate by default. Keep that default at the application boundary rather than hard-coding it into provider or selector behavior.
+## Explicitly not owned by composition
 
-## Explicitly out of scope
+Application composition does **not** own:
 
-Do **not** implement any of the following in this branch:
-
-- phone UI or changes to `MainActivity` presentation;
-- Android Auto UI/service presentation;
-- Compose or another UI toolkit migration;
-- `NotificationListenerService`;
-- `MediaSessionManager` active-session discovery or session selection;
-- live `MediaController.Callback` plumbing;
+- phone UI or `MainActivity` presentation;
+- Android Auto presentation;
+- live `NotificationListenerService` / `MediaSessionManager` runtime;
 - process-wide lyrics-demand gating;
 - cache;
 - translation;
 - artwork/colors;
 - timing offset/calibration or karaoke rendering;
-- provider scoring/selection-policy changes;
-- provider transport/search behavior changes.
+- provider scoring/selection policy;
+- provider transport/search behavior.
 
-Live Android media-session runtime is the next independent slice after composition is stable.
+The next planned independent slice is documented in `docs/MEDIA_SESSION_RUNTIME.md`.
 
-## Validation
+## Validation record
 
-Add deterministic tests for the new composition/preference responsibilities, especially preference changes on the same playback identity. Existing playback invariants must remain covered.
-
-Run:
+PR #25 passed:
 
 ```text
 ./gradlew test check :app:assembleDebug
@@ -105,4 +98,4 @@ bash scripts/verify-architecture.sh
 git diff --check
 ```
 
-Complete the bounded review in `AGENTS.md`, fix material in-scope findings, and stop before merge for explicit approval.
+The first bounded review found the missing `android.permission.INTERNET` declaration for the newly composed network providers; that was fixed before merge. The second bounded review found no major issue.
