@@ -2,7 +2,7 @@
 
 AALyrics is a new Android project for synchronized lyrics on phone and Android Auto.
 
-> **Status:** active architecture and provider migration. The core lyrics pipeline is established, but application wiring and end-user UI are not yet complete enough for daily use.
+> **Status:** core, production selection, and all four concrete provider adapters are established. Application composition is the active slice; live media-session runtime and end-user UI are intentionally not started yet.
 
 ## Project direction
 
@@ -31,9 +31,9 @@ Completed foundation includes:
 - LRCLIB provider migration (PR #19),
 - PetitLyrics provider migration (PR #20),
 - Musixmatch provider migration (PR #21),
-- SyncLRC provider migration implemented and reviewed in PR #24 (merge approval pending).
+- SyncLRC provider migration (PR #24).
 
-Application composition, cache, translation, phone UI, Android Auto UI, timing controls, and karaoke rendering remain later phases.
+The current `feature/application-composition` slice connects the existing providers, selector, coordinator, playback ownership, and selection preferences into the first production object graph. It deliberately excludes live MediaSession discovery, cache, translation, phone UI, Android Auto UI, timing controls, and karaoke rendering.
 
 ## Modules
 
@@ -54,7 +54,7 @@ feature:phone          Phone presentation boundary
 feature:automotive     Android Auto presentation boundary
 ```
 
-See `docs/ARCHITECTURE.md`, `docs/ROADMAP.md`, and `docs/PROVIDER_ARCHITECTURE.md` for the authoritative architecture and migration plan.
+See `docs/ARCHITECTURE.md`, `docs/ROADMAP.md`, `docs/PROVIDER_ARCHITECTURE.md`, and `docs/APPLICATION_COMPOSITION.md` for the authoritative architecture and migration plan.
 
 ## Package
 
