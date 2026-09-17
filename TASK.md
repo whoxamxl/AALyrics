@@ -2,7 +2,7 @@
 
 ## Branch and baseline
 
-- Branch: `architecture/lyrics-capability-foundation`.
+- Branch: `docs/lyrics-capability-foundation`.
 - Base: main `55f918896df501ffc3c196a0cda92c88b6a159d8` after PR #30 merged.
 - Scope: documentation-only architecture foundation for cache, translation, timing/calibration, karaoke projection, and presentation state.
 - No production implementation is authorized in this slice.
@@ -38,6 +38,7 @@ This slice should make later implementations difficult to place in the wrong lay
 - [x] define Phase 11.x implementation slices in `docs/ROADMAP.md`
 - [x] align `docs/MIGRATION_INVENTORY.md` with the capability foundation
 - [x] complete docs review; stale TASK completion/file-name metadata was corrected before merge
+- [x] move the reviewed head to a CI-compliant `docs/*` branch before PR because repository branch-name validation does not allow `architecture/*`
 
 ## Scope guard
 
