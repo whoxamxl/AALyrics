@@ -35,8 +35,15 @@
 - [x] Wire playback selection preferences without introducing settings persistence or UI.
 - [x] Add/adjust deterministic tests.
 - [x] Update durable architecture/roadmap/migration docs to record Phase 7 completion and composition status.
-- [ ] Run full validation and bounded review.
-- [ ] Open PR and stop before merge.
+- [x] Run full validation and bounded review.
+- [x] Open PR #25 and stop before merge.
+
+## Validation/review record
+
+- `./gradlew test check :app:assembleDebug` passed locally.
+- `bash scripts/verify-architecture.sh` passed.
+- `git diff --check` passed.
+- PR #25 CI passed. The first Codex review identified the missing application Internet permission; commit `75e984d` fixed it, and the second bounded review found no major issues.
 
 ## Scope guard
 
