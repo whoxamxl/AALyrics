@@ -140,9 +140,9 @@ Playback lookup ownership now includes both track identity and candidate-selecti
 
 ### Phase 8.1 — UI foundation ✅
 
-Merged in PRs #27 and #28.
+Merged in PRs #27 and #28, with Phone information architecture/package scaffolding added in PR #31.
 
-Presentation now uses `:ui:designsystem` for shared tokens/components, `:ui:phone` for phone-specific composition, and `:ui:automotive` for automotive-specific composition. Production UI lives in `src/main`; deterministic Preview/development fixtures live in `src/debug` and render the production composables.
+Presentation uses `:ui:designsystem` for shared tokens/components, `:ui:phone` for phone-specific composition, and `:ui:automotive` for automotive-specific composition. Production UI lives in `src/main`; deterministic Preview/development fixtures live in `src/debug` and render the production composables. Phone and automotive remain separate presentation surfaces rather than one universal UI model.
 
 ### Phase 9 — Live MediaSession runtime ✅
 
@@ -168,15 +168,9 @@ LyricsState
 
 The runtime preserves/refactors the mature working-fork session-selection behavior while keeping Android framework ownership in `:platform:media` and avoiding the old `MediaTracker` monolith. It retains token-based ownership and the platform-owned 600 ms track-metadata stabilization, and hands normalized snapshots to the existing application graph through a narrow host/sink boundary.
 
-The phase STOP gate is deliberately UI-free: with notification-listener access granted and a media app playing, real playback can drive the production provider/selection pipeline and update `LyricsState`.
+### Phase 10 — Lyrics demand gating ✅
 
-## Current work
-
-### Phase 10 — Lyrics demand gating
-
-Active branch: `feature/lyrics-demand-gating`.
-
-Implementation, validation, and bounded review are complete in PR #30; the PR awaits explicit merge approval.
+Merged in PR #30.
 
 This background/runtime slice preserves the working fork's proven demand rule while moving ownership into the AALyrics application lifecycle boundary:
 
@@ -198,13 +192,81 @@ provider lookup
 
 MediaSession discovery and selected-controller callbacks remain alive even when demand is inactive. The gate controls only lyrics work. While demand is off it retains the latest normalized playback snapshot but does not start provider lookup; deactivation clears current lookup ownership, and reactivation immediately replays the latest snapshot without requiring another track change.
 
-The detailed scope, ownership, lifecycle semantics, regressions, and STOP gate are defined in `docs/LYRICS_DEMAND_GATING.md`.
+Detailed behavior is defined in `docs/LYRICS_DEMAND_GATING.md`.
+
+### Phase 11 — Lyrics capability architecture foundation ✅
+
+Defined on `architecture/lyrics-capability-foundation` as a documentation-first architecture slice.
+
+This phase does not implement cache, translation, timing/calibration, karaoke, or production presentation state. It defines their stable seams so later implementation can proceed without collapsing unrelated responsibilities into `LyricsCoordinator`, providers, MediaSession code, or UI.
+
+Umbrella architecture:
+
+- `docs/LYRICS_PIPELINE_ARCHITECTURE.md`
+
+Capability-specific architecture:
+
+- `docs/CACHE_ARCHITECTURE.md`
+- `docs/TRANSLATION_ARCHITECTURE.md`
+- `docs/TIMING_ARCHITECTURE.md`
+- `docs/KARAOKE_ARCHITECTURE.md`
+- `docs/PRESENTATION_STATE_ARCHITECTURE.md`
+
+The foundation fixes:
+
+- canonical lyrics/source timing versus derived artifacts;
+- capability ownership and dependency direction;
+- stale-result and identity expectations;
+- failure isolation between optional capabilities;
+- shared karaoke/timing semantics before surface-specific rendering;
+- independent Phone and automotive presentation state;
+- the rule that implementation must stabilize seams before signatures rather than pre-create speculative modules/interfaces.
+
+It intentionally leaves concrete modules, API signatures, storage engines, translation engines, calibration algorithms, karaoke DTOs, and final presentation-state fields to the implementation slices that have evidence to define them.
+
+## Next implementation slices
+
+No capability implementation slice is active merely because the foundation exists. Select and explicitly authorize one responsibility before production implementation.
+
+The expected dependency-friendly sequence is:
+
+### Phase 11.1 — Cache
+
+Implement the smallest cache contract justified by provider cost, identity, selection-preference semantics, persistence requirements, and current working-fork behavior.
+
+Must follow `docs/CACHE_ARCHITECTURE.md`. The implementation slice must decide provider-result versus selected-result caching (or an explicitly justified layered approach), storage adapter placement, identity, invalidation, and failure fallback through tests rather than foundation guesswork.
+
+### Phase 11.2 — Translation
+
+Implement translation as an additive derived capability over canonical lyrics without moving translation execution into providers or `LyricsCoordinator` and without replacing valid original lyrics on failure.
+
+Must follow `docs/TRANSLATION_ARCHITECTURE.md`. Translation engine, alignment granularity, status model, batching, language detection, and persistence remain implementation decisions.
+
+### Phase 11.3 — Timing / calibration
+
+Introduce source-versus-effective timing and the smallest calibration transform justified by product behavior and working-fork regressions.
+
+Must follow `docs/TIMING_ARCHITECTURE.md`. A first implementation may remain constant-offset only; calibration scope, persistence, precedence, and later drift correction must be explicit rather than hidden in UI state.
+
+### Phase 11.4 — Karaoke projection
+
+Implement a framework-neutral semantic projection from timed lyrics + effective timing + playback position into line/word/progress facts.
+
+Must follow `docs/KARAOKE_ARCHITECTURE.md`. Phone Compose rendering and Android Auto host rendering stay downstream and may differ visually, but they must not duplicate karaoke timing semantics.
+
+### Phase 11.5 — Presentation state integration
+
+Compose application/domain capability facts into the smallest presentation contracts demonstrated by actual Phone and automotive requirements.
+
+Must follow `docs/PRESENTATION_STATE_ARCHITECTURE.md`. Do not create one universal giant UI state. Keep shared semantic facts shareable and surface-local state local.
+
+These implementation slices are separate responsibilities and should normally use separate topic branches/PRs. The order may change when concrete implementation or product evidence justifies it, but the dependency and ownership rules in the Phase 11 foundation remain the guardrail.
 
 ## Later phases
 
-After demand gating, later work includes screen/state specification, finished Android Auto/phone presentation, cache, translation, timing controls, karaoke rendering, persistence/settings, release/signing, and regression comparison against the previous fork.
+After the capability slices, later work includes finished Phone and Android Auto feature presentation, settings/persistence not already introduced by a capability, release/signing, and regression comparison against the previous fork.
 
-These should remain separate responsibilities and topic branches. Do not use future feature needs as a reason to turn `LyricsCoordinator`, `PlaybackLyricsController`, the media-session runtime, demand gate, production selector, concrete providers, or the shared design system into god objects.
+Do not use future feature needs as a reason to turn `LyricsCoordinator`, `PlaybackLyricsController`, the media-session runtime, demand gate, production selector, concrete providers, capability services, or the shared design system into god objects.
 
 ## Working method
 
@@ -214,9 +276,10 @@ Before starting any non-trivial implementation slice:
 
 1. check `docs/MIGRATION_INVENTORY.md`,
 2. inspect the current `whoxamxl/auto-lyrics` main branch for equivalent behavior when relevant,
-3. read the relevant architecture/profile document,
+3. read `docs/LYRICS_PIPELINE_ARCHITECTURE.md` plus the relevant capability architecture document for Phase 11.x work,
 4. classify inherited behavior as PRESERVE, REFACTOR, REWRITE, or DROP when migration is involved,
-5. define the current PR acceptance criteria,
+5. define the current PR acceptance criteria and the smallest justified contracts,
 6. implement only after the user has explicitly authorized implementation for that slice,
-7. run CI and the bounded review process in `AGENTS.md`,
-8. stop before merge for explicit approval.
+7. add executable architecture guardrails only for concrete boundaries that now exist in code,
+8. run CI and the bounded review process in `AGENTS.md`,
+9. stop before merge for explicit approval.
