@@ -3,13 +3,13 @@
 ## Branch and baseline
 
 - Branch: `feature/media-session-runtime`.
-- Base: main `3ea97ce` after application-composition PR #25 merged.
+- Original base: main `3ea97ce` after application-composition PR #25 merged; the branch was reconciled onto current main `1c8a875` before final PR review.
 - Working fork: `whoxamxl/auto-lyrics` main `8484bed2dbe8db5ca7b17dec5481b3c22714dc6f` (`v1.13.0`), re-checked on 2026-09-17 and still current.
 - Classification: **PRESERVE / REFACTOR** for mature session-selection behavior and **REWRITE** for integration ownership.
 - Read `AGENTS.md`, `docs/ARCHITECTURE.md`, `docs/ROADMAP.md`, `docs/MIGRATION_INVENTORY.md`, `docs/APPLICATION_COMPOSITION.md`, and `docs/MEDIA_SESSION_RUNTIME.md` before changing production code.
-- The user explicitly authorized media-session runtime implementation on this branch.
+- The user explicitly authorized media-session runtime implementation and has approved the final doc alignment + merge gate.
 
-## Acceptance criteria for the later implementation slice
+## Acceptance criteria
 
 - Keep Android `MediaSession`/`MediaController`/`NotificationListenerService` concerns inside `:platform:media`.
 - Use notification-listener access rather than privileged `MEDIA_CONTENT_CONTROL` for other apps' active sessions.
@@ -38,6 +38,7 @@
 - [x] Add deterministic regressions and update durable docs with the implementation result.
 - [x] Run final validation and bounded review.
 - [x] Open PR #29 and stop before merge.
+- [x] Receive explicit pre-merge approval and align final documentation.
 
 ## Validation/review record
 
@@ -47,7 +48,7 @@
 - GitHub Actions branch-name and build checks passed on the reviewed implementation.
 - Codex review round 1 found one current-scope P2: a selected session leaving `PLAYING` did not refresh selection for an already-playing replacement. Commit `7a5e82f` fixes it with a deterministic regression.
 - Codex review round 2 targeted the original concern at `7a5e82f` and reported no major issues; the addressed thread is resolved.
-- PR #29 is ready for the explicit pre-merge approval gate and has not been merged.
+- The only changes after the final code review are documentation alignment; production runtime code is unchanged.
 
 ## Scope guard
 
