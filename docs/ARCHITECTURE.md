@@ -13,22 +13,26 @@ Completed milestones:
 - Compose UI foundation — PR #27
 - automotive design-system boundary — PR #28
 - live Android media-session runtime — PR #29
+- process-wide lyrics-demand gating — PR #30
 
-The live Android media-session runtime is implemented and merged in PR #29. Process-wide lyrics-demand gating is implemented, validated, and reviewed in PR #30 and awaits explicit merge approval; its boundary is specified in `docs/LYRICS_DEMAND_GATING.md`. Presentation remains in the dedicated `:ui` boundary: a shared Compose design system plus separate phone and automotive screen-composition modules.
+The live Android media-session runtime is implemented and merged in PR #29. Process-wide lyrics-demand gating is implemented and merged in PR #30; its boundary is specified in `docs/LYRICS_DEMAND_GATING.md`. Presentation remains in the dedicated `:ui` boundary: a shared Compose design system plus separate phone and automotive screen-composition modules.
+
+The future lyrics-capability architecture is defined by `docs/LYRICS_PIPELINE_ARCHITECTURE.md` and its five focused capability documents for cache, translation, timing/calibration, karaoke projection, and presentation state. That foundation fixes ownership, dependency direction, lifecycle constraints, and canonical-versus-derived data rules without prematurely fixing module names, concrete APIs, DTOs, storage technology, or implementation algorithms.
 
 ## Design goals
 
 1. Keep Android media integration out of the lyrics domain.
 2. Keep provider-specific behavior out of application state management.
 3. Centralize provider selection instead of allowing providers to compete through call order.
-4. Expose one stable application/domain state to both phone and automotive presentation layers.
-5. Make timing, translation, caching, provider implementations, media runtime, and demand lifecycle independently replaceable.
+4. Expose stable application/domain facts to both phone and automotive presentation layers without forcing both surfaces into one universal UI state.
+5. Make timing, translation, caching, karaoke projection, provider implementations, media runtime, and demand lifecycle independently replaceable.
 6. Keep pure domain modules free of Android framework dependencies.
-7. Make track changes, cancellation, provider failures, stale results, playback ownership, and lyrics demand explicit concerns rather than incidental UI behavior.
+7. Make track changes, cancellation, provider failures, stale results, playback ownership, lyrics demand, and derived-capability ownership explicit concerns rather than incidental UI behavior.
 8. Ensure AALyrics core behavior can be tested entirely with fakes.
 9. Preserve proven fork behavior unless there is a concrete architectural, correctness, or maintainability reason to change it.
 10. Separate semantic migration from structural refactoring: behavior may stay the same even when ownership and module boundaries change.
 11. Keep reusable visual tokens/components independent from phone- or automotive-specific screen composition.
+12. Stabilize future capability seams before signatures: define ownership and dependency direction first, then introduce only the smallest implementation-specific contracts justified by each later slice.
 
 ## Migration principle
 
@@ -66,6 +70,8 @@ LyricsState
 
 The demand-gating slice adds an application-lifecycle boundary in front of `PlaybackLyricsController`; it does not move provider or media-session ownership into `:app`.
 
+Future cache, translation, timing, karaoke, and presentation-capability composition may be wired from `:app` or other appropriate composition roots, but the composition root must not become the owner of their feature logic.
+
 ### `:core:model`
 
 Pure Kotlin normalized track, playback, playback identity, and lyrics representations. Provider DTOs and Android framework types do not belong here.
@@ -77,6 +83,8 @@ Pure Kotlin provider contracts. Concrete providers normalize results into `Lyric
 ### `:core:lyrics`
 
 Pure Kotlin application lyrics orchestration. It owns `LyricsState`, lookup identity/lifecycle, provider fan-out, stale-result protection, playback-to-lookup ownership, and the `CandidateSelector` port. It depends on provider contracts, never concrete providers or the production selector implementation.
+
+It must not become a general-purpose cache, translation, timing, karaoke, persistence, or presentation orchestrator merely because those capabilities consume lyrics.
 
 ### `:provider:selection`
 
@@ -124,13 +132,13 @@ Production design-system code lives under `src/main`; debug-only catalogs and pr
 
 ### `:ui:phone`
 
-Phone-specific presentation and screen composition. It consumes the shared lyrics-core contract and `:ui:designsystem`, maps domain state into phone UI state, and must not talk directly to provider implementations or the media platform adapter.
+Phone-specific presentation and screen composition. It consumes the shared lyrics-core contract and `:ui:designsystem`, maps domain/application capability facts into phone UI state, and must not talk directly to provider implementations, cache storage, translation infrastructure, or the media platform adapter.
 
 Phone lyrics demand is process-lifecycle state owned/wired above the presentation module; individual composables must not start or cancel provider work directly.
 
 ### `:ui:automotive`
 
-Automotive-specific presentation and screen composition. It consumes the same application/domain state as the phone UI plus `:ui:designsystem`. It must not own lyrics fetching, provider selection, or Android media-session adaptation.
+Automotive-specific presentation and screen composition. It consumes the same application/domain capability facts as the phone UI plus `:ui:designsystem`. It must not own lyrics fetching, provider selection, cache storage, translation execution, timing math, karaoke semantics, or Android media-session adaptation.
 
 Android Auto lyrics demand is projection-connection lifecycle state owned/wired above the presentation module; the automotive composables do not own that policy.
 
@@ -160,6 +168,8 @@ Detailed presentation/source-set rules are defined in `docs/UI_ARCHITECTURE.md`.
 ```
 
 The diagram is a compile-time dependency sketch, not a runtime call-order diagram. `:provider:selection` depends on the selector port in `:core:lyrics`; `:core:lyrics` never depends on `:provider:selection`. `:ui:designsystem` is intentionally lower-level than both screen-composition modules and is isolated from application/domain ownership.
+
+Future cache/translation/timing/karaoke modules are intentionally absent from this diagram until implementation evidence justifies their concrete module placement and contracts. Their allowed dependency direction is already constrained by `docs/LYRICS_PIPELINE_ARCHITECTURE.md`.
 
 ## Runtime flow
 
@@ -209,6 +219,25 @@ Phone UI (:ui:phone)   Automotive UI (:ui:automotive)
 ```
 
 The central direction is deliberate: platform and provider adapters feed normalized inputs into AALyrics core; they do not own application state. Demand gating controls whether observed playback owns lyrics work, but it does not change playback normalization, track identity, provider execution, or candidate selection. Presentation converts shared domain state into surface-specific UI state and reusable visual components.
+
+Future capability integration extends the post-lookup system through explicit seams rather than by changing the ownership above:
+
+```text
+canonical normalized lyrics
+        ├─ cache boundary
+        ├─ translation boundary
+        └─ timing/calibration boundary
+                    ↓
+             effective timing
+                    ↓
+             karaoke projection
+                    ↓
+       presentation-ready semantic facts
+             /                 \
+        Phone state       Automotive state
+```
+
+This is an ownership sketch, not a requirement that all capabilities execute linearly or synchronously.
 
 ## Playback identity and lookup ownership
 
@@ -286,6 +315,42 @@ Phone demand uses process-level lifecycle semantics so ordinary Activity recreat
 
 The gate must not reach into provider jobs, change `PlaybackTrackIdentity`, or teach `:platform:media` about UI/application lifecycle policy.
 
+## Lyrics capability foundation
+
+Future cache, translation, timing/calibration, karaoke projection, and presentation-state work share one architectural foundation defined in `docs/LYRICS_PIPELINE_ARCHITECTURE.md`.
+
+Capability-specific rules live in:
+
+- `docs/CACHE_ARCHITECTURE.md`
+- `docs/TRANSLATION_ARCHITECTURE.md`
+- `docs/TIMING_ARCHITECTURE.md`
+- `docs/KARAOKE_ARCHITECTURE.md`
+- `docs/PRESENTATION_STATE_ARCHITECTURE.md`
+
+The central invariant is that canonical normalized lyrics and source timing remain distinguishable from derived artifacts and projections:
+
+```text
+canonical lyrics
+├─ source text/timing
+├─ cacheable canonical facts
+├─ derived translation
+├─ derived effective timing/calibration
+└─ derived karaoke projection
+```
+
+Stable rules:
+
+- cache/storage infrastructure stays behind a replaceable data-access boundary;
+- translation is additive and must not overwrite valid original lyrics;
+- calibration transforms source timing into effective timing without destroying source timestamps;
+- karaoke semantics are framework-neutral and shared before surface-specific rendering;
+- Phone and automotive consume common semantic facts but retain independent surface state;
+- asynchronous/persisted derived work must respect canonical lyrics identity and stale-result ownership;
+- optional capability failure must not erase valid lower-level lyrics state;
+- providers, MediaSession runtime, `LyricsCoordinator`, and UI must not absorb unrelated capability ownership.
+
+This foundation intentionally does not prescribe concrete future module names, API signatures, storage engines, translation engines, calibration algorithms, karaoke DTOs, ViewModels, or final UI-state shapes. Each implementation slice must introduce only the smallest contract justified by real inputs, outputs, lifecycle, and tests.
+
 ## Core responsibilities
 
 ### `LyricsCoordinator`
@@ -308,6 +373,8 @@ Port between core orchestration and winner selection. The production implementat
 
 Provider-independent observable domain state for phone and automotive presentation. Loading, ready/degraded, not-found, and failure states are explicit domain outcomes.
 
+`LyricsState` is not intended to become a replacement monolith containing cache storage state, translation engine internals, calibration persistence, karaoke renderer state, or both surfaces' complete UI state.
+
 ## Failure and lifecycle rules
 
 - One provider failure must not automatically fail the whole request when other providers can still produce candidates.
@@ -326,13 +393,21 @@ Provider-independent observable domain state for phone and automotive presentati
 - Existing proven matching/scoring behavior must not be replaced without explicit regression evidence and a documented reason.
 - Concrete providers surface operational failures according to the provider contract instead of silently converting every failure into a no-result outcome.
 - Provider-local cancellation should cancel underlying HTTP work where practical.
+- Translation failure must leave valid original lyrics usable.
+- Calibration changes must not silently rewrite canonical provider timestamps or refetch lyrics unless a later explicit policy requires it.
+- Karaoke semantic calculation must not be duplicated independently by Phone and automotive renderers.
+- Cache or optional derived-capability failure must not corrupt canonical lyrics lifecycle state.
 
 ## Architecture guardrails
 
 `scripts/verify-architecture.sh` is a best-effort regression guardrail for common accidental boundary violations. It checks the `ui/*` presentation ownership along with the established pure-core/provider/media boundaries. It is not a formal Kotlin/Gradle static-analysis proof and should not be expanded indefinitely to enumerate every theoretical bypass. Stronger structural enforcement, if later needed, should use appropriate Gradle/static-analysis tooling as separate work.
 
+As future capability modules become concrete, their implementation slices should add executable dependency guardrails only for boundaries that now exist in code. The project should not invent empty modules solely so CI can enforce speculative dependency rules.
+
 ## Future extension points
 
-Translation, caching, timing adjustment, settings/persistence, karaoke rendering, and other features may be introduced later behind explicit contracts. Their future existence must not be used as a reason to mix those responsibilities into `LyricsCoordinator`, `PlaybackLyricsController`, the media-session runtime, demand gate, provider selection, concrete provider adapters, or shared design-system components.
+The architecture seam for cache, translation, timing/calibration, karaoke projection, and presentation state is now defined. Concrete implementations remain future independent slices and must follow `docs/LYRICS_PIPELINE_ARCHITECTURE.md` plus the relevant capability-specific document.
 
-See `docs/ROADMAP.md`, `docs/CORE_READINESS_GATE.md`, `docs/MIGRATION_INVENTORY.md`, `docs/APPLICATION_COMPOSITION.md`, `docs/MEDIA_SESSION_RUNTIME.md`, `docs/LYRICS_DEMAND_GATING.md`, and `docs/PROVIDER_ARCHITECTURE.md`.
+Settings/persistence, release/signing, and other later features remain separate responsibilities. Their future existence must not be used as a reason to mix those concerns into `LyricsCoordinator`, `PlaybackLyricsController`, the media-session runtime, demand gate, provider selection, concrete provider adapters, capability services, or shared design-system components.
+
+See `docs/ROADMAP.md`, `docs/CORE_READINESS_GATE.md`, `docs/MIGRATION_INVENTORY.md`, `docs/APPLICATION_COMPOSITION.md`, `docs/MEDIA_SESSION_RUNTIME.md`, `docs/LYRICS_DEMAND_GATING.md`, `docs/LYRICS_PIPELINE_ARCHITECTURE.md`, `docs/CACHE_ARCHITECTURE.md`, `docs/TRANSLATION_ARCHITECTURE.md`, `docs/TIMING_ARCHITECTURE.md`, `docs/KARAOKE_ARCHITECTURE.md`, `docs/PRESENTATION_STATE_ARCHITECTURE.md`, and `docs/PROVIDER_ARCHITECTURE.md`.
