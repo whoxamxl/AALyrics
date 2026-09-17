@@ -27,13 +27,25 @@ import io.github.whoxamxl.aalyrics.ui.phone.navigation.PhoneDestination
 import io.github.whoxamxl.aalyrics.ui.phone.shell.PhoneAppShell
 import io.github.whoxamxl.aalyrics.ui.phone.state.PhoneShellUiState
 
-@Preview(name = "Lyrics · playing", widthDp = 412, heightDp = 892, showBackground = true)
+@Preview(
+    name = "Lyrics · playing",
+    widthDp = 412,
+    heightDp = 892,
+    showBackground = true,
+    showSystemUi = true,
+)
 @Composable
 private fun PlayingLyricsShellPreview() {
     PhoneShellPreview(PreviewPhoneData.playingLyrics)
 }
 
-@Preview(name = "Lyrics · narrow paused", widthDp = 320, heightDp = 700, showBackground = true)
+@Preview(
+    name = "Lyrics · narrow paused",
+    widthDp = 320,
+    heightDp = 700,
+    showBackground = true,
+    showSystemUi = true,
+)
 @Composable
 private fun NarrowPausedLyricsShellPreview() {
     PhoneShellPreview(PreviewPhoneData.pausedLyrics)
