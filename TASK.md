@@ -2,7 +2,7 @@
 
 ## Branch and baseline
 
-- Branch: `feat/ui-foundation`.
+- Branch: `feature/ui-foundation`.
 - Base: `main` at `3ea97ce` after application-composition PR #25 merged.
 - Classification: **REFACTOR / NEW UI FOUNDATION**.
 - User explicitly authorized the UI foundation and module cleanup.
@@ -26,7 +26,7 @@
 
 ## Plan/status
 
-- [x] Create `feat/ui-foundation` from current `main`.
+- [x] Create `feature/ui-foundation` from current `main`.
 - [x] Confirm the old feature modules contain no production implementation requiring migration.
 - [x] Replace `:feature:phone` / `:feature:automotive` with `:ui:phone` / `:ui:automotive`.
 - [x] Add `:ui:designsystem` and Compose build configuration.
