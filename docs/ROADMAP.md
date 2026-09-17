@@ -140,9 +140,9 @@ Playback lookup ownership now includes both track identity and candidate-selecti
 
 ## Current work
 
-### Phase 9 — Live MediaSession runtime planning
+### Phase 9 — Live MediaSession runtime implementation
 
-The next slice is documented in `docs/MEDIA_SESSION_RUNTIME.md` and is currently planning-only on `feature/media-session-runtime`; production implementation is not yet authorized.
+The runtime documented in `docs/MEDIA_SESSION_RUNTIME.md` is implemented on `feature/media-session-runtime` and is undergoing validation/review.
 
 Its purpose is to connect Android's live active media sessions to the already-composed lyrics engine:
 
@@ -162,7 +162,7 @@ PlaybackLyricsController
 LyricsState
 ```
 
-The runtime should preserve/refactor the mature working-fork session-selection behavior while keeping Android framework ownership in `:platform:media` and avoiding the old `MediaTracker` monolith.
+The runtime preserves/refactors the mature working-fork session-selection behavior while keeping Android framework ownership in `:platform:media` and avoiding the old `MediaTracker` monolith. It retains token-based ownership and the platform-owned 600 ms track-metadata stabilization, and hands normalized snapshots to the existing application graph through a narrow host/sink boundary.
 
 The STOP gate for this phase is deliberately UI-free: with notification-listener access granted and a media app playing, real playback should be able to drive the production provider/selection pipeline and update `LyricsState`.
 

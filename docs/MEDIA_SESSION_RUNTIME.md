@@ -6,7 +6,7 @@
 - Base: main `3ea97ce` after application-composition PR #25 merged.
 - Working-fork behavioral reference: `whoxamxl/auto-lyrics` main `8484bed2dbe8db5ca7b17dec5481b3c22714dc6f` (`v1.13.0`), re-checked on 2026-09-17 and still current.
 - Classification: **PRESERVE / REFACTOR** for session-selection behavior, **REWRITE** for ownership/integration.
-- State: **AUTHORIZED — implementation is active.**
+- State: **IMPLEMENTED — validation and bounded review are active.**
 
 ## Purpose
 
@@ -94,7 +94,7 @@ Normal callback churn must rely on the existing `PlaybackLyricsController` ident
 
 ## Metadata stabilization
 
-The working fork delays track-changing metadata by 600 ms because some media apps publish transient/intermediate metadata while changing tracks. That behavior remains relevant, but the old `MediaTracker` implementation must not be copied wholesale.
+The runtime retains the working fork's 600 ms delay for track-changing metadata because some media apps publish transient/intermediate metadata while changing tracks. The delay is owned by `SelectedMediaSessionRuntime` in `:platform:media`; playback status and position continue to update immediately against the last stable track identity. Deterministic regressions verify the delay, replacement of older pending metadata, and callback ordering where playback-state notification arrives before metadata notification.
 
 During implementation, preserve a platform-owned metadata stabilization/debounce only if it is required to prevent transient identity lookups with real or deterministic regression cases. It must remain outside `PlaybackLyricsController` and must not delay or redefine core lookup identity semantics. Document and test whichever behavior is retained.
 
@@ -164,3 +164,15 @@ git diff --check
 ```
 
 Complete the bounded review process in `AGENTS.md` and stop before merge for explicit approval.
+
+## Implementation result
+
+The implemented runtime keeps all Android session access in `:platform:media`:
+
+- `MediaSessionListenerService` waits for `onListenerConnected()`, observes active sessions through its notification-listener component, and retains notification-posted refresh as a compatibility fallback;
+- `SelectedMediaSessionRuntime` owns token-based selection, the single selected callback, clear/re-selection behavior, and the retained 600 ms metadata stabilization;
+- `MediaControllerSnapshotAdapter` remains the exclusive Android-to-`PlaybackSnapshot` normalization path;
+- `MediaSessionRuntimeHost` is the narrow platform/application handoff, and `AALyricsApplication` attaches a sink that forwards snapshots into the existing `PlaybackLyricsController`;
+- disconnect and `SecurityException` paths detach ownership and clear stale playback state.
+
+The implementation adds deterministic coverage for selection order and token retention, self filtering, callback attachment/detachment, empty and destroyed sessions, stabilization, permission failure, connection lifecycle, normalized application handoff, and non-identity playback churn.

@@ -11,7 +11,7 @@ Completed milestones:
 - all four concrete providers through SyncLRC — PR #24
 - first production application composition — PR #25
 
-The next planned slice is live Android media-session runtime on `feature/media-session-runtime`. It is documented in `docs/MEDIA_SESSION_RUNTIME.md` and is currently planning-only; presentation/UI work has intentionally not started.
+The live Android media-session runtime is implemented on `feature/media-session-runtime` and is undergoing validation/review. It is documented in `docs/MEDIA_SESSION_RUNTIME.md`; presentation/UI work has intentionally not started.
 
 ## Design goals
 
@@ -97,19 +97,16 @@ Current implemented responsibilities:
 - `MediaControllerSnapshotAdapter`
 - `MediaSessionSnapshotNormalizer`
 - Spotify-specific playback reference extraction
-
-Planned live-runtime responsibilities:
-
 - `NotificationListenerService` access boundary
 - `MediaSessionManager` active-session discovery
 - selected-session ownership and token-based retention
 - selected `MediaController.Callback` lifecycle
 - safe normalization/forwarding of live controller state
-- platform-owned metadata stabilization if regression evidence requires it
+- platform-owned 600 ms track-metadata stabilization
 
 It must not fetch/rank lyrics, depend on concrete providers, own `LyricsState`, or implement presentation.
 
-Because Android constructs `NotificationListenerService`, constructor injection from `:app` is not available. The live runtime should use a narrow platform-defined host/callback boundary that the application composition root implements or attaches to. `:platform:media` may deliver normalized `PlaybackSnapshot` values through that boundary; it must not know `LyricsCoordinator` or provider implementations.
+Because Android constructs `NotificationListenerService`, constructor injection from `:app` is not available. The live runtime uses the narrow platform-defined `MediaSessionRuntimeHost`/`PlaybackSnapshotSink` boundary, which the application composition root attaches to the existing `PlaybackLyricsController`. `:platform:media` delivers only normalized `PlaybackSnapshot` values through that boundary and does not know `LyricsCoordinator` or provider implementations.
 
 ### `:feature:phone`
 

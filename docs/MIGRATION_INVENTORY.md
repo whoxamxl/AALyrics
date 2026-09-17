@@ -161,7 +161,8 @@ Do not bulk-port the old application. Each provider or subsystem remains a separ
 - Musixmatch: migrated and merged in PR #21.
 - SyncLRC: migrated and merged in PR #24.
 - Phase 7 concrete-provider migration: complete.
-- Application composition: active on `feature/application-composition`.
+- Application composition: merged in PR #25.
+- Live media-session runtime: implemented on `feature/media-session-runtime`; validation and bounded review are active.
 
 ### LRCLIB implementation re-check
 

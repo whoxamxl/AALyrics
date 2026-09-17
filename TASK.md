@@ -34,8 +34,8 @@
 - [x] Re-check current Android notification-listener / active-media-session API requirements.
 - [x] Define runtime ownership, session-selection semantics, callback lifecycle, permission boundary, STOP gate, and explicit no-UI scope in `docs/MEDIA_SESSION_RUNTIME.md`.
 - [x] Obtain explicit authorization before production implementation.
-- [ ] Implement the live media-session runtime behind the documented platform/application boundary.
-- [ ] Add deterministic regressions and update durable docs with the implementation result.
+- [x] Implement the live media-session runtime behind the documented platform/application boundary.
+- [x] Add deterministic regressions and update durable docs with the implementation result.
 - [ ] Run final validation and bounded review.
 - [ ] Open PR and stop before merge.
 
