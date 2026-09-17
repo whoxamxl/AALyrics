@@ -64,6 +64,30 @@ class SelectedMediaSessionRuntimeTest {
     }
 
     @Test
+    fun `stopped selected session refreshes to an already playing replacement`() {
+        val snapshots = mutableListOf<PlaybackSnapshot>()
+        val first = controller("first", "First", playing = true)
+        val second = controller("second", "Second", playing = true)
+        lateinit var runtime: SelectedMediaSessionRuntime<String>
+        var refreshCount = 0
+        runtime = runtime(FakeScheduler(), snapshots) {
+            refreshCount += 1
+            runtime.updateSessions(listOf(first, second))
+        }
+
+        runtime.updateSessions(listOf(first, second))
+        first.playing = false
+        first.snapshot = snapshot("First", status = PlaybackStatus.PAUSED)
+        first.playbackChanged()
+
+        assertEquals(1, refreshCount)
+        assertEquals(1, first.detachCount)
+        assertEquals(1, second.attachCount)
+        assertEquals("Second", snapshots.last().track?.title)
+        assertEquals(PlaybackStatus.PLAYING, snapshots.last().status)
+    }
+
+    @Test
     fun `metadata identity is stabilized while playback churn remains immediate`() {
         val scheduler = FakeScheduler()
         val snapshots = mutableListOf<PlaybackSnapshot>()

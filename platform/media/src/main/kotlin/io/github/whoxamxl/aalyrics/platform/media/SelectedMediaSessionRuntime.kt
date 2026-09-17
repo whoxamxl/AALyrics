@@ -152,6 +152,9 @@ internal class SelectedMediaSessionRuntime<Token>(
                     latest
                 }
                 sink.onPlaybackSnapshot(forwarded)
+                if (!current.isPlaying) {
+                    refreshSessions()
+                }
             }
 
             override fun onSessionDestroyed() {
