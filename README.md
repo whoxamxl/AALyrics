@@ -2,7 +2,7 @@
 
 AALyrics is a new Android project for synchronized lyrics on phone and Android Auto.
 
-> **Status:** the core lyrics engine, all four providers, production selection, and the first application composition are established. Live Android media-session runtime is the next planned slice; end-user UI has intentionally not started yet.
+> **Status:** the core lyrics engine, all four providers, production selection, application composition, and the UI foundation are established. The live Android media-session runtime is implemented in PR #29 and is pending merge; finished end-user presentation remains later work.
 
 ## Project direction
 
@@ -32,9 +32,10 @@ Completed foundation includes:
 - PetitLyrics provider migration (PR #20),
 - Musixmatch provider migration (PR #21),
 - SyncLRC provider migration (PR #24),
-- manual production application composition (PR #25).
+- manual production application composition (PR #25),
+- shared/phone/automotive UI foundation (PRs #27 and #28).
 
-The current `feature/media-session-runtime` branch is documentation/planning for the next runtime slice: discover and select live Android media sessions, normalize the selected `MediaController`, and feed playback into the existing production graph. Phone UI, Android Auto presentation, demand gating, cache, translation, timing controls, and karaoke rendering remain separate later work.
+The current `feature/media-session-runtime` branch implements live Android media-session discovery, token-based session selection, selected-controller callback ownership, playback normalization, and handoff into the existing production lyrics graph. Phone/Android Auto feature completion, demand gating, cache, translation, timing controls, persistence, and karaoke rendering remain separate later work.
 
 ## Modules
 
@@ -51,11 +52,12 @@ provider:petitlyrics   PetitLyrics adapter
 provider:musixmatch    Musixmatch adapter
 provider:synclrc       SyncLRC karaoke adapter
 platform:media         Android media-session / playback integration
-feature:phone          Phone presentation boundary
-feature:automotive     Android Auto presentation boundary
+ui:designsystem        Shared presentation tokens/components
+ui:phone               Phone presentation composition
+ui:automotive          Android Auto presentation composition
 ```
 
-See `docs/ARCHITECTURE.md`, `docs/ROADMAP.md`, `docs/APPLICATION_COMPOSITION.md`, `docs/MEDIA_SESSION_RUNTIME.md`, and `docs/PROVIDER_ARCHITECTURE.md` for the authoritative architecture and migration plan.
+See `docs/ARCHITECTURE.md`, `docs/ROADMAP.md`, `docs/APPLICATION_COMPOSITION.md`, `docs/MEDIA_SESSION_RUNTIME.md`, `docs/UI_ARCHITECTURE.md`, and `docs/PROVIDER_ARCHITECTURE.md` for the authoritative architecture and migration plan.
 
 ## Package
 
