@@ -41,16 +41,20 @@ return to app -> re-check actual system state
 - Fall back to the general Notification Listener settings page, then general Settings if an OEM does not expose the more specific Activity.
 - Android 8.0 (API 26) remains supported even though `NotificationManager.isNotificationListenerAccessGranted()` starts at API 27.
 - The setup screen has no skip path and clearly explains why the access is required.
+- Render the setup screen as a production Compose component in `:ui:phone`, while keeping permission/system-navigation ownership in `:app`.
+- Provide deterministic debug Previews for typical phone, narrow phone, and enlarged-font layouts.
 - Preserve the existing granted-state placeholder until the separate Phone application-composition slice wires the production shell.
 - Keep MediaSession observation/provider/selection logic unchanged.
 - Add deterministic JVM coverage for the entry gate state decision.
-- Run CI/review, open a PR, and stop before merge for explicit approval.
+- Run CI/review, keep the PR open, and stop before merge for explicit approval.
 
 ## Planned work
 
 - [x] Prepare branch and task scope.
 - [x] Add framework access checker and settings navigation.
 - [x] Add required setup screen and Activity resume gate.
+- [x] Move setup presentation to Compose in `:ui:phone`.
+- [x] Add typical / narrow / large-font setup Previews.
 - [x] Add deterministic gate tests.
 - [x] Update durable runtime documentation.
 - [x] Review diff / CI and open PR.
