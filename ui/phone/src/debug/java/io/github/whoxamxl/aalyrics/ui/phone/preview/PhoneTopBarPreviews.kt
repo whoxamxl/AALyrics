@@ -9,7 +9,6 @@ import io.github.whoxamxl.aalyrics.ui.phone.shell.PhoneTopBar
     name = "No status",
     group = "PhoneTopBar",
     widthDp = 412,
-    heightDp = 160,
     showBackground = true,
 )
 @Composable
@@ -21,7 +20,6 @@ private fun PhoneTopBarNoStatusPreview() {
     name = "Word sync",
     group = "PhoneTopBar",
     widthDp = 412,
-    heightDp = 160,
     showBackground = true,
 )
 @Composable
@@ -33,7 +31,6 @@ private fun PhoneTopBarWordSyncPreview() {
     name = "Line sync",
     group = "PhoneTopBar",
     widthDp = 412,
-    heightDp = 160,
     showBackground = true,
 )
 @Composable
@@ -45,7 +42,6 @@ private fun PhoneTopBarLineSyncPreview() {
     name = "Loading",
     group = "PhoneTopBar",
     widthDp = 412,
-    heightDp = 160,
     showBackground = true,
 )
 @Composable
@@ -57,7 +53,6 @@ private fun PhoneTopBarLoadingPreview() {
     name = "Long status",
     group = "PhoneTopBar",
     widthDp = 412,
-    heightDp = 160,
     showBackground = true,
 )
 @Composable
@@ -69,7 +64,6 @@ private fun PhoneTopBarLongStatusPreview() {
     name = "Narrow",
     group = "PhoneTopBar",
     widthDp = 320,
-    heightDp = 160,
     showBackground = true,
 )
 @Composable
