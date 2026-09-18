@@ -49,7 +49,7 @@ fun PlaybackControlsBar(
                     .fillMaxWidth()
                     .padding(
                         horizontal = AALyricsSpacing.Space16,
-                        vertical = AALyricsSpacing.Space4,
+                        vertical = 2.dp,
                     ),
                 horizontalArrangement = Arrangement.SpaceEvenly,
                 verticalAlignment = Alignment.CenterVertically,
