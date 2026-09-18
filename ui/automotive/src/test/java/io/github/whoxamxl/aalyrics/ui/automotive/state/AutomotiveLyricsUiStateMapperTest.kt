@@ -25,6 +25,7 @@ class AutomotiveLyricsUiStateMapperTest {
             status = PlaybackStatus.PLAYING,
             positionMs = 9_500L,
             playbackRate = 1f,
+            positionUpdatedAtMonotonicMs = 1_000L,
         )
         val lyrics = LyricsDocument(
             lines = listOf(
@@ -37,7 +38,8 @@ class AutomotiveLyricsUiStateMapperTest {
         val state = AutomotiveLyricsUiStateMapper.project(
             playback = playback,
             lyricsState = ready(track, lyrics),
-            elapsedSincePlaybackSnapshotMs = 750L,
+            currentMonotonicTimeMs = 1_750L,
+            elapsedSincePlaybackSnapshotMs = 50L,
         )
 
         assertEquals(10_250L, state.positionMs)
