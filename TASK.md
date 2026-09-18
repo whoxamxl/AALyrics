@@ -41,12 +41,12 @@ This slice should improve the shell itself and its production component Previews
 ## Planned commits
 
 - [x] Prepare Phone visual-refinement task and branch.
-- [ ] Add shared AALyrics shell icon assets/APIs.
-- [ ] Refine `PhoneTopBar`.
-- [ ] Refine `PlaybackControlsBar`.
-- [ ] Refine `PhoneNavigationBar`.
+- [x] Add shared AALyrics shell icon assets/APIs.
+- [x] Refine `PhoneTopBar`.
+- [x] Refine `PlaybackControlsBar`.
+- [x] Refine `PhoneNavigationBar`.
 - [ ] Re-check shell Previews and narrow layouts.
-- [ ] Align durable UI docs only where implementation decisions became stable.
+- [x] Align durable UI docs only where implementation decisions became stable.
 - [ ] Run validation and review.
 - [ ] Open PR and stop before merge.
 

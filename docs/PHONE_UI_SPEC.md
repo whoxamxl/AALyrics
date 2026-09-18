@@ -73,7 +73,7 @@ Purpose:
 
 Examples of runtime status intent include media connection and lyrics/sync state, such as `WORD SYNC`, `LINE`, `Loading`, or a compact connected/degraded state. The bar should not duplicate full current-track metadata.
 
-The exact status vocabulary and priority rules are implementation decisions to be validated with real states and available width.
+The exact status vocabulary and priority rules remain implementation decisions to be validated with real states and available width. The persistent visual treatment is now established: the left identity uses the shared AALyrics brand mark, while non-empty runtime status is presented as a compact outlined pill with a cyan status dot.
 
 ## Lyrics Track Card
 
@@ -130,7 +130,7 @@ The bar intentionally does **not** duplicate:
 
 Those already belong to the Lyrics Track Card or destination content.
 
-The center Play/Pause action may receive stronger visual emphasis than Previous/Next during implementation, but exact sizing/styling is deferred.
+Transport controls are icon-first. Previous and Next use secondary icon buttons, while the center Play/Pause action uses the stronger filled cyan treatment. All three retain accessible touch targets and presentation-only enabled/disabled state.
 
 When no controllable media session exists, the final implementation may hide or disable the bar; that behavior is not fixed here.
 
@@ -144,7 +144,7 @@ Destinations:
 Lyrics   Sync   Details   Settings
 ```
 
-The navigation bar performs destination switching only. Playback actions belong to the Playback Controls Bar and current-track information belongs to destination content.
+The navigation bar performs destination switching only. Each destination uses a stable semantic icon plus label, with cyan emphasis for the selected destination. Playback actions belong to the Playback Controls Bar and current-track information belongs to destination content.
 
 ## Phone shell ownership
 
