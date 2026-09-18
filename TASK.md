@@ -47,9 +47,9 @@ Do **not** add or change:
 - [x] Add focused `PhoneTopBar` Previews.
 - [x] Add focused `PlaybackControlsBar` Previews.
 - [x] Add focused `PhoneNavigationBar` Previews.
-- [ ] Add focused `PhoneAppShell` integration Previews and debug-only sample Lyrics body.
-- [ ] Remove the combined `LyricsScreenPreviews.kt` file.
-- [ ] Verify no production files changed and no tests were added.
+- [x] Add focused `PhoneAppShell` integration Previews and debug-only sample Lyrics body.
+- [x] Remove the combined `LyricsScreenPreviews.kt` file.
+- [x] Verify no production files changed and no tests were added.
 - [ ] Run `./gradlew test check :app:assembleDebug`.
 - [ ] Run `bash scripts/verify-architecture.sh`.
 - [ ] Run `git diff --check`.
