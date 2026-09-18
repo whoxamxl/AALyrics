@@ -15,8 +15,10 @@ import io.github.whoxamxl.aalyrics.provider.petitlyrics.PetitLyricsConfig
 import io.github.whoxamxl.aalyrics.provider.petitlyrics.PetitLyricsProvider
 import io.github.whoxamxl.aalyrics.provider.selection.CrossProviderCandidateSelector
 import io.github.whoxamxl.aalyrics.provider.synclrc.SyncLrcProvider
+import io.github.whoxamxl.aalyrics.platform.media.MediaBrowserClientTrust
 import io.github.whoxamxl.aalyrics.platform.media.MediaSessionRuntimeHost
 import io.github.whoxamxl.aalyrics.platform.media.PlaybackSnapshotSink
+import io.github.whoxamxl.aalyrics.ui.automotive.AutomotiveBrowserClientTrust
 import io.github.whoxamxl.aalyrics.ui.automotive.AutomotiveRuntimeBinding
 import io.github.whoxamxl.aalyrics.ui.automotive.AutomotiveRuntimeHost
 import io.github.whoxamxl.aalyrics.ui.automotive.AutomotiveTransport
@@ -54,6 +56,13 @@ class AALyricsApplication : Application() {
                 override fun skipToPrevious() = MediaSessionRuntimeHost.skipToPrevious()
                 override fun skipToNext() = MediaSessionRuntimeHost.skipToNext()
                 override fun seekTo(positionMs: Long) = MediaSessionRuntimeHost.seekTo(positionMs)
+            },
+            browserClientTrust = AutomotiveBrowserClientTrust { clientPackageName, clientUid ->
+                MediaBrowserClientTrust.isTrusted(
+                    context = this,
+                    clientPackageName = clientPackageName,
+                    clientUid = clientUid,
+                )
             },
         )
         AutomotiveRuntimeHost.attach(automotiveBinding)
