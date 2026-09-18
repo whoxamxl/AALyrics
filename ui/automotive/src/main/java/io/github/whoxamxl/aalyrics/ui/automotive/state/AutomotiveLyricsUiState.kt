@@ -63,6 +63,7 @@ internal object AutomotiveLyricsUiStateMapper {
             is LyricsState.Degraded,
             -> when {
                 currentLine != null -> currentLine.text.ifBlank { "♪" }
+                document?.lines?.any { it is TimedLyricLine } == true -> "♪"
                 document?.lines?.isNotEmpty() == true -> "Unsynced lyrics"
                 else -> "No lyrics found"
             }
