@@ -2,6 +2,7 @@ package io.github.whoxamxl.aalyrics.ui.phone.setup
 
 import android.content.Context
 import android.view.View
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -51,6 +52,7 @@ fun NotificationAccessSetupScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
+            .background(AALyricsColors.BackgroundBase)
             .verticalScroll(rememberScrollState())
             .padding(
                 horizontal = AALyricsSpacing.Space32,
