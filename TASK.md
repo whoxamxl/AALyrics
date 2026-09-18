@@ -45,10 +45,10 @@ This slice should improve the shell itself and its production component Previews
 - [x] Refine `PhoneTopBar` and assign the right-side pill to media-source identity.
 - [x] Refine `PlaybackControlsBar`.
 - [x] Refine `PhoneNavigationBar`.
-- [ ] Re-check shell Previews and narrow layouts.
+- [x] Re-check shell Previews and narrow layouts.
 - [x] Align durable UI docs only where implementation decisions became stable.
-- [ ] Run validation and review.
-- [ ] Open PR and stop before merge.
+- [x] Run validation and review.
+- [x] Open PR and stop before merge.
 
 ## Scope guard
 

@@ -113,7 +113,7 @@ This is a layout target, not a hard line-count guarantee. Exact typography, spac
 
 ## Persistent playback controls
 
-A compact playback-controls bar sits immediately above bottom navigation when an active/controllable media session is available.
+A compact floating playback-controls surface overlays the lower edge of the current destination immediately above bottom navigation when an active/controllable media session is available.
 
 It exposes only the high-frequency transport controls:
 
@@ -130,7 +130,7 @@ The bar intentionally does **not** duplicate:
 
 Those already belong to the Lyrics Track Card or destination content.
 
-Transport controls are icon-first. Previous and Next use secondary icon buttons, while the center Play/Pause action uses the stronger filled cyan treatment. All three retain accessible touch targets and presentation-only enabled/disabled state.
+Transport controls are icon-first. Previous and Next use secondary icon buttons, while the center Play/Pause action uses the stronger filled cyan treatment. All three retain accessible touch targets and presentation-only enabled/disabled state. A thin non-interactive progress line along the bottom of the floating surface indicates the current normalized position within the track when that value is available.
 
 When no controllable media session exists, the final implementation may hide or disable the bar; that behavior is not fixed here.
 
