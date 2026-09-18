@@ -53,10 +53,15 @@ Android Auto host
 - [x] Wire application playback/lyrics state into the automotive host.
 - [x] Add sideloadable CI artifact and setup documentation.
 - [x] Add deterministic regression tests.
-- [ ] Run validation and architecture checks.
-- [ ] Review complete diff and open PR.
-- [ ] Stop before merge.
+- [x] Run validation and architecture checks.
+- [x] Review complete diff and open PR #38.
+- [x] Stop before merge for explicit approval.
 
 ## Scope guard
 
 This slice migrates the proven Android Auto Now Playing media-host path only. It must not copy legacy provider, translation, calibration, cache, artwork/color, word-karaoke, or browse-window logic into AALyrics. Richer automotive browse presentation remains a later slice.
+
+
+## Validation record
+
+PR #38 CI run #172 passed the architecture guard, debug APK build, complete unit-test suite, and `aalyrics-debug-apk` artifact upload. The final diff review found no unresolved in-scope blocking issue. Browse-window UI remains explicitly deferred.
