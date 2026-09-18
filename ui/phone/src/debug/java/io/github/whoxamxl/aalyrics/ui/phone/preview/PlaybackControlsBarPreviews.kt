@@ -41,12 +41,6 @@ private fun PlaybackControlsAllDisabledPreview() {
     PlaybackControlsPreview(PhonePreviewFixtures.allDisabledControls)
 }
 
-@Preview(name = "Narrow", group = "PlaybackControlsBar", widthDp = 320, showBackground = true)
-@Composable
-private fun PlaybackControlsNarrowPreview() {
-    PlaybackControlsPreview(PhonePreviewFixtures.playingControls)
-}
-
 @Composable
 private fun PlaybackControlsPreview(state: PlaybackControlsUiState) {
     AALyricsTheme {

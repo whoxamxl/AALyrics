@@ -60,17 +60,6 @@ private fun PhoneTopBarLongMediaSourcePreview() {
     PhoneTopBarPreview(mediaSourceLabel = "Very Long Music Player Application")
 }
 
-@Preview(
-    name = "Narrow",
-    group = "PhoneTopBar",
-    widthDp = 320,
-    showBackground = true,
-)
-@Composable
-private fun PhoneTopBarNarrowPreview() {
-    PhoneTopBarPreview(mediaSourceLabel = "YouTube Music")
-}
-
 @Composable
 private fun PhoneTopBarPreview(mediaSourceLabel: String?) {
     AALyricsTheme {

@@ -30,12 +30,6 @@ private fun PhoneNavigationSettingsPreview() {
     PhoneNavigationPreview(PhoneDestination.Settings)
 }
 
-@Preview(name = "Narrow", group = "PhoneNavigationBar", widthDp = 320, showBackground = true)
-@Composable
-private fun PhoneNavigationNarrowPreview() {
-    PhoneNavigationPreview(PhoneDestination.Details)
-}
-
 @Composable
 private fun PhoneNavigationPreview(selectedDestination: PhoneDestination) {
     AALyricsTheme {
