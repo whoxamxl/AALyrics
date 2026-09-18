@@ -113,7 +113,7 @@ The shell may compose the selected destination and expose presentation-ready tra
 
 The richer current-track card is Lyrics-destination content, not persistent shell chrome. Persistent playback controls remain compact and do not duplicate artwork/title/artist metadata.
 
-Exact layout dimensions, component APIs, navigation runtime, and transport integration are intentionally deferred to later implementation slices. See `docs/PHONE_UI_SPEC.md` for the product-level structure and deferred decisions.
+PR #33 implements this persistent shell boundary in production Compose with caller-owned destination content, presentation-only shell state, and callback-only transport/navigation actions. `PhoneTopBar` consumes the status-bar inset for edge-to-edge layouts, and deterministic debug Previews render the same production shell at typical and narrow sizes. Destination APIs, navigation runtime/back-stack ownership, transport integration, state mapping, and final visual tuning remain deferred. See `docs/PHONE_UI_SPEC.md` for the product-level structure and deferred decisions.
 
 ## Shared vs automotive design system
 
