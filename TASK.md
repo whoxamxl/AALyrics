@@ -53,7 +53,7 @@ return to app -> re-check actual system state
 - [x] Add required setup screen and Activity resume gate.
 - [x] Add deterministic gate tests.
 - [x] Update durable runtime documentation.
-- [ ] Review diff / CI and open PR.
+- [x] Review diff / CI and open PR.
 
 ## Scope guard
 
