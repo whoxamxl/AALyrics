@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsColors
 import io.github.whoxamxl.aalyrics.ui.phone.navigation.PhoneDestination
@@ -34,14 +35,16 @@ fun PhoneAppShell(
                     .weight(1f),
             ) {
                 destinationContent(state.selectedDestination)
-            }
-            state.playbackControls?.let { playbackState ->
-                PlaybackControlsBar(
-                    state = playbackState,
-                    onPrevious = onPrevious,
-                    onPlayPause = onPlayPause,
-                    onNext = onNext,
-                )
+
+                state.playbackControls?.let { playbackState ->
+                    PlaybackControlsBar(
+                        state = playbackState,
+                        onPrevious = onPrevious,
+                        onPlayPause = onPlayPause,
+                        onNext = onNext,
+                        modifier = Modifier.align(Alignment.BottomCenter),
+                    )
+                }
             }
             PhoneNavigationBar(
                 selectedDestination = state.selectedDestination,
