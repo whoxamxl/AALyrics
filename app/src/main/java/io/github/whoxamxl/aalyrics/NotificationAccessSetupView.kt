@@ -11,14 +11,18 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
+import kotlin.math.roundToInt
 
 internal fun Activity.createNotificationAccessSetupView(
     onGrantAccess: () -> Unit,
 ): View {
+    val density = resources.displayMetrics.density
+    fun dp(value: Int): Int = (value * density).roundToInt()
+
     val content = LinearLayout(this).apply {
         orientation = LinearLayout.VERTICAL
         gravity = Gravity.CENTER_HORIZONTAL
-        setPadding(32.dp, 48.dp, 32.dp, 40.dp)
+        setPadding(dp(32), dp(48), dp(32), dp(40))
         layoutParams = ViewGroup.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT,
             ViewGroup.LayoutParams.WRAP_CONTENT,
@@ -29,8 +33,8 @@ internal fun Activity.createNotificationAccessSetupView(
         ImageView(this).apply {
             setImageResource(R.mipmap.ic_launcher)
             contentDescription = null
-            layoutParams = LinearLayout.LayoutParams(72.dp, 72.dp).apply {
-                bottomMargin = 28.dp
+            layoutParams = LinearLayout.LayoutParams(dp(72), dp(72)).apply {
+                bottomMargin = dp(28)
             }
         },
     )
@@ -57,7 +61,7 @@ internal fun Activity.createNotificationAccessSetupView(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT,
             ).apply {
-                topMargin = 10.dp
+                topMargin = dp(10)
             }
         },
     )
@@ -73,7 +77,7 @@ internal fun Activity.createNotificationAccessSetupView(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT,
             ).apply {
-                topMargin = 18.dp
+                topMargin = dp(18)
             }
         },
     )
@@ -89,7 +93,7 @@ internal fun Activity.createNotificationAccessSetupView(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT,
             ).apply {
-                topMargin = 14.dp
+                topMargin = dp(14)
             }
         },
     )
@@ -99,13 +103,13 @@ internal fun Activity.createNotificationAccessSetupView(
             setText(R.string.notification_access_grant)
             isAllCaps = false
             textSize = 16f
-            minimumHeight = 52.dp
+            minimumHeight = dp(52)
             setOnClickListener { onGrantAccess() }
             layoutParams = LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT,
             ).apply {
-                topMargin = 30.dp
+                topMargin = dp(30)
             }
         },
     )
@@ -120,7 +124,7 @@ internal fun Activity.createNotificationAccessSetupView(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT,
             ).apply {
-                topMargin = 18.dp
+                topMargin = dp(18)
             }
         },
     )
@@ -140,18 +144,3 @@ internal fun Activity.createNotificationAccessSetupView(
         )
     }
 }
-
-private val Activity.density: Float
-    get() = resources.displayMetrics.density
-
-private val Int.dp: Int
-    get() = error("Use Activity.dp extension")
-
-private val ActivityDpMarker: Unit
-    get() = Unit
-
-private val Activity.dp: (Int) -> Int
-    get() = { value -> (value * density).toInt() }
-
-private val Int.dpFallback: Int
-    get() = this
