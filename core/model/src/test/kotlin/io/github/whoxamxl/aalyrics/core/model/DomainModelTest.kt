@@ -159,5 +159,8 @@ class DomainModelTest {
         assertFailsWith<IllegalArgumentException> {
             PlaybackSnapshot(playbackRate = Float.NaN)
         }
+        assertFailsWith<IllegalArgumentException> {
+            PlaybackSnapshot(positionUpdatedAtMonotonicMs = -1L)
+        }
     }
 }
