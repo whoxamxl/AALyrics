@@ -93,7 +93,7 @@ private fun TransportButton(
     IconButton(
         onClick = onClick,
         enabled = enabled,
-        modifier = Modifier.size(width = 56.dp, height = AALyricsSpacing.Space48),
+        modifier = Modifier.size(\n            width = if (emphasized) 80.dp else 72.dp,\n            height = AALyricsSpacing.Space48,\n        ),
         colors = IconButtonDefaults.iconButtonColors(
             contentColor = Color.Unspecified,
             disabledContentColor = Color.Unspecified,
