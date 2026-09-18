@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.view.Gravity
 import android.view.View
 import android.widget.TextView
+import io.github.whoxamxl.aalyrics.ui.phone.setup.createNotificationAccessSetupView
 
 class MainActivity : Activity() {
     private lateinit var notificationAccessController: NotificationAccessController
@@ -32,7 +33,10 @@ class MainActivity : Activity() {
         setContentView(
             when (state) {
                 NotificationAccessEntryState.REQUIRED ->
-                    createNotificationAccessSetupView(notificationAccessController::openSettings)
+                    createNotificationAccessSetupView(
+                        context = this,
+                        onGrantAccess = notificationAccessController::openSettings,
+                    )
 
                 NotificationAccessEntryState.GRANTED -> createGrantedContentView()
             },
