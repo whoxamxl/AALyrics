@@ -10,6 +10,11 @@ internal interface RuntimeMediaController<Token> {
     fun snapshot(): PlaybackSnapshot
     fun attach(callback: RuntimeMediaControllerCallback)
     fun detach(callback: RuntimeMediaControllerCallback)
+    fun play()
+    fun pause()
+    fun skipToPrevious()
+    fun skipToNext()
+    fun seekTo(positionMs: Long)
 }
 
 internal interface RuntimeMediaControllerCallback {
@@ -56,7 +61,7 @@ internal class SelectedMediaSessionRuntime<Token>(
     private val scheduler: MetadataTaskScheduler,
     private val refreshSessions: () -> Unit,
     private val metadataStabilizationMs: Long = DEFAULT_METADATA_STABILIZATION_MS,
-) {
+) : PlaybackTransport {
     private var selectedController: RuntimeMediaController<Token>? = null
     private var selectedCallback: RuntimeMediaControllerCallback? = null
     private var stableSnapshot: PlaybackSnapshot? = null
@@ -75,6 +80,27 @@ internal class SelectedMediaSessionRuntime<Token>(
 
     fun disconnect() {
         switchTo(null)
+    }
+
+    override fun play() = routeTransport { it.play() }
+
+    override fun pause() = routeTransport { it.pause() }
+
+    override fun skipToPrevious() = routeTransport { it.skipToPrevious() }
+
+    override fun skipToNext() = routeTransport { it.skipToNext() }
+
+    override fun seekTo(positionMs: Long) {
+        if (positionMs >= 0L) routeTransport { it.seekTo(positionMs) }
+    }
+
+    private fun routeTransport(command: (RuntimeMediaController<Token>) -> Unit) {
+        val controller = selectedController ?: return
+        try {
+            command(controller)
+        } catch (_: RuntimeException) {
+            // A selected framework session can disappear between observation and command dispatch.
+        }
     }
 
     private fun switchTo(next: RuntimeMediaController<Token>?) {
