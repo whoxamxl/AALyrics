@@ -34,6 +34,7 @@ internal object AutomotiveLyricsUiStateMapper {
     fun project(
         playback: PlaybackSnapshot,
         lyricsState: LyricsState,
+        currentMonotonicTimeMs: Long? = null,
         elapsedSincePlaybackSnapshotMs: Long = 0L,
     ): AutomotiveLyricsUiState {
         val track = playback.track
@@ -44,7 +45,11 @@ internal object AutomotiveLyricsUiStateMapper {
             )
         }
 
-        val positionMs = projectedPosition(playback, elapsedSincePlaybackSnapshotMs)
+        val positionMs = projectedPosition(
+            playback = playback,
+            currentMonotonicTimeMs = currentMonotonicTimeMs,
+            fallbackElapsedMs = elapsedSincePlaybackSnapshotMs,
+        )
         val matchingState = lyricsState.takeIf { it.belongsTo(track) }
         val document = when (matchingState) {
             is LyricsState.Ready -> matchingState.lyrics
@@ -81,12 +86,25 @@ internal object AutomotiveLyricsUiStateMapper {
         )
     }
 
-    private fun projectedPosition(playback: PlaybackSnapshot, elapsedMs: Long): Long {
+    private fun projectedPosition(
+        playback: PlaybackSnapshot,
+        currentMonotonicTimeMs: Long?,
+        fallbackElapsedMs: Long,
+    ): Long {
         val base = playback.positionMs
-        if (!playback.isPlaying || elapsedMs <= 0L || playback.playbackRate <= 0f) {
+        if (!playback.isPlaying || playback.playbackRate <= 0f) {
             return clampToDuration(base, playback.track)
         }
-        val advanced = base + (elapsedMs.coerceAtLeast(0L) * playback.playbackRate)
+
+        val sourceElapsedMs = playback.positionUpdatedAtMonotonicMs?.let { updatedAt ->
+            currentMonotonicTimeMs?.let { now ->
+                (now - updatedAt).coerceAtLeast(0L)
+            }
+        }
+        val elapsedMs = sourceElapsedMs ?: fallbackElapsedMs.coerceAtLeast(0L)
+        if (elapsedMs == 0L) return clampToDuration(base, playback.track)
+
+        val advanced = base + (elapsedMs * playback.playbackRate)
             .toDouble()
             .roundToLong()
         return clampToDuration(advanced.coerceAtLeast(base), playback.track)
