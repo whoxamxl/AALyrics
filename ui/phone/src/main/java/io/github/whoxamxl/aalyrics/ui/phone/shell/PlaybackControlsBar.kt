@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
@@ -35,15 +34,23 @@ fun PlaybackControlsBar(
     onNext: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Surface(
-        modifier = modifier.fillMaxWidth(),
-        color = AALyricsColors.BackgroundSurfaceStrong,
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(
+                horizontal = AALyricsSpacing.Space12,
+                vertical = AALyricsSpacing.Space4,
+            ),
     ) {
-        androidx.compose.foundation.layout.Column {
-            HorizontalDivider(
-                thickness = AALyricsStroke.Thin,
-                color = AALyricsColors.BorderSoft,
-            )
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(AALyricsRadius.Radius16),
+            color = AALyricsColors.BackgroundSurfaceStrong.copy(alpha = 0.78f),
+            border = BorderStroke(
+                width = AALyricsStroke.Thin,
+                color = AALyricsColors.BorderSoft.copy(alpha = 0.72f),
+            ),
+        ) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
