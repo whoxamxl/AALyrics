@@ -35,6 +35,9 @@ object MediaControllerSnapshotAdapter {
                 status = playbackStatus(playbackState?.state),
                 positionMs = playbackState?.position ?: 0L,
                 playbackRate = playbackState?.playbackSpeed ?: 1.0f,
+                positionUpdatedAtMonotonicMs = playbackState
+                    ?.lastPositionUpdateTime
+                    ?.takeIf { it > 0L },
             ),
         )
     }
