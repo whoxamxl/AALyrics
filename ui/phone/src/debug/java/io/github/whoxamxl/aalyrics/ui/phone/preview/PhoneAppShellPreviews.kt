@@ -28,49 +28,55 @@ import io.github.whoxamxl.aalyrics.ui.phone.shell.PhoneAppShell
 import io.github.whoxamxl.aalyrics.ui.phone.state.PhoneShellUiState
 
 @Preview(
-    name = "Lyrics · playing",
+    name = "Typical Lyrics shell",
+    group = "PhoneAppShell",
     widthDp = 412,
     heightDp = 892,
     showBackground = true,
-    showSystemUi = true,
 )
 @Composable
-private fun PlayingLyricsShellPreview() {
-    PhoneShellPreview(PreviewPhoneData.playingLyrics)
+private fun PhoneAppShellTypicalLyricsPreview() {
+    PhoneAppShellPreview(PhonePreviewFixtures.typicalLyricsShell)
 }
 
 @Preview(
-    name = "Lyrics · narrow paused",
+    name = "Narrow Lyrics shell",
+    group = "PhoneAppShell",
     widthDp = 320,
     heightDp = 700,
     showBackground = true,
-    showSystemUi = true,
 )
 @Composable
-private fun NarrowPausedLyricsShellPreview() {
-    PhoneShellPreview(PreviewPhoneData.pausedLyrics)
+private fun PhoneAppShellNarrowLyricsPreview() {
+    PhoneAppShellPreview(PhonePreviewFixtures.narrowLyricsShell)
 }
 
-@Preview(name = "Sync · selected", widthDp = 412, heightDp = 892, showBackground = true)
+@Preview(
+    name = "Playback controls hidden",
+    group = "PhoneAppShell",
+    widthDp = 412,
+    heightDp = 892,
+    showBackground = true,
+)
 @Composable
-private fun SyncShellPreview() {
-    PhoneShellPreview(PreviewPhoneData.syncDestination)
+private fun PhoneAppShellHiddenControlsPreview() {
+    PhoneAppShellPreview(PhonePreviewFixtures.lyricsWithoutControls)
 }
 
-@Preview(name = "Details · disabled controls", widthDp = 412, heightDp = 892, showBackground = true)
+@Preview(
+    name = "Sync selected",
+    group = "PhoneAppShell",
+    widthDp = 412,
+    heightDp = 892,
+    showBackground = true,
+)
 @Composable
-private fun DisabledControlsShellPreview() {
-    PhoneShellPreview(PreviewPhoneData.disabledDetails)
+private fun PhoneAppShellSyncPreview() {
+    PhoneAppShellPreview(PhonePreviewFixtures.syncShell)
 }
 
-@Preview(name = "Settings · unavailable controls", widthDp = 412, heightDp = 892, showBackground = true)
 @Composable
-private fun UnavailableControlsShellPreview() {
-    PhoneShellPreview(PreviewPhoneData.unavailableSettings)
-}
-
-@Composable
-private fun PhoneShellPreview(state: PhoneShellUiState) {
+private fun PhoneAppShellPreview(state: PhoneShellUiState) {
     AALyricsTheme {
         PhoneAppShell(
             state = state,
@@ -87,7 +93,7 @@ private fun PhoneShellPreview(state: PhoneShellUiState) {
     }
 }
 
-/** Debug-only body used to assess how much room the production shell leaves for Lyrics. */
+/** Debug-only body used to assess the destination space left by the production shell. */
 @Composable
 private fun PreviewLyricsBody() {
     Column(
@@ -145,7 +151,7 @@ private fun PreviewLyricsBody() {
         }
 
         Column(verticalArrangement = Arrangement.spacedBy(AALyricsSpacing.Space8)) {
-            PreviewPhoneData.lyricsLines.forEachIndexed { index, line ->
+            PhonePreviewFixtures.lyricsLines.forEachIndexed { index, line ->
                 Text(
                     text = line,
                     style = if (index == 1) {
