@@ -67,14 +67,6 @@ fun PhoneNavigationBar(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.SpaceBetween,
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(AALyricsStroke.Strong)
-                            .background(
-                                if (selected) AALyricsColors.AccentCyan else Color.Transparent,
-                            ),
-                    )
                     Icon(
                         imageVector = destination.icon,
                         contentDescription = null,
@@ -94,6 +86,14 @@ fun PhoneNavigationBar(
                             AALyricsColors.TextSecondary
                         },
                         maxLines = 1,
+                    )
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(AALyricsStroke.Strong)
+                            .background(
+                                if (selected) AALyricsColors.AccentCyan else Color.Transparent,
+                            ),
                     )
                 }
             }
