@@ -1,70 +1,61 @@
-# Phone App Shell
+# Phone Shell Preview Catalog
 
 ## Branch and baseline
 
-- Branch: `feature/phone-app-shell`.
-- Base: current `main` at `e009d0b75506ac1632a42c66263f0bf1a6c299b3` after PR #32 merged.
-- Classification: **PHONE UI IMPLEMENTATION / SHELL ONLY**.
-- Read `AGENTS.md`, `docs/UI_ARCHITECTURE.md`, and `docs/PHONE_UI_SPEC.md` before changing Phone UI.
-- The user explicitly authorized implementation of the Phone app shell on this branch.
+- Branch: `feature/phone-shell-previews`.
+- Base: current `main` at `307a46bd563ec98460f72cfe92508d3d7a971d0a` after PR #33 merged.
+- Classification: **PREVIEW-ONLY VISUAL VALIDATION**.
+- Authoritative scope: this file plus `docs/UI_ARCHITECTURE.md` and `docs/PHONE_UI_SPEC.md`.
+- The user explicitly authorized this debug-only Preview organization slice.
 
 ## Goal
 
-Implement the persistent Phone Compose shell defined by the approved Phone UI architecture, together with deterministic debug-only previews that render the real production composables. This slice is for validating shell composition and vertical space before implementing the real destination screens or runtime wiring.
+Organize deterministic Android Studio Previews by the production Phone shell component they render. Each Preview must call the real production composable from `src/main`; fixtures and sample destination content remain debug-only.
 
 ## Acceptance criteria
 
-- Implement production `PhoneAppShell` under `:ui:phone`.
-- Implement production `PhoneTopBar`.
-- Implement production `PlaybackControlsBar` with Previous / Play-Pause / Next only.
-- Implement production `PhoneNavigationBar` for `Lyrics`, `Sync`, `Details`, and `Settings`.
-- Define the minimal `PhoneDestination` and shell presentation state/contracts needed to render the shell.
-- Keep `Lyrics` as the home/default destination.
-- Keep shell components local to `:ui:phone`; do not prematurely promote them to `:ui:designsystem`.
-- Reuse existing `:ui:designsystem` theme/tokens where appropriate.
-- Keep production composables in `src/main` and deterministic Preview fixtures in `src/debug`.
-- Preview must render the same production shell/components that runtime will later use.
-- Add preview scenarios sufficient to judge normal and narrow phone layouts, selected destinations, playing/paused state, and disabled/unavailable playback controls.
-- Include a debug-only sample Lyrics body with a Track-Card-like block plus roughly six lyric lines only to evaluate available vertical space.
-- Preserve the approved package ownership under `shell/`, `navigation/`, destination packages, and `state/`.
-- UI APIs must consume presentation values/callbacks only; no Android media framework objects may leak into `:ui:phone`.
+- Add `PhoneTopBarPreviews.kt` with no-status, sync-status, loading, long-status, and narrow-width coverage.
+- Add `PlaybackControlsBarPreviews.kt` with playing, paused, previous-disabled, next-disabled, all-disabled, and narrow-width coverage.
+- Add `PhoneNavigationBarPreviews.kt` with each destination selected independently plus narrow-width coverage.
+- Add `PhoneAppShellPreviews.kt` with a small integration set for typical/narrow Lyrics layout, hidden controls, and another selected destination.
+- Keep the Track-Card-like block and sample lyric lines debug-only for shell-space inspection.
+- Keep deterministic reusable fixtures under `ui/phone/src/debug`.
+- Remove the combined `LyricsScreenPreviews.kt` ownership once its shell Preview responsibilities are split.
+- Leave all production code under `ui/phone/src/main` unchanged.
+- Do not add Compose UI tests or screenshot/golden tests; this slice is for human Android Studio Preview inspection.
 - Run repository validation, review the complete diff, open a PR against `main`, and stop before merge for explicit approval.
 
 ## Explicit non-goals
 
-Do **not** implement in this slice:
+Do **not** add or change:
 
-- real `LyricsScreen` behavior or lyrics state mapping
-- real Sync / Details / Settings screen behavior
-- ViewModels
-- Navigation Compose runtime or back-stack behavior
-- `MediaSession` / `MediaController` wiring
-- playback transport integration with platform code
-- provider/network access
-- artwork loading
-- follow/manual-browse logic
-- final animations or final visual tuning
-- Android Auto changes
-- cache/translation/timing/karaoke feature implementation
+- production state or component APIs for Preview convenience
+- real destination behavior or state mapping
+- ViewModels or Navigation Compose/runtime navigation
+- media-session/controller integration or playback transport wiring
+- provider/network logic
+- cache, translation, timing, or karaoke implementation
+- Android Auto code
+- Compose UI tests or screenshot/golden infrastructure
 
 ## Plan/status
 
-- [x] Create `feature/phone-app-shell` from current `main`.
-- [x] Define this implementation slice in `TASK.md`.
-- [x] Implement minimal shell presentation contracts.
-- [x] Implement `PhoneTopBar`.
-- [x] Implement `PlaybackControlsBar`.
-- [x] Implement `PhoneNavigationBar`.
-- [x] Compose `PhoneAppShell`.
-- [x] Add deterministic debug-only shell previews.
-- [x] Validate vertical space with a sample Lyrics preview body.
-- [x] Run `./gradlew test check :app:assembleDebug`.
-- [x] Run `bash scripts/verify-architecture.sh`.
-- [x] Run `git diff --check`.
-- [x] Review the complete branch diff.
-- [x] Align `PHONE_UI_SPEC.md`, `UI_ARCHITECTURE.md`, and `ROADMAP.md` with the implemented shell after review.
-- [x] Open PR #33 against `main`; fix the status-bar inset P2; complete targeted re-review; stop before merge.
+- [x] Create `feature/phone-shell-previews` from current `main`.
+- [x] Read the repository instructions, UI architecture/specification, and production Phone shell.
+- [x] Replace `TASK.md` with this Preview-only slice.
+- [ ] Consolidate deterministic reusable debug fixtures.
+- [ ] Add focused `PhoneTopBar` Previews.
+- [ ] Add focused `PlaybackControlsBar` Previews.
+- [ ] Add focused `PhoneNavigationBar` Previews.
+- [ ] Add focused `PhoneAppShell` integration Previews and debug-only sample Lyrics body.
+- [ ] Remove the combined `LyricsScreenPreviews.kt` file.
+- [ ] Verify no production files changed and no tests were added.
+- [ ] Run `./gradlew test check :app:assembleDebug`.
+- [ ] Run `bash scripts/verify-architecture.sh`.
+- [ ] Run `git diff --check`.
+- [ ] Review the complete branch diff.
+- [ ] Open a PR against `main`, complete bounded review, and stop before merge.
 
 ## Scope guard
 
-This branch proves only the persistent Phone shell and its Compose/Preview contracts. It must not grow into destination implementation or runtime/media integration. If a shell API choice requires real destination behavior to justify it, defer that choice to the later destination slice instead of inventing speculative behavior here.
+This branch only improves Preview ownership and visual-inspection coverage for already implemented Phone shell components. Any required production change is a scope boundary: stop and explain it instead of changing `src/main`.
