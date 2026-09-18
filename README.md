@@ -48,13 +48,15 @@ Build and install locally:
 ./gradlew :app:installDebug
 ```
 
-For Android Auto to show an APK installed outside a trusted store:
+For a fresh sideload:
 
-1. Open Android Auto settings on the phone.
-2. Open **About** and tap **Version and permission info** repeatedly until Android Auto developer mode is enabled.
-3. Open the overflow menu, choose **Developer settings**, and enable **Unknown sources**.
-4. Reconnect Android Auto or the Desktop Head Unit after installing AALyrics.
-5. Enable AALyrics in the Android Auto launcher/customize list if it is not already visible.
+1. Open AALyrics on the phone once after installation.
+2. In Android system settings, open **Notification access** (search Settings for "Notification access" if needed) and enable **AALyrics**. This access is required for AALyrics to observe the active media session.
+3. Open Android Auto settings on the phone.
+4. Open **About** and tap **Version and permission info** repeatedly until Android Auto developer mode is enabled.
+5. Open the overflow menu, choose **Developer settings**, and enable **Unknown sources**.
+6. Reconnect Android Auto or the Desktop Head Unit after installing AALyrics.
+7. Enable AALyrics in the Android Auto launcher/customize list if it is not already visible.
 
 The CI build also uploads `aalyrics-debug-apk` as a workflow artifact. This is a development sideload artifact; durable release signing/versioned distribution remains a separate release-engineering slice.
 
