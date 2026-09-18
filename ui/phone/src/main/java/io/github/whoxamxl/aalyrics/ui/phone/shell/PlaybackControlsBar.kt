@@ -38,7 +38,7 @@ fun PlaybackControlsBar(
         modifier = modifier
             .fillMaxWidth()
             .padding(
-                horizontal = AALyricsSpacing.Space12,
+                horizontal = AALyricsSpacing.Space4,
                 vertical = AALyricsSpacing.Space4,
             ),
     ) {
