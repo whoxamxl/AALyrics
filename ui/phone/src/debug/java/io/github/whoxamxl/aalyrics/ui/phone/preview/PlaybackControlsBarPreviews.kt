@@ -1,7 +1,12 @@
 package io.github.whoxamxl.aalyrics.ui.phone.preview
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsColors
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsTheme
 import io.github.whoxamxl.aalyrics.ui.phone.shell.PlaybackControlsBar
 import io.github.whoxamxl.aalyrics.ui.phone.state.PlaybackControlsUiState
@@ -45,11 +50,17 @@ private fun PlaybackControlsNarrowPreview() {
 @Composable
 private fun PlaybackControlsPreview(state: PlaybackControlsUiState) {
     AALyricsTheme {
-        PlaybackControlsBar(
-            state = state,
-            onPrevious = {},
-            onPlayPause = {},
-            onNext = {},
-        )
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(AALyricsColors.BackgroundBase),
+        ) {
+            PlaybackControlsBar(
+                state = state,
+                onPrevious = {},
+                onPlayPause = {},
+                onNext = {},
+            )
+        }
     }
 }
