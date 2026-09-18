@@ -70,7 +70,12 @@ class LyricsBrowserService : MediaBrowserServiceCompat() {
         clientPackageName: String,
         clientUid: Int,
         rootHints: Bundle?,
-    ): BrowserRoot = BrowserRoot(ROOT_ID, null)
+    ): BrowserRoot? {
+        val trusted = binding?.browserClientTrust
+            ?.isTrusted(clientPackageName, clientUid)
+            ?: false
+        return if (trusted) BrowserRoot(ROOT_ID, null) else null
+    }
 
     override fun onLoadChildren(
         parentId: String,
@@ -114,6 +119,7 @@ class LyricsBrowserService : MediaBrowserServiceCompat() {
         val state = AutomotiveLyricsUiStateMapper.project(
             playback = latestPlayback,
             lyricsState = latestLyrics,
+            currentMonotonicTimeMs = now,
             elapsedSincePlaybackSnapshotMs = elapsed,
         )
 
