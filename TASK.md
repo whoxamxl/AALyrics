@@ -62,6 +62,7 @@ Do **not** implement in this slice:
 - [x] Run `bash scripts/verify-architecture.sh`.
 - [x] Run `git diff --check`.
 - [x] Review the complete branch diff.
+- [x] Align `PHONE_UI_SPEC.md`, `UI_ARCHITECTURE.md`, and `ROADMAP.md` with the implemented shell after review.
 - [x] Open PR #33 against `main`; fix the status-bar inset P2; complete targeted re-review; stop before merge.
 
 ## Scope guard
