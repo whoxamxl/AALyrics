@@ -140,9 +140,9 @@ Playback lookup ownership now includes both track identity and candidate-selecti
 
 ### Phase 8.1 — UI foundation ✅
 
-Merged in PRs #27 and #28, with Phone information architecture/package scaffolding added in PR #31.
+Merged in PRs #27 and #28, with Phone information architecture/package scaffolding added in PR #31. PR #33 implements the persistent Phone Compose shell: top status, caller-owned destination content, compact playback controls, four-destination bottom navigation, and minimal shell presentation contracts, with deterministic debug-only Preview coverage.
 
-Presentation uses `:ui:designsystem` for shared tokens/components, `:ui:phone` for phone-specific composition, and `:ui:automotive` for automotive-specific composition. Production UI lives in `src/main`; deterministic Preview/development fixtures live in `src/debug` and render the production composables. Phone and automotive remain separate presentation surfaces rather than one universal UI model.
+Presentation uses `:ui:designsystem` for shared tokens/components, `:ui:phone` for phone-specific composition, and `:ui:automotive` for automotive-specific composition. Production UI lives in `src/main`; deterministic Preview/development fixtures live in `src/debug` and render the production composables. Phone and automotive remain separate presentation surfaces rather than one universal UI model. Destination behavior, runtime navigation, media transport wiring, and finished screen presentation remain later slices.
 
 ### Phase 9 — Live MediaSession runtime ✅
 
