@@ -96,7 +96,8 @@ fun PlaybackControlsBar(
                         modifier = Modifier
                             .align(Alignment.BottomCenter)
                             .padding(
-                                horizontal = AALyricsSpacing.Space12,
+                                start = AALyricsSpacing.Space12,
+                                end = AALyricsSpacing.Space12,
                                 bottom = 2.dp,
                             ),
                     )
