@@ -69,11 +69,11 @@ The top bar is compact and persistent across primary destinations.
 Purpose:
 
 - left: AALyrics app identity/icon
-- remaining/right area: concise runtime status
+- right: the media app/session source currently monitored by AALyrics
 
-Examples of runtime status intent include media connection and lyrics/sync state, such as `WORD SYNC`, `LINE`, `Loading`, or a compact connected/degraded state. The bar should not duplicate full current-track metadata.
+Examples include `Spotify`, `YouTube Music`, or `Poweramp`. The top bar does not show lyrics format, provider/sync status, track metadata, or playback state; those belong to destination content, the Lyrics Track Card, or playback controls.
 
-The exact status vocabulary and priority rules remain implementation decisions to be validated with real states and available width. The persistent visual treatment is now established: the left identity uses the shared AALyrics brand mark, while non-empty runtime status is presented as a compact outlined pill with a cyan status dot.
+The UI receives the media-source label as presentation data only; media-session discovery and source selection remain outside `:ui:phone`. The persistent visual treatment uses the shared AALyrics brand mark on the left and a compact outlined source pill with a cyan dot on the right.
 
 ## Lyrics Track Card
 

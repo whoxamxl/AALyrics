@@ -27,7 +27,7 @@ This slice should improve the shell itself and its production component Previews
 ## Acceptance criteria
 
 - Replace the temporary `A` badge in `PhoneTopBar` with an AALyrics brand mark owned by `:ui:designsystem`.
-- Keep the top bar compact, preserve status-bar inset handling, and refine the runtime-status pill without adding runtime policy to UI.
+- Keep the top bar compact, preserve status-bar inset handling, and use its right-side pill for the connected/monitored media source without adding media-session policy to UI.
 - Replace text-only Previous / Play-Pause / Next controls with icon-first transport controls and keep valid touch targets plus disabled-state presentation.
 - Replace temporary bottom-navigation line markers with destination icons for Lyrics / Sync / Details / Settings.
 - Preserve the four approved destinations, Lyrics as home, and caller-owned destination composition.
@@ -42,7 +42,7 @@ This slice should improve the shell itself and its production component Previews
 
 - [x] Prepare Phone visual-refinement task and branch.
 - [x] Add shared AALyrics shell icon assets/APIs.
-- [x] Refine `PhoneTopBar`.
+- [x] Refine `PhoneTopBar` and assign the right-side pill to media-source identity.
 - [x] Refine `PlaybackControlsBar`.
 - [x] Refine `PhoneNavigationBar`.
 - [ ] Re-check shell Previews and narrow layouts.
