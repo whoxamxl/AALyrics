@@ -22,6 +22,7 @@ class MediaSessionSnapshotNormalizerTest {
                 mediaUri = "spotify:track:$spotifyId",
                 status = PlaybackStatus.PLAYING,
                 positionMs = 12_000L,
+                positionUpdatedAtMonotonicMs = 345_678L,
             ),
         )
 
@@ -35,6 +36,7 @@ class MediaSessionSnapshotNormalizerTest {
         )
         assertEquals(PlaybackStatus.PLAYING, snapshot.status)
         assertEquals(12_000L, snapshot.positionMs)
+        assertEquals(345_678L, snapshot.positionUpdatedAtMonotonicMs)
     }
 
     @Test
