@@ -2,6 +2,7 @@ package io.github.whoxamxl.aalyrics.platform.media
 
 import android.content.Context
 import android.content.pm.ApplicationInfo
+import android.content.pm.PackageManager
 import android.media.session.MediaSessionManager
 import android.os.Build
 import android.os.Process
@@ -45,7 +46,7 @@ object MediaBrowserClientTrust {
     private fun isSystemApplication(context: Context, packageName: String): Boolean {
         val info = try {
             context.packageManager.getApplicationInfo(packageName, 0)
-        } catch (_: RuntimeException) {
+        } catch (_: PackageManager.NameNotFoundException) {
             return false
         }
         return info.flags and (ApplicationInfo.FLAG_SYSTEM or ApplicationInfo.FLAG_UPDATED_SYSTEM_APP) != 0
