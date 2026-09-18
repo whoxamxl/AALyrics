@@ -5,9 +5,11 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
@@ -51,39 +53,53 @@ fun PlaybackControlsBar(
                 color = AALyricsColors.BorderSoft.copy(alpha = 0.72f),
             ),
         ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(
-                        horizontal = AALyricsSpacing.Space16,
-                        vertical = 2.dp,
-                    ),
-                horizontalArrangement = Arrangement.SpaceEvenly,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                TransportButton(
-                    imageVector = AALyricsIcons.Previous,
-                    contentDescription = "Previous",
-                    enabled = state.previousEnabled,
-                    onClick = onPrevious,
-                )
-                TransportButton(
-                    imageVector = if (state.isPlaying) {
-                        AALyricsIcons.Pause
-                    } else {
-                        AALyricsIcons.Play
-                    },
-                    contentDescription = if (state.isPlaying) "Pause" else "Play",
-                    enabled = state.playPauseEnabled,
-                    emphasized = true,
-                    onClick = onPlayPause,
-                )
-                TransportButton(
-                    imageVector = AALyricsIcons.Next,
-                    contentDescription = "Next",
-                    enabled = state.nextEnabled,
-                    onClick = onNext,
-                )
+            Box(Modifier.fillMaxWidth()) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(
+                            horizontal = AALyricsSpacing.Space16,
+                            vertical = 2.dp,
+                        ),
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    TransportButton(
+                        imageVector = AALyricsIcons.Previous,
+                        contentDescription = "Previous",
+                        enabled = state.previousEnabled,
+                        onClick = onPrevious,
+                    )
+                    TransportButton(
+                        imageVector = if (state.isPlaying) {
+                            AALyricsIcons.Pause
+                        } else {
+                            AALyricsIcons.Play
+                        },
+                        contentDescription = if (state.isPlaying) "Pause" else "Play",
+                        enabled = state.playPauseEnabled,
+                        emphasized = true,
+                        onClick = onPlayPause,
+                    )
+                    TransportButton(
+                        imageVector = AALyricsIcons.Next,
+                        contentDescription = "Next",
+                        enabled = state.nextEnabled,
+                        onClick = onNext,
+                    )
+                }
+
+                state.progressFraction?.let { progressFraction ->
+                    PlaybackProgressIndicator(
+                        progressFraction = progressFraction,
+                        modifier = Modifier
+                            .align(Alignment.BottomCenter)
+                            .padding(
+                                horizontal = AALyricsSpacing.Space12,
+                                bottom = 2.dp,
+                            ),
+                    )
+                }
             }
         }
     }
@@ -141,5 +157,28 @@ private fun TransportButton(
                 )
             }
         }
+    }
+}
+
+
+@Composable
+private fun PlaybackProgressIndicator(
+    progressFraction: Float,
+    modifier: Modifier = Modifier,
+) {
+    val progress = progressFraction.coerceIn(0f, 1f)
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(AALyricsStroke.Thin)
+            .clip(RoundedCornerShape(AALyricsRadius.Full))
+            .background(AALyricsColors.BorderSoft.copy(alpha = 0.48f)),
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth(progress)
+                .height(AALyricsStroke.Thin)
+                .background(AALyricsColors.AccentCyan.copy(alpha = 0.9f)),
+        )
     }
 }

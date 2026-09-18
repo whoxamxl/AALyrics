@@ -18,4 +18,6 @@ data class PlaybackControlsUiState(
     val previousEnabled: Boolean = true,
     val playPauseEnabled: Boolean = true,
     val nextEnabled: Boolean = true,
+    /** Current track position as a normalized 0f..1f value; null when unavailable. */
+    val progressFraction: Float? = null,
 )
