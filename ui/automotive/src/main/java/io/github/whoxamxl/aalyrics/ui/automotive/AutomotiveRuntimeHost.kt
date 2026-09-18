@@ -12,10 +12,15 @@ interface AutomotiveTransport {
     fun seekTo(positionMs: Long)
 }
 
+fun interface AutomotiveBrowserClientTrust {
+    fun isTrusted(clientPackageName: String, clientUid: Int): Boolean
+}
+
 class AutomotiveRuntimeBinding(
     val playback: StateFlow<PlaybackSnapshot>,
     val lyrics: StateFlow<LyricsState>,
     val transport: AutomotiveTransport,
+    val browserClientTrust: AutomotiveBrowserClientTrust,
 )
 
 object AutomotiveRuntimeHost {
