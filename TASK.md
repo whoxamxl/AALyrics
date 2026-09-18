@@ -48,11 +48,11 @@ Android Auto host
 
 - [x] Prepare Android Auto Now Playing task and branch.
 - [x] Add platform transport-control boundary.
-- [ ] Add automotive runtime binding and line-level Now Playing projection.
-- [ ] Add Android Auto MediaBrowser/MediaSession host service and media discovery descriptor.
-- [ ] Wire application playback/lyrics state into the automotive host.
-- [ ] Add sideloadable CI artifact and setup documentation.
-- [ ] Add deterministic regression tests.
+- [x] Add automotive runtime binding and line-level Now Playing projection.
+- [x] Add Android Auto MediaBrowser/MediaSession host service and media discovery descriptor.
+- [x] Wire application playback/lyrics state into the automotive host.
+- [x] Add sideloadable CI artifact and setup documentation.
+- [x] Add deterministic regression tests.
 - [ ] Run validation and architecture checks.
 - [ ] Review complete diff and open PR.
 - [ ] Stop before merge.
