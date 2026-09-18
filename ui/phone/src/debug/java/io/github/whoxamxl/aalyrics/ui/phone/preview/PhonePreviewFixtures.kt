@@ -6,35 +6,44 @@ import io.github.whoxamxl.aalyrics.ui.phone.state.PlaybackControlsUiState
 
 /** Deterministic debug-only inputs shared by Phone shell component Previews. */
 internal object PhonePreviewFixtures {
-    val playingControls = PlaybackControlsUiState(isPlaying = true)
-    val pausedControls = PlaybackControlsUiState(isPlaying = false)
+    val playingControls = PlaybackControlsUiState(
+        isPlaying = true,
+        progressFraction = 0.42f,
+    )
+    val pausedControls = PlaybackControlsUiState(
+        isPlaying = false,
+        progressFraction = 0.61f,
+    )
     val previousDisabledControls = PlaybackControlsUiState(
         isPlaying = true,
         previousEnabled = false,
+        progressFraction = 0.08f,
     )
     val nextDisabledControls = PlaybackControlsUiState(
         isPlaying = false,
         nextEnabled = false,
+        progressFraction = 0.93f,
     )
     val allDisabledControls = PlaybackControlsUiState(
         isPlaying = false,
         previousEnabled = false,
         playPauseEnabled = false,
         nextEnabled = false,
+        progressFraction = 0.37f,
     )
 
     val typicalLyricsShell = PhoneShellUiState(
-        statusText = "WORD SYNC",
+        mediaSourceLabel = "Spotify",
         playbackControls = playingControls,
     )
     val narrowLyricsShell = PhoneShellUiState(
-        statusText = "LINE SYNC",
+        mediaSourceLabel = "YouTube Music",
         playbackControls = pausedControls,
     )
-    val lyricsWithoutControls = PhoneShellUiState(statusText = "NO MEDIA")
+    val lyricsWithoutControls = PhoneShellUiState(mediaSourceLabel = null)
     val syncShell = PhoneShellUiState(
         selectedDestination = PhoneDestination.Sync,
-        statusText = "PAUSED",
+        mediaSourceLabel = "Poweramp",
         playbackControls = pausedControls,
     )
 

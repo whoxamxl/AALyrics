@@ -69,11 +69,11 @@ The top bar is compact and persistent across primary destinations.
 Purpose:
 
 - left: AALyrics app identity/icon
-- remaining/right area: concise runtime status
+- right: the media app/session source currently monitored by AALyrics
 
-Examples of runtime status intent include media connection and lyrics/sync state, such as `WORD SYNC`, `LINE`, `Loading`, or a compact connected/degraded state. The bar should not duplicate full current-track metadata.
+Examples include `Spotify`, `YouTube Music`, or `Poweramp`. The top bar does not show lyrics format, provider/sync status, track metadata, or playback state; those belong to destination content, the Lyrics Track Card, or playback controls.
 
-The exact status vocabulary and priority rules are implementation decisions to be validated with real states and available width.
+The UI receives the media-source label as presentation data only; media-session discovery and source selection remain outside `:ui:phone`. The persistent visual treatment uses the shared AALyrics brand mark on the left and a compact outlined source pill with a cyan dot on the right.
 
 ## Lyrics Track Card
 
@@ -113,7 +113,7 @@ This is a layout target, not a hard line-count guarantee. Exact typography, spac
 
 ## Persistent playback controls
 
-A compact playback-controls bar sits immediately above bottom navigation when an active/controllable media session is available.
+A compact floating playback-controls surface overlays the lower edge of the current destination immediately above bottom navigation when an active/controllable media session is available.
 
 It exposes only the high-frequency transport controls:
 
@@ -130,7 +130,7 @@ The bar intentionally does **not** duplicate:
 
 Those already belong to the Lyrics Track Card or destination content.
 
-The center Play/Pause action may receive stronger visual emphasis than Previous/Next during implementation, but exact sizing/styling is deferred.
+Transport controls are icon-first. Previous and Next use secondary icon buttons, while the center Play/Pause action uses the stronger filled cyan treatment. All three retain accessible touch targets and presentation-only enabled/disabled state. A thin non-interactive progress line along the bottom of the floating surface indicates the current normalized position within the track when that value is available.
 
 When no controllable media session exists, the final implementation may hide or disable the bar; that behavior is not fixed here.
 
@@ -144,7 +144,7 @@ Destinations:
 Lyrics   Sync   Details   Settings
 ```
 
-The navigation bar performs destination switching only. Playback actions belong to the Playback Controls Bar and current-track information belongs to destination content.
+The navigation bar performs destination switching only. Each destination uses a stable semantic icon plus label, with cyan emphasis for the selected destination. Playback actions belong to the Playback Controls Bar and current-track information belongs to destination content.
 
 ## Phone shell ownership
 

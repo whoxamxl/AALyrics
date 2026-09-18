@@ -6,80 +6,63 @@ import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsTheme
 import io.github.whoxamxl.aalyrics.ui.phone.shell.PhoneTopBar
 
 @Preview(
-    name = "No status",
+    name = "No media source",
     group = "PhoneTopBar",
     widthDp = 412,
-    heightDp = 160,
     showBackground = true,
 )
 @Composable
-private fun PhoneTopBarNoStatusPreview() {
-    PhoneTopBarPreview(statusText = null)
+private fun PhoneTopBarNoMediaSourcePreview() {
+    PhoneTopBarPreview(mediaSourceLabel = null)
 }
 
 @Preview(
-    name = "Word sync",
+    name = "Spotify",
     group = "PhoneTopBar",
     widthDp = 412,
-    heightDp = 160,
     showBackground = true,
 )
 @Composable
-private fun PhoneTopBarWordSyncPreview() {
-    PhoneTopBarPreview(statusText = "WORD SYNC")
+private fun PhoneTopBarSpotifyPreview() {
+    PhoneTopBarPreview(mediaSourceLabel = "Spotify")
 }
 
 @Preview(
-    name = "Line sync",
+    name = "YouTube Music",
     group = "PhoneTopBar",
     widthDp = 412,
-    heightDp = 160,
     showBackground = true,
 )
 @Composable
-private fun PhoneTopBarLineSyncPreview() {
-    PhoneTopBarPreview(statusText = "LINE SYNC")
+private fun PhoneTopBarYouTubeMusicPreview() {
+    PhoneTopBarPreview(mediaSourceLabel = "YouTube Music")
 }
 
 @Preview(
-    name = "Loading",
+    name = "Poweramp",
     group = "PhoneTopBar",
     widthDp = 412,
-    heightDp = 160,
     showBackground = true,
 )
 @Composable
-private fun PhoneTopBarLoadingPreview() {
-    PhoneTopBarPreview(statusText = "Loading lyrics")
+private fun PhoneTopBarPowerampPreview() {
+    PhoneTopBarPreview(mediaSourceLabel = "Poweramp")
 }
 
 @Preview(
-    name = "Long status",
+    name = "Long media source",
     group = "PhoneTopBar",
     widthDp = 412,
-    heightDp = 160,
     showBackground = true,
 )
 @Composable
-private fun PhoneTopBarLongStatusPreview() {
-    PhoneTopBarPreview(statusText = "Synchronizing word-by-word lyrics")
-}
-
-@Preview(
-    name = "Narrow",
-    group = "PhoneTopBar",
-    widthDp = 320,
-    heightDp = 160,
-    showBackground = true,
-)
-@Composable
-private fun PhoneTopBarNarrowPreview() {
-    PhoneTopBarPreview(statusText = "WORD SYNC")
+private fun PhoneTopBarLongMediaSourcePreview() {
+    PhoneTopBarPreview(mediaSourceLabel = "Very Long Music Player Application")
 }
 
 @Composable
-private fun PhoneTopBarPreview(statusText: String?) {
+private fun PhoneTopBarPreview(mediaSourceLabel: String?) {
     AALyricsTheme {
-        PhoneTopBar(statusText = statusText)
+        PhoneTopBar(mediaSourceLabel = mediaSourceLabel)
     }
 }

@@ -40,18 +40,6 @@ private fun PhoneAppShellTypicalLyricsPreview() {
 }
 
 @Preview(
-    name = "Narrow Lyrics shell",
-    group = "PhoneAppShell",
-    widthDp = 320,
-    heightDp = 700,
-    showBackground = true,
-)
-@Composable
-private fun PhoneAppShellNarrowLyricsPreview() {
-    PhoneAppShellPreview(PhonePreviewFixtures.narrowLyricsShell)
-}
-
-@Preview(
     name = "Playback controls hidden",
     group = "PhoneAppShell",
     widthDp = 412,

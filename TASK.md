@@ -1,65 +1,55 @@
-# Phone Shell Preview Catalog
+# Phone Visual Refinement
 
 ## Branch and baseline
 
-- Branch: `feature/phone-shell-previews`.
-- Base: current `main` at `307a46bd563ec98460f72cfe92508d3d7a971d0a` after PR #33 merged.
-- Classification: **PREVIEW-ONLY VISUAL VALIDATION**.
-- Authoritative scope: this file plus `docs/UI_ARCHITECTURE.md` and `docs/PHONE_UI_SPEC.md`.
-- The user explicitly authorized this debug-only Preview organization slice.
+- Branch: `feature/phone-visual-refinement`.
+- Base: `main` at `cd5df721803cc1eec67740ea64bcc1e7d85af7ce` after PR #34 merged.
+- Classification: **PHONE SHELL VISUAL REFINEMENT**.
+- Authoritative references: `AGENTS.md`, `docs/UI_ARCHITECTURE.md`, and `docs/PHONE_UI_SPEC.md`.
+- The user explicitly authorized Phone visual refinement with small, single-purpose commits.
 
 ## Goal
 
-Organize deterministic Android Studio Previews by the production Phone shell component they render. Each Preview must call the real production composable from `src/main`; fixtures and sample destination content remain debug-only.
+Refine the already-implemented persistent Phone shell from structural placeholders into the approved AALyrics visual direction while preserving the existing presentation/runtime boundaries.
+
+The shell remains:
+
+```text
+PhoneAppShell
+├─ PhoneTopBar
+├─ CurrentDestination
+├─ PlaybackControlsBar
+└─ PhoneNavigationBar
+```
+
+This slice should improve the shell itself and its production component Previews. The real Lyrics destination, Track Card, Lyrics viewport behavior, ViewModels, navigation runtime, and media wiring remain later work.
 
 ## Acceptance criteria
 
-- Add `PhoneTopBarPreviews.kt` with no-status, sync-status, loading, long-status, and narrow-width coverage.
-- Add `PlaybackControlsBarPreviews.kt` with playing, paused, previous-disabled, next-disabled, all-disabled, and narrow-width coverage.
-- Add `PhoneNavigationBarPreviews.kt` with each destination selected independently plus narrow-width coverage.
-- Add `PhoneAppShellPreviews.kt` with a small integration set for typical/narrow Lyrics layout, hidden controls, and another selected destination.
-- Keep ordinary visual-design Previews free of `showSystemUi`; Android Studio's Preview host can decor-fit system bars independently of the API-36 edge-to-edge runtime and otherwise produce a misleading duplicate top gap and clipped bottom chrome.
-- Keep the production `PhoneTopBar` status-bar inset behavior unchanged; validate real system-bar behavior on emulator/device rather than treating the Preview host as the runtime window.
-- Keep the Track-Card-like block and sample lyric lines debug-only for shell-space inspection.
-- Keep deterministic reusable fixtures under `ui/phone/src/debug`.
-- Remove the combined `LyricsScreenPreviews.kt` ownership once its shell Preview responsibilities are split.
-- Leave all production code under `ui/phone/src/main` unchanged.
-- Do not add Compose UI tests or screenshot/golden tests; this slice is for human Android Studio Preview inspection.
-- Run repository validation, review the complete diff, open a PR against `main`, and stop before merge for explicit approval.
+- Replace the temporary `A` badge in `PhoneTopBar` with an AALyrics brand mark owned by `:ui:designsystem`.
+- Keep the top bar compact, preserve status-bar inset handling, and use its right-side pill for the connected/monitored media source without adding media-session policy to UI.
+- Replace text-only Previous / Play-Pause / Next controls with icon-first transport controls and keep valid touch targets plus disabled-state presentation.
+- Replace temporary bottom-navigation line markers with destination icons for Lyrics / Sync / Details / Settings.
+- Preserve the four approved destinations, Lyrics as home, and caller-owned destination composition.
+- Continue using AALyrics semantic theme tokens instead of ad-hoc visual constants where practical.
+- Keep ordinary visual Previews deterministic and render the real production composables.
+- Verify typical and narrow Preview layouts still prioritize destination/lyrics vertical space.
+- Do not introduce MediaSession/MediaController references, ViewModels, provider/network work, Navigation runtime, real Lyrics-screen behavior, or Android Auto changes.
+- Keep commits small and single-purpose.
+- Run repository validation, review the complete diff, open a PR, and stop before merge for explicit approval.
 
-## Explicit non-goals
+## Planned commits
 
-Do **not** add or change:
-
-- production state or component APIs for Preview convenience
-- real destination behavior or state mapping
-- ViewModels or Navigation Compose/runtime navigation
-- media-session/controller integration or playback transport wiring
-- provider/network logic
-- cache, translation, timing, or karaoke implementation
-- Android Auto code
-- Compose UI tests or screenshot/golden infrastructure
-
-## Plan/status
-
-- [x] Create `feature/phone-shell-previews` from current `main`.
-- [x] Read the repository instructions, UI architecture/specification, and production Phone shell.
-- [x] Replace `TASK.md` with this Preview-only slice.
-- [x] Consolidate deterministic reusable debug fixtures.
-- [x] Add focused `PhoneTopBar` Previews.
-- [x] Add focused `PlaybackControlsBar` Previews.
-- [x] Add focused `PhoneNavigationBar` Previews.
-- [x] Add focused `PhoneAppShell` integration Previews and debug-only sample Lyrics body.
-- [x] Remove the combined `LyricsScreenPreviews.kt` file.
-- [x] Verify no production files changed and no tests were added.
-- [x] Run `./gradlew test check :app:assembleDebug`.
-- [x] Run `bash scripts/verify-architecture.sh`.
-- [x] Run `git diff --check`.
-- [x] Review the complete branch diff.
-- [x] Open PR #34 against `main`; complete one clean Codex review round with no material findings.
-- [x] Remove `showSystemUi` from ordinary Top Bar / shell visual Previews after Android Studio showed a duplicate system-bar gap and clipped persistent bottom chrome; production edge-to-edge inset handling remains unchanged.
-- [ ] Re-run CI/validation for the Preview-host fix and stop before merge.
+- [x] Prepare Phone visual-refinement task and branch.
+- [x] Add shared AALyrics shell icon assets/APIs.
+- [x] Refine `PhoneTopBar` and assign the right-side pill to media-source identity.
+- [x] Refine `PlaybackControlsBar`.
+- [x] Refine `PhoneNavigationBar`.
+- [x] Re-check shell Previews and narrow layouts.
+- [x] Align durable UI docs only where implementation decisions became stable.
+- [x] Run validation and review.
+- [x] Open PR and stop before merge.
 
 ## Scope guard
 
-This branch only improves Preview ownership and visual-inspection coverage for already implemented Phone shell components. Any required production change is a scope boundary: stop and explain it instead of changing `src/main`.
+This branch refines the visual presentation of the existing Phone shell. It must not turn into the Lyrics-screen implementation branch. If a visual change requires real destination state/behavior, record it for the next slice rather than adding that behavior here.
