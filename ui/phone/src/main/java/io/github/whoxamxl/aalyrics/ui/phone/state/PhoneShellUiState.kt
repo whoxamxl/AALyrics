@@ -7,7 +7,7 @@ import io.github.whoxamxl.aalyrics.ui.phone.navigation.PhoneDestination
 @Immutable
 data class PhoneShellUiState(
     val selectedDestination: PhoneDestination = PhoneDestination.Home,
-    val statusText: String? = null,
+    val mediaSourceLabel: String? = null,
     val playbackControls: PlaybackControlsUiState? = null,
 )
 

@@ -30,10 +30,10 @@ import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsSpacing
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsStroke
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsTypography
 
-/** Compact persistent app identity and runtime-status presentation. */
+/** Compact persistent app identity and connected-media-source presentation. */
 @Composable
 fun PhoneTopBar(
-    statusText: String?,
+    mediaSourceLabel: String?,
     modifier: Modifier = Modifier,
 ) {
     Surface(
@@ -59,7 +59,7 @@ fun PhoneTopBar(
                 maxLines = 1,
             )
             Spacer(Modifier.weight(1f))
-            if (!statusText.isNullOrBlank()) {
+            if (!mediaSourceLabel.isNullOrBlank()) {
                 Surface(
                     modifier = Modifier.widthIn(max = 168.dp),
                     shape = RoundedCornerShape(AALyricsRadius.Full),
@@ -86,7 +86,7 @@ fun PhoneTopBar(
                                 ),
                         )
                         Text(
-                            text = statusText,
+                            text = mediaSourceLabel,
                             style = AALyricsTypography.Label,
                             color = AALyricsColors.AccentCyan,
                             maxLines = 1,

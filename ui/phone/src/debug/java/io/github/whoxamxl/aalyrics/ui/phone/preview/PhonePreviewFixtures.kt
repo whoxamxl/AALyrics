@@ -24,17 +24,17 @@ internal object PhonePreviewFixtures {
     )
 
     val typicalLyricsShell = PhoneShellUiState(
-        statusText = "WORD SYNC",
+        mediaSourceLabel = "Spotify",
         playbackControls = playingControls,
     )
     val narrowLyricsShell = PhoneShellUiState(
-        statusText = "LINE SYNC",
+        mediaSourceLabel = "YouTube Music",
         playbackControls = pausedControls,
     )
-    val lyricsWithoutControls = PhoneShellUiState(statusText = "NO MEDIA")
+    val lyricsWithoutControls = PhoneShellUiState(mediaSourceLabel = null)
     val syncShell = PhoneShellUiState(
         selectedDestination = PhoneDestination.Sync,
-        statusText = "PAUSED",
+        mediaSourceLabel = "Poweramp",
         playbackControls = pausedControls,
     )
 

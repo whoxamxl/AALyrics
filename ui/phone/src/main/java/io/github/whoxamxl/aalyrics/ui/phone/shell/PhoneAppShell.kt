@@ -28,7 +28,7 @@ fun PhoneAppShell(
         color = AALyricsColors.BackgroundBase,
     ) {
         Column(Modifier.fillMaxSize()) {
-            PhoneTopBar(statusText = state.statusText)
+            PhoneTopBar(mediaSourceLabel = state.mediaSourceLabel)
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
