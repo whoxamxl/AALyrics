@@ -11,7 +11,6 @@ import io.github.whoxamxl.aalyrics.ui.phone.shell.PhoneTopBar
     widthDp = 412,
     heightDp = 160,
     showBackground = true,
-    showSystemUi = true,
 )
 @Composable
 private fun PhoneTopBarNoStatusPreview() {
@@ -24,7 +23,6 @@ private fun PhoneTopBarNoStatusPreview() {
     widthDp = 412,
     heightDp = 160,
     showBackground = true,
-    showSystemUi = true,
 )
 @Composable
 private fun PhoneTopBarWordSyncPreview() {
@@ -37,7 +35,6 @@ private fun PhoneTopBarWordSyncPreview() {
     widthDp = 412,
     heightDp = 160,
     showBackground = true,
-    showSystemUi = true,
 )
 @Composable
 private fun PhoneTopBarLineSyncPreview() {
@@ -50,7 +47,6 @@ private fun PhoneTopBarLineSyncPreview() {
     widthDp = 412,
     heightDp = 160,
     showBackground = true,
-    showSystemUi = true,
 )
 @Composable
 private fun PhoneTopBarLoadingPreview() {
@@ -63,7 +59,6 @@ private fun PhoneTopBarLoadingPreview() {
     widthDp = 412,
     heightDp = 160,
     showBackground = true,
-    showSystemUi = true,
 )
 @Composable
 private fun PhoneTopBarLongStatusPreview() {
@@ -76,7 +71,6 @@ private fun PhoneTopBarLongStatusPreview() {
     widthDp = 320,
     heightDp = 160,
     showBackground = true,
-    showSystemUi = true,
 )
 @Composable
 private fun PhoneTopBarNarrowPreview() {

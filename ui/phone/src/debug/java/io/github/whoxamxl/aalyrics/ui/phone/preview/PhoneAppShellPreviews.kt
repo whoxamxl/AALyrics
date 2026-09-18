@@ -33,7 +33,6 @@ import io.github.whoxamxl.aalyrics.ui.phone.state.PhoneShellUiState
     widthDp = 412,
     heightDp = 892,
     showBackground = true,
-    showSystemUi = true,
 )
 @Composable
 private fun PhoneAppShellTypicalLyricsPreview() {
@@ -46,7 +45,6 @@ private fun PhoneAppShellTypicalLyricsPreview() {
     widthDp = 320,
     heightDp = 700,
     showBackground = true,
-    showSystemUi = true,
 )
 @Composable
 private fun PhoneAppShellNarrowLyricsPreview() {
@@ -59,7 +57,6 @@ private fun PhoneAppShellNarrowLyricsPreview() {
     widthDp = 412,
     heightDp = 892,
     showBackground = true,
-    showSystemUi = true,
 )
 @Composable
 private fun PhoneAppShellHiddenControlsPreview() {
@@ -72,7 +69,6 @@ private fun PhoneAppShellHiddenControlsPreview() {
     widthDp = 412,
     heightDp = 892,
     showBackground = true,
-    showSystemUi = true,
 )
 @Composable
 private fun PhoneAppShellSyncPreview() {

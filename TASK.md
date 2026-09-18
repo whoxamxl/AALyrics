@@ -18,6 +18,8 @@ Organize deterministic Android Studio Previews by the production Phone shell com
 - Add `PlaybackControlsBarPreviews.kt` with playing, paused, previous-disabled, next-disabled, all-disabled, and narrow-width coverage.
 - Add `PhoneNavigationBarPreviews.kt` with each destination selected independently plus narrow-width coverage.
 - Add `PhoneAppShellPreviews.kt` with a small integration set for typical/narrow Lyrics layout, hidden controls, and another selected destination.
+- Keep ordinary visual-design Previews free of `showSystemUi`; Android Studio's Preview host can decor-fit system bars independently of the API-36 edge-to-edge runtime and otherwise produce a misleading duplicate top gap and clipped bottom chrome.
+- Keep the production `PhoneTopBar` status-bar inset behavior unchanged; validate real system-bar behavior on emulator/device rather than treating the Preview host as the runtime window.
 - Keep the Track-Card-like block and sample lyric lines debug-only for shell-space inspection.
 - Keep deterministic reusable fixtures under `ui/phone/src/debug`.
 - Remove the combined `LyricsScreenPreviews.kt` ownership once its shell Preview responsibilities are split.
@@ -54,7 +56,9 @@ Do **not** add or change:
 - [x] Run `bash scripts/verify-architecture.sh`.
 - [x] Run `git diff --check`.
 - [x] Review the complete branch diff.
-- [x] Open PR #34 against `main`; complete one clean Codex review round with no material findings; stop before merge.
+- [x] Open PR #34 against `main`; complete one clean Codex review round with no material findings.
+- [x] Remove `showSystemUi` from ordinary Top Bar / shell visual Previews after Android Studio showed a duplicate system-bar gap and clipped persistent bottom chrome; production edge-to-edge inset handling remains unchanged.
+- [ ] Re-run CI/validation for the Preview-host fix and stop before merge.
 
 ## Scope guard
 
