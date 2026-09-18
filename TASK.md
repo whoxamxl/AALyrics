@@ -43,10 +43,10 @@ Do **not** add or change:
 - [x] Create `feature/phone-shell-previews` from current `main`.
 - [x] Read the repository instructions, UI architecture/specification, and production Phone shell.
 - [x] Replace `TASK.md` with this Preview-only slice.
-- [ ] Consolidate deterministic reusable debug fixtures.
-- [ ] Add focused `PhoneTopBar` Previews.
-- [ ] Add focused `PlaybackControlsBar` Previews.
-- [ ] Add focused `PhoneNavigationBar` Previews.
+- [x] Consolidate deterministic reusable debug fixtures.
+- [x] Add focused `PhoneTopBar` Previews.
+- [x] Add focused `PlaybackControlsBar` Previews.
+- [x] Add focused `PhoneNavigationBar` Previews.
 - [ ] Add focused `PhoneAppShell` integration Previews and debug-only sample Lyrics body.
 - [ ] Remove the combined `LyricsScreenPreviews.kt` file.
 - [ ] Verify no production files changed and no tests were added.
