@@ -55,7 +55,9 @@ Android Auto host
 - [x] Add deterministic regression tests.
 - [x] Run validation and architecture checks.
 - [x] Review complete diff and open PR #38.
-- [x] Stop before merge for explicit approval.
+- [x] Address first bounded Codex review findings.
+- [ ] Complete second bounded Codex review.
+- [ ] Stop before merge for explicit approval.
 
 ## Scope guard
 
@@ -64,4 +66,10 @@ This slice migrates the proven Android Auto Now Playing media-host path only. It
 
 ## Validation record
 
-PR #38 CI run #172 passed the architecture guard, debug APK build, complete unit-test suite, and `aalyrics-debug-apk` artifact upload. The final diff review found no unresolved in-scope blocking issue. Browse-window UI remains explicitly deferred.
+Initial PR validation passed in CI runs #172 and #173. The first bounded Codex review then identified two current-scope P1 findings and one current-scope P2 finding:
+
+- reject untrusted MediaBrowser clients before exposing the MediaSession token;
+- retain the source playback-position sample time instead of anchoring projection only at AALyrics receipt time;
+- require notification-listener access in the fresh-sideload setup.
+
+All three findings were fixed. CI run #182 subsequently passed the architecture guard, debug APK build, complete unit-test suite, and `aalyrics-debug-apk` artifact upload. Browse-window UI remains explicitly deferred. A second bounded review is pending before the merge approval gate.
