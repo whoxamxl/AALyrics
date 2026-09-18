@@ -54,7 +54,7 @@ Do **not** add or change:
 - [x] Run `bash scripts/verify-architecture.sh`.
 - [x] Run `git diff --check`.
 - [x] Review the complete branch diff.
-- [ ] Open a PR against `main`, complete bounded review, and stop before merge.
+- [x] Open PR #34 against `main`; complete one clean Codex review round with no material findings; stop before merge.
 
 ## Scope guard
 
