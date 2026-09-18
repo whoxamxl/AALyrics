@@ -2,7 +2,7 @@
 
 ## Status
 
-Architecture/specification only. This document defines the intended Phone UI structure before Compose implementation begins. Exact visual dimensions, component APIs, navigation runtime, and state-mapping code are deliberately deferred.
+The Phone information architecture is established, and the persistent Compose shell is implemented by PR #33. The implemented shell includes `PhoneAppShell`, `PhoneTopBar`, `PlaybackControlsBar`, `PhoneNavigationBar`, `PhoneDestination`, and minimal shell presentation state. Destination behavior, navigation runtime, transport wiring, state mapping, and final visual tuning remain deliberately deferred.
 
 ## Product intent
 
@@ -238,11 +238,11 @@ ui/phone/src/main/java/io/github/whoxamxl/aalyrics/ui/phone/
    └─ PhoneShellUiState.kt
 ```
 
-During architecture-only work these files may be placeholders containing no production behavior. Later implementation slices should replace only the placeholders needed by the approved screen slice.
+The persistent shell, navigation identity, and shell-level state files now contain production Compose behavior. Destination files may remain placeholders until their own approved implementation slices; do not invent destination behavior merely to complete the tree.
 
 ## Preview and validation direction
 
-Once implementation starts, production composables remain in `src/main` and deterministic Preview fixtures stay in `src/debug`.
+Production shell composables live in `src/main`, while deterministic shell Preview fixtures live in `src/debug`. PR #33 validates the real production shell at typical and narrow widths, across all selected destinations, with playing/paused and disabled/unavailable transport states.
 
 Preview coverage should eventually exercise at least:
 
@@ -261,7 +261,7 @@ Implementation should validate that the persistent top bar, playback controls, a
 
 ## Explicitly deferred
 
-This architecture slice does not decide or implement:
+The persistent shell implementation intentionally still does not decide or implement:
 
 - exact dp heights or typography sizes for shell elements
 - final icons or animation
@@ -273,4 +273,4 @@ This architecture slice does not decide or implement:
 - final Sync interaction model
 - final Details fields
 - final Settings taxonomy
-- screen implementation or Compose component APIs
+- destination screen implementation or destination-specific Compose APIs
