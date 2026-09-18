@@ -8,12 +8,11 @@
 - Classification: **PRESERVE / REFACTOR** for proven Android Auto media-host behavior, **REWRITE** for AALyrics ownership/integration.
 - Authoritative references: `AGENTS.md`, `docs/MIGRATION_INVENTORY.md`, `docs/UI_ARCHITECTURE.md`, `docs/PRESENTATION_STATE_ARCHITECTURE.md`, and `docs/KARAOKE_ARCHITECTURE.md`.
 - The user explicitly authorized implementation of Android Auto split/full Now Playing behavior and a sideloadable Android Auto build path.
+- Lyrics browse-window/browse-tree presentation is explicitly deferred from this slice.
 
 ## Goal
 
 Expose AALyrics as a sideloadable Android Auto media app and project the existing normalized playback + lyrics state into the host-managed Now Playing surfaces without reintroducing the working fork's `MediaTracker` monolith.
-
-The runtime path is:
 
 ```text
 existing selected MediaSession runtime
@@ -28,7 +27,7 @@ MediaBrowserServiceCompat + MediaSessionCompat
         ↓
 Android Auto host
    ├─ split / compact Now Playing
-   └─ full Now Playing / lyrics browse surface
+   └─ full Now Playing
 ```
 
 ## Acceptance criteria
@@ -36,10 +35,9 @@ Android Auto host
 - Add Android Auto media-app discovery metadata and an `automotive_app_desc.xml` declaring `media`.
 - Add a thin `MediaBrowserServiceCompat` host service that publishes a `MediaSessionCompat`.
 - Populate `DISPLAY_TITLE` with current track/artist and `DISPLAY_SUBTITLE` with the active line-timed lyric so Android Auto can render useful split/compact and full Now Playing metadata.
-- Expose a bounded lyrics browse window for the expanded/full automotive surface without provider access or networking.
-- Mirror normalized playback state and position into the automotive MediaSession.
-- Forward host Play/Pause/Previous/Next controls through an explicit transport boundary owned by `:platform:media`; do not rediscover active sessions from `:ui:automotive`.
-- Keep current-line selection line-level only in this slice. Do not implement word-level karaoke, translation, timing calibration/offset, cache, or sync editing.
+- Mirror normalized playback state and projected playback position into the automotive MediaSession.
+- Forward host Play/Pause/Previous/Next/Seek controls through the explicit transport boundary owned by `:platform:media`; do not rediscover active sessions from `:ui:automotive`.
+- Keep current-line selection line-level only in this slice. Do not implement word-level karaoke, translation, timing calibration/offset, cache, sync editing, or lyrics browse windows.
 - Preserve `:ui:automotive` independence from concrete providers and `:platform:media`.
 - Make debug APKs available as CI artifacts suitable for sideloading.
 - Document Android Auto developer-mode / Unknown sources setup and local `installDebug` workflow.
@@ -49,8 +47,8 @@ Android Auto host
 ## Planned commits
 
 - [x] Prepare Android Auto Now Playing task and branch.
-- [ ] Add platform transport-control boundary.
-- [ ] Add automotive runtime binding and presentation projection.
+- [x] Add platform transport-control boundary.
+- [ ] Add automotive runtime binding and line-level Now Playing projection.
 - [ ] Add Android Auto MediaBrowser/MediaSession host service and media discovery descriptor.
 - [ ] Wire application playback/lyrics state into the automotive host.
 - [ ] Add sideloadable CI artifact and setup documentation.
@@ -61,4 +59,4 @@ Android Auto host
 
 ## Scope guard
 
-This slice migrates the proven Android Auto media-host path only. It must not copy legacy provider, translation, calibration, cache, artwork/color, or word-karaoke logic into AALyrics. Any richer timing/karaoke behavior remains behind the dedicated capability architecture and should be added in a later slice.
+This slice migrates the proven Android Auto Now Playing media-host path only. It must not copy legacy provider, translation, calibration, cache, artwork/color, word-karaoke, or browse-window logic into AALyrics. Richer automotive browse presentation remains a later slice.
