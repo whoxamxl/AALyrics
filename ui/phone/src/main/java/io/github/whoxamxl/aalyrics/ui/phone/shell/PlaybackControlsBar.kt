@@ -94,7 +94,7 @@ private fun TransportButton(
         onClick = onClick,
         enabled = enabled,
         modifier = Modifier.size(
-            width = if (emphasized) 80.dp else 72.dp,
+            width = if (emphasized) 88.dp else 84.dp,
             height = AALyricsSpacing.Space48,
         ),
         colors = IconButtonDefaults.iconButtonColors(
@@ -104,8 +104,8 @@ private fun TransportButton(
     ) {
         Surface(
             modifier = Modifier.size(
-                width = if (emphasized) 72.dp else AALyricsSpacing.Space64,
-                height = if (emphasized) AALyricsSpacing.Space40 else 36.dp,
+                width = if (emphasized) 82.dp else 77.dp,
+                height = 36.dp,
             ),
             shape = RoundedCornerShape(AALyricsRadius.Radius12),
             color = when {
