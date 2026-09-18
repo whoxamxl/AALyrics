@@ -50,7 +50,20 @@ AALyrics uses an enabled `NotificationListenerService` as the permission path fo
 
 The service waits for `onListenerConnected()` before using notification-listener-backed APIs. `MediaSessionManager.getActiveSessions(...)` and `addOnActiveSessionsChangedListener(...)` receive the notification-listener component so the app does not depend on privileged `MEDIA_CONTENT_CONTROL` permission.
 
-Notification access itself is user-controlled system access. This slice provides the runtime/service boundary but intentionally does not add a settings screen or other presentation UI for that access.
+Notification access itself is user-controlled system access. PR #29 provided the runtime/service boundary but intentionally did not add presentation for granting that access.
+
+### Application-entry onboarding follow-up
+
+The later `feature/notification-access-onboarding` slice adds the application-entry behavior for this already-required system access without changing MediaSession ownership:
+
+- `MainActivity` checks the real Notification Listener grant on launch and every resume;
+- when access is missing, normal phone content is replaced by a required setup screen with no skip path;
+- the grant action opens the app-specific Notification Listener detail page on API 30+ when available, then falls back to the general listener settings page and finally general Settings;
+- API 26 remains supported with a read-only check of the enabled-listener setting because `NotificationManager.isNotificationListenerAccessGranted(...)` starts at API 27;
+- returning from Settings always causes the actual system state to be checked again;
+- `POST_NOTIFICATIONS` is not requested because this flow grants listener access for MediaSession observation, not permission for AALyrics to post notifications.
+
+The finished Android Auto presentation is still a separate surface. When that surface is implemented, a missing-access state should direct the user to finish setup on the phone rather than attempting to grant Notification Listener access from the car display.
 
 ## Ownership and module boundary
 
