@@ -38,6 +38,26 @@ Completed foundation includes:
 
 PR #30 implements the next runtime slice and is ready for explicit merge approval: MediaSession observation stays alive, while provider lookup runs only when phone-process foreground or Android Auto projection demand is active. Demand deactivation clears lyrics work; reactivation resumes immediately from the latest already-observed playback snapshot. Finished phone/Android Auto presentation, cache, translation, timing controls, persistence, and karaoke rendering remain separate later work.
 
+## Android Auto sideload development
+
+AALyrics exposes a MediaBrowserService-backed Android Auto media surface for development builds. The host renders the same MediaSession metadata in compact/split and full Now Playing layouts; the current line-timed lyric is published through the display subtitle. Lyrics browse-window UI is intentionally not part of this slice.
+
+Build and install locally:
+
+```bash
+./gradlew :app:installDebug
+```
+
+For Android Auto to show an APK installed outside a trusted store:
+
+1. Open Android Auto settings on the phone.
+2. Open **About** and tap **Version and permission info** repeatedly until Android Auto developer mode is enabled.
+3. Open the overflow menu, choose **Developer settings**, and enable **Unknown sources**.
+4. Reconnect Android Auto or the Desktop Head Unit after installing AALyrics.
+5. Enable AALyrics in the Android Auto launcher/customize list if it is not already visible.
+
+The CI build also uploads `aalyrics-debug-apk` as a workflow artifact. This is a development sideload artifact; durable release signing/versioned distribution remains a separate release-engineering slice.
+
 ## Modules
 
 ```text
