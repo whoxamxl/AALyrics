@@ -49,10 +49,10 @@ return to app -> re-check actual system state
 ## Planned work
 
 - [x] Prepare branch and task scope.
-- [ ] Add framework access checker and settings navigation.
-- [ ] Add required setup screen and Activity resume gate.
-- [ ] Add deterministic gate tests.
-- [ ] Update durable runtime documentation.
+- [x] Add framework access checker and settings navigation.
+- [x] Add required setup screen and Activity resume gate.
+- [x] Add deterministic gate tests.
+- [x] Update durable runtime documentation.
 - [ ] Review diff / CI and open PR.
 
 ## Scope guard
