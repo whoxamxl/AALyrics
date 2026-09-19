@@ -238,7 +238,7 @@ Project policy now forbids persistent Translation Cache through stable `v1.0.0`;
 
 General lyrics/cache work still follows `docs/CACHE_ARCHITECTURE.md` when separately authorized.
 
-### Phase 11.2a — Translation background scaffold — active
+### Phase 11.2a — Translation background scaffold ✅
 
 Prepare Translation without changing unfinished foreground presentation:
 
@@ -251,7 +251,7 @@ Prepare Translation without changing unfinished foreground presentation:
 
 The scaffold must not implement speculative LanguageProfiler thresholds, contextual block algorithms, Musixmatch Translation alignment, Translation Provider selection, or persistent Translation Cache.
 
-### Phase 11.2b — Translation execution/orchestration — next large slice
+### Phase 11.2b — Translation execution/orchestration — active
 
 Implement Translation as an additive derived capability over canonical lyrics without moving execution into Lyrics Providers or `LyricsCoordinator`.
 
