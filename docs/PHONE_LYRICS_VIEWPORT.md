@@ -25,10 +25,14 @@ Rules:
 - Let the actual number of visible rows be determined by viewport height, width, line wrapping, font metrics, and user font scale.
 - Long lyrics wrap naturally and remain one logical lyric row even when they occupy multiple visual lines.
 - Do not shrink typography merely to fit more lyrics on screen.
-- When Follow mode owns the scroll, target the current playback region at approximately 42% of viewport height from the top when enough content exists before it. This intentionally leaves more upcoming lyrics visible below the current region.
-- The 42% anchor is a scroll-position target, not permanently reserved leading space.
-- At the document start, center the first lyric row vertically in the viewport. At the document end, allow the final lyric row to finish vertically centered. This creates a deliberate opening/closing breathing space without forcing that gap throughout the song.
-- The 42% follow anchor and 50% document-boundary centering are responsive viewport fractions, not fixed dp offsets.
+- Do not use one fixed center point for every current lyric row. The rendered current block may occupy one, two, three, or more visual lines after wrapping.
+- For ordinary timed rows, use the measured bottom edge of the current block as the primary focus reference. Target that bottom edge near 52% of viewport height.
+- Keep the current block inside an approximate 28%–60% focus band when its measured height permits. This naturally places a one-line block lower, a two-line block near the previous ~42% visual center, and a three-line block slightly higher without special-casing visual-line counts.
+- If a current block is taller than the focus band, center the block around the focus band's center rather than forcing either edge outside the viewport unnecessarily.
+- At the document start, place the first lyric row so its **bottom edge** reaches the 50% viewport boundary.
+- At the document end, place the final lyric row so its **top edge** begins at the 50% viewport boundary.
+- These boundary rules create deliberate opening/closing breathing space while preserving the adaptive focus behavior through the middle of the document.
+- All focus/boundary positions are responsive viewport fractions, not fixed dp offsets.
 
 ## Edge fading
 
@@ -94,18 +98,19 @@ Initial geometry:
 
 - accessible hit target: 48dp,
 - visible circular silhouette: approximately 36dp,
-- chevron icon: approximately 24dp,
+- chevron icon: approximately 28dp,
 - shape: circle,
 - no visible rounded-rectangle/pill silhouette.
+- Position the control low in the viewport: approximately one third of the previous edge-fade-to-bottom distance, rather than directly above the fade boundary.
 
 Initial semantic treatment:
 
-- circle fill: `BackgroundSurfaceStrong` at low opacity,
+- circle fill: `BackgroundSurfaceStrong` at very low opacity,
 - circle border: 1dp `BorderSoft` at very low opacity,
 - chevron: `AccentCyan` with strong but not fully dominant opacity,
 - no shadow, or only the minimum necessary if contrast testing proves it is required.
 
-The circle should be close to the threshold of visibility; the chevron carries the interaction meaning.
+The circle should be more transparent than the earlier prototype and remain close to the threshold of visibility; the slightly larger chevron carries the interaction meaning.
 
 ### Attention animation
 
@@ -114,11 +119,10 @@ Only the chevron moves.
 On appearance:
 
 1. fade the control in subtly,
-2. bounce the chevron in its indicated direction,
-3. use roughly 2–3dp travel,
-4. use roughly 400–500ms per bounce cycle,
-5. repeat only twice,
-6. then remain completely still.
+2. begin the directional chevron motion almost immediately as the fade becomes visible so the transition feels continuous rather than staged,
+3. use approximately 3dp travel,
+4. perform one approximately 400ms bounce cycle,
+5. then remain completely still.
 
 Do not bounce the circular silhouette itself and do not loop the animation continuously.
 
