@@ -7,6 +7,7 @@ import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -38,7 +39,6 @@ import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.CompositingStrategy
-import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
@@ -380,35 +380,17 @@ private fun ReturnToPlaybackControl(
         Box(
             modifier = Modifier
                 .size(ReturnControlVisualSize)
-                .clip(CircleShape)
-                .graphicsLayer {
-                    alpha = ReturnControlFillAlpha
-                }
+                .background(
+                    color = AALyricsColors.BackgroundSurfaceStrong.copy(alpha = ReturnControlFillAlpha),
+                    shape = CircleShape,
+                )
                 .border(
                     width = AALyricsStroke.Thin,
-                    brush = SolidColor(AALyricsColors.BorderSoft.copy(alpha = ReturnControlBorderAlpha)),
+                    color = AALyricsColors.BorderSoft.copy(alpha = ReturnControlBorderAlpha),
                     shape = CircleShape,
-                )
-                .graphicsLayer {
-                    shadowElevation = 0f
-                    shape = CircleShape
-                    clip = true
-                },
+                ),
             contentAlignment = Alignment.Center,
         ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .graphicsLayer {
-                        alpha = 1f
-                    },
-                contentAlignment = Alignment.Center,
-            ) {
-                androidx.compose.foundation.background(
-                    color = AALyricsColors.BackgroundSurfaceStrong,
-                    shape = CircleShape,
-                )
-            }
             Icon(
                 imageVector = if (direction == PlaybackRegionDirection.ABOVE) {
                     AALyricsIcons.PlaybackAbove
