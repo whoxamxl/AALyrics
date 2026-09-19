@@ -2,7 +2,7 @@
 
 ## Status
 
-The Phone information architecture is established, and the persistent Compose shell is implemented by PR #33. The implemented shell includes `PhoneAppShell`, `PhoneTopBar`, `PlaybackControlsBar`, `PhoneNavigationBar`, `PhoneDestination`, and minimal shell presentation state. Destination behavior, navigation runtime, transport wiring, state mapping, and final visual tuning remain deliberately deferred.
+The Phone information architecture and persistent Compose shell are established. The Lyrics destination now has a production composition boundary built from `TrackCard` and `LyricsViewport`; navigation runtime, transport wiring, runtime state mapping, the remaining destinations, and final visual tuning remain deliberately deferred.
 
 ## Product intent
 
@@ -49,6 +49,12 @@ Owns:
 - lyrics-specific empty/loading/error presentation
 
 The Track Card is destination-specific rather than shell-level so non-Lyrics destinations do not duplicate large track metadata.
+
+The production `LyricsScreen` composes the Track Card above a flexible `LyricsViewport`. The Track Card uses compact 16dp destination-side/top insets; the viewport keeps its own internal 20dp lyric inset rather than inheriting another screen-level horizontal inset. A 12dp gap separates the card from the viewport, and the viewport receives the remaining destination height through flexible weight.
+
+Artwork remains caller-owned. `LyricsScreen` forwards viewport interaction-mode changes but does not own media, provider, navigation, or playback-controller objects.
+
+Because the Playback Controls Bar is a floating shell overlay, `PhoneAppShell` also exposes its required bottom overlay inset to destination content. `LyricsScreen` applies that inset only to the flexible LyricsViewport region, keeping the Track Card unchanged while preventing the viewport return-to-playback control and bottom lyric content from sitting under the transport surface. When playback controls are absent, the inset is zero.
 
 ### Sync
 
@@ -244,7 +250,7 @@ ui/phone/src/main/java/io/github/whoxamxl/aalyrics/ui/phone/
    └─ PhoneShellUiState.kt
 ```
 
-The persistent shell, navigation identity, and shell-level state files now contain production Compose behavior. Destination files may remain placeholders until their own approved implementation slices; do not invent destination behavior merely to complete the tree.
+The persistent shell, navigation identity, and shell-level state files contain production Compose behavior. `LyricsScreen` is now the production Lyrics destination composition. Sync, Details, and Settings may remain placeholders until their own approved implementation slices; do not invent destination behavior merely to complete the tree.
 
 ## Preview and validation direction
 
@@ -279,4 +285,4 @@ The persistent shell implementation intentionally still does not decide or imple
 - final Sync interaction model
 - final Details fields
 - final Settings taxonomy
-- destination screen implementation or destination-specific Compose APIs
+- Sync, Details, and Settings destination implementation or their destination-specific Compose APIs

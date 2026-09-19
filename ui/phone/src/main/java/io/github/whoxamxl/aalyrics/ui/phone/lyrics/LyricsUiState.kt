@@ -42,3 +42,11 @@ data class LyricsViewportUiState(
     val plainAutoScrollEnabled: Boolean = true,
     val interactionMode: LyricsViewportInteractionMode = LyricsViewportInteractionMode.FOLLOW,
 )
+
+
+/** Presentation-ready state for the complete Phone Lyrics destination. */
+@Immutable
+data class LyricsScreenUiState(
+    val trackCard: TrackCardUiState,
+    val viewport: LyricsViewportUiState,
+)

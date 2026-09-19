@@ -31,9 +31,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -106,6 +108,9 @@ fun LyricsViewport(
         val topContentPadding = with(density) { topContentPaddingPx.toDp() }
         val bottomContentPadding = with(density) { bottomContentPaddingPx.toDp() }
         val scope = rememberCoroutineScope()
+        var hasInitialFollowPosition by remember(state.lines, state.syncType) {
+            mutableStateOf(false)
+        }
 
         val latestMode = rememberUpdatedState(state.interactionMode)
         val latestModeChange = rememberUpdatedState(onInteractionModeChange)
@@ -159,8 +164,17 @@ fun LyricsViewport(
                 state.interactionMode == LyricsViewportInteractionMode.FOLLOW &&
                 playbackTargetScrollPx != null
             ) {
+                val initialTargetIsReady =
+                    playbackTargetScrollPx <= 0 || scrollState.maxValue > 0
+                if (!initialTargetIsReady) {
+                    return@LaunchedEffect
+                }
+
                 val target = playbackTargetScrollPx.coerceIn(0, scrollState.maxValue)
-                if (abs(scrollState.value - target) > 1) {
+                if (!hasInitialFollowPosition) {
+                    scrollState.scrollTo(target)
+                    hasInitialFollowPosition = true
+                } else if (abs(scrollState.value - target) > 1) {
                     scrollState.animateScrollTo(
                         value = target,
                         animationSpec = tween(
