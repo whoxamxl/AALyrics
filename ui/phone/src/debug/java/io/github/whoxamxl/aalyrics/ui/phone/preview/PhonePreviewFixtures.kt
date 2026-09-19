@@ -1,5 +1,9 @@
 package io.github.whoxamxl.aalyrics.ui.phone.preview
 
+import io.github.whoxamxl.aalyrics.core.model.LyricsSyncType
+import io.github.whoxamxl.aalyrics.ui.phone.lyrics.LyricsViewportInteractionMode
+import io.github.whoxamxl.aalyrics.ui.phone.lyrics.LyricsViewportLineUiState
+import io.github.whoxamxl.aalyrics.ui.phone.lyrics.LyricsViewportUiState
 import io.github.whoxamxl.aalyrics.ui.phone.lyrics.TrackCardUiState
 import io.github.whoxamxl.aalyrics.ui.phone.navigation.PhoneDestination
 import io.github.whoxamxl.aalyrics.ui.phone.state.PhoneShellUiState
@@ -39,6 +43,58 @@ internal object PhonePreviewFixtures {
         title = "Untitled Session",
         providerLabel = "LRCLIB",
         syncLabel = "Line synced",
+    )
+
+    private val viewportLines = listOf(
+        LyricsViewportLineUiState("Streetlights wake along the avenue"),
+        LyricsViewportLineUiState("We carry the signal into the night"),
+        LyricsViewportLineUiState("Every window turns into a constellation"),
+        LyricsViewportLineUiState("Hold the rhythm while the city moves"),
+        LyricsViewportLineUiState(
+            text = "A quiet echo follows close behind",
+            words = listOf("A", "quiet", "echo", "follows", "close", "behind"),
+        ),
+        LyricsViewportLineUiState("The rain keeps drawing silver on the glass"),
+        LyricsViewportLineUiState(
+            "A deliberately long lyric line wraps naturally instead of shrinking just to preserve an arbitrary visible-line count",
+        ),
+        LyricsViewportLineUiState("Every step is warmer than the last"),
+        LyricsViewportLineUiState("We leave the static somewhere far behind"),
+        LyricsViewportLineUiState("Morning colors gather on the skyline"),
+        LyricsViewportLineUiState("Until the daylight finds us here"),
+    )
+
+    val viewportLineMiddle = LyricsViewportUiState(
+        lines = viewportLines,
+        syncType = LyricsSyncType.LINE,
+        currentLineIndex = 5,
+    )
+    val viewportLineFirst = viewportLineMiddle.copy(currentLineIndex = 0)
+    val viewportLineLast = viewportLineMiddle.copy(currentLineIndex = viewportLines.lastIndex)
+
+    val viewportWord = LyricsViewportUiState(
+        lines = viewportLines,
+        syncType = LyricsSyncType.WORD,
+        currentLineIndex = 4,
+        currentWordIndex = 3,
+        currentWordProgress = 0.62f,
+    )
+
+    val viewportPlain = LyricsViewportUiState(
+        lines = viewportLines,
+        syncType = LyricsSyncType.PLAIN,
+        playbackProgress = 0.46f,
+        plainAutoScrollEnabled = true,
+    )
+    val viewportPlainNoDuration = viewportPlain.copy(playbackProgress = null)
+
+    val viewportBrowsePlaybackBelow = viewportLineMiddle.copy(
+        currentLineIndex = 8,
+        interactionMode = LyricsViewportInteractionMode.BROWSE,
+    )
+    val viewportBrowsePlaybackAbove = viewportLineMiddle.copy(
+        currentLineIndex = 2,
+        interactionMode = LyricsViewportInteractionMode.BROWSE,
     )
 
     val playingControls = PlaybackControlsUiState(
