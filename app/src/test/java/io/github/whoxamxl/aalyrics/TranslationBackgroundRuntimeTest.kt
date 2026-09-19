@@ -7,11 +7,13 @@ import io.github.whoxamxl.aalyrics.translation.api.TranslationSettings
 import io.github.whoxamxl.aalyrics.translation.api.TranslationSettingsStore
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class TranslationBackgroundRuntimeTest {
     @Test
     fun enabledSettingsPrepareCurrentAndChangedTargets() = runTest {
@@ -20,13 +22,13 @@ class TranslationBackgroundRuntimeTest {
         val runtime = TranslationBackgroundRuntime(
             settingsStore = settingsStore,
             modelManager = modelManager,
-            applicationScope = backgroundScope,
+            applicationScope = this,
         )
 
         runtime.start()
-        advanceUntilIdle()
+        runCurrent()
         settingsStore.setTargetLanguage("ja-JP")
-        advanceUntilIdle()
+        runCurrent()
 
         assertEquals(listOf("en", "ja"), modelManager.preparedLanguages)
 
@@ -40,14 +42,14 @@ class TranslationBackgroundRuntimeTest {
         val runtime = TranslationBackgroundRuntime(
             settingsStore = settingsStore,
             modelManager = modelManager,
-            applicationScope = backgroundScope,
+            applicationScope = this,
         )
 
         runtime.start()
-        advanceUntilIdle()
+        runCurrent()
         settingsStore.setEnabled(false)
         settingsStore.setTargetLanguage("fr")
-        advanceUntilIdle()
+        runCurrent()
 
         assertEquals(listOf("en"), modelManager.preparedLanguages)
 
