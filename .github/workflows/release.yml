@@ -34,9 +34,21 @@ jobs:
           RELEASE_STORE_PASSWORD: ${{ secrets.AALYRICS_RELEASE_STORE_PASSWORD }}
           RELEASE_KEY_ALIAS: ${{ secrets.AALYRICS_RELEASE_KEY_ALIAS }}
           RELEASE_KEY_PASSWORD: ${{ secrets.AALYRICS_RELEASE_KEY_PASSWORD }}
+          PETITLYRICS_USER_ID: ${{ secrets.PETITLYRICS_USER_ID }}
+          PETITLYRICS_APP_NAME: ${{ secrets.PETITLYRICS_APP_NAME }}
+          PETITLYRICS_PKG_NAME: ${{ secrets.PETITLYRICS_PKG_NAME }}
+          PETITLYRICS_CLIENT_APP_ID: ${{ secrets.PETITLYRICS_CLIENT_APP_ID }}
         run: |
           missing=0
-          for name in RELEASE_KEYSTORE_BASE64 RELEASE_STORE_PASSWORD RELEASE_KEY_ALIAS RELEASE_KEY_PASSWORD; do
+          for name in \
+            RELEASE_KEYSTORE_BASE64 \
+            RELEASE_STORE_PASSWORD \
+            RELEASE_KEY_ALIAS \
+            RELEASE_KEY_PASSWORD \
+            PETITLYRICS_USER_ID \
+            PETITLYRICS_APP_NAME \
+            PETITLYRICS_PKG_NAME \
+            PETITLYRICS_CLIENT_APP_ID; do
             if [[ -z "${!name}" ]]; then
               echo "Missing required release secret: $name"
               missing=1
@@ -54,11 +66,11 @@ jobs:
       - name: Resolve release version
         shell: bash
         run: |
-          version_name="${GITHUB_REF_NAME#v}"
-          if [[ -z "$version_name" || "$version_name" == "$GITHUB_REF_NAME" ]]; then
-            echo "Release tag must start with v, for example v0.1.0."
+          if [[ ! "$GITHUB_REF_NAME" =~ ^v[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.-]+)?$ ]]; then
+            echo "Release tag must use version form vMAJOR.MINOR.PATCH, for example v0.1.0."
             exit 1
           fi
+          version_name="${GITHUB_REF_NAME#v}"
           echo "AALYRICS_VERSION_NAME=$version_name" >> "$GITHUB_ENV"
           echo "AALYRICS_VERSION_CODE=$GITHUB_RUN_NUMBER" >> "$GITHUB_ENV"
 
