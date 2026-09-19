@@ -38,7 +38,7 @@ This slice establishes the final presentation boundary before runtime/media/prov
 - [x] Update the narrow shell Preview to render the production Lyrics destination.
 - [x] Validate composition ownership and reserve the shell-provided playback overlay inset so LyricsViewport interactions remain clear of the floating controls.
 - [x] Update durable Phone UI docs with the production LyricsScreen composition.
-- [ ] Run final-head CI/review on PR #42 and stop before merge for explicit approval.
+- [x] Run final-head CI/review on PR #42 and stop before merge for explicit approval.
 
 ## Scope guard
 
