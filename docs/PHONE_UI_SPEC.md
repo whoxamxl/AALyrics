@@ -106,6 +106,8 @@ Long title/artist text uses a synchronized horizontal marquee only when the comb
 
 The Lyrics viewport is the visual priority of the Lyrics destination.
 
+The detailed responsive scrolling, sync-mode, edge-fade, manual-browse, return-control, and PLAIN auto-scroll contract is defined in `docs/PHONE_LYRICS_VIEWPORT.md`.
+
 Goals:
 
 - current lyric remains visually dominant
