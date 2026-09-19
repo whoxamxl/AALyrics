@@ -139,8 +139,8 @@ for module in "${presentation_modules[@]}"; do
     || fail "$module must consume the shared lyrics-core contract"
 
   if printf '%s\n' "$presentation_dependencies" \
-    | grep -Eq 'project[[:space:]]*\([[:space:]]*(path[[:space:]]*=[[:space:]]*)?":(provider:[^"]+|platform:media)"|projects\.(provider\.|platform\.media)'; then
-    fail "$module must not depend directly on providers or the media platform adapter"
+    | grep -Eq 'project[[:space:]]*\([[:space:]]*(path[[:space:]]*=[[:space:]]*)?":(provider:[^"]+|platform:media|translation:mlkit)"|projects\.(provider\.|platform\.media|translation\.mlkit)'; then
+    fail "$module must not depend directly on providers, the media platform adapter, or a concrete translation engine"
   fi
 
   source_dir="$module/src/main"
@@ -149,8 +149,8 @@ done
 
 designsystem_dependencies="$(production_dependency_expressions "ui/designsystem/build.gradle.kts")"
 if printf '%s\n' "$designsystem_dependencies" \
-  | grep -Eq 'project[[:space:]]*\([[:space:]]*(path[[:space:]]*=[[:space:]]*)?":(core|provider|platform|ui:(phone|automotive))'; then
-  fail "ui/designsystem must remain independent of app/domain/provider/platform modules"
+  | grep -Eq 'project[[:space:]]*\([[:space:]]*(path[[:space:]]*=[[:space:]]*)?":(core|provider|platform|translation|ui:(phone|automotive))'; then
+  fail "ui/designsystem must remain independent of app/domain/provider/platform/translation modules"
 fi
 
 for source_dir in "${ui_source_dirs[@]}"; do
