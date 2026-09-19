@@ -169,6 +169,29 @@ class TranslationCoordinatorTest {
     }
 
     @Test
+    fun `language identification failure publishes Failed without opening provider`() = runTest {
+        var opened = false
+        val provider = provider("unused") {
+            opened = true
+            session { it }
+        }
+        val coordinator = TranslationCoordinator(
+            profiler = LanguageProfiler(
+                LanguageIdentifier { error("synthetic language-id failure") },
+            ),
+            planner = TranslationBlockPlanner(),
+            providers = listOf(provider),
+            scope = this,
+        )
+
+        coordinator.update(canonical(2), TranslationSettings(targetLanguage = "ja"))
+        advanceUntilIdle()
+
+        assertIs<TranslationState.Failed>(coordinator.state.value)
+        assertTrue(!opened)
+    }
+
+    @Test
     fun `target-language lyrics are a no-op without opening a provider`() = runTest {
         var opened = false
         val provider = provider("unused") {
