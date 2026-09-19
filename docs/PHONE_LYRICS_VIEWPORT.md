@@ -73,7 +73,7 @@ The user owns the viewport position.
 
 If the user manually returns to the playback focus region, the return indicator disappears. Follow mode may re-arm after the manual scroll gesture settles and the playback region is again inside the accepted focus zone.
 
-The initial focus-zone threshold should be expressed as a viewport fraction rather than a row count. A practical initial range is approximately 30%–60% of viewport height; tune this in Preview/device validation.
+The browse-return threshold is expressed as viewport displacement rather than a lyric-row count. The current implementation shows the return control when the playback target is displaced by roughly 15% of viewport height from the current scroll position.
 
 ## Return-to-playback control
 
@@ -168,9 +168,9 @@ LINE timing follows row boundaries.
 - Align lyrics to the start edge using the existing 20dp horizontal viewport inset.
 - Current row: 22sp Bold, strongest color treatment.
 - Supporting rows: 18sp Medium.
-- Add an extra 8dp of vertical separation between the current row and its immediate supporting neighbors.
+- Add an extra 16dp of vertical separation between the current row and its immediate supporting neighbors at full current emphasis.
 - Previous and upcoming rows remain readable with one consistent supporting color; do not add extra distance-based dimming because the viewport edge alpha mask already provides spatial falloff.
-- When the timed current row changes, move the viewport smoothly toward the 42% follow anchor.
+- When the timed current row changes, move the viewport smoothly toward the adaptive measured-height focus target.
 - Do not snap merely because the current index changed.
 
 ### PLAIN
@@ -259,9 +259,9 @@ Runtime state mapping will later supply playback position, duration, lyrics timi
 The following details are intentionally not frozen until the first interactive Preview/device pass:
 
 - exact supporting-line spacing,
-- exact focus-zone bounds around the 42% follow anchor,
+- exact adaptive focus-band bounds around the measured current block,
 - final low-opacity circle/border values for the return control,
-- exact fade percentage if 15% needs slight visual adjustment,
+- exact fade percentage if the current 20% target needs slight visual adjustment,
 - whether long instrumental gaps should dim the previous timed current row after its explicit `endMs`,
 - exact PLAIN lead-in/lead-out weighting.
 

@@ -18,8 +18,8 @@ The visual direction takes the legacy Auto-Lyrics fullscreen Performance mode as
 
 - Use the full available viewport height instead of forcing a fixed six-line window.
 - Render a continuous scrollable lyric list; visible line count is determined by device size, wrapping, font metrics, and current content.
-- Keep the current playback region above visual center, approximately 40–45% from the top when follow mode owns the scroll.
-- Apply top and bottom edge fading over roughly 15% of viewport height so rows fade smoothly in/out rather than clipping abruptly.
+- Position the current timed block adaptively from its measured height: target its bottom edge near 52% of viewport height while keeping ordinary blocks within an approximate 28–60% focus band.
+- Apply top and bottom edge fading over roughly 20% of viewport height so rows fade smoothly in/out rather than clipping abruptly.
 - Keep manual scrolling available for synchronized and plain lyrics.
 - When manual scrolling moves away from the current playback region, suspend follow behavior and expose a transient action to return to the current line / playback region.
 - Keep WORD, LINE, and PLAIN rendering behavior distinct while sharing one viewport geometry and scrolling model.
@@ -55,7 +55,7 @@ The visual direction takes the legacy Auto-Lyrics fullscreen Performance mode as
 - Use Material `ExpandMore` when the playback region is below the visible viewport and `ExpandLess` when it is above.
 - Do not show text such as "Current line", "Now", or "Follow playback" in the return control.
 - Render the control as a barely visible circular silhouette rather than a prominent rounded pill: approximately 36dp visual circle inside a 48dp accessible touch target, with very low-opacity surface/border treatment and an AccentCyan chevron.
-- On appearance, attract attention with only two subtle directional bounces (roughly 4–6dp travel, 350–450ms per cycle), then remain still.
+- On appearance, fade in and perform one subtle chevron-only bounce (roughly 3dp travel, ~400ms total), then remain still.
 - Do not auto-return merely because a timer expired while the user is reading elsewhere.
 
 ## Acceptance criteria
@@ -65,7 +65,7 @@ The visual direction takes the legacy Auto-Lyrics fullscreen Performance mode as
 - Use a responsive `LazyColumn`/scroll model rather than a fixed visible-line count.
 - Keep current-line target position responsive to viewport height.
 - Support long wrapped lyric rows without corrupting follow positioning.
-- Add top/bottom gradient masking/fading over approximately 15% of the available viewport.
+- Add top/bottom gradient masking/fading over approximately 20% of the available viewport.
 - Implement deterministic WORD, LINE, and PLAIN Previews.
 - Add short-height, typical-height, tall-height, narrow-width, long-line, first-line, middle-line, last-line, and browsed-away Preview coverage where practical.
 - Keep Preview fixtures under `src/debug`.
