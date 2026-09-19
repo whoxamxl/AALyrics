@@ -62,17 +62,17 @@ New decisions from the current Translation design discussion are documented as c
 
 ## Acceptance criteria
 
-- [ ] Update Translation architecture and roadmap with the approved policy.
-- [ ] Re-check current Auto-Lyrics Translation implementation before code migration.
-- [ ] Add a pure Translation API/configuration module only for contracts required by this scaffold.
-- [ ] Add an Android ML Kit adapter module for model lifecycle only.
-- [ ] Preserve target-language/model-download behavior by refactoring mature fork logic.
-- [ ] Add app-owned translation settings persistence without adding Settings UI.
-- [ ] Start background target-model preparation from persisted settings without touching Lyrics/UI state.
-- [ ] Add deterministic tests for language normalization/model planning/background settings reaction.
-- [ ] Extend architecture guardrails to cover the new pure Translation boundary.
-- [ ] Run CI and bounded review.
-- [ ] Open a PR and stop before merge for explicit approval.
+- [x] Update Translation architecture and roadmap with the approved policy.
+- [x] Re-check current Auto-Lyrics Translation implementation before code migration.
+- [x] Add a pure Translation API/configuration module only for contracts required by this scaffold.
+- [x] Add an Android ML Kit adapter module for model lifecycle only.
+- [x] Preserve target-language/model-download behavior by refactoring mature fork logic.
+- [x] Add app-owned translation settings persistence without adding Settings UI.
+- [x] Start background target-model preparation from persisted settings without touching Lyrics/UI state.
+- [x] Add deterministic tests for language normalization/model planning/background settings reaction.
+- [x] Extend architecture guardrails to cover the new pure Translation boundary.
+- [x] Run CI and bounded review; final-head CI is required before merge.
+- [x] Open PR #41 and stop before merge for explicit approval.
 
 ## Scope guard
 
