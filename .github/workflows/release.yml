@@ -11,15 +11,6 @@ permissions:
 jobs:
   release:
     runs-on: ubuntu-latest
-    env:
-      PETITLYRICS_USER_ID: ${{ secrets.PETITLYRICS_USER_ID }}
-      PETITLYRICS_APP_NAME: ${{ secrets.PETITLYRICS_APP_NAME }}
-      PETITLYRICS_PKG_NAME: ${{ secrets.PETITLYRICS_PKG_NAME }}
-      PETITLYRICS_CLIENT_APP_ID: ${{ secrets.PETITLYRICS_CLIENT_APP_ID }}
-      RELEASE_KEYSTORE_BASE64: ${{ secrets.AALYRICS_RELEASE_KEYSTORE_BASE64 }}
-      RELEASE_STORE_PASSWORD: ${{ secrets.AALYRICS_RELEASE_STORE_PASSWORD }}
-      RELEASE_KEY_ALIAS: ${{ secrets.AALYRICS_RELEASE_KEY_ALIAS }}
-      RELEASE_KEY_PASSWORD: ${{ secrets.AALYRICS_RELEASE_KEY_PASSWORD }}
 
     steps:
       - name: Check out tagged commit
@@ -38,9 +29,14 @@ jobs:
 
       - name: Verify release secrets
         shell: bash
+        env:
+          RELEASE_KEYSTORE_BASE64: ${{ secrets.AALYRICS_RELEASE_KEYSTORE_BASE64 }}
+          RELEASE_STORE_PASSWORD: ${{ secrets.AALYRICS_RELEASE_STORE_PASSWORD }}
+          RELEASE_KEY_ALIAS: ${{ secrets.AALYRICS_RELEASE_KEY_ALIAS }}
+          RELEASE_KEY_PASSWORD: ${{ secrets.AALYRICS_RELEASE_KEY_PASSWORD }}
         run: |
           missing=0
-          for name in             RELEASE_KEYSTORE_BASE64             RELEASE_STORE_PASSWORD             RELEASE_KEY_ALIAS             RELEASE_KEY_PASSWORD; do
+          for name in RELEASE_KEYSTORE_BASE64 RELEASE_STORE_PASSWORD RELEASE_KEY_ALIAS RELEASE_KEY_PASSWORD; do
             if [[ -z "${!name}" ]]; then
               echo "Missing required release secret: $name"
               missing=1
@@ -50,13 +46,10 @@ jobs:
 
       - name: Restore release keystore
         shell: bash
+        env:
+          RELEASE_KEYSTORE_BASE64: ${{ secrets.AALYRICS_RELEASE_KEYSTORE_BASE64 }}
         run: |
-          keystore="$RUNNER_TEMP/aalyrics-release.keystore"
-          printf '%s' "$RELEASE_KEYSTORE_BASE64" | base64 --decode > "$keystore"
-          echo "AALYRICS_RELEASE_STORE_FILE=$keystore" >> "$GITHUB_ENV"
-          echo "AALYRICS_RELEASE_STORE_PASSWORD=$RELEASE_STORE_PASSWORD" >> "$GITHUB_ENV"
-          echo "AALYRICS_RELEASE_KEY_ALIAS=$RELEASE_KEY_ALIAS" >> "$GITHUB_ENV"
-          echo "AALYRICS_RELEASE_KEY_PASSWORD=$RELEASE_KEY_PASSWORD" >> "$GITHUB_ENV"
+          printf '%s' "$RELEASE_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/aalyrics-release.keystore"
 
       - name: Resolve release version
         shell: bash
@@ -85,6 +78,15 @@ jobs:
         run: ./gradlew test --stacktrace
 
       - name: Build signed release APK
+        env:
+          PETITLYRICS_USER_ID: ${{ secrets.PETITLYRICS_USER_ID }}
+          PETITLYRICS_APP_NAME: ${{ secrets.PETITLYRICS_APP_NAME }}
+          PETITLYRICS_PKG_NAME: ${{ secrets.PETITLYRICS_PKG_NAME }}
+          PETITLYRICS_CLIENT_APP_ID: ${{ secrets.PETITLYRICS_CLIENT_APP_ID }}
+          AALYRICS_RELEASE_STORE_FILE: ${{ runner.temp }}/aalyrics-release.keystore
+          AALYRICS_RELEASE_STORE_PASSWORD: ${{ secrets.AALYRICS_RELEASE_STORE_PASSWORD }}
+          AALYRICS_RELEASE_KEY_ALIAS: ${{ secrets.AALYRICS_RELEASE_KEY_ALIAS }}
+          AALYRICS_RELEASE_KEY_PASSWORD: ${{ secrets.AALYRICS_RELEASE_KEY_PASSWORD }}
         run: ./gradlew :app:assembleRelease --stacktrace
 
       - name: Stage release files
@@ -96,11 +98,12 @@ jobs:
           sha256sum "$apk" > "$apk.sha256"
 
       - name: Publish GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          name: AALyrics ${{ github.ref_name }}
-          generate_release_notes: true
-          fail_on_unmatched_files: true
-          files: |
-            dist/AALyrics-${{ github.ref_name }}.apk
-            dist/AALyrics-${{ github.ref_name }}.apk.sha256
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" \
+            "dist/AALyrics-${GITHUB_REF_NAME}.apk" \
+            "dist/AALyrics-${GITHUB_REF_NAME}.apk.sha256" \
+            --title "AALyrics $GITHUB_REF_NAME" \
+            --generate-notes
