@@ -7,6 +7,7 @@ import io.github.whoxamxl.aalyrics.translation.api.LanguageIdentifier
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 
 class LanguageProfilerTest {
@@ -108,6 +109,23 @@ class LanguageProfilerTest {
 
         assertEquals(ProfiledLineRole.UNCERTAIN, profile.lines[2].role)
         assertEquals(null, profile.lines[2].languageTag)
+    }
+
+    @Test
+    fun `identifier failure is distinct from undetermined language`() = runTest {
+        val lyrics = document(
+            listOf(
+                "Synthetic Latin lyric line",
+                "Another synthetic Latin lyric line",
+            ),
+        )
+        val profiler = LanguageProfiler(
+            LanguageIdentifier { error("synthetic language-id failure") },
+        )
+
+        assertFailsWith<LanguageProfilingException> {
+            profiler.profile(lyrics, targetLanguage = "ja")
+        }
     }
 
     @Test
