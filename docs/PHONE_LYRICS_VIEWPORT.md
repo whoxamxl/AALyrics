@@ -25,7 +25,8 @@ Rules:
 - Let the actual number of visible rows be determined by viewport height, width, line wrapping, font metrics, and user font scale.
 - Long lyrics wrap naturally and remain one logical lyric row even when they occupy multiple visual lines.
 - Do not shrink typography merely to fit more lyrics on screen.
-- When Follow mode owns the scroll, target the current playback region at approximately 42% of viewport height from the top. This intentionally leaves more upcoming lyrics visible below the current region.
+- When Follow mode owns the scroll, target the current playback region at approximately 42% of viewport height from the top when enough content exists before it. This intentionally leaves more upcoming lyrics visible below the current region.
+- The 42% anchor is a scroll-position target, not reserved leading space. At the beginning of the document, the first rows start with ordinary content padding rather than leaving the upper 42% blank.
 - The 42% anchor is a responsive viewport fraction, not a fixed dp offset.
 
 ## Edge fading
@@ -39,6 +40,8 @@ Use an alpha mask over the rendered lyrics content:
 - bottom approximately 15%: fully visible -> transparent.
 
 The fade applies to the lyric content itself rather than painting an opaque surface over it. This allows the effect to remain correct over the AALyrics background and future visual treatments.
+
+Only fade an edge when lyrics continue beyond that edge. At the document start, the top edge remains fully visible; at the document end, the bottom edge remains fully visible.
 
 The 15% value is the initial approved target and may be tuned slightly in Preview if it proves visually too strong or too weak.
 
