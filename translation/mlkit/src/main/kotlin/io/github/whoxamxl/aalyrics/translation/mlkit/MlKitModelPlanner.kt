@@ -15,7 +15,9 @@ internal object MlKitModelPlanner {
         // ML Kit ships English translation support with the SDK. Other languages
         // are downloaded as language-specific packs and are reusable across routes.
         return listOf(source, target)
-            .filter { it != TranslationLanguages.DEFAULT_TARGET_LANGUAGE }
+            .filter { it != BUILT_IN_LANGUAGE }
             .distinct()
     }
+
+    const val BUILT_IN_LANGUAGE = "en"
 }
