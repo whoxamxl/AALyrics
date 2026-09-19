@@ -45,10 +45,10 @@ private fun LyricsViewportLineTransitionPreview() {
         val scrollState = rememberScrollState()
 
         LaunchedEffect(Unit) {
-            delay(900)
+            delay(1200)
             for (index in 1 until state.lines.size) {
                 state = state.copy(currentLineIndex = index)
-                delay(1500)
+                delay(2500)
             }
         }
 
