@@ -35,9 +35,9 @@ data class LanguageProfilerPolicy(
     }
 }
 
-/** Complete-document profiler with conservative line routing for lyric text. */
 class LanguageProfilingException(message: String) : IllegalStateException(message)
 
+/** Complete-document profiler with conservative line routing for lyric text. */
 class LanguageProfiler(
     private val identifier: LanguageIdentifier,
     private val policy: LanguageProfilerPolicy = LanguageProfilerPolicy(),
