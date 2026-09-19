@@ -40,15 +40,15 @@ Lyrics should not clip abruptly at the top and bottom edges.
 
 Use an alpha mask over the rendered lyrics content:
 
-- top approximately 15%: transparent -> fully visible,
-- middle approximately 70%: fully visible,
-- bottom approximately 15%: fully visible -> transparent.
+- top approximately 20%: transparent -> fully visible,
+- middle approximately 60%: fully visible,
+- bottom approximately 20%: fully visible -> transparent.
 
 The fade applies to the lyric content itself rather than painting an opaque surface over it. This allows the effect to remain correct over the AALyrics background and future visual treatments.
 
 Keep the edge mask active at the document boundaries as well. Because the first and final lyric rows are centered vertically, the boundary spacing itself keeps those rows clear of the fade region.
 
-The 15% value is the initial approved target and may be tuned slightly in Preview if it proves visually too strong or too weak.
+The 20% value is the current approved target and may still be tuned slightly in Preview if it proves visually too strong or too weak.
 
 ## Scroll ownership
 
@@ -146,6 +146,10 @@ All sync modes share the same responsive viewport, edge fading, manual scrolling
 
 WORD timing provides karaoke-level progress.
 
+- Align lyrics to the start edge using the existing 20dp horizontal viewport inset.
+- The current timed lyric row uses 20sp Bold typography.
+- Supporting lyric rows use 18sp Medium typography.
+- Add an extra 8dp of vertical separation between the current row and its immediate supporting neighbors.
 - The current timed lyric row receives the strongest line hierarchy.
 - Word progress must not change glyph/word geometry or trigger line reflow.
 - Do not reproduce the legacy Performance mode's active-word size pop.
@@ -160,14 +164,20 @@ WORD timing provides karaoke-level progress.
 
 LINE timing follows row boundaries.
 
-- Current row: strongest typography/color.
-- Previous and upcoming rows: readable but reduced emphasis.
+- Align lyrics to the start edge using the existing 20dp horizontal viewport inset.
+- Current row: 20sp Bold, strongest color treatment.
+- Supporting rows: 18sp Medium.
+- Add an extra 8dp of vertical separation between the current row and its immediate supporting neighbors.
+- Previous and upcoming rows remain readable with one consistent supporting color; do not add extra distance-based dimming because the viewport edge alpha mask already provides spatial falloff.
 - When the timed current row changes, move the viewport smoothly toward the 42% follow anchor.
 - Do not snap merely because the current index changed.
 
 ### PLAIN
 
 PLAIN lyrics have no authoritative current row.
+
+- Align lyrics to the start edge using the existing 20dp horizontal viewport inset.
+- Render all rows at 18sp Medium with the same supporting color; spatial fading comes from the viewport edge mask rather than per-row distance dimming.
 
 The UI must not pretend that an estimated row is exact timing.
 
