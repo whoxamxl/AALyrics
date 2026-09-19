@@ -372,7 +372,6 @@ private fun buildWordProgressText(
     )
 
     words.forEachIndexed { index, word ->
-        if (index > 0) append(" ")
         val color = when {
             index < activeIndex -> AALyricsColors.TextPrimary
             index == activeIndex -> activeColor
