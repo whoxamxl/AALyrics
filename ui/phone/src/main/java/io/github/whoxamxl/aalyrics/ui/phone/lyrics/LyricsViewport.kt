@@ -82,7 +82,9 @@ fun LyricsViewport(
     BoxWithConstraints(modifier = modifier.fillMaxSize()) {
         val density = LocalDensity.current
         val viewportHeightPx = with(density) { maxHeight.roundToPx() }
-        val anchorHeight = maxHeight * FollowAnchorFraction
+        val followAnchorPx = (viewportHeightPx * FollowAnchorFraction).roundToInt()
+        val topContentPadding = AALyricsSpacing.Space20
+        val topContentPaddingPx = with(density) { topContentPadding.roundToPx() }
         val bottomAnchorSpace = maxHeight * (1f - FollowAnchorFraction)
         val rowSpacingPx = with(density) { AALyricsSpacing.Space16.roundToPx() }
         val lineHeights = remember(state.lines) { mutableStateMapOf<Int, Int>() }
@@ -115,6 +117,8 @@ fun LyricsViewport(
             state = state,
             lineHeights = lineHeights,
             rowSpacingPx = rowSpacingPx,
+            topContentPaddingPx = topContentPaddingPx,
+            followAnchorPx = followAnchorPx,
         )
         val plainTargetScrollPx = plainTargetScrollPx(
             state = state,
@@ -167,7 +171,7 @@ fun LyricsViewport(
                 targetScrollPx = playbackTargetScrollPx,
                 currentScrollPx = scrollState.value,
                 viewportHeightPx = viewportHeightPx,
-                anchorPx = with(density) { anchorHeight.roundToPx() },
+                anchorPx = followAnchorPx,
             )
         } else {
             null
@@ -200,10 +204,14 @@ fun LyricsViewport(
                     drawContent()
                     drawRect(
                         brush = Brush.verticalGradient(
-                            0f to Color.Transparent,
+                            0f to if (scrollState.value > 0) Color.Transparent else Color.Black,
                             EdgeFadeFraction to Color.Black,
                             (1f - EdgeFadeFraction) to Color.Black,
-                            1f to Color.Transparent,
+                            1f to if (scrollState.value < scrollState.maxValue) {
+                                Color.Transparent
+                            } else {
+                                Color.Black
+                            },
                         ),
                         blendMode = BlendMode.DstIn,
                     )
@@ -215,7 +223,7 @@ fun LyricsViewport(
                     .verticalScroll(scrollState)
                     .padding(
                         start = AALyricsSpacing.Space20,
-                        top = anchorHeight,
+                        top = topContentPadding,
                         end = AALyricsSpacing.Space20,
                         bottom = bottomAnchorSpace,
                     ),
@@ -411,6 +419,8 @@ private fun syncedTargetScrollPx(
     state: LyricsViewportUiState,
     lineHeights: Map<Int, Int>,
     rowSpacingPx: Int,
+    topContentPaddingPx: Int,
+    followAnchorPx: Int,
 ): Int? {
     if (state.syncType == LyricsSyncType.PLAIN) return null
 
@@ -424,9 +434,12 @@ private fun syncedTargetScrollPx(
         beforeHeight += lineHeights[index] ?: return null
     }
 
-    return beforeHeight +
+    val currentCenterPx = topContentPaddingPx +
+        beforeHeight +
         (rowSpacingPx * currentIndex) +
         (currentHeight / 2)
+
+    return currentCenterPx - followAnchorPx
 }
 
 private fun plainTargetScrollPx(
