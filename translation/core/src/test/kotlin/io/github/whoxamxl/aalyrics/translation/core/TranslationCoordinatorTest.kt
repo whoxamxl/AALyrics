@@ -9,6 +9,7 @@ import io.github.whoxamxl.aalyrics.translation.api.TranslationProviderId
 import io.github.whoxamxl.aalyrics.translation.api.TranslationRoute
 import io.github.whoxamxl.aalyrics.translation.api.TranslationSession
 import io.github.whoxamxl.aalyrics.translation.api.TranslationSettings
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
