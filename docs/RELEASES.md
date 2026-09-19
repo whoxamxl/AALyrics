@@ -38,11 +38,13 @@ Stable tags are reserved for builds that are intentionally presented as generall
 
 ## Version tags
 
-The Release workflow accepts:
+The Release workflow accepts only the stable tag form or one of the three defined prerelease channels:
 
 ```text
 vMAJOR.MINOR.PATCH
-vMAJOR.MINOR.PATCH-PRERELEASE
+vMAJOR.MINOR.PATCH-alpha.N
+vMAJOR.MINOR.PATCH-beta.N
+vMAJOR.MINOR.PATCH-rc.N
 ```
 
 Examples:
