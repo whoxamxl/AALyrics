@@ -1,44 +1,64 @@
-# Phone Track Card
+# Notification Access Onboarding
 
 ## Branch and baseline
 
-- Branch: `feature/phone-track-card`.
-- Base: `main` at `a6f6270b00c3340d671a8d896b596d74466e0180` after PR #38 merged.
-- Classification: **PHONE LYRICS TRACK CARD**.
-- Authoritative references: `AGENTS.md`, `docs/UI_ARCHITECTURE.md`, and `docs/PHONE_UI_SPEC.md`.
-- The user explicitly authorized continuing from the refined Phone shell into the Track Card as the next small slice.
+- Branch: `feature/notification-access-onboarding`.
+- Base: current `main` after the Phone shell work.
+- Classification: **APPLICATION ENTRY / REQUIRED SYSTEM ACCESS**.
+- Authoritative references: `AGENTS.md`, `docs/MEDIA_SESSION_RUNTIME.md`, and the existing NotificationListenerService runtime.
+- The user explicitly authorized implementation.
 
 ## Goal
 
-Implement the production `TrackCard` composable and its presentation state, then validate it through focused deterministic Previews.
+Require Notification Listener access before entering the normal phone application flow, because AALyrics depends on that access to observe other apps' active MediaSessions.
 
-This slice should establish the visual/API contract for current-track identity inside the Lyrics destination without implementing the Lyrics viewport, route/ViewModel wiring, media-session discovery, artwork loading, provider behavior, or navigation runtime.
+The application entry flow is:
+
+```text
+App launch / resume
+        |
+        v
+Notification access granted?
+   |                     |
+   no                    yes
+   |                     |
+   v                     v
+Required setup UI      normal app content
+   |
+   v
+Android notification-listener settings
+   |
+   v
+return to app -> re-check actual system state
+```
 
 ## Acceptance criteria
 
-- Add a focused immutable `TrackCardUiState` for title, artist, and compact provider/sync metadata.
-- Implement the real production `TrackCard` in `:ui:phone`.
-- Keep the card compact enough to preserve Lyrics viewport vertical priority.
-- Keep artwork rendering caller-owned so the component does not gain networking/image-loading policy.
-- Keep the 64dp artwork slot caller-owned and use a neutral placeholder when no artwork content is supplied; do not substitute the AALyrics brand mark for album artwork.
-- Support synchronized marquee behavior for overflowing title/artist text: 4s pause at the start, constant-speed scroll, 32dp repeat spacing, then repeat from the start; keep short text static and handle absent optional metadata cleanly.
-- Add focused Previews for normal artwork, long title, long artist, long title + artist, no metadata, no artist, and artwork-placeholder states.
-- Keep narrow-width checks isolated in the responsive Preview file rather than mixing them into the primary Track Card Preview set.
-- Do not implement `LyricsViewport`, `LyricsScreen`, ViewModels, media/runtime wiring, provider/network work, or Android Auto changes.
-- Keep commits small and single-purpose.
-- Run CI/repository validation, review the complete diff, open a PR, and stop before merge for explicit approval.
+- Treat Notification Listener access as required application setup.
+- Do not request `POST_NOTIFICATIONS`; AALyrics does not currently need permission to post its own notifications.
+- Check the real system grant state on launch and every Activity resume.
+- On Android 11+ open the listener-specific detail settings page when available.
+- Fall back to the general Notification Listener settings page, then general Settings if an OEM does not expose the more specific Activity.
+- Android 8.0 (API 26) remains supported even though `NotificationManager.isNotificationListenerAccessGranted()` starts at API 27.
+- The setup screen has no skip path and clearly explains why the access is required.
+- Render the setup screen as a production Compose component in `:ui:phone`, while keeping permission/system-navigation ownership in `:app`.
+- Provide deterministic debug Previews for typical phone, narrow phone, and enlarged-font layouts.
+- Preserve the existing granted-state placeholder until the separate Phone application-composition slice wires the production shell.
+- Keep MediaSession observation/provider/selection logic unchanged.
+- Add deterministic JVM coverage for the entry gate state decision.
+- Run CI/review, keep the PR open, and stop before merge for explicit approval.
 
-## Planned commits
+## Planned work
 
-- [x] Prepare Track Card branch and task.
-- [x] Add `TrackCardUiState`.
-- [x] Implement production `TrackCard`.
-- [x] Add focused Track Card Previews.
-- [x] Add responsive-only Track Card Preview.
-- [x] Align durable Phone UI docs with the stable Track Card/branding contract.
-- [x] Review the complete diff and require green final-head CI before merge.
-- [x] Open PR and stop before merge.
+- [x] Prepare branch and task scope.
+- [x] Add framework access checker and settings navigation.
+- [x] Add required setup screen and Activity resume gate.
+- [x] Move setup presentation to Compose in `:ui:phone`.
+- [x] Add typical / narrow / large-font setup Previews.
+- [x] Add deterministic gate tests.
+- [x] Update durable runtime documentation.
+- [x] Review diff / CI and open PR.
 
 ## Scope guard
 
-This branch implements only the Lyrics destination Track Card contract and visual component. The surrounding Lyrics screen and viewport remain the next slices.
+This slice gates application entry on the access already required by the live MediaSession runtime. It does not implement finished Lyrics presentation, Android Auto UI, media controls, provider changes, or a general-purpose permission framework.

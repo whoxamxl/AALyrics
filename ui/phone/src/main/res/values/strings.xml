@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="notification_access_eyebrow">REQUIRED SYSTEM ACCESS</string>
+    <string name="notification_access_title">Setup required</string>
+    <string name="notification_access_body">AALyrics needs Notification Access to detect the music currently playing on this device and load synchronized lyrics.</string>
+    <string name="notification_access_reason">Android keeps this access under system settings. AALyrics checks the real system state again when you return.</string>
+    <string name="notification_access_grant">Grant notification access</string>
+    <string name="notification_access_footer">You can disable this access at any time in Android Settings.</string>
+</resources>
