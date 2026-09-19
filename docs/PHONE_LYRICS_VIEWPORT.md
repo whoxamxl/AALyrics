@@ -26,8 +26,9 @@ Rules:
 - Long lyrics wrap naturally and remain one logical lyric row even when they occupy multiple visual lines.
 - Do not shrink typography merely to fit more lyrics on screen.
 - When Follow mode owns the scroll, target the current playback region at approximately 42% of viewport height from the top when enough content exists before it. This intentionally leaves more upcoming lyrics visible below the current region.
-- The 42% anchor is a scroll-position target, not reserved leading space. At the beginning of the document, the first rows start with ordinary content padding rather than leaving the upper 42% blank.
-- The 42% anchor is a responsive viewport fraction, not a fixed dp offset.
+- The 42% anchor is a scroll-position target, not permanently reserved leading space.
+- At the document start, center the first lyric row vertically in the viewport. At the document end, allow the final lyric row to finish vertically centered. This creates a deliberate opening/closing breathing space without forcing that gap throughout the song.
+- The 42% follow anchor and 50% document-boundary centering are responsive viewport fractions, not fixed dp offsets.
 
 ## Edge fading
 
@@ -41,7 +42,7 @@ Use an alpha mask over the rendered lyrics content:
 
 The fade applies to the lyric content itself rather than painting an opaque surface over it. This allows the effect to remain correct over the AALyrics background and future visual treatments.
 
-Only fade an edge when lyrics continue beyond that edge. At the document start, the top edge remains fully visible; at the document end, the bottom edge remains fully visible.
+Keep the edge mask active at the document boundaries as well. Because the first and final lyric rows are centered vertically, the boundary spacing itself keeps those rows clear of the fade region.
 
 The 15% value is the initial approved target and may be tuned slightly in Preview if it proves visually too strong or too weak.
 
@@ -114,8 +115,8 @@ On appearance:
 
 1. fade the control in subtly,
 2. bounce the chevron in its indicated direction,
-3. use roughly 4–6dp travel,
-4. use roughly 350–450ms per bounce cycle,
+3. use roughly 2–3dp travel,
+4. use roughly 400–500ms per bounce cycle,
 5. repeat only twice,
 6. then remain completely still.
 
