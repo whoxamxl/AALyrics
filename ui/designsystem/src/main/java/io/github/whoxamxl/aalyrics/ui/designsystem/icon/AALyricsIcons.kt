@@ -1,6 +1,8 @@
 package io.github.whoxamxl.aalyrics.ui.designsystem.icon
 
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.ExpandLess
+import androidx.compose.material.icons.rounded.ExpandMore
 import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.Lyrics
 import androidx.compose.material.icons.rounded.Pause
@@ -22,4 +24,7 @@ object AALyricsIcons {
     val Sync: ImageVector = Icons.Rounded.Sync
     val Details: ImageVector = Icons.Rounded.Info
     val Settings: ImageVector = Icons.Rounded.Settings
+
+    val PlaybackAbove: ImageVector = Icons.Rounded.ExpandLess
+    val PlaybackBelow: ImageVector = Icons.Rounded.ExpandMore
 }
