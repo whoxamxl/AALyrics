@@ -277,9 +277,45 @@ The durable distribution policy is defined in `docs/RELEASES.md`:
 
 The initial signed distribution is expected to be `v0.1.0-alpha.1` after PR #38 is merged and the release workflow is ready to exercise.
 
+## Android Auto media presentation track
+
+The Android Auto product direction is now fixed even though its Car App Library implementation is not yet authorized as an active slice.
+
+AALyrics remains a **Media app** and will keep two presentation paths in the same product:
+
+```text
+planned primary path
+    Car App Library templated media
+    -> androidx.car.app 1.8.0-rc01
+    -> MEDIA category
+    -> SectionedItemTemplate
+    -> MediaPlaybackTemplate where appropriate
+
+compatibility path
+    existing MediaBrowserServiceCompat
+    -> legacy Android Auto media presentation
+```
+
+The existing MediaSession/media-service architecture is retained. Adding Car App Library does not mean deleting the MediaBrowser path.
+
+Sideload policy is also fixed:
+
+- AALyrics is distributed outside Google Play.
+- Android Auto `Unknown sources` is a legacy-media compatibility requirement, not a global requirement for the Car App Library templated path.
+- Notification Access remains the only blocking phone setup gate.
+- Android Auto compatibility onboarding is advisory and records `ENABLED` or `SKIPPED`; it does not pretend to verify the Android Auto developer setting.
+- Exact host-selection/fallback behavior must be validated in DHU and on real Android Auto hardware before being treated as guaranteed runtime behavior.
+
+See:
+
+- `docs/ANDROID_AUTO_MEDIA_STRATEGY.md`
+- `docs/ANDROID_AUTO_COMPATIBILITY.md`
+
+The future Car App Library implementation must remain a dedicated topic branch/PR and must preserve the working legacy media path unless a later explicit decision changes this strategy.
+
 ## Later phases
 
-After the capability slices, later work includes finished Phone and Android Auto feature presentation, settings/persistence not already introduced by a capability, release-process refinement beyond the established GitHub Release baseline, and regression comparison against the previous fork.
+After the capability slices, later work includes finished Phone presentation, the authorized Car App Library Android Auto implementation described above, settings/persistence not already introduced by a capability, release-process refinement beyond the established GitHub Release baseline, and regression comparison against the previous fork.
 
 Do not use future feature needs as a reason to turn `LyricsCoordinator`, `PlaybackLyricsController`, the media-session runtime, demand gate, production selector, concrete providers, capability services, or the shared design system into god objects.
 

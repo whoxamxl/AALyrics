@@ -63,7 +63,9 @@ The later `feature/notification-access-onboarding` slice adds the application-en
 - returning from Settings always causes the actual system state to be checked again;
 - `POST_NOTIFICATIONS` is not requested because this flow grants listener access for MediaSession observation, not permission for AALyrics to post notifications.
 
-The finished Android Auto presentation is still a separate surface. When that surface is implemented, a missing-access state should direct the user to finish setup on the phone rather than attempting to grant Notification Listener access from the car display.
+The finished Android Auto presentation remains a separate surface. The durable Android Auto direction is now documented in `docs/ANDROID_AUTO_MEDIA_STRATEGY.md`: AALyrics remains a Media app, plans a Car App Library 1.8.0-rc01 templated-media path using `SectionedItemTemplate`, and retains the current `MediaBrowserServiceCompat` path for compatibility. This does not change the ownership rules in this document: active-session observation remains a phone-side platform concern, and missing Notification Access must be resolved on the phone rather than from the car display.
+
+The separate `docs/ANDROID_AUTO_COMPATIBILITY.md` document defines the advisory Android Auto `Unknown sources` onboarding for the sideloaded legacy media fallback. That compatibility acknowledgement must not be confused with or weaken the required Notification Access gate.
 
 ## Ownership and module boundary
 

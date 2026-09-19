@@ -448,7 +448,7 @@ The initial shared UI foundation uses:
 
 The BOM is intentionally pinned to the stable Compose 1.11 generation while the project remains on `compileSdk = 36`. Updating Compose or compileSdk should be a deliberate dependency slice rather than an incidental UI change.
 
-Android Auto host-template dependencies are intentionally not selected by the automotive architecture-only slice. The planned `SectionedItemTemplate` experiment should introduce its Car App Library version deliberately in its own implementation slice and validate the actual DHU host behavior before that dependency becomes part of durable production assumptions.
+The Android Auto media direction is now decided but remains a separate implementation slice. AALyrics stays a Media app and plans to add a Car App Library templated-media path using `androidx.car.app:app:1.8.0-rc01`, with `SectionedItemTemplate` as the primary browsing structure and the existing `MediaBrowserServiceCompat` path retained for compatibility. The planned Car App Library path must be validated in DHU and on physical Android Auto before host-dependent fallback behavior becomes a durable runtime assumption. See `docs/ANDROID_AUTO_MEDIA_STRATEGY.md` for the full decision, sideload policy, and coexistence rules.
 
 ## Naming and package rules
 
