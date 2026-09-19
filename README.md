@@ -65,43 +65,19 @@ For a local debug build:
 
 CI also uploads `aalyrics-debug-apk` for pull requests and `main` builds. This artifact is not the durable distribution package.
 
-### Publishing a signed GitHub Release
+### Release policy
 
-Release signing material is never committed to the repository. Configure these GitHub Actions repository secrets:
+Signed GitHub Releases are the durable distribution channel. Early functional snapshots use GitHub Pre-releases rather than pretending to be stable builds:
 
-- `AALYRICS_RELEASE_KEYSTORE_BASE64`
-- `AALYRICS_RELEASE_STORE_PASSWORD`
-- `AALYRICS_RELEASE_KEY_ALIAS`
-- `AALYRICS_RELEASE_KEY_PASSWORD`
+- `v0.1.0-alpha.1`, `-beta.N`, and `-rc.N` are published as **Pre-releases**;
+- `v0.1.0`-style tags with no suffix are normal/stable GitHub Releases;
+- release tags must point to commits contained in `main`;
+- the initial signed distribution is planned as `v0.1.0-alpha.1`;
+- release signing material is stored only through GitHub Actions secrets, never in Git.
 
-The existing `PETITLYRICS_USER_ID`, `PETITLYRICS_APP_NAME`, `PETITLYRICS_PKG_NAME`, and `PETITLYRICS_CLIENT_APP_ID` repository secrets are also required for a production release. The Release workflow fails rather than publishing an APK with missing release/provider credentials.
+An alpha release may be functionally incomplete. Its purpose can be to validate signing, installation, update compatibility, Android Auto discovery, and the durable distribution pipeline while clearly documenting current limitations.
 
-Generate the signing key once and keep the original keystore backed up securely. Example:
-
-```bash
-keytool -genkeypair -v -keystore aalyrics-release.jks -storetype JKS -alias aalyrics -keyalg RSA -keysize 4096 -validity 10000
-```
-
-On Windows PowerShell, encode the keystore for the GitHub secret with:
-
-```powershell
-[Convert]::ToBase64String([IO.File]::ReadAllBytes("aalyrics-release.jks"))
-```
-
-Put that output in `AALYRICS_RELEASE_KEYSTORE_BASE64`, then add the store password, alias, and key password in their matching secrets.
-
-A release is created by pushing a version tag that points to a commit already contained in `main`:
-
-```bash
-git checkout main
-git pull
-git tag v0.1.0
-git push origin v0.1.0
-```
-
-The Release workflow runs tests, builds and signs `app-release.apk`, renames it to `AALyrics-vX.Y.Z.apk`, writes a SHA-256 checksum, and publishes both files to the corresponding GitHub Release. The tag supplies `versionName`; the release workflow run number supplies a monotonically increasing `versionCode`.
-
-After downloading both files, the checksum can be verified with `sha256sum -c AALyrics-vX.Y.Z.apk.sha256`.
+See [docs/RELEASES.md](docs/RELEASES.md) for the authoritative versioning, signing, secret setup, publishing, checksum, backup, and update policy.
 
 ## Modules
 
