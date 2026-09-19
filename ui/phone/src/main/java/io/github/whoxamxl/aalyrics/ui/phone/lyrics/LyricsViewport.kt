@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
@@ -52,10 +53,12 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import io.github.whoxamxl.aalyrics.core.model.LyricsSyncType
 import io.github.whoxamxl.aalyrics.ui.designsystem.icon.AALyricsIcons
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsColors
@@ -238,11 +241,12 @@ fun LyricsViewport(
                         state = state,
                         line = line,
                         index = index,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .onSizeChanged { size ->
-                                lineHeights[index] = size.height
-                            },
+                        isFirst = index == 0,
+                        isLast = index == state.lines.lastIndex,
+                        modifier = Modifier.fillMaxWidth(),
+                        onTextHeightChanged = { height ->
+                            lineHeights[index] = height
+                        },
                     )
                 }
             }
@@ -285,10 +289,20 @@ private fun LyricsViewportRow(
     state: LyricsViewportUiState,
     line: LyricsViewportLineUiState,
     index: Int,
+    isFirst: Boolean,
+    isLast: Boolean,
     modifier: Modifier = Modifier,
+    onTextHeightChanged: (Int) -> Unit,
 ) {
     val isCurrent = state.syncType != LyricsSyncType.PLAIN && index == state.currentLineIndex
-    val distance = state.currentLineIndex?.let { abs(index - it) }
+    val neighborPadding = if (isCurrent) {
+        PaddingValues(
+            top = if (isFirst) 0.dp else CurrentLineNeighborMargin,
+            bottom = if (isLast) 0.dp else CurrentLineNeighborMargin,
+        )
+    } else {
+        PaddingValues(0.dp)
+    }
 
     val text = if (
         isCurrent &&
@@ -304,22 +318,37 @@ private fun LyricsViewportRow(
         buildAnnotatedString { append(line.text) }
     }
 
-    Text(
-        text = text,
-        modifier = modifier,
-        style = if (isCurrent) {
-            AALyricsTypography.LyricsCurrent
-        } else {
-            AALyricsTypography.LyricsSupporting
-        },
-        color = when {
-            isCurrent -> AALyricsColors.TextPrimary
-            state.syncType == LyricsSyncType.PLAIN -> AALyricsColors.TextSecondary
-            distance == null || distance <= 1 -> AALyricsColors.TextSecondary
-            else -> AALyricsColors.TextTertiary.copy(alpha = 0.82f)
-        },
-        textAlign = TextAlign.Center,
-    )
+    Box(
+        modifier = modifier.padding(neighborPadding),
+    ) {
+        Text(
+            text = text,
+            modifier = Modifier
+                .fillMaxWidth()
+                .onSizeChanged { size ->
+                    onTextHeightChanged(size.height)
+                },
+            style = if (isCurrent) {
+                AALyricsTypography.LyricsCurrent.copy(
+                    fontSize = 20.sp,
+                    lineHeight = 28.sp,
+                    fontWeight = FontWeight.Bold,
+                )
+            } else {
+                AALyricsTypography.LyricsSupporting.copy(
+                    fontSize = 18.sp,
+                    lineHeight = 26.sp,
+                    fontWeight = FontWeight.Medium,
+                )
+            },
+            color = if (isCurrent) {
+                AALyricsColors.TextPrimary
+            } else {
+                AALyricsColors.TextSecondary
+            },
+            textAlign = TextAlign.Start,
+        )
+    }
 }
 
 private fun buildWordProgressText(
@@ -439,9 +468,15 @@ private fun syncedTargetScrollPx(
         beforeHeight += lineHeights[index] ?: return null
     }
 
+    val currentTopMarginPx = if (currentIndex > 0) {
+        CurrentLineNeighborMarginPx
+    } else {
+        0
+    }
     val currentBottomPx = topContentPaddingPx +
         beforeHeight +
         (rowSpacingPx * currentIndex) +
+        currentTopMarginPx +
         currentHeight
     val focusBottomPx = resolvedFocusBottomPx(
         viewportHeightPx = viewportHeightPx,
@@ -522,7 +557,7 @@ private enum class PlaybackRegionDirection {
 
 private const val FocusBottomFraction = 0.52f
 private const val BoundaryCenterFraction = 0.50f
-private const val EdgeFadeFraction = 0.15f
+private const val EdgeFadeFraction = 0.20f
 private const val FocusZoneStartFraction = 0.28f
 private const val FocusZoneEndFraction = 0.60f
 private const val SyncedFocusToleranceFraction = 0.15f
@@ -536,6 +571,8 @@ private const val ReturnScrollDurationMillis = 420
 private const val ReturnControlFadeMillis = 140
 private const val ReturnBounceStartDelayMillis = 90L
 
+private val CurrentLineNeighborMargin = 8.dp
+private const val CurrentLineNeighborMarginPx = 8
 private val ReturnControlVisualSize = 36.dp
 private val ReturnChevronSize = 28.dp
 private val ReturnControlBottomInset = 3.dp
