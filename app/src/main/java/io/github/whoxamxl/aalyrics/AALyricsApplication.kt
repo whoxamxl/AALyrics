@@ -22,7 +22,13 @@ import io.github.whoxamxl.aalyrics.ui.automotive.AutomotiveBrowserClientTrust
 import io.github.whoxamxl.aalyrics.ui.automotive.AutomotiveRuntimeBinding
 import io.github.whoxamxl.aalyrics.ui.automotive.AutomotiveRuntimeHost
 import io.github.whoxamxl.aalyrics.ui.automotive.AutomotiveTransport
+import io.github.whoxamxl.aalyrics.translation.core.LanguageProfiler
+import io.github.whoxamxl.aalyrics.translation.core.TranslationBlockPlanner
+import io.github.whoxamxl.aalyrics.translation.core.TranslationCoordinator
+import io.github.whoxamxl.aalyrics.translation.core.TranslationState
+import io.github.whoxamxl.aalyrics.translation.mlkit.MlKitLanguageIdentifier
 import io.github.whoxamxl.aalyrics.translation.mlkit.MlKitTranslationModelManager
+import io.github.whoxamxl.aalyrics.translation.mlkit.MlKitTranslationProvider
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -39,6 +45,9 @@ class AALyricsApplication : Application() {
     private lateinit var automotiveBinding: AutomotiveRuntimeBinding
     private lateinit var translationSettingsStore: SharedPreferencesTranslationSettingsStore
     private lateinit var translationBackgroundRuntime: TranslationBackgroundRuntime
+    private lateinit var translationExecutionRuntime: TranslationExecutionRuntime
+    private lateinit var translationCoordinator: TranslationCoordinator
+    private lateinit var translationLanguageIdentifier: MlKitLanguageIdentifier
 
     val playbackLyricsController: PlaybackLyricsController
         get() = graph.playbackLyricsController
@@ -46,16 +55,33 @@ class AALyricsApplication : Application() {
     val lyricsState: StateFlow<LyricsState>
         get() = graph.lyricsState
 
+    val translationState: StateFlow<TranslationState>
+        get() = translationCoordinator.state
+
     override fun onCreate() {
         super.onCreate()
         graph = createProductionApplicationGraph(applicationScope)
         translationSettingsStore = SharedPreferencesTranslationSettingsStore(this)
+        val translationModelManager = MlKitTranslationModelManager(
+            context = this,
+            applicationScope = applicationScope,
+        )
         translationBackgroundRuntime = TranslationBackgroundRuntime(
             settingsStore = translationSettingsStore,
-            modelManager = MlKitTranslationModelManager(
-                context = this,
-                applicationScope = applicationScope,
-            ),
+            modelManager = translationModelManager,
+            applicationScope = applicationScope,
+        ).also { it.start() }
+        translationLanguageIdentifier = MlKitLanguageIdentifier()
+        translationCoordinator = TranslationCoordinator(
+            profiler = LanguageProfiler(translationLanguageIdentifier),
+            planner = TranslationBlockPlanner(),
+            providers = listOf(MlKitTranslationProvider(translationModelManager)),
+            scope = applicationScope,
+        )
+        translationExecutionRuntime = TranslationExecutionRuntime(
+            lyricsState = graph.lyricsState,
+            settingsStore = translationSettingsStore,
+            lifecycle = translationCoordinator,
             applicationScope = applicationScope,
         ).also { it.start() }
         MediaSessionRuntimeHost.attach(graph.playbackSnapshotSink)
@@ -82,6 +108,8 @@ class AALyricsApplication : Application() {
     }
 
     override fun onTerminate() {
+        translationExecutionRuntime.stop()
+        translationLanguageIdentifier.close()
         translationBackgroundRuntime.stop()
         translationSettingsStore.close()
         demandLifecycle.stop()
