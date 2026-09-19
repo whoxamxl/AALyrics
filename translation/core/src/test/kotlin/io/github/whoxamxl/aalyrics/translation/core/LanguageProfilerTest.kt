@@ -129,6 +129,29 @@ class LanguageProfilerTest {
     }
 
     @Test
+    fun `borrowed-only evidence does not hide meaningful identifier failure`() = runTest {
+        val lyrics = document(
+            listOf(
+                "Synthetic Latin lyric line",
+                "Yeah",
+            ),
+        )
+        val profiler = LanguageProfiler(
+            LanguageIdentifier { text ->
+                if (text.equals("Yeah", ignoreCase = true)) {
+                    candidates("en" to 0.99f)
+                } else {
+                    error("synthetic language-id failure")
+                }
+            },
+        )
+
+        assertFailsWith<LanguageProfilingException> {
+            profiler.profile(lyrics, targetLanguage = "ja")
+        }
+    }
+
+    @Test
     fun `target-language document produces no translatable blocks`() = runTest {
         val lyrics = document(
             listOf(
