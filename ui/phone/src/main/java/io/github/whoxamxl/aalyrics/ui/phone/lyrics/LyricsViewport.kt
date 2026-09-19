@@ -62,6 +62,7 @@ import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsColors
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsSpacing
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsStroke
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsTypography
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.abs
 import kotlin.math.roundToInt
@@ -82,7 +83,6 @@ fun LyricsViewport(
     BoxWithConstraints(modifier = modifier.fillMaxSize()) {
         val density = LocalDensity.current
         val viewportHeightPx = with(density) { maxHeight.roundToPx() }
-        val followAnchorPx = (viewportHeightPx * FollowAnchorFraction).roundToInt()
         val minimumContentPaddingPx = with(density) { AALyricsSpacing.Space20.roundToPx() }
         val rowSpacingPx = with(density) { AALyricsSpacing.Space16.roundToPx() }
         val lineHeights = remember(state.lines) { mutableStateMapOf<Int, Int>() }
@@ -90,10 +90,10 @@ fun LyricsViewport(
         val lastLineHeightPx = lineHeights[state.lines.lastIndex] ?: 0
         val boundaryCenterPx = (viewportHeightPx * BoundaryCenterFraction).roundToInt()
         val topContentPaddingPx = (
-            boundaryCenterPx - (firstLineHeightPx / 2)
+            boundaryCenterPx - firstLineHeightPx
             ).coerceAtLeast(minimumContentPaddingPx)
         val bottomContentPaddingPx = (
-            boundaryCenterPx - (lastLineHeightPx / 2)
+            boundaryCenterPx - lastLineHeightPx
             ).coerceAtLeast(minimumContentPaddingPx)
         val topContentPadding = with(density) { topContentPaddingPx.toDp() }
         val bottomContentPadding = with(density) { bottomContentPaddingPx.toDp() }
@@ -127,7 +127,7 @@ fun LyricsViewport(
             lineHeights = lineHeights,
             rowSpacingPx = rowSpacingPx,
             topContentPaddingPx = topContentPaddingPx,
-            followAnchorPx = followAnchorPx,
+            viewportHeightPx = viewportHeightPx,
         )
         val plainTargetScrollPx = plainTargetScrollPx(
             state = state,
@@ -180,7 +180,6 @@ fun LyricsViewport(
                 targetScrollPx = playbackTargetScrollPx,
                 currentScrollPx = scrollState.value,
                 viewportHeightPx = viewportHeightPx,
-                anchorPx = followAnchorPx,
             )
         } else {
             null
@@ -253,7 +252,9 @@ fun LyricsViewport(
             visible = returnDirection != null,
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .padding(bottom = (maxHeight * EdgeFadeFraction) + AALyricsSpacing.Space8),
+                .padding(
+                    bottom = (maxHeight * (EdgeFadeFraction / 3f)) + ReturnControlBottomInset,
+                ),
             enter = fadeIn(animationSpec = tween(ReturnControlFadeMillis)),
             exit = fadeOut(animationSpec = tween(ReturnControlFadeMillis)),
         ) {
@@ -356,27 +357,26 @@ private fun ReturnToPlaybackControl(
 
     LaunchedEffect(direction) {
         bounceOffset.snapTo(0f)
+        delay(ReturnBounceStartDelayMillis)
         val target = if (direction == PlaybackRegionDirection.ABOVE) {
             -ReturnBounceDistanceDp
         } else {
             ReturnBounceDistanceDp
         }
-        repeat(ReturnBounceCount) {
-            bounceOffset.animateTo(
-                targetValue = target,
-                animationSpec = tween(
-                    durationMillis = ReturnBounceHalfCycleMillis,
-                    easing = FastOutSlowInEasing,
-                ),
-            )
-            bounceOffset.animateTo(
-                targetValue = 0f,
-                animationSpec = tween(
-                    durationMillis = ReturnBounceHalfCycleMillis,
-                    easing = FastOutSlowInEasing,
-                ),
-            )
-        }
+        bounceOffset.animateTo(
+            targetValue = target,
+            animationSpec = tween(
+                durationMillis = ReturnBounceHalfCycleMillis,
+                easing = FastOutSlowInEasing,
+            ),
+        )
+        bounceOffset.animateTo(
+            targetValue = 0f,
+            animationSpec = tween(
+                durationMillis = ReturnBounceHalfCycleMillis,
+                easing = FastOutSlowInEasing,
+            ),
+        )
     }
 
     Box(
@@ -425,7 +425,7 @@ private fun syncedTargetScrollPx(
     lineHeights: Map<Int, Int>,
     rowSpacingPx: Int,
     topContentPaddingPx: Int,
-    followAnchorPx: Int,
+    viewportHeightPx: Int,
 ): Int? {
     if (state.syncType == LyricsSyncType.PLAIN) return null
 
@@ -439,12 +439,36 @@ private fun syncedTargetScrollPx(
         beforeHeight += lineHeights[index] ?: return null
     }
 
-    val currentCenterPx = topContentPaddingPx +
+    val currentBottomPx = topContentPaddingPx +
         beforeHeight +
         (rowSpacingPx * currentIndex) +
-        (currentHeight / 2)
+        currentHeight
+    val focusBottomPx = resolvedFocusBottomPx(
+        viewportHeightPx = viewportHeightPx,
+        currentHeightPx = currentHeight,
+    )
 
-    return currentCenterPx - followAnchorPx
+    return currentBottomPx - focusBottomPx
+}
+
+private fun resolvedFocusBottomPx(
+    viewportHeightPx: Int,
+    currentHeightPx: Int,
+): Int {
+    val nominalBottomPx = viewportHeightPx * FocusBottomFraction
+    val focusTopPx = viewportHeightPx * FocusZoneStartFraction
+    val focusBottomLimitPx = viewportHeightPx * FocusZoneEndFraction
+    val minimumBottomPx = focusTopPx + currentHeightPx
+
+    return if (minimumBottomPx <= focusBottomLimitPx) {
+        nominalBottomPx
+            .coerceIn(minimumBottomPx, focusBottomLimitPx)
+            .roundToInt()
+    } else {
+        val focusCenterPx = viewportHeightPx *
+            ((FocusZoneStartFraction + FocusZoneEndFraction) / 2f)
+        (focusCenterPx + (currentHeightPx / 2f)).roundToInt()
+    }
 }
 
 private fun plainTargetScrollPx(
@@ -473,27 +497,21 @@ private fun playbackRegionDirection(
     targetScrollPx: Int,
     currentScrollPx: Int,
     viewportHeightPx: Int,
-    anchorPx: Int,
 ): PlaybackRegionDirection? {
     if (viewportHeightPx <= 0) return null
 
-    return if (state.syncType == LyricsSyncType.PLAIN) {
-        val delta = targetScrollPx - currentScrollPx
-        val tolerance = viewportHeightPx * PlainFocusToleranceFraction
-        when {
-            delta < -tolerance -> PlaybackRegionDirection.ABOVE
-            delta > tolerance -> PlaybackRegionDirection.BELOW
-            else -> null
-        }
+    val delta = targetScrollPx - currentScrollPx
+    val toleranceFraction = if (state.syncType == LyricsSyncType.PLAIN) {
+        PlainFocusToleranceFraction
     } else {
-        val playbackCenterY = anchorPx + targetScrollPx - currentScrollPx
-        when {
-            playbackCenterY < viewportHeightPx * FocusZoneStartFraction ->
-                PlaybackRegionDirection.ABOVE
-            playbackCenterY > viewportHeightPx * FocusZoneEndFraction ->
-                PlaybackRegionDirection.BELOW
-            else -> null
-        }
+        SyncedFocusToleranceFraction
+    }
+    val tolerance = viewportHeightPx * toleranceFraction
+
+    return when {
+        delta < -tolerance -> PlaybackRegionDirection.ABOVE
+        delta > tolerance -> PlaybackRegionDirection.BELOW
+        else -> null
     }
 }
 
@@ -502,11 +520,12 @@ private enum class PlaybackRegionDirection {
     BELOW,
 }
 
-private const val FollowAnchorFraction = 0.42f
+private const val FocusBottomFraction = 0.52f
 private const val BoundaryCenterFraction = 0.50f
 private const val EdgeFadeFraction = 0.15f
-private const val FocusZoneStartFraction = 0.30f
+private const val FocusZoneStartFraction = 0.28f
 private const val FocusZoneEndFraction = 0.60f
+private const val SyncedFocusToleranceFraction = 0.15f
 private const val PlainFocusToleranceFraction = 0.15f
 private const val PlainLeadInFraction = 0.05f
 private const val PlainLeadOutFraction = 0.05f
@@ -514,13 +533,14 @@ private const val PlainLeadOutFraction = 0.05f
 private const val SyncedFollowScrollDurationMillis = 420
 private const val PlainFollowScrollDurationMillis = 350
 private const val ReturnScrollDurationMillis = 420
-private const val ReturnControlFadeMillis = 160
+private const val ReturnControlFadeMillis = 140
+private const val ReturnBounceStartDelayMillis = 90L
 
 private val ReturnControlVisualSize = 36.dp
-private val ReturnChevronSize = 24.dp
-private const val ReturnControlFillAlpha = 0.48f
-private const val ReturnControlBorderAlpha = 0.30f
-private const val ReturnChevronAlpha = 0.92f
+private val ReturnChevronSize = 28.dp
+private val ReturnControlBottomInset = 3.dp
+private const val ReturnControlFillAlpha = 0.38f
+private const val ReturnControlBorderAlpha = 0.22f
+private const val ReturnChevronAlpha = 0.94f
 private const val ReturnBounceDistanceDp = 3f
-private const val ReturnBounceCount = 2
-private const val ReturnBounceHalfCycleMillis = 220
+private const val ReturnBounceHalfCycleMillis = 200
