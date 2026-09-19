@@ -42,7 +42,10 @@ Android Auto host
 - Make debug APKs available as CI artifacts suitable for development sideloading.
 - Make signed release APKs the durable distribution path via GitHub Releases; do not use Google Play distribution.
 - Keep the release keystore out of the repository and restore it only from GitHub Actions secrets.
-- Publish versioned APK + SHA-256 checksum automatically from `v*` tags that point to commits contained in `main`.
+- Publish versioned APK + SHA-256 checksum automatically from accepted version tags that point to commits contained in `main`.
+- Publish prerelease-suffixed tags (`-alpha.*`, `-beta.*`, `-rc.*`) as GitHub Pre-releases and reserve suffix-free `vMAJOR.MINOR.PATCH` tags for stable releases.
+- Define `v0.1.0-alpha.1` as the intended first signed distribution; functional completeness is not required for this pipeline-validation release.
+- Maintain an authoritative `docs/RELEASES.md` covering channels, versioning, signing identity, backup, secrets, publishing, checksum verification, and update compatibility.
 - Document Android Auto developer-mode / Unknown sources setup, local `installDebug`, and the signed release workflow.
 - Add deterministic tests for automotive state projection and transport routing.
 - Run repository validation, review the complete diff, open a PR, and stop before merge for explicit approval.
@@ -57,6 +60,8 @@ Android Auto host
 - [x] Add sideloadable debug CI artifact and setup documentation.
 - [x] Add signed GitHub Release APK workflow and release-signing configuration.
 - [x] Document keystore-secret setup and tag-driven release publishing.
+- [x] Define prerelease/stable tag policy and automatic GitHub Pre-release classification.
+- [x] Add authoritative release policy documentation and align README/ROADMAP.
 - [x] Add deterministic regression tests.
 - [x] Run validation and architecture checks.
 - [x] Review complete diff and open PR #38.
@@ -77,4 +82,4 @@ Initial PR validation passed in CI runs #172 and #173. The first bounded Codex r
 - retain the source playback-position sample time instead of anchoring projection only at AALyrics receipt time;
 - require notification-listener access in the fresh-sideload setup.
 
-All three findings were fixed. CI run #182 subsequently passed the architecture guard, debug APK build, complete unit-test suite, and `aalyrics-debug-apk` artifact upload. The distribution path was then expanded by explicit user request: Google Play is excluded; signed release APKs are published from `v*` tags through GitHub Releases, with the keystore restored from repository secrets only. Browse-window UI remains explicitly deferred. A second bounded review is pending before the merge approval gate.
+All three findings were fixed. CI run #182 subsequently passed the architecture guard, debug APK build, complete unit-test suite, and `aalyrics-debug-apk` artifact upload. The distribution path was then expanded by explicit user request: Google Play is excluded; signed release APKs are published through GitHub Releases, with the keystore restored from repository secrets only. The release policy now distinguishes prerelease tags from stable tags, automatically marks suffix-bearing versions as GitHub Pre-releases, and records `v0.1.0-alpha.1` as the intended first signed distribution even if product functionality is still incomplete. `docs/RELEASES.md` is the authoritative release policy. Browse-window UI remains explicitly deferred. A second bounded review is pending before the merge approval gate.
