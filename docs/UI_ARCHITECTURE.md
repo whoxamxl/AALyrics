@@ -8,6 +8,8 @@ The project uses Jetpack Compose itself as the executable design specification f
 
 Surface-specific product structure is documented separately when useful. The current Phone information architecture is defined in `docs/PHONE_UI_SPEC.md`.
 
+Branding authority and derivative rules are defined in `docs/BRANDING.md`; `branding/AALyrics_MASTER.svg` is the canonical AALyrics master icon.
+
 ## Modules
 
 ```text
