@@ -262,9 +262,24 @@ Must follow `docs/PRESENTATION_STATE_ARCHITECTURE.md`. Do not create one univers
 
 These implementation slices are separate responsibilities and should normally use separate topic branches/PRs. The order may change when concrete implementation or product evidence justifies it, but the dependency and ownership rules in the Phase 11 foundation remain the guardrail.
 
+## Release engineering
+
+PR #38 introduces the release-engineering foundation alongside the Android Auto Now Playing slice. Until that PR is merged, it remains pending integration.
+
+The durable distribution policy is defined in `docs/RELEASES.md`:
+
+- Google Play is not a distribution channel for AALyrics;
+- durable builds are release-signed APKs published through GitHub Releases;
+- prerelease version tags such as `v0.1.0-alpha.1` are GitHub Pre-releases and may intentionally represent incomplete development milestones;
+- suffix-free tags such as `v0.1.0` are reserved for stable releases;
+- release tags must point to commits contained in `main`;
+- one persistent release signing identity is required for update compatibility.
+
+The initial signed distribution is expected to be `v0.1.0-alpha.1` after PR #38 is merged and the release workflow is ready to exercise.
+
 ## Later phases
 
-After the capability slices, later work includes finished Phone and Android Auto feature presentation, settings/persistence not already introduced by a capability, release/signing, and regression comparison against the previous fork.
+After the capability slices, later work includes finished Phone and Android Auto feature presentation, settings/persistence not already introduced by a capability, release-process refinement beyond the established GitHub Release baseline, and regression comparison against the previous fork.
 
 Do not use future feature needs as a reason to turn `LyricsCoordinator`, `PlaybackLyricsController`, the media-session runtime, demand gate, production selector, concrete providers, capability services, or the shared design system into god objects.
 
