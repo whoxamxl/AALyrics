@@ -38,7 +38,9 @@ class MlKitTranslationModelManager(
     private val applicationScope: CoroutineScope,
 ) : TranslationModelManager {
     private val appContext = context.applicationContext
-    private val remoteModelManager = RemoteModelManager.getInstance()
+    private val remoteModelManager: RemoteModelManager by lazy(LazyThreadSafetyMode.SYNCHRONIZED) {
+        RemoteModelManager.getInstance()
+    }
 
     private val activeModelDownloads = ConcurrentHashMap<String, Task<Void>>()
     private val activeModelMonitors = ConcurrentHashMap<String, Deferred<Boolean>>()
