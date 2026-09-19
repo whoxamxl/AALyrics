@@ -2,6 +2,7 @@ package io.github.whoxamxl.aalyrics.ui.phone.lyrics
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
@@ -299,14 +300,19 @@ private fun LyricsViewportRow(
     onTextHeightChanged: (Int) -> Unit,
 ) {
     val isCurrent = state.syncType != LyricsSyncType.PLAIN && index == state.currentLineIndex
-    val neighborPadding = if (isCurrent) {
-        PaddingValues(
-            top = if (isFirst) 0.dp else CurrentLineNeighborMargin,
-            bottom = if (isLast) 0.dp else CurrentLineNeighborMargin,
-        )
-    } else {
-        PaddingValues(0.dp)
-    }
+    val emphasis by animateFloatAsState(
+        targetValue = if (isCurrent) 1f else 0f,
+        animationSpec = tween(
+            durationMillis = CurrentEmphasisTransitionMillis,
+            easing = FastOutSlowInEasing,
+        ),
+        label = "lyrics-current-emphasis",
+    )
+    val animatedNeighborMargin = (CurrentLineNeighborMargin.value * emphasis).dp
+    val neighborPadding = PaddingValues(
+        top = if (isFirst) 0.dp else animatedNeighborMargin,
+        bottom = if (isLast) 0.dp else animatedNeighborMargin,
+    )
 
     val text = if (
         isCurrent &&
@@ -332,24 +338,20 @@ private fun LyricsViewportRow(
                 .onSizeChanged { size ->
                     onTextHeightChanged(size.height)
                 },
-            style = if (isCurrent) {
-                AALyricsTypography.LyricsCurrent.copy(
-                    fontSize = 22.sp,
-                    lineHeight = 30.sp,
-                    fontWeight = FontWeight.Bold,
-                )
-            } else {
-                AALyricsTypography.LyricsSupporting.copy(
-                    fontSize = 18.sp,
-                    lineHeight = 26.sp,
-                    fontWeight = FontWeight.Medium,
-                )
-            },
-            color = if (isCurrent) {
-                AALyricsColors.TextPrimary
-            } else {
-                AALyricsColors.TextSecondary
-            },
+            style = AALyricsTypography.LyricsSupporting.copy(
+                fontSize = (18f + (4f * emphasis)).sp,
+                lineHeight = (26f + (4f * emphasis)).sp,
+                fontWeight = FontWeight(
+                    (FontWeight.Medium.weight +
+                        ((FontWeight.Bold.weight - FontWeight.Medium.weight) * emphasis))
+                        .roundToInt(),
+                ),
+            ),
+            color = lerp(
+                AALyricsColors.TextSecondary,
+                AALyricsColors.TextPrimary,
+                emphasis,
+            ),
             textAlign = TextAlign.Start,
         )
     }
@@ -570,6 +572,7 @@ private const val PlainFocusToleranceFraction = 0.15f
 private const val PlainLeadInFraction = 0.05f
 private const val PlainLeadOutFraction = 0.05f
 
+private const val CurrentEmphasisTransitionMillis = 320
 private const val SyncedFollowScrollDurationMillis = 420
 private const val PlainFollowScrollDurationMillis = 350
 private const val ReturnScrollDurationMillis = 420
