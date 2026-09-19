@@ -57,6 +57,11 @@ class MlKitTranslationModelManager(
             return true
         }
 
+        if (isRetryBlocked(normalized)) {
+            Log.d(TAG, "automatic model retry suppressed until explicit retry: $normalized")
+            return false
+        }
+
         val mlLanguage = TranslateLanguage.fromLanguageTag(normalized)
         if (mlLanguage == null) {
             publish(
@@ -89,6 +94,13 @@ class MlKitTranslationModelManager(
         return getOrStartMonitor(normalized, model).await()
     }
 
+    override suspend fun retry(languageTag: String): Boolean {
+        val normalized = TranslationLanguages.normalizeLanguageTag(languageTag)
+            ?: return false
+        _states.update { current -> current - normalized }
+        return ensureAvailable(normalized)
+    }
+
     override suspend fun ensureRouteAvailable(
         sourceLanguage: String,
         targetLanguage: String,
@@ -103,6 +115,13 @@ class MlKitTranslationModelManager(
         }
         return true
     }
+
+    private fun isRetryBlocked(languageTag: String): Boolean =
+        when (_states.value[languageTag]?.phase) {
+            TranslationModelPhase.FAILED,
+            TranslationModelPhase.TIMED_OUT -> true
+            else -> false
+        }
 
     private fun activeMonitor(languageTag: String): Deferred<Boolean>? =
         synchronized(activeModelMonitors) {
