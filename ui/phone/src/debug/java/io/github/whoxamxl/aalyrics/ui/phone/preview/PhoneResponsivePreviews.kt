@@ -6,6 +6,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsTheme
+import io.github.whoxamxl.aalyrics.ui.phone.lyrics.TrackCard
 import io.github.whoxamxl.aalyrics.ui.phone.navigation.PhoneDestination
 import io.github.whoxamxl.aalyrics.ui.phone.shell.PhoneAppShell
 import io.github.whoxamxl.aalyrics.ui.phone.shell.PhoneNavigationBar
@@ -21,6 +22,14 @@ import io.github.whoxamxl.aalyrics.ui.phone.shell.PlaybackControlsBar
 private fun PhoneTopBarNarrowPreview() {
     AALyricsTheme {
         PhoneTopBar(mediaSourceLabel = "YouTube Music")
+    }
+}
+
+@Preview(name = "Track Card · 320dp", group = "Responsive", widthDp = 320, showBackground = true)
+@Composable
+private fun TrackCardNarrowPreview() {
+    AALyricsTheme {
+        TrackCard(state = PhonePreviewFixtures.trackCardLongTitleAndArtist)
     }
 }
 
