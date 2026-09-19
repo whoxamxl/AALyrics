@@ -428,6 +428,7 @@ Stable rules:
 
 - original lyrics remain usable during all Translation work;
 - Translation or model failure is not lyrics lookup failure;
+- an engine exception during meaningful language identification is a Translation failure, not a false `NotRequired` result; genuinely undetermined/uncertain text may still be preserved without failure;
 - target-language changes may restart Translation without refetching Lyrics Providers;
 - stale work cannot publish after lyrics/target/request supersession;
 - foreground presentation does not own the model download lifecycle.
