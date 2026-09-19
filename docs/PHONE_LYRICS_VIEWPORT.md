@@ -2,7 +2,7 @@
 
 ## Status
 
-This document captures the approved interaction and visual contract for the Phone `LyricsViewport` before implementation.
+This document defines the implemented interaction and visual contract for the Phone `LyricsViewport`.
 
 The viewport is the primary reading surface of the Lyrics destination. It must remain responsive to available height, width, text wrapping, and system font scale rather than targeting a fixed visible-line count.
 

@@ -83,15 +83,15 @@ AALyrics should preserve the useful hierarchy and manual-return concept while re
 
 - [x] Prepare LyricsViewport branch and task.
 - [x] Capture the approved LyricsViewport behavior contract in durable docs.
-- [ ] Add viewport presentation model.
-- [ ] Implement responsive continuous viewport shell and edge fading.
-- [ ] Add LINE follow behavior and Previews.
-- [ ] Add WORD visual progress behavior and Previews.
-- [ ] Add PLAIN estimated auto-follow behavior and Previews.
-- [ ] Add manual browse / return-to-current interaction.
-- [ ] Align durable Phone UI docs after behavior stabilizes.
-- [ ] Run validation and review.
-- [ ] Open PR and stop before merge.
+- [x] Add viewport presentation model.
+- [x] Implement responsive continuous viewport shell and edge fading.
+- [x] Add LINE follow behavior and Previews.
+- [x] Add WORD visual progress behavior and Previews.
+- [x] Add PLAIN estimated auto-follow behavior and Previews.
+- [x] Add manual browse / return-to-playback interaction.
+- [x] Align durable Phone UI docs with the implemented viewport contract.
+- [x] Review the complete diff; require final-head CI before merge.
+- [x] Open PR #40 and stop before merge.
 
 ## Scope guard
 
