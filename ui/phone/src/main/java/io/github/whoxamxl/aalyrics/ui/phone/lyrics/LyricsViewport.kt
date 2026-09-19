@@ -123,8 +123,7 @@ fun LyricsViewport(
         val playbackTargetScrollPx = when (state.syncType) {
             LyricsSyncType.PLAIN -> plainTargetScrollPx
             LyricsSyncType.LINE,
-            LyricsSyncType.WORD,
-            -> syncTargetScrollPx
+            LyricsSyncType.WORD -> syncTargetScrollPx
         }
 
         LaunchedEffect(
