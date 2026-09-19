@@ -1,11 +1,46 @@
 package io.github.whoxamxl.aalyrics.ui.phone.preview
 
+import io.github.whoxamxl.aalyrics.ui.phone.lyrics.TrackCardUiState
 import io.github.whoxamxl.aalyrics.ui.phone.navigation.PhoneDestination
 import io.github.whoxamxl.aalyrics.ui.phone.state.PhoneShellUiState
 import io.github.whoxamxl.aalyrics.ui.phone.state.PlaybackControlsUiState
 
 /** Deterministic debug-only inputs shared by Phone shell component Previews. */
 internal object PhonePreviewFixtures {
+    val trackCardReady = TrackCardUiState(
+        title = "Midnight Signals",
+        artist = "The Northbound Lights",
+        providerLabel = "Musixmatch",
+        syncLabel = "Word synced",
+    )
+    val trackCardLongTitle = TrackCardUiState(
+        title = "A Track Title Long Enough to Demonstrate the Overflow Marquee Behavior",
+        artist = "The Northbound Lights",
+        providerLabel = "Musixmatch",
+        syncLabel = "Word synced",
+    )
+    val trackCardLongArtist = TrackCardUiState(
+        title = "Midnight Signals",
+        artist = "An Artist Name That Is Deliberately Much Longer Than the Available Track Card Width",
+        providerLabel = "Musixmatch",
+        syncLabel = "Word synced",
+    )
+    val trackCardLongTitleAndArtist = TrackCardUiState(
+        title = "A Track Title Long Enough to Demonstrate the Overflow Marquee Behavior",
+        artist = "An Artist Name That Is Deliberately Much Longer Than the Available Track Card Width",
+        providerLabel = "Musixmatch",
+        syncLabel = "Word synced",
+    )
+    val trackCardNoMetadata = TrackCardUiState(
+        title = "Midnight Signals",
+        artist = "The Northbound Lights",
+    )
+    val trackCardNoArtist = TrackCardUiState(
+        title = "Untitled Session",
+        providerLabel = "LRCLIB",
+        syncLabel = "Line synced",
+    )
+
     val playingControls = PlaybackControlsUiState(
         isPlaying = true,
         progressFraction = 0.42f,

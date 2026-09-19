@@ -62,6 +62,7 @@ class ApplicationGraphTest {
         graph.playbackSnapshotSink.onPlaybackSnapshot(PlaybackSnapshot(track = track))
         advanceUntilIdle()
         assertEquals(emptyList(), provider.requests)
+        assertEquals(track, graph.playbackState.value.track)
 
         graph.lyricsDemandGate.setPhoneProcessForeground(true)
         advanceUntilIdle()

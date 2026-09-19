@@ -13,6 +13,38 @@ fun javaStringLiteral(value: String): String = "\"" + value
     .replace("\\", "\\\\").replace("\"", "\\\"")
     .replace("\r", "\\r").replace("\n", "\\n").replace("\t", "\\t") + "\""
 
+val releaseStorePath = providers.environmentVariable("AALYRICS_RELEASE_STORE_FILE").orNull
+val releaseStorePassword = providers.environmentVariable("AALYRICS_RELEASE_STORE_PASSWORD").orNull
+val releaseKeyAlias = providers.environmentVariable("AALYRICS_RELEASE_KEY_ALIAS").orNull
+val releaseKeyPassword = providers.environmentVariable("AALYRICS_RELEASE_KEY_PASSWORD").orNull
+val releaseSigningConfigured = listOf(
+    releaseStorePath,
+    releaseStorePassword,
+    releaseKeyAlias,
+    releaseKeyPassword,
+).all { !it.isNullOrBlank() }
+
+val releaseTaskRequested = gradle.startParameter.taskNames.any {
+    it.contains("Release", ignoreCase = true)
+}
+if (releaseTaskRequested && !releaseSigningConfigured) {
+    error(
+        "Release signing is not configured. Set AALYRICS_RELEASE_STORE_FILE, " +
+            "AALYRICS_RELEASE_STORE_PASSWORD, AALYRICS_RELEASE_KEY_ALIAS, and " +
+            "AALYRICS_RELEASE_KEY_PASSWORD.",
+    )
+}
+
+val configuredVersionCode = providers.environmentVariable("AALYRICS_VERSION_CODE")
+    .orNull
+    ?.toIntOrNull()
+    ?.takeIf { it > 0 }
+    ?: 1
+val configuredVersionName = providers.environmentVariable("AALYRICS_VERSION_NAME")
+    .orNull
+    ?.takeIf { it.isNotBlank() }
+    ?: "0.1.0-dev"
+
 android {
     buildFeatures { buildConfig = true }
     namespace = "io.github.whoxamxl.aalyrics"
@@ -22,8 +54,8 @@ android {
         applicationId = "io.github.whoxamxl.aalyrics"
         minSdk = 26
         targetSdk = 36
-        versionCode = 1
-        versionName = "0.1.0-dev"
+        versionCode = configuredVersionCode
+        versionName = configuredVersionName
 
         listOf(
             "PETITLYRICS_USER_ID", "PETITLYRICS_APP_NAME",
@@ -31,6 +63,25 @@ android {
         ).forEach { key ->
             val value = providers.environmentVariable(key).orNull ?: petitLyricsLocal.getProperty(key, "")
             buildConfigField("String", key, javaStringLiteral(value))
+        }
+    }
+
+    signingConfigs {
+        if (releaseSigningConfigured) {
+            create("release") {
+                storeFile = file(requireNotNull(releaseStorePath))
+                storePassword = releaseStorePassword
+                keyAlias = releaseKeyAlias
+                keyPassword = releaseKeyPassword
+            }
+        }
+    }
+
+    buildTypes {
+        getByName("release") {
+            if (releaseSigningConfigured) {
+                signingConfig = signingConfigs.getByName("release")
+            }
         }
     }
 

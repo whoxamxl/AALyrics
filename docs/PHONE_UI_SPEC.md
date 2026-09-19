@@ -98,6 +98,10 @@ Conceptually:
 
 The card is informational. Playback transport actions stay in the persistent Playback Controls Bar so information and actions have separate, predictable locations.
 
+The production Track Card keeps album artwork caller-owned in a compact 64dp slot. When artwork is unavailable, the card shows a neutral placeholder rather than substituting the AALyrics brand mark. Artwork loading/decoding policy remains outside the component.
+
+Long title/artist text uses a synchronized horizontal marquee only when the combined identity block overflows. Title and artist move together, pause for 4 seconds at the leading position, scroll at a constant speed, keep a small repeat gap, then return to the leading position and repeat. Short text remains static. Provider/sync metadata stays fixed and truncates rather than joining the marquee.
+
 ## Lyrics viewport
 
 The Lyrics viewport is the visual priority of the Lyrics destination.

@@ -112,6 +112,12 @@ class MediaSessionObservationTest {
             detachCount += 1
             if (this.callback === callback) this.callback = null
         }
+
+        override fun play() = Unit
+        override fun pause() = Unit
+        override fun skipToPrevious() = Unit
+        override fun skipToNext() = Unit
+        override fun seekTo(positionMs: Long) = Unit
     }
 
     private companion object {

@@ -72,6 +72,11 @@ class MediaSessionSelectionPolicyTest {
         override fun snapshot() = PlaybackSnapshot()
         override fun attach(callback: RuntimeMediaControllerCallback) = Unit
         override fun detach(callback: RuntimeMediaControllerCallback) = Unit
+        override fun play() = Unit
+        override fun pause() = Unit
+        override fun skipToPrevious() = Unit
+        override fun skipToNext() = Unit
+        override fun seekTo(positionMs: Long) = Unit
     }
 
     private companion object {

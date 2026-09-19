@@ -66,18 +66,29 @@ sealed interface PlaybackTrackIdentity {
     ) : PlaybackTrackIdentity
 }
 
-/** Immutable snapshot consumed by the lyrics domain and presentation layers. */
+/**
+ * Immutable snapshot consumed by the lyrics domain and presentation layers.
+ *
+ * [positionUpdatedAtMonotonicMs] is optional because not every playback source
+ * supplies a sample timestamp. When present, it is on the source platform's
+ * monotonic clock and lets a downstream adapter advance [positionMs] without
+ * pretending the snapshot was sampled when AALyrics happened to receive it.
+ */
 data class PlaybackSnapshot(
     val track: Track? = null,
     val status: PlaybackStatus = PlaybackStatus.IDLE,
     val positionMs: Long = 0L,
     val playbackRate: Float = 1.0f,
     val source: PlaybackSource? = null,
+    val positionUpdatedAtMonotonicMs: Long? = null,
 ) {
     init {
         require(positionMs >= 0L) { "Playback position must not be negative" }
         require(playbackRate.isFinite() && playbackRate >= 0f) {
             "Playback rate must be finite and non-negative"
+        }
+        require(positionUpdatedAtMonotonicMs == null || positionUpdatedAtMonotonicMs >= 0L) {
+            "Playback position update time must be null or non-negative"
         }
     }
 
