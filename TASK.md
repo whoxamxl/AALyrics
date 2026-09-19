@@ -427,7 +427,7 @@ Do not turn shell guards into a general Kotlin parser.
 
 ## Acceptance criteria
 
-- [ ] Re-check current Auto-Lyrics Translation execution before migration.
+- [x] Re-check current Auto-Lyrics Translation execution before migration.
 - [ ] Define the smallest justified Translation execution/provider contracts.
 - [ ] Implement complete-document LanguageProfiler.
 - [ ] Implement Primary + Secondary candidate/activation policy.

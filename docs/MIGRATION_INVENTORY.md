@@ -30,7 +30,7 @@ Core Readiness Gate and current provider/runtime/lifecycle baseline:
 - Repository: `whoxamxl/auto-lyrics`
 - Branch: `main`
 - Reviewed commit: `8484bed2dbe8db5ca7b17dec5481b3c22714dc6f` (`v1.13.0`)
-- Re-checked for the SyncLRC slice on 2026-09-16, for the live media-session runtime on 2026-09-17, for lyrics-demand-gating planning on 2026-09-17, and for the Translation background scaffold on 2026-09-19. It remains the current working-fork release baseline.
+- Re-checked for the SyncLRC slice on 2026-09-16, for the live media-session runtime on 2026-09-17, for lyrics-demand-gating planning on 2026-09-17, and for both the Translation background scaffold and Translation execution/orchestration on 2026-09-19. It remains the current working-fork release baseline.
 
 The mature resolver/provider clients remain present in that baseline, `MediaTracker` combines Android media, provider, cache, translation, timing, and presentation responsibilities, and the explicit Spotify playback identity and lyrics-demand helpers remain separate behaviors.
 
@@ -193,6 +193,14 @@ Preserve/refactor into the scaffold: the nine-language target list; BCP-47-to-la
 Intentionally not migrated in the scaffold: legacy foreground Views; legacy `MediaTracker` ownership; actual text translation execution; the first-five-nonblank-lines source-language detector; per-line Translation fallback policy; and any persistent Translation cache.
 
 New AALyrics-specific decisions—complete-lyrics Primary/Secondary profiling, INCIDENTAL/UNCERTAIN preservation, contextual Core + Context Halo blocks, independent Translation Provider selection, Musixmatch alignment, and atomic Translation Artifact publication—remain documented requirements for the next large implementation slice rather than being prematurely coded here.
+
+### Translation execution implementation re-check
+
+Working-fork `origin/main` was fetched and remained at `8484bed2dbe8db5ca7b17dec5481b3c22714dc6f` (`v1.13.0`) on 2026-09-19. The execution review re-read `LyricsTranslator.kt`, `TranslationLanguages.kt`, the Translation preference/target call sites in `MediaTracker.kt`, and the ML Kit dependencies/tests.
+
+Preserve/refactor into the execution slice: normalized source/target route setup; preparation of both non-English model packs through the already migrated model manager; cancellation propagation; whole-result publication; original-line preservation after isolated Translation failure when the artifact remains structurally valid; and final publication guards for track, enablement, and selected target.
+
+Intentionally replace: the first-five-nonblank-lines detector, one global source-language assumption, context-free per-line Translation as the primary path, legacy `MediaTracker` ownership, and foreground Translation Views. AALyrics owns complete-document profiling, Primary/Secondary activation, contextual Core + Context Halo blocks, structural fallback, provider-independent provenance, request-generation stale rejection, and atomic artifact state.
 
 ### LRCLIB implementation re-check
 
