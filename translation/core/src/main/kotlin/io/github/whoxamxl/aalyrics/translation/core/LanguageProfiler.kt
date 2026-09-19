@@ -160,7 +160,8 @@ class LanguageProfiler(
         val attempt = identifySafely(text)
         val detected = attempt.candidates.firstOrNull()
         val scriptEvidence = when {
-            scripts.kana > 0 -> IdentifiedLanguage("ja", DISTINCTIVE_SCRIPT_CONFIDENCE)
+            scripts.kana >= policy.minimumDistinctiveScriptCharacters ->
+                IdentifiedLanguage("ja", DISTINCTIVE_SCRIPT_CONFIDENCE)
             scripts.hangul >= policy.minimumDistinctiveScriptCharacters &&
                 scripts.hangul.toFloat() / substantiveCharacters >= DISTINCTIVE_SCRIPT_SHARE ->
                 IdentifiedLanguage("ko", DISTINCTIVE_SCRIPT_CONFIDENCE)
