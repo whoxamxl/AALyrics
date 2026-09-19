@@ -428,23 +428,23 @@ Do not turn shell guards into a general Kotlin parser.
 ## Acceptance criteria
 
 - [x] Re-check current Auto-Lyrics Translation execution before migration.
-- [ ] Define the smallest justified Translation execution/provider contracts.
-- [ ] Implement complete-document LanguageProfiler.
-- [ ] Implement Primary + Secondary candidate/activation policy.
-- [ ] Preserve INCIDENTAL and UNCERTAIN text.
-- [ ] Implement contextual block planning.
-- [ ] Guarantee one Core owner per translatable line.
-- [ ] Implement Core + Context Halo execution semantics.
-- [ ] Implement ML Kit as a Translation Provider using existing model lifecycle.
-- [ ] Implement structural validation and split/per-line fallback.
-- [ ] Implement complete Translation Artifact assembly.
-- [ ] Implement request identity/stale-result rejection.
-- [ ] Publish Translation atomically.
-- [ ] Keep Lyrics Provider selection independent.
-- [ ] Keep one Translation Provider per artifact.
-- [ ] Do not introduce persistent Translation Cache.
-- [ ] Add deterministic regression coverage.
-- [ ] Extend architecture guardrails only as justified.
+- [x] Define the smallest justified Translation execution/provider contracts.
+- [x] Implement complete-document LanguageProfiler.
+- [x] Implement Primary + Secondary candidate/activation policy.
+- [x] Preserve INCIDENTAL and UNCERTAIN text.
+- [x] Implement contextual block planning.
+- [x] Guarantee one Core owner per translatable line.
+- [x] Implement Core + Context Halo execution semantics.
+- [x] Implement ML Kit as a Translation Provider using existing model lifecycle.
+- [x] Implement structural validation and split/per-line fallback.
+- [x] Implement complete Translation Artifact assembly.
+- [x] Implement request identity/stale-result rejection.
+- [x] Publish Translation atomically.
+- [x] Keep Lyrics Provider selection independent.
+- [x] Keep one Translation Provider per artifact.
+- [x] Do not introduce persistent Translation Cache.
+- [x] Add deterministic regression coverage.
+- [x] Extend architecture guardrails only as justified.
 - [ ] Run CI and bounded review.
 - [ ] Open a PR and stop before merge for explicit approval.
 

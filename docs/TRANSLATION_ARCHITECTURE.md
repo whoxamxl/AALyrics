@@ -6,6 +6,41 @@ Define AALyrics Translation as an additive derived capability over canonical lyr
 
 The current working fork `whoxamxl/auto-lyrics` remains the behavioral reference for mature Translation settings and Google ML Kit model lifecycle. AALyrics should preserve or refactor that proven behavior rather than rewrite it without evidence.
 
+## Current execution implementation
+
+The Translation execution slice implements the approved design through three boundaries:
+
+```text
+:translation:api
+  engine-independent language and Translation Provider contracts
+
+:translation:core
+  profiling, planning, structural fallback, artifact assembly,
+  request ownership, and atomic state
+
+:translation:mlkit
+  ML Kit language evidence, model preparation, and Translation sessions
+```
+
+`:app` observes completed canonical `LyricsState` plus persisted Translation settings, assigns the exact lookup/content identity, and hands that input to `TranslationCoordinator`. It exposes the coordinator's atomic `TranslationState` for later presentation work without changing Phone or Android Auto UI in this slice.
+
+The default `LanguageProfilerPolicy` is named and testable:
+
+- Latin/identifier-only lines require at least 4 substantive characters;
+- distinctive script evidence requires at least 2 characters where applicable;
+- ordinary line evidence requires confidence `0.45`;
+- complete-document Language ID contributes `0.20` of aggregate substantive-character weight;
+- Primary requires evidence weight `4.0`;
+- a Secondary candidate requires evidence weight `0.25`;
+- Secondary becomes ACTIVE only with at least 2 meaningful lines, 12 substantive characters, `0.15` character share, and either a 2-line contiguous run or presence in at least 2 song regions;
+- common borrowed phrases (`Oh`, `Ooh`, `Yeah`, `Baby`, `Hey`, `La`, `Na`) contribute only `0.10` evidence weight and cannot activate Secondary by themselves.
+
+The default `TranslationBlockPolicy` uses 3 Core lines, a 240-character Core limit, a one-line Context Halo, and a 10-second timestamp-gap hard boundary. Blank/preserved lines and language changes also split hard groups. The current canonical model has no reliable verse/chorus marker, so the planner does not invent one.
+
+Block text uses indexed `AALYRICS_LINE` markers. Results are accepted only when every expected marker appears exactly once and in order with nonblank mapped text. Invalid contextual output is retried in smaller Core chunks and then per line. An unrecoverable line retains its canonical text. No partial map is published.
+
+`TranslationCoordinator` cancels superseded work and guards completion by canonical identity, target language, and a monotonic request id. A completed artifact records exactly one Translation Provider id. If one provider cannot prepare every required route or produce any acceptable translated line, the whole candidate is rejected before the next provider is tried.
+
 ## Stable ownership rules
 
 Translation is not part of lyrics retrieval or cross-provider candidate ranking.
@@ -109,7 +144,7 @@ lines
 
 must not determine the song's source language in AALyrics.
 
-A later `LanguageProfiler` will inspect the complete canonical lyric content and produce a profile conceptually containing:
+`LanguageProfiler` inspects the complete canonical lyric content and produces a profile containing:
 
 ```text
 LanguageProfile
@@ -131,7 +166,7 @@ AALyrics should recognize a meaningful Primary and at most one Secondary candida
 
 A Secondary candidate being detected does **not** mean it must be translated.
 
-Secondary activation should eventually consider evidence such as:
+Secondary activation considers evidence such as:
 
 - line coverage;
 - substantive text/token coverage;
@@ -139,7 +174,7 @@ Secondary activation should eventually consider evidence such as:
 - distribution across the song;
 - whether the evidence is mostly short borrowed phrases such as `Oh`, `Yeah`, or `Baby`.
 
-The exact thresholds are deliberately deferred to the implementation slice and must be tuned against real songs/tests.
+The implemented thresholds are documented above and remain explicit policy values covered by synthetic tests.
 
 Routing intent:
 
@@ -159,9 +194,9 @@ The governing principle is:
 
 ## Context-aware block translation
 
-AALyrics will move away from completely context-free line-by-line translation where doing so can preserve deterministic line ownership.
+AALyrics uses contextual blocks where deterministic line ownership can be preserved.
 
-Future block planning may use:
+Block planning uses the available canonical evidence for:
 
 ### Hard boundaries
 
@@ -177,7 +212,7 @@ Future block planning may use:
 
 Hard boundaries are normally not crossed for context. Soft boundaries may use adjacent context.
 
-The exact boundary thresholds and detection algorithm are deferred.
+The current threshold policy is documented above. Verse/chorus boundaries remain unused until canonical lyrics expose reliable structural evidence.
 
 ## Core + Context Halo
 
@@ -224,7 +259,7 @@ Translated line N
 
 If a block engine cannot return a structurally valid mapping, the invalid block must not be published.
 
-A later implementation may degrade through smaller blocks and ultimately per-line translation:
+The implementation degrades through smaller blocks and ultimately per-line translation:
 
 ```text
 block
@@ -275,7 +310,7 @@ Translation Provider selection
 Translation Artifact
 ```
 
-The final concrete provider request/candidate signatures are intentionally deferred until the large Translation implementation slice proves the required alignment and lifecycle fields.
+The execution slice now defines the minimal provider id, route, and prepared-session contracts required by adaptive block fallback. Artifact assembly and provider selection remain in pure Translation core.
 
 Do not put Translation Providers in `:provider:api`.
 
@@ -310,7 +345,7 @@ This keeps provenance and regression diagnosis clear.
 
 Google ML Kit remains the standard local Translation engine unless a later explicit decision changes it.
 
-The current scaffold may implement background-only ML Kit model lifecycle:
+The background scaffold implements ML Kit model lifecycle:
 
 - target-language model planning;
 - model availability checks;
@@ -320,7 +355,7 @@ The current scaffold may implement background-only ML Kit model lifecycle:
 - thermal waiting;
 - timeout based on active rather than thermally blocked download time.
 
-The large Translation algorithm slice will later add actual text/block translation and LanguageProfiler integration.
+The execution slice adds actual text/block translation and LanguageProfiler integration while reusing this model lifecycle unchanged.
 
 ML Kit infrastructure belongs outside pure Translation contracts because it depends on Android/Google SDK APIs.
 
@@ -328,7 +363,7 @@ ML Kit infrastructure belongs outside pure Translation contracts because it depe
 
 Translation preferences are application/capability state, not a foreground View responsibility.
 
-The background scaffold may persist:
+The background scaffold persists:
 
 - Translation enabled/disabled;
 - selected target language.
@@ -345,7 +380,7 @@ When Translation is enabled, the application may prepare the selected target mod
 
 English requires no downloaded ML Kit language pack.
 
-Preparing a target model does not imply that source-language models are known yet. Once a later LanguageProfiler resolves the actual route, the Translation execution layer may ensure the additional route-specific model(s).
+Preparing a target model does not imply that source-language models are known yet. Once `LanguageProfiler` resolves an actual route, Translation execution ensures any additional route-specific model(s).
 
 Background model preparation must not publish lyrics, mutate canonical lyrics, or create UI state.
 
@@ -387,7 +422,7 @@ FAILED
 TIMED_OUT
 ```
 
-The later Translation execution lifecycle may additionally distinguish disabled, pending, translating, ready, and failed.
+The Translation execution lifecycle distinguishes disabled, idle, translating, not-required, ready, and failed.
 
 Stable rules:
 
@@ -405,7 +440,7 @@ Translated text references canonical lyric line identity; timing truth remains i
 
 WORD timing does not imply word-by-word Translation.
 
-## Scaffold boundary
+## Scaffold boundary (historical)
 
 The Translation background scaffold is allowed to implement only contracts demonstrated by immediate background responsibilities:
 
@@ -430,7 +465,7 @@ It must not prematurely implement:
 - Phone/Android Auto Translation presentation;
 - persistent Translation Cache.
 
-Those belong to the subsequent large implementation slice.
+Those exclusions defined Phase 11.2a. Phase 11.2b implements the execution responsibilities described in "Current execution implementation" while preserving the scaffold's settings and model-lifecycle ownership.
 
 ## Invariants
 

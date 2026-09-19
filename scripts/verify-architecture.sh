@@ -49,6 +49,7 @@ dependency_suffix='[[:space:]]*\)[[:space:]]*(//.*)?$'
 core_model_target='(project[[:space:]]*\([[:space:]]*(path[[:space:]]*=[[:space:]]*)?":core:model"[[:space:]]*\)|projects\.core\.model)'
 core_lyrics_target='(project[[:space:]]*\([[:space:]]*(path[[:space:]]*=[[:space:]]*)?":core:lyrics"[[:space:]]*\)|projects\.core\.lyrics)'
 provider_api_target='(project[[:space:]]*\([[:space:]]*(path[[:space:]]*=[[:space:]]*)?":provider:api"[[:space:]]*\)|projects\.provider\.api)'
+translation_api_target='(project[[:space:]]*\([[:space:]]*(path[[:space:]]*=[[:space:]]*)?":translation:api"[[:space:]]*\)|projects\.translation\.api)'
 coroutines_core_target='"org\.jetbrains\.kotlinx:kotlinx-coroutines-core:[^"]+"'
 network_api_refs='(android\.net\.http\.|okhttp3\.|retrofit2\.|io\.ktor\.|org\.apache\.http\.|java\.net\.|javax\.net\.)'
 
@@ -59,6 +60,7 @@ pure_modules=(
   "provider/lrc"
   "core/lyrics"
   "translation/api"
+  "translation/core"
 )
 
 for module in "${pure_modules[@]}"; do
@@ -95,6 +97,14 @@ for module in "${pure_modules[@]}"; do
       forbidden_dependencies=$(
         printf '%s\n' "$production_dependencies" \
           | grep -Ev "${dependency_prefix}${coroutines_core_target}${dependency_suffix}" \
+          || true
+      )
+      ;;
+    "translation/core")
+      allowed_target="(${core_model_target}|${translation_api_target}|${coroutines_core_target})"
+      forbidden_dependencies=$(
+        printf '%s\n' "$production_dependencies" \
+          | grep -Ev "${dependency_prefix}${allowed_target}${dependency_suffix}" \
           || true
       )
       ;;
@@ -232,3 +242,19 @@ grep -RInE \
   || fail "platform/media must own the Android media framework adapter"
 
 echo "Provider/UI ownership and Android media confinement checks passed."
+
+if grep -RInE \
+  --include='build.gradle.kts' \
+  'project[[:space:]]*\([[:space:]]*(path[[:space:]]*=[[:space:]]*)?":translation:' \
+  provider 2>/dev/null; then
+  fail "Lyrics provider and selection modules must not depend on Translation execution"
+fi
+
+if grep -RInE \
+  --include='*.kt' --include='*.java' \
+  'io\.github\.whoxamxl\.aalyrics\.translation\.mlkit' \
+  core/lyrics/src/main 2>/dev/null; then
+  fail "concrete Translation engines must not leak into lyrics core"
+fi
+
+echo "Translation execution boundary checks passed."
