@@ -74,6 +74,8 @@ Release signing material is never committed to the repository. Configure these G
 - `AALYRICS_RELEASE_KEY_ALIAS`
 - `AALYRICS_RELEASE_KEY_PASSWORD`
 
+The existing `PETITLYRICS_USER_ID`, `PETITLYRICS_APP_NAME`, `PETITLYRICS_PKG_NAME`, and `PETITLYRICS_CLIENT_APP_ID` repository secrets are also required for a production release. The Release workflow fails rather than publishing an APK with missing release/provider credentials.
+
 Generate the signing key once and keep the original keystore backed up securely. Example:
 
 ```bash
