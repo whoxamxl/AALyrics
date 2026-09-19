@@ -186,3 +186,6 @@ private fun PlaybackProgressIndicator(
         )
     }
 }
+
+/** Vertical destination inset required to keep interactive content clear of the floating bar. */
+internal val PlaybackControlsOverlayInset = 60.dp

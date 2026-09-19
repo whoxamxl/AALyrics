@@ -8,6 +8,8 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsColors
 import io.github.whoxamxl.aalyrics.ui.phone.navigation.PhoneDestination
 import io.github.whoxamxl.aalyrics.ui.phone.state.PhoneShellUiState
@@ -21,7 +23,7 @@ fun PhoneAppShell(
     onPlayPause: () -> Unit,
     onNext: () -> Unit,
     modifier: Modifier = Modifier,
-    destinationContent: @Composable (PhoneDestination) -> Unit,
+    destinationContent: @Composable (PhoneDestination, Dp) -> Unit,
 ) {
     Surface(
         modifier = modifier.fillMaxSize(),
@@ -34,7 +36,12 @@ fun PhoneAppShell(
                     .fillMaxWidth()
                     .weight(1f),
             ) {
-                destinationContent(state.selectedDestination)
+                val bottomOverlayInset = if (state.playbackControls != null) {
+                    PlaybackControlsOverlayInset
+                } else {
+                    0.dp
+                }
+                destinationContent(state.selectedDestination, bottomOverlayInset)
 
                 state.playbackControls?.let { playbackState ->
                     PlaybackControlsBar(
