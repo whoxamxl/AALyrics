@@ -1,6 +1,7 @@
 package io.github.whoxamxl.aalyrics.ui.phone.preview
 
 import io.github.whoxamxl.aalyrics.core.model.LyricsSyncType
+import io.github.whoxamxl.aalyrics.ui.phone.lyrics.LyricsScreenUiState
 import io.github.whoxamxl.aalyrics.ui.phone.lyrics.LyricsViewportInteractionMode
 import io.github.whoxamxl.aalyrics.ui.phone.lyrics.LyricsViewportLineUiState
 import io.github.whoxamxl.aalyrics.ui.phone.lyrics.LyricsViewportUiState
@@ -95,6 +96,26 @@ internal object PhonePreviewFixtures {
     val viewportBrowsePlaybackAbove = viewportLineMiddle.copy(
         currentLineIndex = 2,
         interactionMode = LyricsViewportInteractionMode.BROWSE,
+    )
+
+    val lyricsScreenLine = LyricsScreenUiState(
+        trackCard = trackCardReady.copy(syncLabel = "Line synced"),
+        viewport = viewportLineMiddle,
+    )
+    val lyricsScreenWord = LyricsScreenUiState(
+        trackCard = trackCardReady,
+        viewport = viewportWord,
+    )
+    val lyricsScreenPlain = LyricsScreenUiState(
+        trackCard = trackCardReady.copy(
+            providerLabel = "LRCLIB",
+            syncLabel = "Plain",
+        ),
+        viewport = viewportPlain,
+    )
+    val lyricsScreenLongMetadata = LyricsScreenUiState(
+        trackCard = trackCardLongTitleAndArtist,
+        viewport = viewportLineMiddle,
     )
 
     val playingControls = PlaybackControlsUiState(

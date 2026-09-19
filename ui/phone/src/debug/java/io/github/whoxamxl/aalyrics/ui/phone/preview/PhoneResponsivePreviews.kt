@@ -136,8 +136,11 @@ private fun PhoneAppShellNarrowPreview() {
             onPrevious = {},
             onPlayPause = {},
             onNext = {},
-        ) {
-            Box(Modifier.fillMaxSize())
+        ) { _, bottomOverlayInset ->
+            PreviewLyricsDestination(
+                initialState = PhonePreviewFixtures.lyricsScreenLine,
+                bottomOverlayInset = bottomOverlayInset,
+            )
         }
     }
 }
