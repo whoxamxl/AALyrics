@@ -83,7 +83,7 @@ The current Auto-Lyrics fork at `v1.13.0` contains mature behavior that should n
 - active model-download reuse;
 - cancellation behavior where a cancelled foreground waiter does not unnecessarily cancel useful process-level model preparation;
 - explicit model availability checks;
-- retryable failure state;
+- latched model failure/timeout state that suppresses automatic retries until an explicit retry;
 - thermal-wait handling and active-time timeout semantics.
 
 ### Do not migrate
@@ -316,7 +316,7 @@ The current scaffold may implement background-only ML Kit model lifecycle:
 - model availability checks;
 - model download;
 - active-download reuse;
-- retryable status;
+- failure/timeout state that remains latched until an explicit retry;
 - thermal waiting;
 - timeout based on active rather than thermally blocked download time.
 
