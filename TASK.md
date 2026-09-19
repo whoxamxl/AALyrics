@@ -445,8 +445,8 @@ Do not turn shell guards into a general Kotlin parser.
 - [x] Do not introduce persistent Translation Cache.
 - [x] Add deterministic regression coverage.
 - [x] Extend architecture guardrails only as justified.
-- [ ] Run CI and bounded review.
-- [ ] Open a PR and stop before merge for explicit approval.
+- [x] Run CI and bounded review; require green final-head CI before merge.
+- [x] Open PR #43 and stop before merge for explicit approval.
 
 ## Scope guard
 
