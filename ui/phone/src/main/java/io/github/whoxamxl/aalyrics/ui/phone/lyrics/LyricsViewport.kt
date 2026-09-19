@@ -88,6 +88,9 @@ fun LyricsViewport(
         val viewportHeightPx = with(density) { maxHeight.roundToPx() }
         val minimumContentPaddingPx = with(density) { AALyricsSpacing.Space20.roundToPx() }
         val rowSpacingPx = with(density) { AALyricsSpacing.Space16.roundToPx() }
+        val currentLineNeighborMarginPx = with(density) {
+            CurrentLineNeighborMargin.roundToPx()
+        }
         val lineHeights = remember(state.lines) { mutableStateMapOf<Int, Int>() }
         val firstLineHeightPx = lineHeights[0] ?: 0
         val lastLineHeightPx = lineHeights[state.lines.lastIndex] ?: 0
@@ -131,6 +134,7 @@ fun LyricsViewport(
             rowSpacingPx = rowSpacingPx,
             topContentPaddingPx = topContentPaddingPx,
             viewportHeightPx = viewportHeightPx,
+            currentLineNeighborMarginPx = currentLineNeighborMarginPx,
         )
         val plainTargetScrollPx = plainTargetScrollPx(
             state = state,
@@ -455,6 +459,7 @@ private fun syncedTargetScrollPx(
     rowSpacingPx: Int,
     topContentPaddingPx: Int,
     viewportHeightPx: Int,
+    currentLineNeighborMarginPx: Int,
 ): Int? {
     if (state.syncType == LyricsSyncType.PLAIN) return null
 
@@ -469,7 +474,7 @@ private fun syncedTargetScrollPx(
     }
 
     val currentTopMarginPx = if (currentIndex > 0) {
-        CurrentLineNeighborMarginPx
+        currentLineNeighborMarginPx
     } else {
         0
     }
@@ -572,7 +577,6 @@ private const val ReturnControlFadeMillis = 140
 private const val ReturnBounceStartDelayMillis = 90L
 
 private val CurrentLineNeighborMargin = 8.dp
-private const val CurrentLineNeighborMarginPx = 8
 private val ReturnControlVisualSize = 36.dp
 private val ReturnChevronSize = 28.dp
 private val ReturnControlBottomInset = 3.dp
