@@ -6,4 +6,16 @@
     <string name="notification_access_reason">Android keeps this access under system settings. AALyrics checks the real system state again when you return.</string>
     <string name="notification_access_grant">Grant notification access</string>
     <string name="notification_access_footer">You can disable this access at any time in Android Settings.</string>
+
+    <string name="android_auto_compat_eyebrow">ANDROID AUTO COMPATIBILITY</string>
+    <string name="android_auto_compat_title">Enable legacy fallback</string>
+    <string name="android_auto_compat_body">AALyrics keeps a legacy Android Auto media fallback for compatibility. Because this build is installed outside Google Play, enable Android Auto Developer Mode and Unknown sources to use that fallback.</string>
+    <string name="android_auto_compat_step_1">Open Android Auto settings.</string>
+    <string name="android_auto_compat_step_2">Open Version, then tap Version and permission info 10 times to enable Developer Mode.</string>
+    <string name="android_auto_compat_step_3">Open Developer settings from the Android Auto menu.</string>
+    <string name="android_auto_compat_step_4">Enable Unknown sources.</string>
+    <string name="android_auto_compat_verification_note">Android Auto does not expose this setting to AALyrics, so it cannot be verified automatically.</string>
+    <string name="android_auto_compat_enabled">I’ve enabled Unknown sources</string>
+    <string name="android_auto_compat_skip">Continue without it</string>
+    <string name="android_auto_compat_footer">This setup is only for the legacy sideloaded media fallback. The templated Car App Library path does not require Android Auto Unknown sources.</string>
 </resources>

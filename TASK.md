@@ -1,64 +1,61 @@
-# Notification Access Onboarding
+# Android Auto Compatibility Onboarding
 
 ## Branch and baseline
 
-- Branch: `feature/notification-access-onboarding`.
-- Base: current `main` after the Phone shell work.
-- Classification: **APPLICATION ENTRY / REQUIRED SYSTEM ACCESS**.
-- Authoritative references: `AGENTS.md`, `docs/MEDIA_SESSION_RUNTIME.md`, and the existing NotificationListenerService runtime.
+- Branch: `feature/android-auto-compat-onboarding`.
+- Base: `feature/notification-access-onboarding` / PR #37.
+- Classification: **OPTIONAL COMPATIBILITY ONBOARDING**.
+- Authoritative references: `AGENTS.md`, Android Auto testing guidance, and the existing legacy `MediaBrowserServiceCompat` fallback.
 - The user explicitly authorized implementation.
 
 ## Goal
 
-Require Notification Listener access before entering the normal phone application flow, because AALyrics depends on that access to observe other apps' active MediaSessions.
+Explain and record the Android Auto `Unknown sources` setup that is required only when AALyrics falls back to the legacy sideloaded MediaBrowserService path.
 
-The application entry flow is:
+This is not a hard permission gate:
 
 ```text
-App launch / resume
-        |
-        v
-Notification access granted?
-   |                     |
-   no                    yes
-   |                     |
-   v                     v
-Required setup UI      normal app content
-   |
-   v
-Android notification-listener settings
-   |
-   v
-return to app -> re-check actual system state
+Notification Access missing
+        -> required setup
+
+Notification Access granted
+        -> Android Auto compatibility not reviewed
+              -> compatibility setup
+                 -> "I've enabled Unknown sources"
+                    OR
+                    "Continue without it"
+              -> normal app content
+
+Compatibility already reviewed
+        -> normal app content
 ```
 
 ## Acceptance criteria
 
-- Treat Notification Listener access as required application setup.
-- Do not request `POST_NOTIFICATIONS`; AALyrics does not currently need permission to post its own notifications.
-- Check the real system grant state on launch and every Activity resume.
-- On Android 11+ open the listener-specific detail settings page when available.
-- Fall back to the general Notification Listener settings page, then general Settings if an OEM does not expose the more specific Activity.
-- Android 8.0 (API 26) remains supported even though `NotificationManager.isNotificationListenerAccessGranted()` starts at API 27.
-- The setup screen has no skip path and clearly explains why the access is required.
-- Render the setup screen as a production Compose component in `:ui:phone`, while keeping permission/system-navigation ownership in `:app`.
-- Provide deterministic debug Previews for typical phone, narrow phone, and enlarged-font layouts.
-- Preserve the existing granted-state placeholder until the separate Phone application-composition slice wires the production shell.
-- Keep MediaSession observation/provider/selection logic unchanged.
-- Add deterministic JVM coverage for the entry gate state decision.
-- Run CI/review, keep the PR open, and stop before merge for explicit approval.
+- Keep Notification Access as the only blocking system-access gate.
+- Present Android Auto compatibility setup after Notification Access is granted and before normal phone content on first review.
+- Explain that `Unknown sources` is for the legacy sideloaded media fallback, while Car App Library templated media does not require that Android Auto setting.
+- Show concise Developer Mode / Developer settings / Unknown sources instructions based on Android's documented flow.
+- Do not claim AALyrics can verify the Android Auto setting; Android Auto exposes no public app API for that state.
+- Provide two explicit actions: `I've enabled Unknown sources` and `Continue without it`.
+- Persist the user's explicit choice as `ENABLED` or `SKIPPED` so the onboarding is not shown repeatedly.
+- Keep persistence and entry-flow policy in `:app`; keep the Compose presentation in `:ui:phone`.
+- Add deterministic JVM coverage for onboarding-state semantics.
+- Add typical, narrow, and enlarged-font Compose Previews using the production screen.
+- Do not change MediaBrowserService, Car App Library, provider, lyrics, or automotive runtime behavior in this slice.
+- Run CI/review and open a stacked PR against PR #37's branch; stop before merge.
 
 ## Planned work
 
-- [x] Prepare branch and task scope.
-- [x] Add framework access checker and settings navigation.
-- [x] Add required setup screen and Activity resume gate.
-- [x] Move setup presentation to Compose in `:ui:phone`.
-- [x] Add typical / narrow / large-font setup Previews.
-- [x] Add deterministic gate tests.
-- [x] Update durable runtime documentation.
-- [x] Review diff / CI and open PR.
+- [x] Prepare stacked branch and task scope.
+- [x] Add compatibility acknowledgement state/persistence boundary.
+- [x] Add Compose compatibility setup screen.
+- [x] Add setup Previews.
+- [x] Integrate the optional setup into application entry.
+- [x] Add deterministic tests.
+- [x] Review diff / CI and open stacked PR.
+- [x] Consolidate the 2026-09-19 Android Auto media / sideload / fallback decisions into durable project documentation.
 
 ## Scope guard
 
-This slice gates application entry on the access already required by the live MediaSession runtime. It does not implement finished Lyrics presentation, Android Auto UI, media controls, provider changes, or a general-purpose permission framework.
+This slice provides user-facing setup guidance only. It does not yet migrate AALyrics to Car App Library 1.8.x, add `CarAppService`, or change the existing legacy MediaBrowserService fallback.
