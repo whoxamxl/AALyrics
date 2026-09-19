@@ -283,7 +283,7 @@ Before each implementation slice, re-check current working-fork code and active 
 
 This umbrella intentionally does not decide:
 
-- concrete future module names;
+- concrete module names beyond the implemented Translation scaffold;
 - whether each capability needs its own Gradle module;
 - cache placement, schema, storage engine, TTL, or invalidation policy;
 - concrete Translation Provider request/candidate signatures, contextual batching heuristics, LanguageProfiler thresholds, or persistent Translation cache implementation;
