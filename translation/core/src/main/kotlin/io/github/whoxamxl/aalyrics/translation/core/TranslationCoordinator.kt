@@ -6,6 +6,8 @@ import io.github.whoxamxl.aalyrics.translation.api.TranslationSettings
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -79,7 +81,12 @@ class TranslationCoordinator(
             val completion = try {
                 execute(request, canonical)
             } catch (cancellation: CancellationException) {
-                throw cancellation
+                // Supersession/clear cancels this request's coroutine and must remain
+                // cancellation. A provider/ML Kit task may also report its own
+                // CancellationException while this request coroutine is still active;
+                // that is a Translation failure rather than request supersession.
+                currentCoroutineContext().ensureActive()
+                TranslationState.Failed(request)
             } catch (_: Exception) {
                 TranslationState.Failed(request)
             }
