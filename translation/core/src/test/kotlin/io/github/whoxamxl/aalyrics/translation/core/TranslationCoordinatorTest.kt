@@ -132,6 +132,19 @@ class TranslationCoordinatorTest {
     }
 
     @Test
+    fun `provider task cancellation fails the current request instead of sticking Translating`() = runTest {
+        val provider = provider("mlkit") {
+            session { throw CancellationException("synthetic provider cancellation") }
+        }
+        val coordinator = coordinator(provider)
+
+        coordinator.update(canonical(2), TranslationSettings(targetLanguage = "ja"))
+        advanceUntilIdle()
+
+        assertIs<TranslationState.Failed>(coordinator.state.value)
+    }
+
+    @Test
     fun `provider fallback keeps one provenance for the complete artifact`() = runTest {
         val unavailable = object : TranslationProvider {
             override val id = TranslationProviderId("unavailable")
