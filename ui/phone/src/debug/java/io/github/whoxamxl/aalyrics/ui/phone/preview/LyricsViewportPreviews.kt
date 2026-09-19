@@ -68,6 +68,22 @@ private fun LyricsViewportPlainNoDurationPreview() {
     LyricsViewportPreview(PhonePreviewFixtures.viewportPlainNoDuration)
 }
 
+@Preview(name = "LINE · long wrapped row", group = "LyricsViewport", widthDp = 412, heightDp = 520)
+@Composable
+private fun LyricsViewportLongLinePreview() {
+    LyricsViewportPreview(
+        PhonePreviewFixtures.viewportLineMiddle.copy(currentLineIndex = 6),
+    )
+}
+
+@Preview(name = "PLAIN · auto-scroll off", group = "LyricsViewport", widthDp = 412, heightDp = 520)
+@Composable
+private fun LyricsViewportPlainAutoScrollOffPreview() {
+    LyricsViewportPreview(
+        PhonePreviewFixtures.viewportPlain.copy(plainAutoScrollEnabled = false),
+    )
+}
+
 @Composable
 private fun LyricsViewportPreview(
     initialState: LyricsViewportUiState,
