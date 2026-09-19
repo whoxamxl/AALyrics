@@ -66,8 +66,8 @@ Android Auto host
 - [x] Run validation and architecture checks.
 - [x] Review complete diff and open PR #38.
 - [x] Address first bounded Codex review findings.
-- [ ] Complete second bounded Codex review.
-- [ ] Stop before merge for explicit approval.
+- [x] Complete second bounded Codex review.
+- [x] Stop before merge for explicit approval.
 
 ## Scope guard
 
@@ -82,4 +82,4 @@ Initial PR validation passed in CI runs #172 and #173. The first bounded Codex r
 - retain the source playback-position sample time instead of anchoring projection only at AALyrics receipt time;
 - require notification-listener access in the fresh-sideload setup.
 
-All three findings were fixed. CI run #182 subsequently passed the architecture guard, debug APK build, complete unit-test suite, and `aalyrics-debug-apk` artifact upload. The distribution path was then expanded by explicit user request: Google Play is excluded; signed release APKs are published through GitHub Releases, with the keystore restored from repository secrets only. The release policy now distinguishes prerelease tags from stable tags, automatically marks suffix-bearing versions as GitHub Pre-releases, and records `v0.1.0-alpha.1` as the intended first signed distribution even if product functionality is still incomplete. `docs/RELEASES.md` is the authoritative release policy. Browse-window UI remains explicitly deferred. A second bounded review is pending before the merge approval gate.
+All three findings were fixed. CI run #182 subsequently passed the architecture guard, debug APK build, complete unit-test suite, and `aalyrics-debug-apk` artifact upload. The distribution path was then expanded by explicit user request: Google Play is excluded; signed release APKs are published through GitHub Releases, with the keystore restored from repository secrets only. The release policy now distinguishes prerelease tags from stable tags, automatically marks suffix-bearing versions as GitHub Pre-releases, and records `v0.1.0-alpha.1` as the intended first signed distribution even if product functionality is still incomplete. `docs/RELEASES.md` is the authoritative release policy. Browse-window UI remains explicitly deferred. The second bounded Codex review completed against commit `3d368944a4` with no major issues. The later release-engineering-only delta was reviewed separately for policy/workflow consistency, and CI run #204 passed on the resulting head. The user then explicitly authorized merge.
