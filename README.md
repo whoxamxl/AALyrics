@@ -77,7 +77,7 @@ Release signing material is never committed to the repository. Configure these G
 Generate the signing key once and keep the original keystore backed up securely. Example:
 
 ```bash
-keytool -genkeypair -v -keystore aalyrics-release.jks -alias aalyrics -keyalg RSA -keysize 4096 -validity 10000
+keytool -genkeypair -v -keystore aalyrics-release.jks -storetype JKS -alias aalyrics -keyalg RSA -keysize 4096 -validity 10000
 ```
 
 On Windows PowerShell, encode the keystore for the GitHub secret with:
@@ -98,6 +98,8 @@ git push origin v0.1.0
 ```
 
 The Release workflow runs tests, builds and signs `app-release.apk`, renames it to `AALyrics-vX.Y.Z.apk`, writes a SHA-256 checksum, and publishes both files to the corresponding GitHub Release. The tag supplies `versionName`; the release workflow run number supplies a monotonically increasing `versionCode`.
+
+After downloading both files, the checksum can be verified with `sha256sum -c AALyrics-vX.Y.Z.apk.sha256`.
 
 ## Modules
 
