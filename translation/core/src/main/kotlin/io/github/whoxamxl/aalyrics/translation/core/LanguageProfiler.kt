@@ -36,6 +36,8 @@ data class LanguageProfilerPolicy(
 }
 
 /** Complete-document profiler with conservative line routing for lyric text. */
+class LanguageProfilingException(message: String) : IllegalStateException(message)
+
 class LanguageProfiler(
     private val identifier: LanguageIdentifier,
     private val policy: LanguageProfilerPolicy = LanguageProfilerPolicy(),
@@ -52,6 +54,7 @@ class LanguageProfiler(
         val substantive = lineEvidence.filter { it.substantiveCharacters > 0 }
         val meaningful = substantive.filterNot { it.borrowedPhrase }
         val evidenceByLanguage = linkedMapOf<String, Float>()
+        var identifierFailed = lineEvidence.any { it.identifierFailed }
 
         substantive.forEach { evidence ->
             val language = evidence.languageTag ?: return@forEach
@@ -63,11 +66,17 @@ class LanguageProfiler(
         val completeText = meaningful.joinToString("\n") { lyrics.lines[it.index].text.trim() }
         if (completeText.isNotBlank()) {
             val totalCharacters = meaningful.sumOf { it.substantiveCharacters }
-            identifySafely(completeText).firstOrNull()?.let { aggregate ->
+            val aggregateAttempt = identifySafely(completeText)
+            identifierFailed = identifierFailed || aggregateAttempt.failed
+            aggregateAttempt.candidates.firstOrNull()?.let { aggregate ->
                 evidenceByLanguage[aggregate.languageTag] =
                     evidenceByLanguage.getOrDefault(aggregate.languageTag, 0f) +
                     totalCharacters * policy.aggregateEvidenceWeight * aggregate.confidence
             }
+        }
+
+        if (meaningful.isNotEmpty() && evidenceByLanguage.isEmpty() && identifierFailed) {
+            throw LanguageProfilingException("Language identification failed for meaningful lyric content")
         }
 
         val primary = evidenceByLanguage.maxByOrNull { it.value }
@@ -115,23 +124,33 @@ class LanguageProfiler(
             .count()
             .toInt()
         if (substantiveCharacters == 0) {
-            return LineEvidence(index, null, 0f, 0, borrowedPhrase = false)
+            return LineEvidence(
+                index = index,
+                languageTag = null,
+                confidence = 0f,
+                substantiveCharacters = 0,
+                borrowedPhrase = false,
+                identifierFailed = false,
+            )
         }
 
         val borrowed = normalizePhrase(text) in BORROWED_PHRASES
         if (borrowed) {
-            val detected = identifySafely(text).firstOrNull()
+            val attempt = identifySafely(text)
+            val detected = attempt.candidates.firstOrNull()
             return LineEvidence(
                 index = index,
                 languageTag = detected?.languageTag,
                 confidence = detected?.confidence ?: 0f,
                 substantiveCharacters = substantiveCharacters,
                 borrowedPhrase = true,
+                identifierFailed = attempt.failed,
             )
         }
 
         val scripts = scriptCounts(text)
-        val detected = identifySafely(text).firstOrNull()
+        val attempt = identifySafely(text)
+        val detected = attempt.candidates.firstOrNull()
         val scriptEvidence = when {
             scripts.kana > 0 -> IdentifiedLanguage("ja", DISTINCTIVE_SCRIPT_CONFIDENCE)
             scripts.hangul >= policy.minimumDistinctiveScriptCharacters &&
@@ -155,6 +174,7 @@ class LanguageProfiler(
             confidence = usable?.confidence ?: 0f,
             substantiveCharacters = substantiveCharacters,
             borrowedPhrase = false,
+            identifierFailed = attempt.failed,
         )
     }
 
@@ -197,14 +217,17 @@ class LanguageProfiler(
         return if (active) SecondaryActivation.ACTIVE else SecondaryActivation.INCIDENTAL
     }
 
-    private suspend fun identifySafely(text: String): List<IdentifiedLanguage> = try {
-        identifier.identifyPossibleLanguages(text)
-            .mapNotNull { it.normalized() }
-            .sortedByDescending { it.confidence }
+    private suspend fun identifySafely(text: String): IdentificationAttempt = try {
+        IdentificationAttempt(
+            candidates = identifier.identifyPossibleLanguages(text)
+                .mapNotNull { it.normalized() }
+                .sortedByDescending { it.confidence },
+            failed = false,
+        )
     } catch (cancellation: CancellationException) {
         throw cancellation
     } catch (_: Exception) {
-        emptyList()
+        IdentificationAttempt(candidates = emptyList(), failed = true)
     }
 
     private fun IdentifiedLanguage.normalized(): IdentifiedLanguage? {
@@ -239,6 +262,12 @@ class LanguageProfiler(
         val confidence: Float,
         val substantiveCharacters: Int,
         val borrowedPhrase: Boolean,
+        val identifierFailed: Boolean,
+    )
+
+    private data class IdentificationAttempt(
+        val candidates: List<IdentifiedLanguage>,
+        val failed: Boolean,
     )
 
     private data class ScriptCounts(
