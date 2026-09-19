@@ -334,8 +334,8 @@ private fun LyricsViewportRow(
                 },
             style = if (isCurrent) {
                 AALyricsTypography.LyricsCurrent.copy(
-                    fontSize = 20.sp,
-                    lineHeight = 28.sp,
+                    fontSize = 22.sp,
+                    lineHeight = 30.sp,
                     fontWeight = FontWeight.Bold,
                 )
             } else {
@@ -576,7 +576,7 @@ private const val ReturnScrollDurationMillis = 420
 private const val ReturnControlFadeMillis = 140
 private const val ReturnBounceStartDelayMillis = 90L
 
-private val CurrentLineNeighborMargin = 8.dp
+private val CurrentLineNeighborMargin = 16.dp
 private val ReturnControlVisualSize = 36.dp
 private val ReturnChevronSize = 28.dp
 private val ReturnControlBottomInset = 3.dp
