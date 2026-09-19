@@ -82,6 +82,9 @@ class TranslationBackgroundRuntimeTest {
             return true
         }
 
+        override suspend fun retry(languageTag: String): Boolean =
+            ensureAvailable(languageTag)
+
         override suspend fun ensureRouteAvailable(
             sourceLanguage: String,
             targetLanguage: String,
