@@ -11,6 +11,7 @@ import android.service.notification.StatusBarNotification
 /** Thin Android service that owns listener-backed active-session observation. */
 class MediaSessionListenerService : NotificationListenerService() {
     private lateinit var observation: MediaSessionObservation<MediaSession.Token>
+    private lateinit var runtime: SelectedMediaSessionRuntime<MediaSession.Token>
 
     override fun onCreate() {
         super.onCreate()
@@ -21,12 +22,13 @@ class MediaSessionListenerService : NotificationListenerService() {
             listenerComponent = ComponentName(this, MediaSessionListenerService::class.java),
             handler = handler,
         )
-        val runtime = SelectedMediaSessionRuntime<MediaSession.Token>(
+        runtime = SelectedMediaSessionRuntime(
             selfPackageName = packageName,
             sink = PlaybackSnapshotSink(MediaSessionRuntimeHost::forward),
             scheduler = HandlerMetadataTaskScheduler(handler),
             refreshSessions = { observation.refresh() },
         )
+        MediaSessionRuntimeHost.attachTransport(runtime)
         observation = MediaSessionObservation(source, runtime)
     }
 
@@ -46,6 +48,7 @@ class MediaSessionListenerService : NotificationListenerService() {
 
     override fun onDestroy() {
         observation.disconnect()
+        MediaSessionRuntimeHost.detachTransport(runtime)
         super.onDestroy()
     }
 }

@@ -7,6 +7,7 @@ import io.github.whoxamxl.aalyrics.core.lyrics.LyricsCoordinator
 import io.github.whoxamxl.aalyrics.core.lyrics.LyricsState
 import io.github.whoxamxl.aalyrics.core.lyrics.PlaybackLyricsController
 import io.github.whoxamxl.aalyrics.core.model.LyricsSyncType
+import io.github.whoxamxl.aalyrics.core.model.PlaybackSnapshot
 import io.github.whoxamxl.aalyrics.provider.api.LyricsProvider
 import io.github.whoxamxl.aalyrics.provider.lrclib.LrcLibProvider
 import io.github.whoxamxl.aalyrics.provider.musixmatch.MusixmatchProvider
@@ -14,19 +15,27 @@ import io.github.whoxamxl.aalyrics.provider.petitlyrics.PetitLyricsConfig
 import io.github.whoxamxl.aalyrics.provider.petitlyrics.PetitLyricsProvider
 import io.github.whoxamxl.aalyrics.provider.selection.CrossProviderCandidateSelector
 import io.github.whoxamxl.aalyrics.provider.synclrc.SyncLrcProvider
+import io.github.whoxamxl.aalyrics.platform.media.MediaBrowserClientTrust
 import io.github.whoxamxl.aalyrics.platform.media.MediaSessionRuntimeHost
 import io.github.whoxamxl.aalyrics.platform.media.PlaybackSnapshotSink
+import io.github.whoxamxl.aalyrics.ui.automotive.AutomotiveBrowserClientTrust
+import io.github.whoxamxl.aalyrics.ui.automotive.AutomotiveRuntimeBinding
+import io.github.whoxamxl.aalyrics.ui.automotive.AutomotiveRuntimeHost
+import io.github.whoxamxl.aalyrics.ui.automotive.AutomotiveTransport
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 
 /** Process-level owner of the first production lyrics object graph. */
 class AALyricsApplication : Application() {
     private val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private lateinit var graph: ApplicationGraph
     private lateinit var demandLifecycle: LyricsDemandLifecycle
+    private lateinit var automotiveBinding: AutomotiveRuntimeBinding
 
     val playbackLyricsController: PlaybackLyricsController
         get() = graph.playbackLyricsController
@@ -38,11 +47,31 @@ class AALyricsApplication : Application() {
         super.onCreate()
         graph = createProductionApplicationGraph(applicationScope)
         MediaSessionRuntimeHost.attach(graph.playbackSnapshotSink)
+        automotiveBinding = AutomotiveRuntimeBinding(
+            playback = graph.playbackState,
+            lyrics = graph.lyricsState,
+            transport = object : AutomotiveTransport {
+                override fun play() = MediaSessionRuntimeHost.play()
+                override fun pause() = MediaSessionRuntimeHost.pause()
+                override fun skipToPrevious() = MediaSessionRuntimeHost.skipToPrevious()
+                override fun skipToNext() = MediaSessionRuntimeHost.skipToNext()
+                override fun seekTo(positionMs: Long) = MediaSessionRuntimeHost.seekTo(positionMs)
+            },
+            browserClientTrust = AutomotiveBrowserClientTrust { clientPackageName, clientUid ->
+                MediaBrowserClientTrust.isTrusted(
+                    context = this,
+                    clientPackageName = clientPackageName,
+                    clientUid = clientUid,
+                )
+            },
+        )
+        AutomotiveRuntimeHost.attach(automotiveBinding)
         demandLifecycle = LyricsDemandLifecycle(this, graph.lyricsDemandGate).also { it.start() }
     }
 
     override fun onTerminate() {
         demandLifecycle.stop()
+        AutomotiveRuntimeHost.detach(automotiveBinding)
         MediaSessionRuntimeHost.detach(graph.playbackSnapshotSink)
         applicationScope.cancel()
         super.onTerminate()
@@ -57,6 +86,7 @@ internal class ApplicationGraph(
 ) {
     internal val providers = providers.toList()
     internal val coordinator = LyricsCoordinator(this.providers, selector, applicationScope)
+    private val mutablePlaybackState = MutableStateFlow(PlaybackSnapshot())
 
     val playbackLyricsController = PlaybackLyricsController(
         lookupLifecycle = coordinator,
@@ -64,8 +94,10 @@ internal class ApplicationGraph(
     )
     val lyricsDemandGate = LyricsDemandGate(playbackLyricsController::onPlayback)
     val playbackSnapshotSink = PlaybackSnapshotSink { snapshot ->
+        mutablePlaybackState.value = snapshot
         lyricsDemandGate.onPlaybackSnapshot(snapshot)
     }
+    val playbackState: StateFlow<PlaybackSnapshot> = mutablePlaybackState.asStateFlow()
     val lyricsState: StateFlow<LyricsState> = coordinator.state
 }
 

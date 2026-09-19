@@ -89,6 +89,26 @@ internal class AndroidRuntimeMediaController(
         controller.unregisterCallback(current.frameworkCallback)
     }
 
+    override fun play() {
+        controller.transportControls.play()
+    }
+
+    override fun pause() {
+        controller.transportControls.pause()
+    }
+
+    override fun skipToPrevious() {
+        controller.transportControls.skipToPrevious()
+    }
+
+    override fun skipToNext() {
+        controller.transportControls.skipToNext()
+    }
+
+    override fun seekTo(positionMs: Long) {
+        controller.transportControls.seekTo(positionMs)
+    }
+
     private data class AttachedCallback(
         val runtimeCallback: RuntimeMediaControllerCallback,
         val frameworkCallback: MediaController.Callback,

@@ -1,2 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest />
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <application>
+        <service
+            android:name="io.github.whoxamxl.aalyrics.ui.automotive.service.LyricsBrowserService"
+            android:exported="true"
+            android:label="@string/automotive_service_label">
+            <intent-filter>
+                <action android:name="android.media.browse.MediaBrowserService" />
+            </intent-filter>
+        </service>
+
+        <meta-data
+            android:name="com.google.android.gms.car.application"
+            android:resource="@xml/automotive_app_desc" />
+    </application>
+
+</manifest>

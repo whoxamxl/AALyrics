@@ -88,6 +88,32 @@ class SelectedMediaSessionRuntimeTest {
     }
 
     @Test
+    fun `transport commands route only to the selected controller`() {
+        val snapshots = mutableListOf<PlaybackSnapshot>()
+        val first = controller("first", "First", playing = true)
+        val second = controller("second", "Second", playing = true)
+        val runtime = runtime(FakeScheduler(), snapshots)
+
+        runtime.updateSessions(listOf(first))
+        runtime.play()
+        runtime.pause()
+        runtime.skipToPrevious()
+        runtime.skipToNext()
+        runtime.seekTo(12_345L)
+
+        first.playing = false
+        runtime.updateSessions(listOf(first, second))
+        runtime.play()
+
+        assertEquals(1, first.playCount)
+        assertEquals(1, first.pauseCount)
+        assertEquals(1, first.previousCount)
+        assertEquals(1, first.nextCount)
+        assertEquals(listOf(12_345L), first.seekPositions)
+        assertEquals(1, second.playCount)
+    }
+
+    @Test
     fun `metadata identity is stabilized while playback churn remains immediate`() {
         val scheduler = FakeScheduler()
         val snapshots = mutableListOf<PlaybackSnapshot>()
@@ -180,6 +206,11 @@ class SelectedMediaSessionRuntimeTest {
         private val callbacks = linkedSetOf<RuntimeMediaControllerCallback>()
         var attachCount = 0
         var detachCount = 0
+        var playCount = 0
+        var pauseCount = 0
+        var previousCount = 0
+        var nextCount = 0
+        val seekPositions = mutableListOf<Long>()
 
         override val isPlaying: Boolean get() = playing
         override fun snapshot(): PlaybackSnapshot = snapshot
@@ -192,6 +223,26 @@ class SelectedMediaSessionRuntimeTest {
         override fun detach(callback: RuntimeMediaControllerCallback) {
             detachCount += 1
             callbacks -= callback
+        }
+
+        override fun play() {
+            playCount += 1
+        }
+
+        override fun pause() {
+            pauseCount += 1
+        }
+
+        override fun skipToPrevious() {
+            previousCount += 1
+        }
+
+        override fun skipToNext() {
+            nextCount += 1
+        }
+
+        override fun seekTo(positionMs: Long) {
+            seekPositions += positionMs
         }
 
         fun metadataChanged() = callbacks.toList().forEach { it.onMetadataChanged() }

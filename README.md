@@ -38,6 +38,47 @@ Completed foundation includes:
 
 PR #30 implements the next runtime slice and is ready for explicit merge approval: MediaSession observation stays alive, while provider lookup runs only when phone-process foreground or Android Auto projection demand is active. Demand deactivation clears lyrics work; reactivation resumes immediately from the latest already-observed playback snapshot. Finished phone/Android Auto presentation, cache, translation, timing controls, persistence, and karaoke rendering remain separate later work.
 
+## Distribution and Android Auto sideloading
+
+AALyrics is distributed outside Google Play. The durable distribution path is a **signed release APK attached to a GitHub Release**. Debug APKs remain development-only artifacts.
+
+### Install a release
+
+1. Open the desired GitHub Release and download `AALyrics-vX.Y.Z.apk`.
+2. Install the APK on the Android phone. When installing from a browser or file manager, Android may require permission for that app to install unknown apps.
+3. Open AALyrics once.
+4. In Android system settings, open **Notification access** and enable **AALyrics**. This is required for AALyrics to observe the active media session.
+5. For Android Auto, enable Android Auto developer mode once, then enable **Developer settings → Unknown sources**. This is required for non-Play Android Auto media apps even though the APK itself is signed.
+6. Reconnect Android Auto or the Desktop Head Unit and enable AALyrics in the Android Auto launcher/customize list if necessary.
+
+The Android Auto host renders the same MediaSession metadata in compact/split and full Now Playing layouts. The active line-timed lyric is published through the display subtitle. Lyrics browse-window UI is intentionally deferred.
+
+If a debug build is already installed, uninstall it before installing the first signed release because debug and release APKs use different signing certificates. After that first switch, later GitHub Release APKs signed with the same release keystore can update the installed release normally.
+
+### Development build
+
+For a local debug build:
+
+```bash
+./gradlew :app:installDebug
+```
+
+CI also uploads `aalyrics-debug-apk` for pull requests and `main` builds. This artifact is not the durable distribution package.
+
+### Release policy
+
+Signed GitHub Releases are the durable distribution channel. Early functional snapshots use GitHub Pre-releases rather than pretending to be stable builds:
+
+- `v0.1.0-alpha.1`, `-beta.N`, and `-rc.N` are published as **Pre-releases**;
+- `v0.1.0`-style tags with no suffix are normal/stable GitHub Releases;
+- release tags must point to commits contained in `main`;
+- the initial signed distribution is planned as `v0.1.0-alpha.1`;
+- release signing material is stored only through GitHub Actions secrets, never in Git.
+
+An alpha release may be functionally incomplete. Its purpose can be to validate signing, installation, update compatibility, Android Auto discovery, and the durable distribution pipeline while clearly documenting current limitations.
+
+See [docs/RELEASES.md](docs/RELEASES.md) for the authoritative versioning, signing, secret setup, publishing, checksum, backup, and update policy.
+
 ## Modules
 
 ```text
