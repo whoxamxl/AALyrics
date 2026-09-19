@@ -83,11 +83,20 @@ fun LyricsViewport(
         val density = LocalDensity.current
         val viewportHeightPx = with(density) { maxHeight.roundToPx() }
         val followAnchorPx = (viewportHeightPx * FollowAnchorFraction).roundToInt()
-        val topContentPadding = AALyricsSpacing.Space20
-        val topContentPaddingPx = with(density) { topContentPadding.roundToPx() }
-        val bottomAnchorSpace = maxHeight * (1f - FollowAnchorFraction)
+        val minimumContentPaddingPx = with(density) { AALyricsSpacing.Space20.roundToPx() }
         val rowSpacingPx = with(density) { AALyricsSpacing.Space16.roundToPx() }
         val lineHeights = remember(state.lines) { mutableStateMapOf<Int, Int>() }
+        val firstLineHeightPx = lineHeights[0] ?: 0
+        val lastLineHeightPx = lineHeights[state.lines.lastIndex] ?: 0
+        val boundaryCenterPx = (viewportHeightPx * BoundaryCenterFraction).roundToInt()
+        val topContentPaddingPx = (
+            boundaryCenterPx - (firstLineHeightPx / 2)
+            ).coerceAtLeast(minimumContentPaddingPx)
+        val bottomContentPaddingPx = (
+            boundaryCenterPx - (lastLineHeightPx / 2)
+            ).coerceAtLeast(minimumContentPaddingPx)
+        val topContentPadding = with(density) { topContentPaddingPx.toDp() }
+        val bottomContentPadding = with(density) { bottomContentPaddingPx.toDp() }
         val scope = rememberCoroutineScope()
 
         val latestMode = rememberUpdatedState(state.interactionMode)
@@ -204,14 +213,10 @@ fun LyricsViewport(
                     drawContent()
                     drawRect(
                         brush = Brush.verticalGradient(
-                            0f to if (scrollState.value > 0) Color.Transparent else Color.Black,
+                            0f to Color.Transparent,
                             EdgeFadeFraction to Color.Black,
                             (1f - EdgeFadeFraction) to Color.Black,
-                            1f to if (scrollState.value < scrollState.maxValue) {
-                                Color.Transparent
-                            } else {
-                                Color.Black
-                            },
+                            1f to Color.Transparent,
                         ),
                         blendMode = BlendMode.DstIn,
                     )
@@ -225,7 +230,7 @@ fun LyricsViewport(
                         start = AALyricsSpacing.Space20,
                         top = topContentPadding,
                         end = AALyricsSpacing.Space20,
-                        bottom = bottomAnchorSpace,
+                        bottom = bottomContentPadding,
                     ),
                 verticalArrangement = Arrangement.spacedBy(AALyricsSpacing.Space16),
             ) {
@@ -498,6 +503,7 @@ private enum class PlaybackRegionDirection {
 }
 
 private const val FollowAnchorFraction = 0.42f
+private const val BoundaryCenterFraction = 0.50f
 private const val EdgeFadeFraction = 0.15f
 private const val FocusZoneStartFraction = 0.30f
 private const val FocusZoneEndFraction = 0.60f
@@ -515,6 +521,6 @@ private val ReturnChevronSize = 24.dp
 private const val ReturnControlFillAlpha = 0.48f
 private const val ReturnControlBorderAlpha = 0.30f
 private const val ReturnChevronAlpha = 0.92f
-private const val ReturnBounceDistanceDp = 5f
+private const val ReturnBounceDistanceDp = 3f
 private const val ReturnBounceCount = 2
-private const val ReturnBounceHalfCycleMillis = 190
+private const val ReturnBounceHalfCycleMillis = 220
