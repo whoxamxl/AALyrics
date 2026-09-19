@@ -147,9 +147,9 @@ All sync modes share the same responsive viewport, edge fading, manual scrolling
 WORD timing provides karaoke-level progress.
 
 - Align lyrics to the start edge using the existing 20dp horizontal viewport inset.
-- The current timed lyric row uses 20sp Bold typography.
+- The current timed lyric row uses 22sp Bold typography.
 - Supporting lyric rows use 18sp Medium typography.
-- Add an extra 8dp of vertical separation between the current row and its immediate supporting neighbors.
+- Add an extra 16dp of vertical separation between the current row and its immediate supporting neighbors.
 - The current timed lyric row receives the strongest line hierarchy.
 - Word progress must not change glyph/word geometry or trigger line reflow.
 - Do not reproduce the legacy Performance mode's active-word size pop.
@@ -165,7 +165,7 @@ WORD timing provides karaoke-level progress.
 LINE timing follows row boundaries.
 
 - Align lyrics to the start edge using the existing 20dp horizontal viewport inset.
-- Current row: 20sp Bold, strongest color treatment.
+- Current row: 22sp Bold, strongest color treatment.
 - Supporting rows: 18sp Medium.
 - Add an extra 8dp of vertical separation between the current row and its immediate supporting neighbors.
 - Previous and upcoming rows remain readable with one consistent supporting color; do not add extra distance-based dimming because the viewport edge alpha mask already provides spatial falloff.
