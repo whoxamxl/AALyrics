@@ -55,6 +55,7 @@ class LanguageProfiler(
         val meaningful = substantive.filterNot { it.borrowedPhrase }
         val evidenceByLanguage = linkedMapOf<String, Float>()
         var identifierFailed = lineEvidence.any { it.identifierFailed }
+        var aggregateIdentified = false
 
         substantive.forEach { evidence ->
             val language = evidence.languageTag ?: return@forEach
@@ -69,13 +70,20 @@ class LanguageProfiler(
             val aggregateAttempt = identifySafely(completeText)
             identifierFailed = identifierFailed || aggregateAttempt.failed
             aggregateAttempt.candidates.firstOrNull()?.let { aggregate ->
+                aggregateIdentified = true
                 evidenceByLanguage[aggregate.languageTag] =
                     evidenceByLanguage.getOrDefault(aggregate.languageTag, 0f) +
                     totalCharacters * policy.aggregateEvidenceWeight * aggregate.confidence
             }
         }
 
-        if (meaningful.isNotEmpty() && evidenceByLanguage.isEmpty() && identifierFailed) {
+        val hasMeaningfulLineEvidence = meaningful.any { it.languageTag != null }
+        if (
+            meaningful.isNotEmpty() &&
+            !hasMeaningfulLineEvidence &&
+            !aggregateIdentified &&
+            identifierFailed
+        ) {
             throw LanguageProfilingException("Language identification failed for meaningful lyric content")
         }
 
