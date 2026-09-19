@@ -50,7 +50,7 @@ class MlKitTranslationModelManager(
         val normalized = TranslationLanguages.normalizeLanguageTag(languageTag)
             ?: return false
 
-        if (normalized == TranslationLanguages.DEFAULT_TARGET_LANGUAGE) {
+        if (normalized == MlKitModelPlanner.BUILT_IN_LANGUAGE) {
             publish(normalized, TranslationModelPhase.READY)
             return true
         }
