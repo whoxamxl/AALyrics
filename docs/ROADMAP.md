@@ -230,17 +230,36 @@ No capability implementation slice is active merely because the foundation exist
 
 The expected dependency-friendly sequence is:
 
-### Phase 11.1 — Cache
+### Phase 11.1 — Cache — deferred
 
-Implement the smallest cache contract justified by provider cost, identity, selection-preference semantics, persistence requirements, and current working-fork behavior.
+Cache remains an independent capability, but persistent Translation Cache is not a prerequisite for Translation implementation.
 
-Must follow `docs/CACHE_ARCHITECTURE.md`. The implementation slice must decide provider-result versus selected-result caching (or an explicitly justified layered approach), storage adapter placement, identity, invalidation, and failure fallback through tests rather than foundation guesswork.
+Project policy now forbids persistent Translation Cache through stable `v1.0.0`; after `v1.0.0` it remains disabled unless explicitly authorized. This keeps Translation behavior directly observable during development and avoids stale cached output masking algorithm changes.
 
-### Phase 11.2 — Translation
+General lyrics/cache work still follows `docs/CACHE_ARCHITECTURE.md` when separately authorized.
 
-Implement translation as an additive derived capability over canonical lyrics without moving translation execution into providers or `LyricsCoordinator` and without replacing valid original lyrics on failure.
+### Phase 11.2a — Translation background scaffold — active
 
-Must follow `docs/TRANSLATION_ARCHITECTURE.md`. Translation engine, alignment granularity, status model, batching, language detection, and persistence remain implementation decisions.
+Prepare Translation without changing unfinished foreground presentation:
+
+- preserve the working fork's nine target languages and normalization semantics;
+- refactor Translation settings into application/capability-owned state;
+- refactor mature ML Kit model availability/download/retry/thermal behavior into an Android adapter;
+- allow background preparation of the persisted target language model;
+- define only the smallest contracts required by that background work;
+- do not wire translated lyrics into Phone or Android Auto yet.
+
+The scaffold must not implement speculative LanguageProfiler thresholds, contextual block algorithms, Musixmatch Translation alignment, Translation Provider selection, or persistent Translation Cache.
+
+### Phase 11.2b — Translation execution/orchestration — next large slice
+
+Implement Translation as an additive derived capability over canonical lyrics without moving execution into Lyrics Providers or `LyricsCoordinator`.
+
+This slice will implement the approved complete-lyrics LanguageProfiler, Primary/Secondary activation policy, contextual Core + Context Halo translation, structural alignment/fallback, independent Translation Provider selection, complete Translation Artifact assembly, stale-result rejection, and atomic publication.
+
+Musixmatch native Translation may be added as a Translation Provider only after its endpoint/entitlement is re-verified and its source text can be aligned confidently to canonical lyrics.
+
+Must follow `docs/TRANSLATION_ARCHITECTURE.md`.
 
 ### Phase 11.3 — Timing / calibration
 
