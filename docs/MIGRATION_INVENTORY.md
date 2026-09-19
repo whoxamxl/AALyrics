@@ -30,7 +30,7 @@ Core Readiness Gate and current provider/runtime/lifecycle baseline:
 - Repository: `whoxamxl/auto-lyrics`
 - Branch: `main`
 - Reviewed commit: `8484bed2dbe8db5ca7b17dec5481b3c22714dc6f` (`v1.13.0`)
-- Re-checked for the SyncLRC slice on 2026-09-16, for the live media-session runtime on 2026-09-17, for lyrics-demand-gating planning on 2026-09-17, and for the Translation background scaffold on 2026-09-19. It remains the current working-fork release baseline.
+- Re-checked for the SyncLRC slice on 2026-09-16, for the live media-session runtime on 2026-09-17, for lyrics-demand-gating planning on 2026-09-17, and for both the Translation background scaffold and Translation execution/orchestration on 2026-09-19. It remains the current working-fork release baseline.
 
 The mature resolver/provider clients remain present in that baseline, `MediaTracker` combines Android media, provider, cache, translation, timing, and presentation responsibilities, and the explicit Spotify playback identity and lyrics-demand helpers remain separate behaviors.
 
@@ -118,10 +118,10 @@ Phase 11 defines the architectural seams in `docs/CACHE_ARCHITECTURE.md` and `do
 
 | Fork implementation | Classification | AALyrics destination / rule | Notes |
 | --- | --- | --- | --- |
-| `lyrics/LyricsTranslator.kt` | **REFACTOR** | split between background ML Kit model lifecycle and later Translation execution/orchestration; see `docs/TRANSLATION_ARCHITECTURE.md` | Re-checked at working-fork `v1.13.0` for the 2026-09-19 scaffold. Preserve active model-task/monitor reuse, availability checks, latched failure/timeout state with explicit retry, cancellation semantics, thermal waiting, and active-time timeout behavior. Do **not** preserve the first-five-lines Language ID algorithm or monolithic UI/status ownership. |
+| `lyrics/LyricsTranslator.kt` | **REFACTOR** | split across `:translation:core` execution and `:translation:mlkit` model/engine adapters; see `docs/TRANSLATION_ARCHITECTURE.md` | Re-checked at working-fork `v1.13.0` for both 2026-09-19 Translation slices. Preserve route/model preparation, active model-task/monitor reuse, availability checks, latched failure/timeout state with explicit retry, cancellation semantics, thermal waiting, active-time timeout behavior, original fallback, and whole-result publication. Do **not** preserve the first-five-lines Language ID algorithm or monolithic UI/status ownership. |
 | `lyrics/TranslationLanguages.kt` | **PRESERVE / REFACTOR** | pure Translation target/config semantics plus ML Kit-specific model planning in the ML Kit adapter | Preserve the approved nine target languages, default target, and language-tag normalization. Move ML Kit-specific required-model planning out of generic language configuration instead of copying the legacy mixed responsibility verbatim. |
 | `TranslationTargetView.kt` / `TranslationStatusView.kt` | **DROP / REWRITE later** | future Phone Settings/presentation downstream of Translation state | Do not migrate legacy View injection into the scaffold. Settings variables/persistence and model lifecycle are implemented below presentation; future Compose UI consumes those boundaries. |
-| `MediaTracker` Translation preference/target handling | **REFACTOR** | application-owned Translation settings/runtime plus later TranslationCoordinator | Preserve useful semantics such as target changes invalidating stale Translation work, but do not restore `MediaTracker` as owner of lyrics, Translation, model downloads, and UI state. |
+| `MediaTracker` Translation preference/target handling | **REFACTOR** | application-owned Translation settings/runtime plus `TranslationCoordinator` | Target changes now cancel/supersede Translation independently of Lyrics Provider lookup. Do not restore `MediaTracker` as owner of lyrics, Translation, model downloads, and UI state. |
 | `lyrics/LyricsCache.kt` | **REFACTOR** | future replaceable cache boundary + storage adapter; see `docs/CACHE_ARCHITECTURE.md` | Re-check implementation and call sites before Phase 11.1. Preserve useful semantics without fixing provider-result versus selected-result cache placement, storage engine, schema, TTL, or invalidation in the foundation. UI and providers must not own global storage policy. |
 | `util/AlbumColorExtractor.kt` | **PRESERVE / REFACTOR** | presentation/platform utility | Android-specific feature; not part of lyrics core or the current Phase 11 capability foundation. |
 | `util/AudioSyncHelper.kt` | **DROP unless proven used** | none by default | Previous inspection found no clear current usage. Do not migrate dead auto-sync logic without an active call path and explicit product requirement. |
@@ -181,7 +181,8 @@ Do not bulk-port the old application. Each provider or subsystem remains a separ
 - Live media-session runtime: merged in PR #29.
 - Lyrics demand gating: migrated and merged in PR #30.
 - Lyrics capability architecture foundation: merged in PR #32.
-- Translation background scaffold: active on `feature/translation-scaffold` as Phase 11.2a; foreground Translation, LanguageProfiler/block algorithms, Translation Provider selection, and persistent Translation Cache remain deferred.
+- Translation background scaffold: merged in PR #41 as Phase 11.2a.
+- Translation execution/orchestration: active on `feature/translation-execution` as Phase 11.2b; persistent Translation Cache and Phone/Android Auto presentation remain deferred.
 
 
 ### Translation scaffold implementation re-check
@@ -192,7 +193,15 @@ Preserve/refactor into the scaffold: the nine-language target list; BCP-47-to-la
 
 Intentionally not migrated in the scaffold: legacy foreground Views; legacy `MediaTracker` ownership; actual text translation execution; the first-five-nonblank-lines source-language detector; per-line Translation fallback policy; and any persistent Translation cache.
 
-New AALyrics-specific decisions—complete-lyrics Primary/Secondary profiling, INCIDENTAL/UNCERTAIN preservation, contextual Core + Context Halo blocks, independent Translation Provider selection, Musixmatch alignment, and atomic Translation Artifact publication—remain documented requirements for the next large implementation slice rather than being prematurely coded here.
+The scaffold deliberately left complete-lyrics Primary/Secondary profiling, INCIDENTAL/UNCERTAIN preservation, contextual Core + Context Halo blocks, independent Translation Provider selection, and atomic Translation Artifact publication to the execution slice recorded below. Musixmatch Translation alignment remains deferred pending endpoint and entitlement verification.
+
+### Translation execution implementation re-check
+
+Working-fork `origin/main` was fetched and remained at `8484bed2dbe8db5ca7b17dec5481b3c22714dc6f` (`v1.13.0`) on 2026-09-19. The execution review re-read `LyricsTranslator.kt`, `TranslationLanguages.kt`, the Translation preference/target call sites in `MediaTracker.kt`, and the ML Kit dependencies/tests.
+
+Preserve/refactor into the execution slice: normalized source/target route setup; preparation of both non-English model packs through the already migrated model manager; cancellation propagation; whole-result publication; original-line preservation after isolated Translation failure when the artifact remains structurally valid; and final publication guards for track, enablement, and selected target.
+
+Intentionally replace: the first-five-nonblank-lines detector, one global source-language assumption, context-free per-line Translation as the primary path, legacy `MediaTracker` ownership, and foreground Translation Views. AALyrics owns complete-document profiling, Primary/Secondary activation, contextual Core + Context Halo blocks, structural fallback, provider-independent provenance, request-generation stale rejection, and atomic artifact state.
 
 ### LRCLIB implementation re-check
 
@@ -220,4 +229,4 @@ Preserved: request execution only when karaoke/WORD timing is preferred; require
 
 Structural adaptation: a `WORD`-only `LyricsProvider` gates transport with normalized `LyricsRequest.preferredSyncType`, reuses shared `:provider:lrc` parsing, normalizes duration seconds to domain milliseconds, uses cancellable HTTP, and surfaces operational failures according to the provider contract. Final metadata scoring, source confidence, karaoke preference, and winner selection remain unchanged in `:provider:selection`.
 
-Each later implementation slice still requires explicit authorization. Phase 11.2a is the explicitly authorized Translation background scaffold; Translation execution/orchestration, persistent cache, timing/calibration, karaoke projection, and production presentation-state integration remain separate future slices until explicitly authorized.
+Each later implementation slice still requires explicit authorization. Phase 11.2a established the Translation background scaffold and Phase 11.2b is the authorized execution/orchestration slice. Persistent cache, timing/calibration, karaoke projection, and production presentation-state integration remain separate future slices until explicitly authorized.

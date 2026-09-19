@@ -35,4 +35,5 @@ include(":provider:musixmatch")
 include(":provider:synclrc")
 
 include(":translation:api")
+include(":translation:core")
 include(":translation:mlkit")

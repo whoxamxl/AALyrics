@@ -115,16 +115,33 @@ Current responsibilities:
 - the approved product-level target-language set and normalization;
 - immutable Translation settings state and a persistence-agnostic settings-store boundary;
 - engine-independent model lifecycle state and the `TranslationModelManager` boundary.
+- engine-independent language-identification evidence;
+- Translation Provider identity, route, and prepared-session contracts.
 
-It does not depend on Android, Google ML Kit, Lyrics Providers, `:core:lyrics`, or presentation. It deliberately does not yet define speculative LanguageProfiler, Translation Provider request/candidate, block-planning, or Translation Artifact signatures.
+It does not depend on Android, Google ML Kit, Lyrics Providers, `:core:lyrics`, or presentation.
+
+### `:translation:core`
+
+Pure Kotlin Translation execution and orchestration over canonical `LyricsDocument` values.
+
+It owns:
+
+- exact in-process canonical lyrics/request identity;
+- complete-document Primary/Secondary profiling and conservative line routing;
+- contextual block planning with unique Core ownership and overlapping Context Halos;
+- structural marker validation plus smaller-block/per-line fallback;
+- one-provider-per-artifact assembly;
+- cancellation, stale-result rejection, and atomic `TranslationState` publication.
+
+It depends on `:core:model` and pure `:translation:api`. It does not depend on Lyrics Provider APIs, `:core:lyrics`, Android, networking, ML Kit, or presentation.
 
 ### `:translation:mlkit`
 
 Android/Google ML Kit adapter for Translation model lifecycle.
 
-Current responsibilities are limited to model planning, availability checks, download-task/monitor reuse, retryable failure state, thermal waiting, and active-download-time timeout semantics refactored from the mature Auto-Lyrics implementation.
+Current responsibilities include model planning, availability checks, download-task/monitor reuse, retryable failure state, thermal waiting, active-download-time timeout semantics, ML Kit language identification, and prepared source/target Translation sessions refactored from the mature Auto-Lyrics implementation.
 
-It depends on `:translation:api` and ML Kit. It does **not** currently execute lyric text Translation, detect song language, own canonical lyrics, or publish Phone/Android Auto state.
+It depends on `:translation:api` and ML Kit. It executes text only behind Translation Provider sessions; it does not own profiling policy, canonical lyrics, artifact assembly, stale-result policy, or Phone/Android Auto state.
 
 ### `:platform:media`
 
@@ -195,13 +212,13 @@ Translation now has one justified concrete dependency path:
 
 ```text
 :app
-  ↓
-:translation:mlkit
-  ↓
-:translation:api
+  ├─> :translation:core ─> :core:model
+  │          ↓
+  │    :translation:api
+  └─> :translation:mlkit ─> :translation:api
 ```
 
-`:translation:api` remains pure Kotlin. UI modules must not depend on the concrete `:translation:mlkit` adapter. The later Translation execution/orchestration layer must consume these boundaries without moving Translation into Lyrics Providers or `:core:lyrics`.
+`:translation:api` and `:translation:core` remain pure Kotlin. UI modules must not depend on the concrete `:translation:mlkit` adapter. Translation remains downstream of canonical lyrics without moving execution into Lyrics Providers or `:core:lyrics`.
 
 Cache, timing, karaoke, and any additional Translation modules remain absent until implementation evidence justifies their placement and contracts.
 

@@ -104,6 +104,7 @@ dependencies {
     implementation(project(":ui:phone"))
     implementation(project(":ui:automotive"))
     implementation(project(":translation:api"))
+    implementation(project(":translation:core"))
     implementation(project(":translation:mlkit"))
     implementation("androidx.lifecycle:lifecycle-process:2.7.0")
     implementation("androidx.car.app:app:1.7.0")
