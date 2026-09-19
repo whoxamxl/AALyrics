@@ -58,6 +58,7 @@ pure_modules=(
   "provider/matching"
   "provider/lrc"
   "core/lyrics"
+  "translation/api"
 )
 
 for module in "${pure_modules[@]}"; do
@@ -87,6 +88,13 @@ for module in "${pure_modules[@]}"; do
       forbidden_dependencies=$(
         printf '%s\n' "$production_dependencies" \
           | grep -Ev "${dependency_prefix}${allowed_target}${dependency_suffix}" \
+          || true
+      )
+      ;;
+    "translation/api")
+      forbidden_dependencies=$(
+        printf '%s\n' "$production_dependencies" \
+          | grep -Ev "${dependency_prefix}${coroutines_core_target}${dependency_suffix}" \
           || true
       )
       ;;
@@ -165,7 +173,7 @@ done
 production_source_dirs=()
 while IFS= read -r -d '' source_dir; do
   production_source_dirs+=("$source_dir")
-done < <(find core provider platform ui app -type d -path '*/src/main' -print0 2>/dev/null)
+done < <(find core provider platform translation ui app -type d -path '*/src/main' -print0 2>/dev/null)
 
 [[ "${#production_source_dirs[@]}" -gt 0 ]] \
   || fail "no production source directories found"
@@ -193,7 +201,7 @@ fi
 if grep -RInE \
   --include='*.kt' --include='*.java' \
   '^[[:space:]]*import[[:space:]].*provider\.(lrclib|musixmatch|petitlyrics|synclrc)\.|\b(LrcLibClient|MusixmatchClient|PetitLyricsClient|SyncLrcClient|SpotifyTrackIdentity)\b' \
-  core/model/src/main core/lyrics/src/main provider/api/src/main 2>/dev/null; then
+  core/model/src/main core/lyrics/src/main provider/api/src/main translation/api/src/main 2>/dev/null; then
   fail "provider-specific implementation details must not become pure-core application behavior"
 fi
 
