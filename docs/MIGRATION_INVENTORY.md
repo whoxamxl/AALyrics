@@ -220,4 +220,4 @@ Preserved: request execution only when karaoke/WORD timing is preferred; require
 
 Structural adaptation: a `WORD`-only `LyricsProvider` gates transport with normalized `LyricsRequest.preferredSyncType`, reuses shared `:provider:lrc` parsing, normalizes duration seconds to domain milliseconds, uses cancellable HTTP, and surfaces operational failures according to the provider contract. Final metadata scoring, source confidence, karaoke preference, and winner selection remain unchanged in `:provider:selection`.
 
-Each later implementation slice still requires explicit authorization. The current Phase 11 work is documentation/architecture only; cache, translation, timing/calibration, karaoke projection, and production presentation-state implementation remain separate future slices until explicitly authorized.
+Each later implementation slice still requires explicit authorization. Phase 11.2a is the explicitly authorized Translation background scaffold; Translation execution/orchestration, persistent cache, timing/calibration, karaoke projection, and production presentation-state integration remain separate future slices until explicitly authorized.
