@@ -53,6 +53,8 @@ AALyrics is distributed outside Google Play. The durable distribution path is a 
 
 The Android Auto host renders the same MediaSession metadata in compact/split and full Now Playing layouts. The active line-timed lyric is published through the display subtitle. Lyrics browse-window UI is intentionally deferred.
 
+If a debug build is already installed, uninstall it before installing the first signed release because debug and release APKs use different signing certificates. After that first switch, later GitHub Release APKs signed with the same release keystore can update the installed release normally.
+
 ### Development build
 
 For a local debug build:
