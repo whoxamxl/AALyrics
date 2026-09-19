@@ -6,6 +6,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsTheme
+import io.github.whoxamxl.aalyrics.ui.phone.lyrics.LyricsViewport
 import io.github.whoxamxl.aalyrics.ui.phone.lyrics.TrackCard
 import io.github.whoxamxl.aalyrics.ui.phone.navigation.PhoneDestination
 import io.github.whoxamxl.aalyrics.ui.phone.shell.PhoneAppShell
@@ -30,6 +31,48 @@ private fun PhoneTopBarNarrowPreview() {
 private fun TrackCardNarrowPreview() {
     AALyricsTheme {
         TrackCard(state = PhonePreviewFixtures.trackCardLongTitleAndArtist)
+    }
+}
+
+@Preview(
+    name = "Lyrics Viewport · 320dp",
+    group = "Responsive",
+    widthDp = 320,
+    heightDp = 500,
+    showBackground = true,
+)
+@Composable
+private fun LyricsViewportNarrowPreview() {
+    AALyricsTheme {
+        LyricsViewport(state = PhonePreviewFixtures.viewportLineMiddle)
+    }
+}
+
+@Preview(
+    name = "Lyrics Viewport · short",
+    group = "Responsive",
+    widthDp = 412,
+    heightDp = 320,
+    showBackground = true,
+)
+@Composable
+private fun LyricsViewportShortPreview() {
+    AALyricsTheme {
+        LyricsViewport(state = PhonePreviewFixtures.viewportWord)
+    }
+}
+
+@Preview(
+    name = "Lyrics Viewport · tall",
+    group = "Responsive",
+    widthDp = 412,
+    heightDp = 720,
+    showBackground = true,
+)
+@Composable
+private fun LyricsViewportTallPreview() {
+    AALyricsTheme {
+        LyricsViewport(state = PhonePreviewFixtures.viewportPlain)
     }
 }
 
