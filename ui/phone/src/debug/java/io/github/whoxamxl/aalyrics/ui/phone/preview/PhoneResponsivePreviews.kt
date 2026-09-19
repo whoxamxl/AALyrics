@@ -1,10 +1,12 @@
 package io.github.whoxamxl.aalyrics.ui.phone.preview
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsColors
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsTheme
 import io.github.whoxamxl.aalyrics.ui.phone.lyrics.LyricsViewport
 import io.github.whoxamxl.aalyrics.ui.phone.lyrics.TrackCard
@@ -44,7 +46,13 @@ private fun TrackCardNarrowPreview() {
 @Composable
 private fun LyricsViewportNarrowPreview() {
     AALyricsTheme {
-        LyricsViewport(state = PhonePreviewFixtures.viewportLineMiddle)
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(AALyricsColors.BackgroundBase),
+        ) {
+            LyricsViewport(state = PhonePreviewFixtures.viewportLineMiddle)
+        }
     }
 }
 
@@ -58,7 +66,13 @@ private fun LyricsViewportNarrowPreview() {
 @Composable
 private fun LyricsViewportShortPreview() {
     AALyricsTheme {
-        LyricsViewport(state = PhonePreviewFixtures.viewportWord)
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(AALyricsColors.BackgroundBase),
+        ) {
+            LyricsViewport(state = PhonePreviewFixtures.viewportWord)
+        }
     }
 }
 
@@ -72,7 +86,13 @@ private fun LyricsViewportShortPreview() {
 @Composable
 private fun LyricsViewportTallPreview() {
     AALyricsTheme {
-        LyricsViewport(state = PhonePreviewFixtures.viewportPlain)
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(AALyricsColors.BackgroundBase),
+        ) {
+            LyricsViewport(state = PhonePreviewFixtures.viewportPlain)
+        }
     }
 }
 
