@@ -33,6 +33,25 @@ class LanguageProfilerTest {
     }
 
     @Test
+    fun `single kana character does not override strong Latin identifier evidence`() = runTest {
+        val lyrics = document(
+            listOf(
+                "Synthetic English line あ",
+                "Another synthetic English line",
+            ),
+        )
+        val profiler = LanguageProfiler(
+            identifier { candidates("en" to 0.99f) },
+        )
+
+        val profile = profiler.profile(lyrics, targetLanguage = "ja")
+
+        assertEquals("en", profile.primary)
+        assertEquals(ProfiledLineRole.PRIMARY, profile.lines[0].role)
+        assertEquals("en", profile.lines[0].languageTag)
+    }
+
+    @Test
     fun `meaningful bilingual passage activates one Secondary language`() = runTest {
         val lyrics = document(
             listOf(
