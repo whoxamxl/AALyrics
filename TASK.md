@@ -1,98 +1,79 @@
-# Phone Lyrics Viewport
+# Translation Background Scaffold
 
 ## Branch and baseline
 
-- Branch: `feature/phone-lyrics-viewport`.
-- Base: `main` at `88592e0d7846afbf1d9755e48915956ad7c13d6f` after PR #39 merged.
-- Classification: **PHONE LYRICS VIEWPORT**.
-- Authoritative references: `AGENTS.md`, `docs/UI_ARCHITECTURE.md`, `docs/PHONE_UI_SPEC.md`, and `docs/PHONE_LYRICS_VIEWPORT.md`.
-- The user explicitly authorized LyricsViewport as the next Phone UI slice.
+- Branch: `feature/translation-scaffold`.
+- Base: `main` at `7fe0c84372a11fb898cd0fc6e2036c4c88ab6326` after PR #40 merged.
+- Classification: **TRANSLATION BACKGROUND SCAFFOLD**.
+- Authoritative references: `AGENTS.md`, `docs/LYRICS_PIPELINE_ARCHITECTURE.md`, `docs/TRANSLATION_ARCHITECTURE.md`, and `docs/MIGRATION_INVENTORY.md`.
+- The user explicitly authorized documentation updates and background/scaffold implementation, but not the large translation algorithm implementation.
 
 ## Goal
 
-Implement the production `LyricsViewport` as a responsive, scrollable lyrics-reading surface that works with WORD, LINE, and PLAIN lyrics while keeping runtime/media/provider wiring outside this slice.
+Prepare the production Translation capability so a later implementation slice can add language profiling, contextual block translation, Translation Provider selection, and presentation wiring without reopening ownership boundaries.
 
-The visual direction takes the legacy Auto-Lyrics fullscreen Performance mode as a reference for strong current-line hierarchy, but replaces its fixed three-line presentation with a responsive scrolling viewport.
+This slice may implement background-only infrastructure that does not alter the unfinished Phone or Android Auto foreground:
 
-## Accepted direction
+- translation settings state/persistence;
+- the approved target-language set and normalization;
+- ML Kit language-model planning, availability checks, download/retry monitoring, and background target-model preparation;
+- minimal capability contracts justified by those concrete background responsibilities;
+- tests and architecture guardrails for the new boundaries.
 
-- Use the full available viewport height instead of forcing a fixed six-line window.
-- Render a continuous scrollable lyric list; visible line count is determined by device size, wrapping, font metrics, and current content.
-- Position the current timed block adaptively from its measured height: target its bottom edge near 52% of viewport height while keeping ordinary blocks within an approximate 28–60% focus band.
-- Apply top and bottom edge fading over roughly 20% of viewport height so rows fade smoothly in/out rather than clipping abruptly.
-- Keep manual scrolling available for synchronized and plain lyrics.
-- When manual scrolling moves away from the current playback region, suspend follow behavior and expose a transient action to return to the current line / playback region.
-- Keep WORD, LINE, and PLAIN rendering behavior distinct while sharing one viewport geometry and scrolling model.
-- Do not force app-brand imagery into lyrics content.
+## Migration rule
 
-## Sync-mode behavior
+The current `whoxamxl/auto-lyrics` fork at `v1.13.0` remains the implementation reference.
 
-### WORD
+Preserve or refactor mature behavior instead of rewriting it:
 
-- Current timed line receives the strongest typography.
-- Word-level timing should highlight karaoke progress without changing word geometry or causing layout reflow.
-- Prefer color/progress emphasis over the legacy Performance mode's active-word size pop.
-- Current-line anchoring follows playback while the user has not manually browsed away.
+- **PRESERVE** the nine-language target set and normalization semantics where applicable.
+- **REFACTOR** the proven ML Kit model download/reuse/thermal-wait/cancellation behavior out of the legacy monolithic `LyricsTranslator`.
+- **REFACTOR** translation settings persistence out of legacy View/MediaTracker ownership.
+- Do not import legacy foreground Views, the legacy monolithic `MediaTracker` ownership model, or the old first-five-lines source-language detector.
 
-### LINE
+New decisions from the current Translation design discussion are documented as contracts/invariants only unless they are required by the scaffold. Do not prematurely implement heuristic thresholds, contextual block planning, Musixmatch Translation alignment, or Translation Provider winner logic in this branch.
 
-- Current timed line receives strong emphasis.
-- Previous/future rows remain readable with reduced emphasis.
-- Follow scroll moves to the new timed line smoothly rather than snapping.
+## Accepted Translation direction
 
-### PLAIN
+- Original canonical lyrics remain immutable and authoritative.
+- Lyrics Provider selection and Translation Provider selection remain independent.
+- Primary and Secondary language profiling will be derived from the complete canonical lyrics, not Provider language metadata and not `take(5)`.
+- A detected Secondary language does not automatically become translatable. Incidental and uncertain foreign-language text remains original by default.
+- Future contextual translation uses block boundaries plus non-overlapping authoritative Core spans and optional overlapping Context Halos.
+- Every translated lyric line has exactly one authoritative Core owner.
+- Translation results publish atomically; partial blocks do not replace text in front of the user.
+- Persistent Translation Cache is forbidden through stable `v1.0.0`; after `v1.0.0` it remains disabled unless explicitly authorized.
+- One completed Translation Artifact uses one Translation Provider unless a later explicit decision permits provider mixing.
+- The unexplained Korean -> Japanese case that produced an English output remains diagnostic evidence only; do not add speculative corrective routing in this scaffold.
 
-- The lyrics remain fully scrollable manually.
-- Optional smooth auto-follow estimates the current playback region from playback position and track duration.
-- The estimate should be better than a naive discrete `position / duration * lineCount` jump: use continuous document progress and measured scroll range so movement is smooth across wrapped/variable-height rows.
-- Plain auto-follow must later be user-configurable in Settings with an ON/OFF toggle. Keep the Settings row concise (for example, `Plain lyrics auto-scroll  ⓘ  [ON]`) and place the behavioral explanation in an on-demand info tooltip rather than persistent subtext. Settings UI/persistence is not implemented in this slice unless separately authorized.
+## Explicitly deferred to the large implementation slice
 
-## Interaction contract
-
-- Follow mode: viewport tracks the playback region automatically.
-- Browse mode: user drag/scroll temporarily owns the viewport and playback updates must not fight the gesture.
-- Return action: while Browse mode is away from the playback region, show a minimal direction-only control over the viewport; tapping it smoothly restores Follow mode.
-- Use Material `ExpandMore` when the playback region is below the visible viewport and `ExpandLess` when it is above.
-- Do not show text such as "Current line", "Now", or "Follow playback" in the return control.
-- Render the control as a barely visible circular silhouette rather than a prominent rounded pill: approximately 36dp visual circle inside a 48dp accessible touch target, with very low-opacity surface/border treatment and an AccentCyan chevron.
-- On appearance, fade in and perform one subtle chevron-only bounce (roughly 3dp travel, ~400ms total), then remain still.
-- Do not auto-return merely because a timer expired while the user is reading elsewhere.
+- LanguageProfiler algorithm and thresholds.
+- Primary/Secondary/INCIDENTAL/UNCERTAIN routing implementation.
+- Context block splitting and Core + Context Halo planner.
+- Line-marker/alignment validation and block-to-line fallback.
+- TranslationCoordinator lifecycle and canonical-lyrics identity binding.
+- Concrete Translation Provider resolver/selector.
+- Musixmatch native Translation adapter/alignment.
+- ML Kit block/text translation execution.
+- Translation Artifact publication to Phone/Android Auto.
+- Translation foreground Settings UI/status UI.
+- Persistent Translation Cache.
 
 ## Acceptance criteria
 
-- Add focused immutable viewport presentation state for rows, sync type, current line/word, playback progress where needed, and follow/browse presentation.
-- Implement the production `LyricsViewport` in `:ui:phone`.
-- Use a responsive `LazyColumn`/scroll model rather than a fixed visible-line count.
-- Keep current-line target position responsive to viewport height.
-- Support long wrapped lyric rows without corrupting follow positioning.
-- Add top/bottom gradient masking/fading over approximately 20% of the available viewport.
-- Implement deterministic WORD, LINE, and PLAIN Previews.
-- Add short-height, typical-height, tall-height, narrow-width, long-line, first-line, middle-line, last-line, and browsed-away Preview coverage where practical.
-- Keep Preview fixtures under `src/debug`.
-- Do not implement ViewModels, media-session ownership, provider/network behavior, real Settings persistence/UI, or Android Auto changes.
-- Keep commits small and single-purpose.
-- Run CI/repository validation, review the complete diff, open a PR, and stop before merge for explicit approval.
-
-## Reference findings
-
-Legacy Auto-Lyrics `PerformanceActivity` used previous/current/next rows with a 36sp bold current line and smaller dim side rows. For plain lyrics it estimated a current line from playback-position fraction. Legacy Phone UI also used a duration-long linear scroll animator for plain lyrics and exposed a jump-to-current action after manual scrolling.
-
-AALyrics should preserve the useful hierarchy and manual-return concept while replacing fixed row count and discrete plain-line estimation with responsive measured scrolling.
-
-## Planned commits
-
-- [x] Prepare LyricsViewport branch and task.
-- [x] Capture the approved LyricsViewport behavior contract in durable docs.
-- [x] Add viewport presentation model.
-- [x] Implement responsive continuous viewport shell and edge fading.
-- [x] Add LINE follow behavior and Previews.
-- [x] Add WORD visual progress behavior and Previews.
-- [x] Add PLAIN estimated auto-follow behavior and Previews.
-- [x] Add manual browse / return-to-playback interaction.
-- [x] Align durable Phone UI docs with the implemented viewport contract.
-- [x] Review the complete diff; require final-head CI before merge.
-- [x] Open PR #40 and stop before merge.
+- [x] Update Translation architecture and roadmap with the approved policy.
+- [x] Re-check current Auto-Lyrics Translation implementation before code migration.
+- [x] Add a pure Translation API/configuration module only for contracts required by this scaffold.
+- [x] Add an Android ML Kit adapter module for model lifecycle only.
+- [x] Preserve target-language/model-download behavior by refactoring mature fork logic.
+- [x] Add app-owned translation settings persistence without adding Settings UI.
+- [x] Start background target-model preparation from persisted settings without touching Lyrics/UI state.
+- [x] Add deterministic tests for language normalization/model planning/background settings reaction.
+- [x] Extend architecture guardrails to cover the new pure Translation boundary.
+- [x] Run CI and bounded review; final-head CI is required before merge.
+- [x] Open PR #41 and stop before merge for explicit approval.
 
 ## Scope guard
 
-This branch establishes LyricsViewport presentation and interaction behavior only. `LyricsScreen` composition, runtime state mapping, real media-position wiring, Settings implementation/persistence, provider work, and Android Auto remain later slices.
+This branch must not change lyrics lookup/provider ranking, canonical lyrics, Phone LyricsViewport rendering, Android Auto rendering, media-session behavior, timing/karaoke behavior, or introduce persistent Translation Cache.

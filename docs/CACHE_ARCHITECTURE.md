@@ -48,6 +48,17 @@ Translation, user timing calibration, active karaoke position, and surface-speci
 
 Where useful, those capabilities may later define their own associated cached artifacts keyed to canonical lyrics identity, but that is a later implementation decision.
 
+## Translation cache policy
+
+Persistent Translation Cache is explicitly outside the current implementation path.
+
+- Through stable `v1.0.0`, persistent Translation Cache must not be introduced.
+- After `v1.0.0`, it remains disabled unless explicitly authorized.
+- This policy does not prohibit transient in-memory state required to coordinate one active Translation request or one process-level ML Kit model download.
+- If Translation Cache is authorized later, it remains a derived-artifact cache keyed to canonical lyrics identity plus the Translation configuration/engine/version factors required for correctness; it must not be folded invisibly into canonical lyrics storage.
+
+The purpose is observability during development: an old translated artifact must not make a changed Translation algorithm appear fixed or broken.
+
 ## Placement intentionally deferred
 
 The exact primary cache unit is **not fixed by this document**. Viable implementation shapes include:

@@ -58,6 +58,7 @@ pure_modules=(
   "provider/matching"
   "provider/lrc"
   "core/lyrics"
+  "translation/api"
 )
 
 for module in "${pure_modules[@]}"; do
@@ -87,6 +88,13 @@ for module in "${pure_modules[@]}"; do
       forbidden_dependencies=$(
         printf '%s\n' "$production_dependencies" \
           | grep -Ev "${dependency_prefix}${allowed_target}${dependency_suffix}" \
+          || true
+      )
+      ;;
+    "translation/api")
+      forbidden_dependencies=$(
+        printf '%s\n' "$production_dependencies" \
+          | grep -Ev "${dependency_prefix}${coroutines_core_target}${dependency_suffix}" \
           || true
       )
       ;;
@@ -131,8 +139,8 @@ for module in "${presentation_modules[@]}"; do
     || fail "$module must consume the shared lyrics-core contract"
 
   if printf '%s\n' "$presentation_dependencies" \
-    | grep -Eq 'project[[:space:]]*\([[:space:]]*(path[[:space:]]*=[[:space:]]*)?":(provider:[^"]+|platform:media)"|projects\.(provider\.|platform\.media)'; then
-    fail "$module must not depend directly on providers or the media platform adapter"
+    | grep -Eq 'project[[:space:]]*\([[:space:]]*(path[[:space:]]*=[[:space:]]*)?":(provider:[^"]+|platform:media|translation:mlkit)"|projects\.(provider\.|platform\.media|translation\.mlkit)'; then
+    fail "$module must not depend directly on providers, the media platform adapter, or a concrete translation engine"
   fi
 
   source_dir="$module/src/main"
@@ -141,8 +149,8 @@ done
 
 designsystem_dependencies="$(production_dependency_expressions "ui/designsystem/build.gradle.kts")"
 if printf '%s\n' "$designsystem_dependencies" \
-  | grep -Eq 'project[[:space:]]*\([[:space:]]*(path[[:space:]]*=[[:space:]]*)?":(core|provider|platform|ui:(phone|automotive))'; then
-  fail "ui/designsystem must remain independent of app/domain/provider/platform modules"
+  | grep -Eq 'project[[:space:]]*\([[:space:]]*(path[[:space:]]*=[[:space:]]*)?":(core|provider|platform|translation|ui:(phone|automotive))'; then
+  fail "ui/designsystem must remain independent of app/domain/provider/platform/translation modules"
 fi
 
 for source_dir in "${ui_source_dirs[@]}"; do
@@ -165,7 +173,7 @@ done
 production_source_dirs=()
 while IFS= read -r -d '' source_dir; do
   production_source_dirs+=("$source_dir")
-done < <(find core provider platform ui app -type d -path '*/src/main' -print0 2>/dev/null)
+done < <(find core provider platform translation ui app -type d -path '*/src/main' -print0 2>/dev/null)
 
 [[ "${#production_source_dirs[@]}" -gt 0 ]] \
   || fail "no production source directories found"
@@ -193,7 +201,7 @@ fi
 if grep -RInE \
   --include='*.kt' --include='*.java' \
   '^[[:space:]]*import[[:space:]].*provider\.(lrclib|musixmatch|petitlyrics|synclrc)\.|\b(LrcLibClient|MusixmatchClient|PetitLyricsClient|SyncLrcClient|SpotifyTrackIdentity)\b' \
-  core/model/src/main core/lyrics/src/main provider/api/src/main 2>/dev/null; then
+  core/model/src/main core/lyrics/src/main provider/api/src/main translation/api/src/main 2>/dev/null; then
   fail "provider-specific implementation details must not become pure-core application behavior"
 fi
 

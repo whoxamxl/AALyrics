@@ -112,7 +112,11 @@ See `docs/CACHE_ARCHITECTURE.md`.
 
 Translation is a derived lyrics capability. It consumes canonical lyrics, preserves original content, and produces translation artifacts/status associated with the exact canonical lyrics version and translation configuration.
 
+Lyrics Provider selection and Translation Provider selection are independent. Translation engines/providers must use a Translation-specific boundary rather than `:provider:api`, and Translation availability must never influence the canonical Lyrics winner.
+
 Translation failure is not lyrics lookup failure.
+
+The approved first implementation path starts with foreground-independent settings and ML Kit model lifecycle. Language profiling, contextual block planning, Translation Provider selection, artifact publication, and presentation integration remain later Translation implementation work.
 
 See `docs/TRANSLATION_ARCHITECTURE.md`.
 
@@ -215,12 +219,16 @@ Later capability contracts should make these failure boundaries explicit rather 
 
 ## Implementation sequence
 
-The foundation does not mandate one calendar order, but the expected dependency-friendly sequence is:
+The foundation does not mandate one calendar order.
+
+The project has now made one explicit ordering decision: **persistent Translation Cache is deferred through stable `v1.0.0` and remains disabled afterward unless explicitly authorized**. Translation work therefore does not wait for a persistent-cache implementation.
+
+The current dependency-friendly direction is:
 
 ```text
-Cache
+Translation background scaffold
   ↓
-Translation
+Translation execution / orchestration
   ↓
 Timing / Calibration
   ↓
@@ -228,10 +236,13 @@ Karaoke Projection
   ↓
 Presentation State integration
   ↓
-Phone / Automotive feature implementation
+Phone / Automotive feature integration
+
+Persistent cache
+  -> separate later capability only when explicitly authorized
 ```
 
-This order is primarily useful for reducing architectural churn. A later slice may change order if there is concrete product or implementation evidence, provided the dependency and ownership rules in this document remain intact.
+This order reduces architectural churn while preserving Cache as an independent capability. It does not forbid non-persistent in-memory lifecycle state needed by Translation execution.
 
 Each capability must be implemented on its own topic branch/PR with its own acceptance criteria and current working-fork re-check where applicable.
 
@@ -272,10 +283,10 @@ Before each implementation slice, re-check current working-fork code and active 
 
 This umbrella intentionally does not decide:
 
-- concrete future module names;
+- concrete module names beyond the implemented Translation scaffold;
 - whether each capability needs its own Gradle module;
 - cache placement, schema, storage engine, TTL, or invalidation policy;
-- translation engine/provider, batching, language detection, or persistence;
+- concrete Translation Provider request/candidate signatures, contextual batching heuristics, LanguageProfiler thresholds, or persistent Translation cache implementation;
 - calibration scope, persistence, offset/drift algorithm, or editing workflow;
 - karaoke projection DTO shape, interpolation policy, update cadence, or visual rendering;
 - shared presentation-facts DTO, ViewModel structure, DI framework, Flow composition, or surface state fields;

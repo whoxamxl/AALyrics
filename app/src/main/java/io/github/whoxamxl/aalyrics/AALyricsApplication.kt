@@ -22,6 +22,7 @@ import io.github.whoxamxl.aalyrics.ui.automotive.AutomotiveBrowserClientTrust
 import io.github.whoxamxl.aalyrics.ui.automotive.AutomotiveRuntimeBinding
 import io.github.whoxamxl.aalyrics.ui.automotive.AutomotiveRuntimeHost
 import io.github.whoxamxl.aalyrics.ui.automotive.AutomotiveTransport
+import io.github.whoxamxl.aalyrics.translation.mlkit.MlKitTranslationModelManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -36,6 +37,8 @@ class AALyricsApplication : Application() {
     private lateinit var graph: ApplicationGraph
     private lateinit var demandLifecycle: LyricsDemandLifecycle
     private lateinit var automotiveBinding: AutomotiveRuntimeBinding
+    private lateinit var translationSettingsStore: SharedPreferencesTranslationSettingsStore
+    private lateinit var translationBackgroundRuntime: TranslationBackgroundRuntime
 
     val playbackLyricsController: PlaybackLyricsController
         get() = graph.playbackLyricsController
@@ -46,6 +49,15 @@ class AALyricsApplication : Application() {
     override fun onCreate() {
         super.onCreate()
         graph = createProductionApplicationGraph(applicationScope)
+        translationSettingsStore = SharedPreferencesTranslationSettingsStore(this)
+        translationBackgroundRuntime = TranslationBackgroundRuntime(
+            settingsStore = translationSettingsStore,
+            modelManager = MlKitTranslationModelManager(
+                context = this,
+                applicationScope = applicationScope,
+            ),
+            applicationScope = applicationScope,
+        ).also { it.start() }
         MediaSessionRuntimeHost.attach(graph.playbackSnapshotSink)
         automotiveBinding = AutomotiveRuntimeBinding(
             playback = graph.playbackState,
@@ -70,6 +82,8 @@ class AALyricsApplication : Application() {
     }
 
     override fun onTerminate() {
+        translationBackgroundRuntime.stop()
+        translationSettingsStore.close()
         demandLifecycle.stop()
         AutomotiveRuntimeHost.detach(automotiveBinding)
         MediaSessionRuntimeHost.detach(graph.playbackSnapshotSink)

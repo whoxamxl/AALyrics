@@ -33,3 +33,6 @@ include(":provider:lrclib")
 include(":provider:petitlyrics")
 include(":provider:musixmatch")
 include(":provider:synclrc")
+
+include(":translation:api")
+include(":translation:mlkit")
