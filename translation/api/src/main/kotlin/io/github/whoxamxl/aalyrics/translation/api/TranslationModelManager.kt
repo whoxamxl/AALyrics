@@ -28,6 +28,13 @@ interface TranslationModelManager {
 
     suspend fun ensureAvailable(languageTag: String): Boolean
 
+    /**
+     * Clears a latched model failure and explicitly retries preparation.
+     * Ordinary ensureAvailable calls must not spin on a model that already
+     * failed or timed out in the current process.
+     */
+    suspend fun retry(languageTag: String): Boolean
+
     suspend fun ensureRouteAvailable(
         sourceLanguage: String,
         targetLanguage: String,
