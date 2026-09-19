@@ -15,6 +15,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsColors
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsSpacing
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsTheme
@@ -108,7 +109,7 @@ private fun PhoneAppShellPreview(
 @Composable
 internal fun PreviewLyricsDestination(
     initialState: LyricsScreenUiState,
-    bottomOverlayInset: androidx.compose.ui.unit.Dp = 0.dp,
+    bottomOverlayInset: Dp = Dp.Zero,
 ) {
     var state by remember(initialState) { mutableStateOf(initialState) }
 
