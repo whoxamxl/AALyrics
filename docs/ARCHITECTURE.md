@@ -17,7 +17,7 @@ Completed milestones:
 
 The live Android media-session runtime is implemented and merged in PR #29. Process-wide lyrics-demand gating is implemented and merged in PR #30; its boundary is specified in `docs/LYRICS_DEMAND_GATING.md`. Presentation remains in the dedicated `:ui` boundary: a shared Compose design system plus separate phone and automotive screen-composition modules.
 
-The future lyrics-capability architecture is defined by `docs/LYRICS_PIPELINE_ARCHITECTURE.md` and its five focused capability documents for cache, translation, timing/calibration, karaoke projection, and presentation state. That foundation fixes ownership, dependency direction, lifecycle constraints, and canonical-versus-derived data rules without prematurely fixing module names, concrete APIs, DTOs, storage technology, or implementation algorithms.
+The lyrics-capability architecture is defined by `docs/LYRICS_PIPELINE_ARCHITECTURE.md` and its five focused capability documents for cache, translation, timing/calibration, karaoke projection, and presentation state. That foundation fixes ownership, dependency direction, lifecycle constraints, and canonical-versus-derived data rules. The Translation background scaffold is the first capability slice to justify concrete Translation modules; later capability modules remain evidence-driven rather than pre-created.
 
 ## Design goals
 
@@ -70,7 +70,9 @@ LyricsState
 
 The demand-gating slice adds an application-lifecycle boundary in front of `PlaybackLyricsController`; it does not move provider or media-session ownership into `:app`.
 
-Future cache, translation, timing, karaoke, and presentation-capability composition may be wired from `:app` or other appropriate composition roots, but the composition root must not become the owner of their feature logic.
+The Translation background scaffold also lets `:app` compose persisted Translation settings with a process-level ML Kit target-model preparation runtime. That runtime does not observe canonical lyrics, execute lyric Translation, or publish foreground state.
+
+Future cache, Translation execution, timing, karaoke, and presentation-capability composition may be wired from `:app` or other appropriate composition roots, but the composition root must not become the owner of their feature logic.
 
 ### `:core:model`
 
@@ -103,6 +105,26 @@ Pure shared utilities. Matching owns genuinely provider-neutral metadata/version
 Each provider owns only its provider-local transport/authentication, query/fallback strategy, DTOs, parsing, provider-local validation, and normalization into `LyricsCandidate`. A provider may report provider-neutral evidence discovered during search, but it must not decide the final winner across providers.
 
 LRCLIB, PetitLyrics, Musixmatch, and SyncLRC are migrated behind the provider contract. Shared policy is defined in `docs/PROVIDER_ARCHITECTURE.md`; concise provider profiles live in `docs/providers/`.
+
+### `:translation:api`
+
+Pure Kotlin Translation capability contracts demonstrated by the background scaffold.
+
+Current responsibilities:
+
+- the approved product-level target-language set and normalization;
+- immutable Translation settings state and a persistence-agnostic settings-store boundary;
+- engine-independent model lifecycle state and the `TranslationModelManager` boundary.
+
+It does not depend on Android, Google ML Kit, Lyrics Providers, `:core:lyrics`, or presentation. It deliberately does not yet define speculative LanguageProfiler, Translation Provider request/candidate, block-planning, or Translation Artifact signatures.
+
+### `:translation:mlkit`
+
+Android/Google ML Kit adapter for Translation model lifecycle.
+
+Current responsibilities are limited to model planning, availability checks, download-task/monitor reuse, retryable failure state, thermal waiting, and active-download-time timeout semantics refactored from the mature Auto-Lyrics implementation.
+
+It depends on `:translation:api` and ML Kit. It does **not** currently execute lyric text Translation, detect song language, own canonical lyrics, or publish Phone/Android Auto state.
 
 ### `:platform:media`
 
@@ -169,7 +191,19 @@ Detailed presentation/source-set rules are defined in `docs/UI_ARCHITECTURE.md`.
 
 The diagram is a compile-time dependency sketch, not a runtime call-order diagram. `:provider:selection` depends on the selector port in `:core:lyrics`; `:core:lyrics` never depends on `:provider:selection`. `:ui:designsystem` is intentionally lower-level than both screen-composition modules and is isolated from application/domain ownership.
 
-Future cache/translation/timing/karaoke modules are intentionally absent from this diagram until implementation evidence justifies their concrete module placement and contracts. Their allowed dependency direction is already constrained by `docs/LYRICS_PIPELINE_ARCHITECTURE.md`.
+Translation now has one justified concrete dependency path:
+
+```text
+:app
+  ↓
+:translation:mlkit
+  ↓
+:translation:api
+```
+
+`:translation:api` remains pure Kotlin. UI modules must not depend on the concrete `:translation:mlkit` adapter. The later Translation execution/orchestration layer must consume these boundaries without moving Translation into Lyrics Providers or `:core:lyrics`.
+
+Cache, timing, karaoke, and any additional Translation modules remain absent until implementation evidence justifies their placement and contracts.
 
 ## Runtime flow
 
