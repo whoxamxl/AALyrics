@@ -38,27 +38,64 @@ Completed foundation includes:
 
 PR #30 implements the next runtime slice and is ready for explicit merge approval: MediaSession observation stays alive, while provider lookup runs only when phone-process foreground or Android Auto projection demand is active. Demand deactivation clears lyrics work; reactivation resumes immediately from the latest already-observed playback snapshot. Finished phone/Android Auto presentation, cache, translation, timing controls, persistence, and karaoke rendering remain separate later work.
 
-## Android Auto sideload development
+## Distribution and Android Auto sideloading
 
-AALyrics exposes a MediaBrowserService-backed Android Auto media surface for development builds. The host renders the same MediaSession metadata in compact/split and full Now Playing layouts; the current line-timed lyric is published through the display subtitle. Lyrics browse-window UI is intentionally not part of this slice.
+AALyrics is distributed outside Google Play. The durable distribution path is a **signed release APK attached to a GitHub Release**. Debug APKs remain development-only artifacts.
 
-Build and install locally:
+### Install a release
+
+1. Open the desired GitHub Release and download `AALyrics-vX.Y.Z.apk`.
+2. Install the APK on the Android phone. When installing from a browser or file manager, Android may require permission for that app to install unknown apps.
+3. Open AALyrics once.
+4. In Android system settings, open **Notification access** and enable **AALyrics**. This is required for AALyrics to observe the active media session.
+5. For Android Auto, enable Android Auto developer mode once, then enable **Developer settings → Unknown sources**. This is required for non-Play Android Auto media apps even though the APK itself is signed.
+6. Reconnect Android Auto or the Desktop Head Unit and enable AALyrics in the Android Auto launcher/customize list if necessary.
+
+The Android Auto host renders the same MediaSession metadata in compact/split and full Now Playing layouts. The active line-timed lyric is published through the display subtitle. Lyrics browse-window UI is intentionally deferred.
+
+### Development build
+
+For a local debug build:
 
 ```bash
 ./gradlew :app:installDebug
 ```
 
-For a fresh sideload:
+CI also uploads `aalyrics-debug-apk` for pull requests and `main` builds. This artifact is not the durable distribution package.
 
-1. Open AALyrics on the phone once after installation.
-2. In Android system settings, open **Notification access** (search Settings for "Notification access" if needed) and enable **AALyrics**. This access is required for AALyrics to observe the active media session.
-3. Open Android Auto settings on the phone.
-4. Open **About** and tap **Version and permission info** repeatedly until Android Auto developer mode is enabled.
-5. Open the overflow menu, choose **Developer settings**, and enable **Unknown sources**.
-6. Reconnect Android Auto or the Desktop Head Unit after installing AALyrics.
-7. Enable AALyrics in the Android Auto launcher/customize list if it is not already visible.
+### Publishing a signed GitHub Release
 
-The CI build also uploads `aalyrics-debug-apk` as a workflow artifact. This is a development sideload artifact; durable release signing/versioned distribution remains a separate release-engineering slice.
+Release signing material is never committed to the repository. Configure these GitHub Actions repository secrets:
+
+- `AALYRICS_RELEASE_KEYSTORE_BASE64`
+- `AALYRICS_RELEASE_STORE_PASSWORD`
+- `AALYRICS_RELEASE_KEY_ALIAS`
+- `AALYRICS_RELEASE_KEY_PASSWORD`
+
+Generate the signing key once and keep the original keystore backed up securely. Example:
+
+```bash
+keytool -genkeypair -v -keystore aalyrics-release.jks -alias aalyrics -keyalg RSA -keysize 4096 -validity 10000
+```
+
+On Windows PowerShell, encode the keystore for the GitHub secret with:
+
+```powershell
+[Convert]::ToBase64String([IO.File]::ReadAllBytes("aalyrics-release.jks"))
+```
+
+Put that output in `AALYRICS_RELEASE_KEYSTORE_BASE64`, then add the store password, alias, and key password in their matching secrets.
+
+A release is created by pushing a version tag that points to a commit already contained in `main`:
+
+```bash
+git checkout main
+git pull
+git tag v0.1.0
+git push origin v0.1.0
+```
+
+The Release workflow runs tests, builds and signs `app-release.apk`, renames it to `AALyrics-vX.Y.Z.apk`, writes a SHA-256 checksum, and publishes both files to the corresponding GitHub Release. The tag supplies `versionName`; the release workflow run number supplies a monotonically increasing `versionCode`.
 
 ## Modules
 
