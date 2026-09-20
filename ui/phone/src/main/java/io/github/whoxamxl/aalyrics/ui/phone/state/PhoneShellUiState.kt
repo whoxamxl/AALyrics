@@ -29,6 +29,7 @@ data class PlaybackSurfaceUiState(
     val isPlaying: Boolean,
     val title: String,
     val artist: String? = null,
+    val playbackIdentityKey: String = title + "\u0000" + artist.orEmpty(),
     val positionMs: Long = 0L,
     val durationMs: Long? = null,
     val playbackRate: Float = 1.0f,
@@ -46,6 +47,7 @@ data class PlaybackSurfaceUiState(
     init {
         require(title.isNotBlank()) { "Playback title must not be blank" }
         require(artist == null || artist.isNotBlank()) { "Playback artist must be null or non-blank" }
+        require(playbackIdentityKey.isNotBlank()) { "Playback identity key must not be blank" }
         require(positionMs >= 0L) { "Playback position must not be negative" }
         require(durationMs == null || durationMs > 0L) {
             "Playback duration must be null or positive"
