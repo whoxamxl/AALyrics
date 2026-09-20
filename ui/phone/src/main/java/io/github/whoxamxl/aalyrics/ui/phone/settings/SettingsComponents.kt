@@ -1,6 +1,7 @@
 package io.github.whoxamxl.aalyrics.ui.phone.settings
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
@@ -38,6 +39,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -49,6 +51,7 @@ import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsRadius
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsSpacing
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsStroke
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsTypography
+import io.github.whoxamxl.aalyrics.ui.phone.R
 
 @Composable
 internal fun SettingsSection(
@@ -457,45 +460,91 @@ private fun String.asVersionLabel(): String =
     if (startsWith("v", ignoreCase = true)) this else "v$this"
 
 @Composable
-internal fun AboutDialog(
+internal fun ChangelogDialog(
+    state: ChangelogUiState,
     title: String,
-    body: String,
-    versionLabel: String,
-    versionName: String,
-    githubLabel: String,
+    loadingLabel: String,
+    failureLabel: String,
+    retryLabel: String,
     closeLabel: String,
-    onOpenGitHub: () -> Unit,
+    genericFailureReason: String,
+    onRetry: () -> Unit,
     onDismissRequest: () -> Unit,
 ) {
     AlertDialog(
         onDismissRequest = onDismissRequest,
         title = {
             Text(
-                text = title,
+                text = if (
+                    state.phase == ChangelogUiPhase.READY &&
+                    !state.releaseVersionName.isNullOrBlank()
+                ) {
+                    "${title} ${state.releaseVersionName.asVersionLabel()}"
+                } else {
+                    title
+                },
                 style = AALyricsTypography.TrackTitle,
                 color = AALyricsColors.TextPrimary,
             )
         },
         text = {
-            Column {
-                Text(
-                    text = body,
-                    style = AALyricsTypography.TrackArtist,
-                    color = AALyricsColors.TextSecondary,
-                )
+            when (state.phase) {
+                ChangelogUiPhase.IDLE,
+                ChangelogUiPhase.LOADING -> {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            text = loadingLabel,
+                            style = AALyricsTypography.TrackArtist,
+                            color = AALyricsColors.TextSecondary,
+                            modifier = Modifier.weight(1f),
+                        )
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(AALyricsSpacing.Space20),
+                            color = AALyricsColors.AccentCyan,
+                            strokeWidth = AALyricsStroke.Strong,
+                        )
+                    }
+                }
 
-                Spacer(Modifier.height(AALyricsSpacing.Space16))
+                ChangelogUiPhase.READY -> {
+                    Text(
+                        text = state.body.orEmpty(),
+                        style = AALyricsTypography.TrackArtist,
+                        color = AALyricsColors.TextSecondary,
+                        modifier = Modifier
+                            .heightIn(max = 420.dp)
+                            .verticalScroll(rememberScrollState()),
+                    )
+                }
 
-                Text(
-                    text = "$versionLabel $versionName",
-                    style = AALyricsTypography.Label,
-                    color = AALyricsColors.TextTertiary,
-                )
+                ChangelogUiPhase.FAILED -> {
+                    Column {
+                        Text(
+                            text = failureLabel,
+                            style = AALyricsTypography.TrackArtist,
+                            color = AALyricsColors.Error,
+                        )
+                        Spacer(Modifier.height(AALyricsSpacing.Space8))
+                        Text(
+                            text = state.failureReason ?: genericFailureReason,
+                            style = AALyricsTypography.TrackArtist,
+                            color = AALyricsColors.TextSecondary,
+                        )
+                    }
+                }
             }
         },
         confirmButton = {
-            TextButton(onClick = onOpenGitHub) {
-                Text(text = githubLabel)
+            if (state.phase == ChangelogUiPhase.FAILED) {
+                TextButton(onClick = onRetry) {
+                    Text(
+                        text = retryLabel,
+                        color = AALyricsColors.AccentCyan,
+                    )
+                }
             }
         },
         dismissButton = {
@@ -508,6 +557,62 @@ internal fun AboutDialog(
         textContentColor = AALyricsColors.TextPrimary,
         shape = RoundedCornerShape(AALyricsRadius.Radius16),
     )
+}
+
+@Composable
+internal fun SettingsBrandFooter(
+    appName: String,
+    versionLabel: String,
+    versionName: String,
+    currentYear: Int,
+    copyrightOwner: String,
+    logoContentDescription: String,
+    onOpenGitHub: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(
+                top = AALyricsSpacing.Space32,
+                bottom = AALyricsSpacing.Space24,
+            ),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Image(
+            painter = painterResource(R.drawable.aalyrics_brand_foreground),
+            contentDescription = logoContentDescription,
+            modifier = Modifier.size(112.dp),
+        )
+
+        Spacer(Modifier.height(AALyricsSpacing.Space8))
+
+        Text(
+            text = appName,
+            style = AALyricsTypography.LyricsSupporting,
+            color = AALyricsColors.TextPrimary,
+        )
+
+        Spacer(Modifier.height(AALyricsSpacing.Space16))
+
+        Text(
+            text = "${versionLabel}: ${versionName.asVersionLabel()}",
+            style = AALyricsTypography.TrackArtist,
+            color = AALyricsColors.TextSecondary,
+        )
+
+        Text(
+            text = "© $currentYear $copyrightOwner",
+            style = AALyricsTypography.TrackArtist,
+            color = AALyricsColors.TextSecondary,
+            modifier = Modifier
+                .clickable(onClick = onOpenGitHub)
+                .padding(
+                    horizontal = AALyricsSpacing.Space8,
+                    vertical = AALyricsSpacing.Space4,
+                ),
+        )
+    }
 }
 
 @Composable
