@@ -31,6 +31,7 @@ fun SettingsScreen(
     onTranslationModelDownloadRequested: (String) -> Unit,
     onAndroidAutoCompatibilitySetup: () -> Unit,
     onCheckForUpdates: () -> Unit,
+    onDownloadUpdate: () -> Unit,
     onOpenGitHub: () -> Unit,
     modifier: Modifier = Modifier,
     bottomOverlayInset: Dp = 0.dp,
@@ -50,6 +51,7 @@ fun SettingsScreen(
         onTranslationModelDownloadRequested = onTranslationModelDownloadRequested,
         onAndroidAutoCompatibilitySetup = onAndroidAutoCompatibilitySetup,
         onCheckForUpdates = onCheckForUpdates,
+        onDownloadUpdate = onDownloadUpdate,
         onAboutRequested = { aboutVisible = true },
         modifier = modifier,
         bottomOverlayInset = bottomOverlayInset,
@@ -80,6 +82,7 @@ internal fun SettingsScreenContent(
     onTranslationModelDownloadRequested: (String) -> Unit,
     onAndroidAutoCompatibilitySetup: () -> Unit,
     onCheckForUpdates: () -> Unit,
+    onDownloadUpdate: () -> Unit,
     onAboutRequested: () -> Unit,
     modifier: Modifier = Modifier,
     bottomOverlayInset: Dp = 0.dp,
@@ -153,17 +156,25 @@ internal fun SettingsScreenContent(
         SettingsSection(
             title = stringResource(R.string.settings_section_app),
         ) {
-            SettingsNavigationRow(
-                title = stringResource(R.string.settings_check_for_updates),
-                value = null,
-                onClick = onCheckForUpdates,
-            )
-
-            SettingsDivider()
-
-            SettingsValueRow(
-                title = stringResource(R.string.settings_current_version),
-                value = state.appVersionName,
+            AppUpdateRow(
+                versionLabel = stringResource(R.string.settings_version),
+                currentVersionName = state.appVersionName,
+                state = state.appUpdate,
+                checkLabel = stringResource(R.string.settings_check_for_updates),
+                checkingLabel = stringResource(R.string.settings_checking_for_updates),
+                upToDateLabel = stringResource(R.string.settings_up_to_date),
+                updateAvailableLabel = stringResource(R.string.settings_update_available),
+                downloadLabel = stringResource(R.string.settings_download_update),
+                downloadingLabel = stringResource(R.string.settings_downloading_update),
+                downloadedLabel = stringResource(R.string.settings_update_downloaded),
+                retryLabel = stringResource(R.string.settings_retry),
+                failedLabel = stringResource(R.string.settings_update_failed),
+                failureInfoContentDescription =
+                    stringResource(R.string.settings_update_failure_info),
+                genericFailureReason =
+                    stringResource(R.string.settings_update_failure_generic),
+                onCheckForUpdates = onCheckForUpdates,
+                onDownloadUpdate = onDownloadUpdate,
             )
 
             SettingsDivider()
