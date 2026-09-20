@@ -65,6 +65,24 @@ class PhoneDetailsMapperTest {
     }
 
     @Test
+    fun `late duration metadata does not hide current lyrics`() {
+        val lookupTrack = currentTrack().copy(durationMs = null)
+        val playbackTrack = lookupTrack.copy(durationMs = 221_000L)
+
+        val state = mapPhoneDetailsState(
+            playback = playback(playbackTrack),
+            lyricsState = readyLyrics(lookupTrack),
+            verboseDetailsEnabled = false,
+            playbackSourceLabel = "Spotify",
+            displayLocale = Locale.ENGLISH,
+        )
+
+        assertEquals("3:41", state.track?.durationLabel)
+        assertEquals("Musixmatch", state.lyrics?.providerDisplayName)
+        assertEquals(DetailsLyricsUiStatus.READY, state.lyricsStatus)
+    }
+
+    @Test
     fun `lyrics from a different track are never exposed as current Details`() {
         val current = currentTrack()
         val staleTrack = current.copy(title = "Previous Track")

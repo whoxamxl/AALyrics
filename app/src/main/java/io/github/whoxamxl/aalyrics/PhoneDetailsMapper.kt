@@ -80,7 +80,7 @@ private fun currentLyrics(
 
     val lookupState = state as? LyricsState.ForLookup
         ?: return CurrentLyrics(null, DetailsLyricsUiStatus.UNAVAILABLE)
-    if (lookupState.lookup.track != track) {
+    if (!sameLookupTrack(track, lookupState.lookup.track)) {
         return CurrentLyrics(null, DetailsLyricsUiStatus.UNAVAILABLE)
     }
 
@@ -99,6 +99,16 @@ private fun currentLyrics(
             CurrentLyrics(null, DetailsLyricsUiStatus.UNAVAILABLE)
     }
 }
+
+/**
+ * Duration is deliberately excluded from lookup identity: the media runtime may
+ * learn duration after lyrics lookup has already started without changing track.
+ */
+private fun sameLookupTrack(
+    playbackTrack: Track,
+    lookupTrack: Track,
+): Boolean =
+    playbackTrack.copy(durationMs = null) == lookupTrack.copy(durationMs = null)
 
 private fun formatDuration(durationMs: Long): String {
     val totalSeconds = durationMs / 1_000L
