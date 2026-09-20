@@ -30,17 +30,17 @@ Settings
 ## Documentation acceptance criteria
 
 - [x] Create a topic branch from current `main`.
-- [ ] Replace stale pre-PR #46 playback-surface status text with the merged implementation state.
-- [ ] Define the first Phone Details contract in `docs/PHONE_DETAILS.md`.
-- [ ] Define Normal Details versus Verbose Details.
-- [ ] Keep machine-facing provider/source identifiers out of the normal Details surface.
-- [ ] Add `Settings > Advanced` with Debug and Experimental sections.
-- [ ] Define `Verbose details` as presentation-only behavior.
-- [ ] Define `Karaoke mode` as disabled/unwired future UI only.
-- [ ] Keep Sync behavior explicitly deferred.
-- [ ] Align UI architecture and roadmap status with merged Phone work.
-- [ ] Review the documentation diff for contradictory ownership or implementation claims.
-- [ ] Stop before implementation and merge until explicitly authorized.
+- [x] Replace stale pre-PR #46 playback-surface status text with the merged implementation state.
+- [x] Define the first Phone Details contract in `docs/PHONE_DETAILS.md`.
+- [x] Define Normal Details versus Verbose Details.
+- [x] Keep machine-facing provider/source identifiers out of the normal Details surface.
+- [x] Add `Settings > Advanced` with Debug and Experimental sections.
+- [x] Define `Verbose details` as presentation-only behavior.
+- [x] Define `Karaoke mode` as disabled/unwired future UI only.
+- [x] Keep Sync behavior explicitly deferred.
+- [x] Align UI architecture and roadmap status with merged Phone work.
+- [x] Review the documentation diff for contradictory ownership or implementation claims.
+- [x] Stop before implementation and merge until explicitly authorized.
 
 ## Scope guard
 
