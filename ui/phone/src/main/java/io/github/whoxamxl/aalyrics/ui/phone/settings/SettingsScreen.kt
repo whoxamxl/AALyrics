@@ -209,6 +209,7 @@ internal fun SettingsScreenContent(
                     stringResource(R.string.settings_update_failure_info),
                 genericFailureReason =
                     stringResource(R.string.settings_update_failure_generic),
+                unavailableLabel = stringResource(R.string.settings_not_available_yet),
                 onCheckForUpdates = onCheckForUpdates,
                 onDownloadUpdate = onDownloadUpdate,
             )
@@ -217,7 +218,12 @@ internal fun SettingsScreenContent(
 
             SettingsNavigationRow(
                 title = stringResource(R.string.settings_changelog),
-                value = null,
+                value = if (state.changelog.phase == ChangelogUiPhase.UNAVAILABLE) {
+                    stringResource(R.string.settings_not_available_yet)
+                } else {
+                    null
+                },
+                enabled = state.changelog.phase != ChangelogUiPhase.UNAVAILABLE,
                 onClick = onChangelogRequested,
             )
 

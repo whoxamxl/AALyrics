@@ -287,6 +287,7 @@ internal fun AppUpdateRow(
     downloadFailedLabel: String,
     failureInfoContentDescription: String,
     genericFailureReason: String,
+    unavailableLabel: String,
     onCheckForUpdates: () -> Unit,
     onDownloadUpdate: () -> Unit,
     modifier: Modifier = Modifier,
@@ -321,6 +322,10 @@ internal fun AppUpdateRow(
         Spacer(Modifier.height(AALyricsSpacing.Space12))
 
         when (state.phase) {
+            AppUpdateUiPhase.UNAVAILABLE -> {
+                AppUpdateStatusTextRow(label = unavailableLabel)
+            }
+
             AppUpdateUiPhase.IDLE -> {
                 AppUpdateActionRow(
                     actionLabel = checkLabel,
@@ -490,6 +495,25 @@ private fun AppUpdateProgressRow(
 }
 
 @Composable
+private fun AppUpdateStatusTextRow(
+    label: String,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = AALyricsSpacing.Space48),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Spacer(Modifier.weight(1f))
+        Text(
+            text = label,
+            style = AALyricsTypography.TrackArtist,
+            color = AALyricsColors.TextTertiary,
+        )
+    }
+}
+
+@Composable
 private fun AppUpdateStatusRow(
     label: String,
     icon: ImageVector,
@@ -584,6 +608,14 @@ internal fun ChangelogDialog(
         },
         text = {
             when (state.phase) {
+                ChangelogUiPhase.UNAVAILABLE -> {
+                    Text(
+                        text = genericFailureReason,
+                        style = AALyricsTypography.TrackArtist,
+                        color = AALyricsColors.TextSecondary,
+                    )
+                }
+
                 ChangelogUiPhase.IDLE,
                 ChangelogUiPhase.LOADING -> {
                     Row(
