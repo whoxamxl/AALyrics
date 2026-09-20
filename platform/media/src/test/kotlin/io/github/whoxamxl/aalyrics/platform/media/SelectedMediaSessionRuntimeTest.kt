@@ -117,6 +117,25 @@ class SelectedMediaSessionRuntimeTest {
 
 
     @Test
+    fun `selected session launch routes only to the selected controller`() {
+        val snapshots = mutableListOf<PlaybackSnapshot>()
+        val first = controller("first", "First", playing = true)
+        val second = controller("second", "Second", playing = true)
+        val runtime = runtime(FakeScheduler(), snapshots)
+
+        runtime.updateSessions(listOf(first))
+        assertEquals(true, runtime.openSessionActivity())
+
+        first.playing = false
+        runtime.updateSessions(listOf(first, second))
+        second.sessionLaunchResult = false
+        assertEquals(false, runtime.openSessionActivity())
+
+        assertEquals(1, first.sessionLaunchCount)
+        assertEquals(1, second.sessionLaunchCount)
+    }
+
+    @Test
     fun `control state follows selected session playback and queue changes`() {
         val snapshots = mutableListOf<PlaybackSnapshot>()
         val controlStates = mutableListOf<PlaybackControlState>()
@@ -258,6 +277,8 @@ class SelectedMediaSessionRuntimeTest {
         var nextCount = 0
         val seekPositions = mutableListOf<Long>()
         val queueItemIds = mutableListOf<Long>()
+        var sessionLaunchCount = 0
+        var sessionLaunchResult = true
         var controls = PlaybackControlState(
             sourcePackageName = packageName,
             capabilities = PlaybackControlCapabilities(
@@ -305,6 +326,11 @@ class SelectedMediaSessionRuntimeTest {
 
         override fun skipToQueueItem(queueItemId: Long) {
             queueItemIds += queueItemId
+        }
+
+        override fun openSessionActivity(): Boolean {
+            sessionLaunchCount += 1
+            return sessionLaunchResult
         }
 
         fun metadataChanged() = callbacks.toList().forEach { it.onMetadataChanged() }
