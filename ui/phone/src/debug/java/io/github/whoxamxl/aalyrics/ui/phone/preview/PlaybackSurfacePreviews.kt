@@ -17,6 +17,7 @@ import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsColors
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsTheme
 import io.github.whoxamxl.aalyrics.ui.phone.shell.ExpandedPlayer
 import io.github.whoxamxl.aalyrics.ui.phone.shell.PlaybackBar
+import io.github.whoxamxl.aalyrics.ui.phone.shell.PlaybackQueueSheetContent
 import io.github.whoxamxl.aalyrics.ui.phone.shell.PlaybackSurface
 import io.github.whoxamxl.aalyrics.ui.phone.state.PlaybackSurfaceUiState
 
@@ -109,6 +110,32 @@ private fun ExpandedPlayerNarrowPreview() {
 @Composable
 private fun ExpandedPlayerLargeFontPreview() {
     ExpandedPlayerPreview(PhonePreviewFixtures.longMetadataSurface)
+}
+
+@Preview(
+    name = "Queue · Scrollable",
+    group = "PlaybackSurface",
+    widthDp = 412,
+    heightDp = 520,
+    showBackground = true,
+)
+@Composable
+private fun PlaybackQueueScrollablePreview() {
+    AALyricsTheme {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(AALyricsColors.BackgroundSurfaceStrong),
+        ) {
+            PlaybackQueueSheetContent(
+                queue = PhonePreviewFixtures.playingSurface.queue,
+                canOpenPlaybackApp = true,
+                onOpenPlaybackApp = {},
+                onQueueItemSelected = {},
+                modifier = Modifier.fillMaxSize(),
+            )
+        }
+    }
 }
 
 @Preview(
