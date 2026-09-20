@@ -177,20 +177,20 @@ Collapsed Player + Back
 
 ## Expanded seek visual language
 
-The Expanded Player seek control uses a subtle Pixel-inspired wavy active track while normal playback is running.
+The Expanded Player seek control uses a One UI-inspired structural treatment rather than an animated waveform.
 
 Rules:
 
-- only the active/progress segment is wavy;
-- use AALyrics Accent Cyan rather than album-art-derived color;
-- keep the wave deliberately restrained (about 4dp height, 22dp wavelength, 3dp track thickness);
-- flatten the seek control when playback is paused;
-- flatten it during direct drag preview;
-- flatten it during Previous/Next long-press relative-seek preview;
-- return to the animated wave after a committed/cancelled seek when playback is still running;
-- the collapsed playback progress indicator remains a straight, non-interactive line.
+- use a rigid, thick pill-shaped track;
+- keep the track visually stable across playing, paused, direct-seek, and long-press relative-seek states;
+- use AALyrics Accent Cyan for the active segment instead of album-art-derived color;
+- use a low-alpha Accent Cyan inactive segment so the control remains visually coherent with the rest of the player;
+- use an unobtrusive round thumb with no visible gap between thumb and track;
+- target an approximately 8dp track and 18dp thumb for the first implementation;
+- keep elapsed/duration labels below the track;
+- the collapsed playback progress indicator remains the existing thin, straight, non-interactive line.
 
-The implementation currently uses `ir.mahozad.multiplatform:wavy-slider:2.2.0` (Apache-2.0) for the Expanded Player only.
+No third-party slider dependency is required for this treatment.
 
 ## Interactive seek bar
 
