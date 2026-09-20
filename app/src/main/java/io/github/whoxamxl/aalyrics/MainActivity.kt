@@ -1,18 +1,21 @@
 package io.github.whoxamxl.aalyrics
 
-import android.app.Activity
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
-import android.view.Gravity
-import android.view.View
-import android.widget.TextView
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsTheme
+import io.github.whoxamxl.aalyrics.ui.phone.settings.AndroidAutoCompatibilityUiStatus
 import io.github.whoxamxl.aalyrics.ui.phone.setup.createAndroidAutoCompatibilitySetupView
 import io.github.whoxamxl.aalyrics.ui.phone.setup.createNotificationAccessSetupView
 
-class MainActivity : Activity() {
+class MainActivity : ComponentActivity() {
     private lateinit var notificationAccessController: NotificationAccessController
     private lateinit var notificationAccessGate: NotificationAccessGate
     private lateinit var androidAutoCompatibilityOnboarding: AndroidAutoCompatibilityOnboarding
     private var renderedEntryState: AppEntryState? = null
+    private var compatibilitySetupRequested = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -58,15 +61,42 @@ class MainActivity : Activity() {
                         context = this,
                         onEnabled = {
                             androidAutoCompatibilityOnboarding.markEnabled()
+                            compatibilitySetupRequested = false
+                            renderedEntryState = null
                             renderEntryState()
                         },
                         onContinueWithout = {
                             androidAutoCompatibilityOnboarding.skip()
+                            compatibilitySetupRequested = false
+                            renderedEntryState = null
                             renderEntryState()
                         },
                     )
 
-                AppEntryState.READY -> createGrantedContentView()
+                AppEntryState.READY -> {
+                    setContent {
+                        AALyricsTheme {
+                            PhoneRuntimeHost(
+                                application = application as AALyricsApplication,
+                                androidAutoStatus = androidAutoCompatibilityOnboarding
+                                    .status()
+                                    .toUiStatus(),
+                                onAndroidAutoCompatibilitySetup = {
+                                    compatibilitySetupRequested = true
+                                    renderedEntryState = null
+                                    renderEntryState()
+                                },
+                                onOpenSourceCode = {
+                                    openUrl(SOURCE_CODE_URL)
+                                },
+                                onOpenLicense = {
+                                    openUrl(LICENSE_URL)
+                                },
+                            )
+                        }
+                    }
+                    return
+                }
             },
         )
     }
@@ -77,6 +107,7 @@ class MainActivity : Activity() {
         }
 
         if (
+            compatibilitySetupRequested ||
             androidAutoCompatibilityOnboarding.status() ==
             AndroidAutoCompatibilitySetupStatus.NOT_REVIEWED
         ) {
@@ -86,12 +117,24 @@ class MainActivity : Activity() {
         return AppEntryState.READY
     }
 
-    private fun createGrantedContentView(): View =
-        TextView(this).apply {
-            text = getString(R.string.foundation_build)
-            gravity = Gravity.CENTER
-            textSize = 22f
-        }
+    private fun openUrl(url: String) {
+        startActivity(
+            Intent(
+                Intent.ACTION_VIEW,
+                Uri.parse(url),
+            ),
+        )
+    }
+
+    private fun AndroidAutoCompatibilitySetupStatus.toUiStatus():
+        AndroidAutoCompatibilityUiStatus = when (this) {
+        AndroidAutoCompatibilitySetupStatus.NOT_REVIEWED ->
+            AndroidAutoCompatibilityUiStatus.NOT_REVIEWED
+        AndroidAutoCompatibilitySetupStatus.ENABLED ->
+            AndroidAutoCompatibilityUiStatus.ENABLED
+        AndroidAutoCompatibilitySetupStatus.SKIPPED ->
+            AndroidAutoCompatibilityUiStatus.SKIPPED
+    }
 
     private enum class AppEntryState {
         NOTIFICATION_ACCESS_REQUIRED,
@@ -102,5 +145,8 @@ class MainActivity : Activity() {
     private companion object {
         const val ENTRY_PREFERENCES_NAME = "app_entry_setup"
         const val ANDROID_AUTO_COMPATIBILITY_KEY = "android_auto_compatibility"
+        const val SOURCE_CODE_URL = "https://github.com/whoxamxl/AALyrics"
+        const val LICENSE_URL =
+            "https://github.com/whoxamxl/AALyrics/blob/main/LICENSE"
     }
 }
