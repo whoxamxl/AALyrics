@@ -50,7 +50,8 @@
     <string name="settings_downloading_update">Downloading</string>
     <string name="settings_update_downloaded">Downloaded</string>
     <string name="settings_retry">Retry</string>
-    <string name="settings_update_failed">Update check failed</string>
+    <string name="settings_update_check_failed">Update check failed</string>
+    <string name="settings_update_download_failed">Download failed</string>
     <string name="settings_update_failure_info">Why the update action failed</string>
     <string name="settings_update_failure_generic">The update action could not complete. Check the network connection and try again.</string>
     <string name="settings_current_version">Current version</string>
