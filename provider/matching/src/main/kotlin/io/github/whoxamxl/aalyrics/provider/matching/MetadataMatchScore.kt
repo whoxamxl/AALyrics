@@ -1,7 +1,5 @@
 package io.github.whoxamxl.aalyrics.provider.matching
 
-// CodeQL compatibility probe; no runtime behavior change.
-
 /** Shared metadata plausibility only; payload quality, source confidence and winner selection stay outside. */
 object MetadataMatchScore {
     fun score(
