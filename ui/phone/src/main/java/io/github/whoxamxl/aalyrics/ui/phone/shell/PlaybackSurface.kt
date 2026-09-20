@@ -149,6 +149,7 @@ fun PlaybackSurface(
             ExpandedPlayer(
                 state = state,
                 displayedPositionMs = displayedPositionMs,
+                seekPreviewActive = previewPositionMs != null,
                 onCollapse = ::collapse,
                 onPrevious = onPrevious,
                 onPlayPause = onPlayPause,
