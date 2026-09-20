@@ -55,6 +55,9 @@
     <string name="settings_update_failure_info">Why the update action failed</string>
     <string name="settings_update_failure_generic">The update action could not complete. Check the network connection and try again.</string>
     <string name="settings_changelog">Changelog</string>
+    <string name="settings_source_code">Source code</string>
+    <string name="settings_github">GitHub</string>
+    <string name="settings_license">License</string>
     <string name="settings_changelog_loading">Loading release notes…</string>
     <string name="settings_changelog_failed">Could not load changelog</string>
     <string name="settings_changelog_failure_generic">GitHub Release notes could not be loaded. Check the network connection and try again.</string>
