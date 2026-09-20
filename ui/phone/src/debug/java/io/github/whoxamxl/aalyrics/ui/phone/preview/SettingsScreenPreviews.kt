@@ -13,6 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsColors
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsTheme
+import io.github.whoxamxl.aalyrics.ui.phone.settings.AboutDialog
 import io.github.whoxamxl.aalyrics.ui.phone.settings.SettingsScreenContent
 import io.github.whoxamxl.aalyrics.ui.phone.settings.SettingsScreenUiState
 import io.github.whoxamxl.aalyrics.ui.phone.settings.TranslationModelUiState
@@ -50,6 +51,29 @@ private fun SettingsTargetLanguagePickerPreview() {
         initialState = PhonePreviewFixtures.settingsTypical,
         initialPickerVisible = true,
     )
+}
+
+@Preview(name = "About", group = "SettingsScreen", widthDp = 412, heightDp = 760)
+@Composable
+private fun SettingsAboutPreview() {
+    AALyricsTheme {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(AALyricsColors.BackgroundBase),
+        ) {
+            AboutDialog(
+                title = "About AALyrics",
+                body = "AALyrics is an open-source lyrics companion focused on synchronized playback, translation, and Android Auto presentation.",
+                versionLabel = "Current version",
+                versionName = PhonePreviewFixtures.settingsTypical.appVersionName,
+                githubLabel = "GitHub",
+                closeLabel = "Close",
+                onOpenGitHub = {},
+                onDismissRequest = {},
+            )
+        }
+    }
 }
 
 @Preview(name = "Narrow · 320dp", group = "SettingsScreen", widthDp = 320, heightDp = 700)
@@ -143,6 +167,8 @@ internal fun SettingsScreenPreview(
                     }
                 },
                 onAndroidAutoCompatibilitySetup = {},
+                onCheckForUpdates = {},
+                onAboutRequested = {},
                 modifier = Modifier.fillMaxSize(),
             )
         }
