@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -269,13 +270,12 @@ internal fun AboutDialog(
                     color = AALyricsColors.TextSecondary,
                 )
 
-                Spacer(Modifier.width(AALyricsSpacing.Space8))
+                Spacer(Modifier.height(AALyricsSpacing.Space16))
 
                 Text(
                     text = "$versionLabel $versionName",
                     style = AALyricsTypography.Label,
                     color = AALyricsColors.TextTertiary,
-                    modifier = Modifier.padding(top = AALyricsSpacing.Space16),
                 )
             }
         },
