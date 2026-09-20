@@ -53,6 +53,13 @@ class PlaybackSeekTest {
     }
 
     @Test
+    fun `playback time formatting handles minutes and hours`() {
+        assertEquals("0:00", formatPlaybackTime(0L))
+        assertEquals("2:05", formatPlaybackTime(125_000L))
+        assertEquals("1:02:03", formatPlaybackTime(3_723_000L))
+    }
+
+    @Test
     fun `zero additional hold preserves starting position`() {
         assertEquals(
             30_000L,
