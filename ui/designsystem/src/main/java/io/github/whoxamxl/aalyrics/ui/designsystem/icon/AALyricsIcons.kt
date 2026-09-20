@@ -8,6 +8,7 @@ import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.Download
 import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.Lyrics
+import androidx.compose.material.icons.rounded.OpenInNew
 import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Settings
@@ -33,6 +34,7 @@ object AALyricsIcons {
     val Check: ImageVector = Icons.Rounded.Check
     val Download: ImageVector = Icons.Rounded.Download
     val Retry: ImageVector = Icons.Rounded.Sync
+    val ExternalLink: ImageVector = Icons.Rounded.OpenInNew
 
     val PlaybackAbove: ImageVector = Icons.Rounded.ExpandLess
     val PlaybackBelow: ImageVector = Icons.Rounded.ExpandMore
