@@ -188,6 +188,7 @@ internal object PhonePreviewFixtures {
             id = "es",
             displayName = "Spanish",
             modelState = TranslationModelUiState.FAILED,
+            modelFailureReason = "Model download failed because the network request did not complete.",
         ),
         SettingsLanguageOptionUiState("ko", "Korean"),
         SettingsLanguageOptionUiState("zh", "Chinese"),
