@@ -161,6 +161,14 @@ Each language row also exposes Translation-model readiness:
 
 The model icon is a separate action from selecting the target language. Downloading a model must not implicitly change the selected target.
 
+Language rows use a stable three-column layout rather than text-width-dependent spacer math:
+
+```text
+language label (flex) | model-status slot | selected slot
+```
+
+Both trailing slots reserve the same token-sized touch area on every row, so download/loading/ready/retry icons and the selected check remain vertically aligned regardless of language-name length or model state.
+
 The picker should clearly mark the selected language, remain open when a model download action is used, dismiss after target selection, and remain usable at narrow widths and enlarged font scales.
 
 ## Android Auto section
