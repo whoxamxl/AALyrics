@@ -53,16 +53,6 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      # Temporary compatibility probe. This is removed after validation.
-      - name: Initialize CodeQL Kotlin compatibility probe
-        uses: github/codeql-action/init@v4
-        with:
-          languages: java-kotlin
-          build-mode: manual
-
-      - name: Probe CodeQL Kotlin extraction
-        run: ./gradlew --no-daemon --no-build-cache :provider:matching:clean :provider:matching:compileKotlin --rerun-tasks --stacktrace
-
       - name: Build debug APK
         run: ./gradlew :app:assembleDebug --stacktrace
 
