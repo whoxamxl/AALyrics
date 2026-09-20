@@ -156,6 +156,14 @@ sha256sum -c AALyrics-v0.1.0-alpha.1.apk.sha256
 
 The checksum verifies file integrity. Android's package signature separately provides the signing identity used for update compatibility.
 
+## In-app update entry
+
+The Phone Settings surface may expose a `Check for updates` action and the currently installed version.
+
+GitHub Releases remains the authoritative distribution source. The Phone Compose layer only emits presentation callbacks; application/runtime code owns network access, release comparison, browser/download handoff, and any future install flow.
+
+The installed version shown in Settings should come from the app build metadata (`BuildConfig.VERSION_NAME`), not a duplicated UI constant.
+
 ## Installation and updates
 
 Debug and release APKs use different signing identities. If a debug AALyrics build is installed, uninstall it before installing the first release-signed APK.
