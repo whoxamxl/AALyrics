@@ -242,6 +242,7 @@ private fun ExpandedPlayerHeader(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ExpandedSeekArea(
     enabled: Boolean,
