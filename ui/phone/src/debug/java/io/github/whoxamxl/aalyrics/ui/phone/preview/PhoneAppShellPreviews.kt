@@ -173,6 +173,7 @@ internal fun PreviewSettingsDestination(
                     state = state.copy(translationTarget = target)
                 }
         },
+        onTranslationModelDownloadRequested = {},
         onAndroidAutoCompatibilitySetup = {},
         modifier = Modifier.fillMaxSize(),
         bottomOverlayInset = bottomOverlayInset,
