@@ -1,18 +1,16 @@
-# Phone Details and Advanced Settings Documentation Alignment
+# Phone Details and Advanced Settings Implementation
 
 ## Branch and baseline
 
-- Branch: `docs/phone-details-advanced-alignment`.
-- Base: `main` at `ebc1df503a6fc112b0ea14197daf30f4241d6e73` (PR #46 merged).
-- Classification: **PHONE UI DOCUMENTATION / DETAILS + ADVANCED SETTINGS CONTRACT**.
-- Authoritative references: `AGENTS.md`, `docs/PHONE_UI_SPEC.md`, `docs/PHONE_SETTINGS.md`, `docs/UI_ARCHITECTURE.md`, and the new `docs/PHONE_DETAILS.md`.
-- This branch is documentation-only. Production implementation is not authorized by this slice.
+- Branch: `feature/phone-details-advanced`.
+- Base: current `main` at `dbeafbdb46ae40f38eb5d3f754772394c9610252`.
+- Classification: **PHONE DETAILS / ADVANCED SETTINGS IMPLEMENTATION**.
+- Authoritative references: `AGENTS.md`, `docs/PHONE_DETAILS.md`, `docs/PHONE_SETTINGS.md`, `docs/PHONE_UI_SPEC.md`, and `docs/UI_ARCHITECTURE.md`.
+- Product direction was approved in PR #47. This slice implements that approved contract without expanding Sync or Karaoke behavior.
 
 ## Goal
 
-Align Phone documentation with the post-PR #46 implementation state and freeze the next presentation contracts without prematurely implementing Sync or Karaoke behavior.
-
-The approved direction is:
+Implement the Phone Details destination and the narrow Settings > Advanced extension:
 
 ```text
 Settings
@@ -23,38 +21,70 @@ Settings
       └─ Karaoke mode                     [OFF, disabled]
 ```
 
-`Verbose details` controls only the amount of read-only diagnostic information shown by the Details destination. It must not change provider lookup, candidate selection, timing, translation, playback, or lyrics rendering behavior.
+`Verbose details` is an application-owned persisted presentation preference. It only controls whether the read-only Developer / Diagnostics section is shown in Details.
 
-`Karaoke mode` is a future/experimental affordance only in this stage. It remains OFF and disabled, with no runtime setting, callback, provider-selection effect, WORD-sync preference change, or karaoke rendering wiring.
+`Karaoke mode` remains a disabled, non-interactive affordance with no persisted state and no runtime wiring.
 
-## Documentation acceptance criteria
+## Implementation acceptance criteria
 
-- [x] Create a topic branch from current `main`.
-- [x] Replace stale pre-PR #46 playback-surface status text with the merged implementation state.
-- [x] Define the first Phone Details contract in `docs/PHONE_DETAILS.md`.
-- [x] Define Normal Details versus Verbose Details.
-- [x] Keep machine-facing provider/source identifiers out of the normal Details surface.
-- [x] Add `Settings > Advanced` with Debug and Experimental sections.
-- [x] Define `Verbose details` as presentation-only behavior.
-- [x] Define `Karaoke mode` as disabled/unwired future UI only.
-- [x] Keep Sync behavior explicitly deferred.
-- [x] Align UI architecture and roadmap status with merged Phone work.
-- [x] Review the documentation diff for contradictory ownership or implementation claims.
-- [x] Stop before implementation and merge until explicitly authorized.
+### Planning / ownership
+- [x] Start from current `main` on a topic branch.
+- [x] Record this implementation plan before production changes.
+- [ ] Preserve existing Settings and playback behavior.
+- [ ] Keep provider lookup/scoring, timing, Translation execution, MediaSession selection, and Sync untouched.
+
+### Advanced Settings
+- [ ] Add an `Advanced` navigation row to Settings.
+- [ ] Add a second-level Advanced Settings presentation.
+- [ ] Add functional `Verbose details` switch.
+- [ ] Persist Verbose Details outside `:ui:phone`.
+- [ ] Add disabled `Karaoke mode` row with no callback/runtime behavior.
+- [ ] Preserve back/navigation behavior without creating a fifth primary destination.
+
+### Details
+- [ ] Replace the Details placeholder with a production read-only screen.
+- [ ] Add Phone-local Details presentation state.
+- [ ] Show Track fields from authoritative current playback/track state.
+- [ ] Show Lyrics provider display name, sync type, language, and line count when available.
+- [ ] Show Developer / Diagnostics only when Verbose Details is enabled.
+- [ ] Limit diagnostics to already-available framework-neutral provider/source IDs and normalized track references.
+- [ ] Avoid stale previous-track metadata during loading/no-session states.
+- [ ] Respect the shell Playback Surface bottom inset.
+
+### Integration / validation
+- [ ] Wire Settings and Details through the existing application/Phone composition boundary.
+- [ ] Add deterministic Previews for normal/partial/verbose/Advanced states.
+- [ ] Add focused JVM/UI-state tests where durable.
+- [ ] Run architecture checks, unit tests, and debug APK build.
+- [ ] Review the final diff and complete bounded Codex review.
+- [ ] Stop before merge until explicit user approval.
+
+## Commit plan
+
+Keep commits small and single-purpose. Expected shape:
+
+1. `docs: plan Phone Details and Advanced implementation`
+2. application-owned Verbose Details preference
+3. Advanced Settings presentation/navigation
+4. Details presentation model/screen
+5. runtime mapping/wiring
+6. Preview/test coverage
+7. documentation/status cleanup if implementation changes require it
+
+The exact split may be adjusted to keep each commit coherent.
 
 ## Scope guard
 
-Do not implement or wire:
+Do not implement:
 
-- `DetailsScreen`;
-- Advanced Settings Compose UI;
-- persistence for Verbose Details;
-- Karaoke mode state or callbacks;
-- WORD-level rendering changes;
-- provider-selection preference changes;
-- timing/calibration behavior;
+- functional Karaoke mode;
+- Karaoke projection or WORD highlighting;
+- provider preference changes;
+- candidate scoring/ranking UI;
+- extra provider/network diagnostics;
+- log viewer/export;
+- timing/calibration changes;
 - Sync destination behavior;
-- new provider diagnostics collection;
-- logging/export infrastructure.
-
-The documentation may name presentation data already available from framework-neutral domain/application state, but it must not require UI code to consume provider DTOs or Android media framework objects directly.
+- cache controls;
+- unrelated Settings taxonomy;
+- MediaSession selection-policy changes.
