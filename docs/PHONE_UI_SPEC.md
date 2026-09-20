@@ -2,7 +2,9 @@
 
 ## Status
 
-The Phone information architecture and persistent Compose shell are established. The Lyrics destination has a production composition boundary built from `TrackCard` and `LyricsViewport`. The first production Settings destination is implemented from the contract in `docs/PHONE_SETTINGS.md`. The next shell-control contract is defined in `docs/PHONE_PLAYBACK_SURFACE.md`: the current fixed three-button playback bar will evolve into a compact collapsed Playback Bar plus an on-demand Expanded Player. Sync, Details, application/runtime wiring, and final visual tuning remain deliberately staged.
+The Phone information architecture and persistent Compose shell are established. Lyrics, Settings, and the shell-owned Playback Surface are implemented in production Compose. PR #46 replaced the legacy fixed three-button playback bar with the compact collapsed Playback Bar plus on-demand Expanded Player defined in `docs/PHONE_PLAYBACK_SURFACE.md`.
+
+The next approved Phone presentation contract is Details, defined in `docs/PHONE_DETAILS.md`, together with the narrow `Settings > Advanced` extension defined in `docs/PHONE_SETTINGS.md`. Their production implementation is not started by this documentation slice. Sync remains intentionally deferred while its timing/calibration interaction model is reconsidered.
 
 ## Product intent
 
@@ -58,11 +60,17 @@ Because the Playback Bar is a floating shell overlay, `PhoneAppShell` also expos
 
 ### Sync
 
-Reserved for synchronization-focused controls and status. Likely responsibilities include timing mode/status and manual timing correction/calibration, but the exact interaction model is not frozen by this architecture slice.
+Reserved for synchronization-focused controls and status. Its final timing/calibration interaction model is intentionally not frozen. Do not infer Sync UI behavior from the presence of the destination placeholder; the project is reconsidering synchronization ownership before implementing this screen.
 
 ### Details
 
-Reserved for current track/lyrics metadata and diagnostics that are useful to a user without turning the main Lyrics screen into a dense status panel. Candidate information includes provider, lyrics format, lookup/match information, and related current-result details. Exact fields are deferred.
+The approved first Details contract is defined in `docs/PHONE_DETAILS.md`.
+
+Normal Details is read-only and user-facing, covering current track metadata plus resolved lyrics metadata such as provider display name, sync type, language, and line count.
+
+When `Settings > Advanced > Verbose details` is enabled, Details additionally exposes a `Developer / Diagnostics` section for machine-facing framework-neutral facts such as provider ID, provider source ID, and normalized track references. Verbose Details changes presentation only; it must not trigger new lookups or alter provider selection, timing, Translation, playback, or rendering behavior.
+
+Candidate scores, raw provider payloads, log export, and deeper resolver diagnostics remain deferred until separately justified.
 
 ### Settings
 
@@ -77,9 +85,12 @@ The first production Settings contract is defined in `docs/PHONE_SETTINGS.md` an
 - app update entry and installed version;
 - GitHub Release changelog;
 - source-code and license entries;
-- permanent AALyrics branding/GitHub footer.
+- permanent AALyrics branding/GitHub footer;
+- an `Advanced` entry containing:
+  - functional `Verbose details` presentation preference;
+  - disabled/unwired `Karaoke mode` future affordance.
 
-Provider preferences, appearance/theme selection, diagnostics, and other future taxonomy remain deferred until separately approved.
+Provider preferences, appearance/theme selection, log export, functional Karaoke wiring, and other future taxonomy remain deferred until separately approved.
 
 ## Persistent top status bar
 
@@ -284,7 +295,9 @@ ui/phone/src/main/java/io/github/whoxamxl/aalyrics/ui/phone/
    └─ PhoneShellUiState.kt
 ```
 
-The persistent shell, navigation identity, and shell-level state files contain production Compose behavior. The current `PlaybackControlsBar` is the implementation being superseded by the approved `PHONE_PLAYBACK_SURFACE` contract. `LyricsScreen` is the production Lyrics destination composition. The Settings destination follows the separately approved `docs/PHONE_SETTINGS.md` contract. Sync and Details may remain placeholders until their own approved implementation slices; do not invent destination behavior merely to complete the tree.
+The persistent shell, navigation identity, and shell-level state files contain production Compose behavior. PR #46 completed the `PlaybackSurface` replacement of the legacy `PlaybackControlsBar`. `LyricsScreen` is the production Lyrics destination composition, and Settings follows `docs/PHONE_SETTINGS.md`.
+
+`DetailsScreen.kt` and `SyncScreen.kt` remain placeholders in production source. Details now has an approved presentation contract in `docs/PHONE_DETAILS.md` but still requires a separately authorized implementation slice. Sync remains both implementation- and interaction-model-deferred; do not invent Sync behavior merely to complete the tree.
 
 ## Preview and validation direction
 
@@ -301,6 +314,8 @@ Preview coverage should eventually exercise at least:
 - first/last-line boundaries
 - follow vs manual browse
 - collapsed/expanded playback-surface states and capability combinations
+- Details normal and Verbose modes once implemented
+- Advanced Settings with Verbose details and disabled Karaoke mode once implemented
 - narrow and typical phone widths
 
 Implementation should validate that the persistent top bar, playback controls, and bottom navigation still leave adequate room for the lyrics viewport.
@@ -316,7 +331,8 @@ The persistent shell implementation intentionally still does not decide or imple
 - media-session ownership
 - provider behavior
 - final Sync interaction model
-- final Details fields
-- Settings features outside the approved first-slice taxonomy
+- Details implementation beyond the approved `PHONE_DETAILS` contract
+- functional Karaoke mode or Karaoke runtime wiring
+- Settings features outside the approved Settings + Advanced taxonomy
 - Settings application/runtime wiring
 - Sync and Details destination implementation or their destination-specific Compose APIs
