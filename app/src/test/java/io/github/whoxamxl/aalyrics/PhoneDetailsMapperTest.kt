@@ -152,7 +152,12 @@ class PhoneDetailsMapperTest {
     @Test
     fun `lyrics from a different track are never exposed as current Details`() {
         val current = currentTrack()
-        val staleTrack = current.copy(title = "Previous Track")
+        val staleTrack = current.copy(
+            title = "Previous Track",
+            references = setOf(
+                TrackReference("spotify", "previous-track-reference"),
+            ),
+        )
         val state = mapPhoneDetailsState(
             playback = playback(current),
             lyricsState = readyLyrics(staleTrack, playback(staleTrack).trackIdentity!!),
