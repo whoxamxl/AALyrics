@@ -32,6 +32,7 @@ internal fun mapPhonePlaybackSurfaceState(
         canPause = capabilities?.canPause == true,
         canSkipPrevious = capabilities?.canSkipPrevious == true,
         canSkipNext = capabilities?.canSkipNext == true,
+        canSkipToQueueItem = capabilities?.canSkipToQueueItem == true,
         canSeek = capabilities?.canSeek == true,
         queue = if (controlsMatchPlayback) {
             controlState.queue.map { item ->
