@@ -106,6 +106,8 @@ Do not promote them to `:ui:designsystem` until another screen demonstrates genu
 - [x] Implement the production `SettingsScreen`.
 - [x] Implement the first-slice Lyrics, Translation, and Android Auto sections described above.
 - [x] Add presentation states and callbacks for manual Translation model download/retry, including built-in English, loading, ready, and failure states.
+- [x] Use one aligned trailing action slot: unavailable -> download, downloading -> spinner, ready -> selectable/empty, selected -> check, failed -> retry.
+- [x] Show a failure-reason tooltip only beside the failed/retry state.
 - [x] Add Check for updates, current version, and About/GitHub presentation to the Settings footer.
 - [x] Keep `:ui:phone` free of concrete persistence/application/Translation-engine dependencies.
 - [x] Reserve the shell playback-overlay inset in Settings scroll content.
