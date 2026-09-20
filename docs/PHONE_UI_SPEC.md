@@ -76,6 +76,7 @@ The first production Settings contract is defined in `docs/PHONE_SETTINGS.md` an
 - Android Auto compatibility acknowledgement/status and setup re-entry;
 - app update entry and installed version;
 - GitHub Release changelog;
+- source-code and license entries;
 - permanent AALyrics branding/GitHub footer.
 
 Provider preferences, appearance/theme selection, diagnostics, and other future taxonomy remain deferred until separately approved.
