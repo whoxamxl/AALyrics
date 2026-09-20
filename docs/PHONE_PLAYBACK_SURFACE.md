@@ -306,7 +306,17 @@ otherwise
 
 Queue is optional because not every media app publishes a useful MediaSession queue.
 
-When available, AALyrics may present a compact queue surface using presentation-ready entries and allow selecting a queue entry through the corresponding queue-item callback.
+When available, Queue opens as a compact bottom sheet rather than an alert dialog. The sheet uses the same visual language as the collapsed Playback Bar, but each queue item is a list row with the playback progress indicator and Play/Pause action removed.
+
+The Queue sheet:
+
+- keeps a compact `Queue` header;
+- shows the same Open playback app affordance at the right edge of the header when that fallback is available;
+- presents each item as a compact artwork/identity row;
+- keeps title and artist to one line each with graceful overflow;
+- scrolls vertically when its contents exceed the available viewport;
+- keeps the sheet itself within the phone viewport rather than growing off-screen;
+- selects an item through the corresponding queue-item callback.
 
 The UI must not assume Queue availability from the app package name.
 
