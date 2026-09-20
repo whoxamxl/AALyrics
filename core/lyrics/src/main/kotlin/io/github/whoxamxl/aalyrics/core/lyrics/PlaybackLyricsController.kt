@@ -36,7 +36,11 @@ class PlaybackLyricsController(
         if (nextLookup == activeLookup) return
 
         activeLookup = nextLookup
-        lookupLifecycle.startLookup(track, preferences)
+        lookupLifecycle.startLookup(
+            track = track,
+            preferences = preferences,
+            playbackIdentity = nextIdentity,
+        )
     }
 
     private data class LookupOwnership(

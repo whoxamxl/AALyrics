@@ -2,6 +2,7 @@ package io.github.whoxamxl.aalyrics.core.lyrics
 
 import io.github.whoxamxl.aalyrics.core.model.LyricsSyncType
 import io.github.whoxamxl.aalyrics.core.model.PlaybackSnapshot
+import io.github.whoxamxl.aalyrics.core.model.PlaybackTrackIdentity
 import io.github.whoxamxl.aalyrics.core.model.PlaybackSource
 import io.github.whoxamxl.aalyrics.core.model.PlaybackStatus
 import io.github.whoxamxl.aalyrics.core.model.Track
@@ -20,6 +21,17 @@ class PlaybackLyricsControllerTest {
         controller.onPlayback(PlaybackSnapshot(track = track))
 
         assertEquals(listOf(track), lifecycle.startedTracks)
+        assertEquals(
+            listOf<PlaybackTrackIdentity>(
+                PlaybackTrackIdentity.Metadata(
+                    sourceId = null,
+                    title = track.title,
+                    artists = track.artists,
+                    album = track.album,
+                ),
+            ),
+            lifecycle.startedIdentities,
+        )
         assertEquals(listOf(CandidateSelectionPreferences()), lifecycle.startedPreferences)
         assertEquals(0, lifecycle.clearCount)
     }
@@ -46,6 +58,15 @@ class PlaybackLyricsControllerTest {
         )
 
         assertEquals(listOf(track), lifecycle.startedTracks)
+        assertEquals(
+            listOf<PlaybackTrackIdentity>(
+                PlaybackTrackIdentity.SourceMedia(
+                    sourceId = "com.example.player",
+                    mediaId = "item-1",
+                ),
+            ),
+            lifecycle.startedIdentities,
+        )
     }
 
     @Test
@@ -95,6 +116,15 @@ class PlaybackLyricsControllerTest {
         controller.onPlayback(PlaybackSnapshot(track = correctedTrack, source = source))
 
         assertEquals(listOf(firstTrack), lifecycle.startedTracks)
+        assertEquals(
+            listOf<PlaybackTrackIdentity>(
+                PlaybackTrackIdentity.Referenced(
+                    sourceId = "com.spotify.music",
+                    references = setOf(reference),
+                ),
+            ),
+            lifecycle.startedIdentities,
+        )
     }
 
     @Test
@@ -138,6 +168,7 @@ class PlaybackLyricsControllerTest {
     private class RecordingLifecycle : LyricsLookupLifecycle {
         val startedTracks = mutableListOf<Track>()
         val startedPreferences = mutableListOf<CandidateSelectionPreferences>()
+        val startedIdentities = mutableListOf<PlaybackTrackIdentity>()
         val lookups = mutableListOf<LyricsLookup>()
         var clearCount = 0
         private var nextId = 0L
@@ -145,12 +176,16 @@ class PlaybackLyricsControllerTest {
         override fun startLookup(
             track: Track,
             preferences: CandidateSelectionPreferences,
+            playbackIdentity: PlaybackTrackIdentity?,
         ): LyricsLookup {
             startedTracks += track
             startedPreferences += preferences
+            val identity = requireNotNull(playbackIdentity)
+            startedIdentities += identity
             return LyricsLookup(
                 id = LyricsLookupId(nextId++),
                 track = track,
+                playbackIdentity = identity,
             ).also(lookups::add)
         }
 

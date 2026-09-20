@@ -58,6 +58,14 @@
     <string name="settings_source_code">Source code</string>
     <string name="settings_github">GitHub</string>
     <string name="settings_license">License</string>
+    <string name="settings_advanced">Advanced</string>
+    <string name="settings_back">Back</string>
+    <string name="settings_section_debug">DEBUG</string>
+    <string name="settings_verbose_details">Verbose details</string>
+    <string name="settings_section_experimental">EXPERIMENTAL FEATURES</string>
+    <string name="settings_karaoke_mode">Karaoke mode</string>
+    <string name="settings_karaoke_unavailable">Experimental feature. Not available yet.</string>
+    <string name="settings_karaoke_unavailable_description">About unavailable Karaoke mode</string>
     <string name="settings_changelog_loading">Loading release notes…</string>
     <string name="settings_changelog_failed">Could not load changelog</string>
     <string name="settings_changelog_failure_generic">GitHub Release notes could not be loaded. Check the network connection and try again.</string>
@@ -66,6 +74,32 @@
     <string name="settings_brand_name">AALyrics</string>
     <string name="settings_brand_copyright_owner">Yuta Miura (whoxamxl)</string>
     <string name="settings_brand_logo_description">AALyrics logo</string>
+
+    <string name="details_title">Details</string>
+    <string name="details_section_track">TRACK</string>
+    <string name="details_track_title">Title</string>
+    <string name="details_track_artist">Artist</string>
+    <string name="details_track_album">Album</string>
+    <string name="details_track_duration">Duration</string>
+    <string name="details_playback_source">Playback source</string>
+    <string name="details_no_active_track">No active track</string>
+    <string name="details_section_lyrics">LYRICS</string>
+    <string name="details_lyrics_provider">Provider</string>
+    <string name="details_lyrics_sync_type">Sync type</string>
+    <string name="details_lyrics_language">Language</string>
+    <string name="details_lyrics_lines">Lines</string>
+    <string name="details_lyrics_loading">Loading lyrics…</string>
+    <string name="details_lyrics_not_found">No lyrics found</string>
+    <string name="details_lyrics_failed">Lyrics lookup failed</string>
+    <string name="details_lyrics_unavailable">Lyrics unavailable</string>
+    <string name="details_sync_plain">Plain</string>
+    <string name="details_sync_line">Line synced</string>
+    <string name="details_sync_word">Word synced</string>
+    <string name="details_section_diagnostics">DEVELOPER / DIAGNOSTICS</string>
+    <string name="details_provider_id">Provider ID</string>
+    <string name="details_source_id">Source ID</string>
+    <string name="details_track_references">Track references</string>
+    <string name="details_no_diagnostics">No diagnostic identifiers available</string>
 
     <string name="playback_play">Play</string>
     <string name="playback_pause">Pause</string>

@@ -117,7 +117,7 @@ The shell may compose the selected destination and expose presentation-ready tra
 
 The richer current-track card remains Lyrics-destination content. The shell-level Playback Surface may repeat only the compact track identity/artwork needed to make playback control context clear; it must not turn persistent chrome into a second full Track Card.
 
-PR #33 established the persistent shell boundary in production Compose. Subsequent Phone slices added Track Card, LyricsViewport/LyricsScreen, production Settings, and the capability-aware two-state Playback Surface. PR #46 completed the current shell playback contract with collapsed/expanded presentation, seek, Queue/Open-app fallback, and Translation quick controls. Details and Sync remain destination-local work; Details now has an approved contract in `docs/PHONE_DETAILS.md`, while Sync remains intentionally undefined pending timing/calibration redesign.
+PR #33 established the persistent shell boundary in production Compose. Subsequent Phone slices added Track Card, LyricsViewport/LyricsScreen, production Settings, and the capability-aware two-state Playback Surface. PR #46 completed the current shell playback contract with collapsed/expanded presentation, seek, Queue/Open-app fallback, and Translation quick controls. PR #49 implements the approved Details destination and the Settings-owned Advanced sub-surface while preserving the existing shell/application boundaries. Sync remains intentionally undefined pending timing/calibration redesign.
 
 ## Shared vs automotive design system
 
@@ -264,8 +264,10 @@ ui/
 │     │     ├─ sync/
 │     │     │  └─ SyncScreen.kt
 │     │     ├─ details/
-│     │     │  └─ DetailsScreen.kt
+│     │     │  ├─ DetailsScreen.kt
+│     │     │  └─ DetailsUiState.kt
 │     │     ├─ settings/
+│     │     │  ├─ AdvancedSettingsScreen.kt
 │     │     │  ├─ SettingsScreen.kt
 │     │     │  └─ SettingsUiState.kt
 │     │     └─ state/

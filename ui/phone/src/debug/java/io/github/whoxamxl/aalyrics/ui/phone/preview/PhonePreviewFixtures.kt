@@ -1,6 +1,11 @@
 package io.github.whoxamxl.aalyrics.ui.phone.preview
 
 import io.github.whoxamxl.aalyrics.core.model.LyricsSyncType
+import io.github.whoxamxl.aalyrics.ui.phone.details.DetailsDiagnosticsUiState
+import io.github.whoxamxl.aalyrics.ui.phone.details.DetailsLyricsUiState
+import io.github.whoxamxl.aalyrics.ui.phone.details.DetailsLyricsUiStatus
+import io.github.whoxamxl.aalyrics.ui.phone.details.DetailsScreenUiState
+import io.github.whoxamxl.aalyrics.ui.phone.details.DetailsTrackUiState
 import io.github.whoxamxl.aalyrics.ui.phone.lyrics.LyricsScreenUiState
 import io.github.whoxamxl.aalyrics.ui.phone.lyrics.LyricsViewportInteractionMode
 import io.github.whoxamxl.aalyrics.ui.phone.lyrics.LyricsViewportLineUiState
@@ -291,6 +296,55 @@ internal object PhonePreviewFixtures {
     )
     val settingsShell = PhoneShellUiState(
         selectedDestination = PhoneDestination.Settings,
+        mediaSourceLabel = "Spotify",
+        playbackSurface = playingSurface,
+    )
+
+    val detailsTypical = DetailsScreenUiState(
+        track = DetailsTrackUiState(
+            title = "Midnight Signals",
+            artist = "The Northbound Lights",
+            album = "Afterglow Transit",
+            durationLabel = "3:41",
+            playbackSourceLabel = "Spotify",
+        ),
+        lyrics = DetailsLyricsUiState(
+            providerDisplayName = "Musixmatch",
+            syncType = LyricsSyncType.LINE,
+            languageLabel = "English",
+            lineCount = 64,
+        ),
+        lyricsStatus = DetailsLyricsUiStatus.READY,
+    )
+    val detailsPartial = DetailsScreenUiState(
+        track = DetailsTrackUiState(
+            title = "Untitled Session",
+            artist = "Northern Relay",
+            playbackSourceLabel = "Poweramp",
+        ),
+        lyricsStatus = DetailsLyricsUiStatus.NOT_FOUND,
+    )
+    val detailsLoading = detailsTypical.copy(
+        lyrics = null,
+        lyricsStatus = DetailsLyricsUiStatus.LOADING,
+    )
+    val detailsVerbose = detailsTypical.copy(
+        diagnostics = DetailsDiagnosticsUiState(
+            providerId = "musixmatch",
+            sourceId = "mxm:track:9384756",
+            trackReferences = listOf(
+                "spotify:4uLU6hMCjMI75M1A2tKUQC",
+                "musicbrainz:7c1c3f7e-demo-reference",
+            ),
+        ),
+    )
+    val detailsVerboseSparse = detailsPartial.copy(
+        diagnostics = DetailsDiagnosticsUiState(
+            trackReferences = listOf("spotify:demo-reference"),
+        ),
+    )
+    val detailsShell = PhoneShellUiState(
+        selectedDestination = PhoneDestination.Details,
         mediaSourceLabel = "Spotify",
         playbackSurface = playingSurface,
     )

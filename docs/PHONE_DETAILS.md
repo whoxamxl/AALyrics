@@ -4,9 +4,7 @@
 
 This document defines the first approved presentation contract for the Phone `Details` destination.
 
-The current production source still contains a placeholder `DetailsScreen.kt`; this document does **not** authorize implementation by itself. Implementation should happen in a later, explicitly authorized slice.
-
-The Details destination is read-only. Its purpose is to make useful current track and lyrics metadata visible without crowding the Lyrics destination, while optionally exposing deeper framework-neutral diagnostics when the user enables `Settings > Advanced > Verbose details`.
+PR #49 implements this contract with a production `DetailsScreen`, Phone-local presentation state, application-owned runtime mapping, deterministic Previews, and focused mapper tests. The Details destination remains read-only. Its purpose is to make useful current track and lyrics metadata visible without crowding the Lyrics destination, while optionally exposing deeper framework-neutral diagnostics when the user enables `Settings > Advanced > Verbose details`.
 
 ## Product intent
 
@@ -130,7 +128,7 @@ DetailsScreenUiState
 DetailsScreen
 ```
 
-The exact persistence implementation is deferred to the implementation slice. The stable requirement is that `:ui:phone` receives only the resolved boolean/presentation state and never reads SharedPreferences directly.
+PR #49 persists the preference through an application-owned SharedPreferences store. The stable requirement remains that `:ui:phone` receives only the resolved boolean/presentation state and never reads SharedPreferences directly.
 
 The setting may control whether diagnostic values are mapped/presented, but it does not control data acquisition behavior.
 
@@ -207,7 +205,7 @@ Labels and values should remain distinguishable through semantics, not color alo
 
 ## Preview matrix
 
-A later implementation should provide deterministic Previews for at least:
+PR #49 provides deterministic Previews covering:
 
 - normal Details with complete metadata;
 - normal Details with partial metadata;
