@@ -18,6 +18,7 @@ import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsTheme
 import io.github.whoxamxl.aalyrics.ui.phone.shell.ExpandedPlayer
 import io.github.whoxamxl.aalyrics.ui.phone.shell.PlaybackBar
 import io.github.whoxamxl.aalyrics.ui.phone.shell.PlaybackQueueSheetContent
+import io.github.whoxamxl.aalyrics.ui.phone.shell.QuickControlTranslationRow
 import io.github.whoxamxl.aalyrics.ui.phone.shell.PlaybackSurface
 import io.github.whoxamxl.aalyrics.ui.phone.state.PlaybackSurfaceUiState
 
@@ -133,6 +134,33 @@ private fun PlaybackQueueScrollablePreview() {
                 onOpenPlaybackApp = {},
                 onQueueItemSelected = {},
                 modifier = Modifier.fillMaxSize(),
+            )
+        }
+    }
+}
+
+@Preview(
+    name = "Quick controls · Translation",
+    group = "PlaybackSurface",
+    widthDp = 240,
+    heightDp = 72,
+    showBackground = true,
+)
+@Composable
+private fun PlaybackQuickControlsPreview() {
+    AALyricsTheme {
+        androidx.compose.material3.Surface(
+            modifier = Modifier.padding(8.dp),
+            shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
+            color = AALyricsColors.BackgroundSurfaceStrong,
+            border = androidx.compose.foundation.BorderStroke(
+                1.dp,
+                AALyricsColors.BorderSoft,
+            ),
+        ) {
+            QuickControlTranslationRow(
+                enabled = true,
+                onEnabledChanged = {},
             )
         }
     }
