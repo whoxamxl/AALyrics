@@ -25,7 +25,9 @@ import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsSpacing
+import io.github.whoxamxl.aalyrics.ui.phone.R
 import io.github.whoxamxl.aalyrics.ui.phone.state.PlaybackSurfaceUiState
 import kotlin.math.abs
 import kotlinx.coroutines.delay
@@ -44,6 +46,7 @@ fun PlaybackSurface(
     modifier: Modifier = Modifier,
     artwork: (@Composable BoxScope.() -> Unit)? = null,
 ) {
+    val collapseLabel = stringResource(R.string.playback_collapse)
     var expanded by rememberSaveable { mutableStateOf(false) }
     var previewPositionMs by remember { mutableStateOf<Long?>(null) }
     var pendingCommittedPositionMs by remember { mutableStateOf<Long?>(null) }
@@ -114,7 +117,7 @@ fun PlaybackSurface(
                     .fillMaxSize()
                     .background(Color.Black.copy(alpha = 0.24f))
                     .clickable(
-                        onClickLabel = "Collapse player",
+                        onClickLabel = collapseLabel,
                         onClick = ::collapse,
                     ),
             )
