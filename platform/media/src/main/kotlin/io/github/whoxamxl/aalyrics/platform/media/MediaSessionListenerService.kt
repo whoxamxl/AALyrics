@@ -25,6 +25,7 @@ class MediaSessionListenerService : NotificationListenerService() {
         runtime = SelectedMediaSessionRuntime(
             selfPackageName = packageName,
             sink = PlaybackSnapshotSink(MediaSessionRuntimeHost::forward),
+            controlStateSink = PlaybackControlStateSink(MediaSessionRuntimeHost::forwardControlState),
             scheduler = HandlerMetadataTaskScheduler(handler),
             refreshSessions = { observation.refresh() },
         )
