@@ -368,9 +368,9 @@ The background scaffold persists:
 - Translation enabled/disabled;
 - selected target language.
 
-The unfinished Phone Settings UI is not part of the scaffold.
+The first Phone Settings presentation contract is defined in `docs/PHONE_SETTINGS.md`.
 
-Future foreground Settings should consume/update the same state boundary rather than owning SharedPreferences keys directly.
+Foreground Settings must consume/update the existing Translation settings boundary through application-provided presentation state and callbacks rather than owning SharedPreferences keys directly. `:ui:phone` must not add a direct dependency on the concrete SharedPreferences store or ML Kit lifecycle in order to render these rows.
 
 Changing Translation settings must not refetch lyrics providers merely because Translation configuration changed.
 
