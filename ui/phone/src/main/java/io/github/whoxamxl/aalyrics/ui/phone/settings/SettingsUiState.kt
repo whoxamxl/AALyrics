@@ -35,4 +35,5 @@ data class SettingsScreenUiState(
     val translationTargets: List<SettingsLanguageOptionUiState>,
     val androidAutoCompatibilityStatus: AndroidAutoCompatibilityUiStatus =
         AndroidAutoCompatibilityUiStatus.NOT_REVIEWED,
+    val appVersionName: String,
 )
