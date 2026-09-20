@@ -23,6 +23,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import io.github.whoxamxl.aalyrics.ui.designsystem.icon.AALyricsIcons
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsColors
@@ -30,6 +31,7 @@ import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsRadius
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsSpacing
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsStroke
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsTypography
+import io.github.whoxamxl.aalyrics.ui.phone.R
 import io.github.whoxamxl.aalyrics.ui.phone.component.TrackIdentityMarquee
 import io.github.whoxamxl.aalyrics.ui.phone.state.PlaybackSurfaceUiState
 
@@ -164,7 +166,9 @@ private fun CompactPlayPauseButton(
             Box(contentAlignment = Alignment.Center) {
                 Icon(
                     imageVector = if (isPlaying) AALyricsIcons.Pause else AALyricsIcons.Play,
-                    contentDescription = if (isPlaying) "Pause" else "Play",
+                    contentDescription = stringResource(
+                        if (isPlaying) R.string.playback_pause else R.string.playback_play,
+                    ),
                     tint = if (enabled) {
                         AALyricsColors.BackgroundBase
                     } else {
