@@ -222,12 +222,11 @@ internal fun SettingsExternalLinkRow(
         modifier = modifier
             .fillMaxWidth()
             .heightIn(min = AALyricsSpacing.Space64)
-            .clickable(onClick = onClick)
             .padding(
                 start = AALyricsSpacing.Space16,
                 end = AALyricsSpacing.Space12,
-                top = AALyricsSpacing.Space12,
-                bottom = AALyricsSpacing.Space12,
+                top = AALyricsSpacing.Space8,
+                bottom = AALyricsSpacing.Space8,
             ),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -238,20 +237,10 @@ internal fun SettingsExternalLinkRow(
             modifier = Modifier.weight(1f),
         )
 
-        Text(
-            text = value,
-            style = AALyricsTypography.TrackArtist,
-            color = AALyricsColors.TextSecondary,
-            maxLines = 1,
-        )
-
-        Spacer(Modifier.size(AALyricsSpacing.Space8))
-
-        Icon(
-            imageVector = AALyricsIcons.ExternalLink,
-            contentDescription = null,
-            tint = AALyricsColors.TextSecondary,
-            modifier = Modifier.size(AALyricsSpacing.Space20),
+        AppUpdateInlineAction(
+            label = value,
+            icon = AALyricsIcons.ExternalLink,
+            onClick = onClick,
         )
     }
 }
