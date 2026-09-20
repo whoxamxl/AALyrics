@@ -14,7 +14,7 @@ import io.github.whoxamxl.aalyrics.ui.phone.navigation.PhoneDestination
 import io.github.whoxamxl.aalyrics.ui.phone.shell.PhoneAppShell
 import io.github.whoxamxl.aalyrics.ui.phone.shell.PhoneNavigationBar
 import io.github.whoxamxl.aalyrics.ui.phone.shell.PhoneTopBar
-import io.github.whoxamxl.aalyrics.ui.phone.shell.PlaybackControlsBar
+import io.github.whoxamxl.aalyrics.ui.phone.shell.PlaybackBar
 
 /**
  * Responsive-only checks kept separate from the primary component Preview files.
@@ -100,11 +100,11 @@ private fun LyricsViewportTallPreview() {
 @Composable
 private fun PlaybackControlsNarrowPreview() {
     AALyricsTheme {
-        PlaybackControlsBar(
-            state = PhonePreviewFixtures.playingControls,
-            onPrevious = {},
+        PlaybackBar(
+            state = PhonePreviewFixtures.longMetadataSurface,
+            progressFraction = PhonePreviewFixtures.longMetadataSurface.progressFraction,
+            onExpand = {},
             onPlayPause = {},
-            onNext = {},
         )
     }
 }
@@ -136,6 +136,10 @@ private fun PhoneAppShellNarrowPreview() {
             onPrevious = {},
             onPlayPause = {},
             onNext = {},
+            onSeekTo = {},
+            onQueueItemSelected = {},
+            onOpenPlaybackApp = {},
+            onTranslationEnabledChanged = {},
         ) { _, bottomOverlayInset ->
             PreviewLyricsDestination(
                 initialState = PhonePreviewFixtures.lyricsScreenLine,
