@@ -1,12 +1,12 @@
 package io.github.whoxamxl.aalyrics.ui.phone.shell
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -22,7 +22,12 @@ fun PhoneAppShell(
     onPrevious: () -> Unit,
     onPlayPause: () -> Unit,
     onNext: () -> Unit,
+    onSeekTo: (Long) -> Unit,
+    onQueueItemSelected: (Long) -> Unit,
+    onOpenPlaybackApp: () -> Unit,
+    onTranslationEnabledChanged: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
+    playbackArtwork: (@Composable BoxScope.() -> Unit)? = null,
     destinationContent: @Composable (PhoneDestination, Dp) -> Unit,
 ) {
     Surface(
@@ -36,20 +41,24 @@ fun PhoneAppShell(
                     .fillMaxWidth()
                     .weight(1f),
             ) {
-                val bottomOverlayInset = if (state.playbackControls != null) {
-                    PlaybackControlsOverlayInset
+                val bottomOverlayInset = if (state.playbackSurface != null) {
+                    PlaybackSurfaceOverlayInset
                 } else {
                     0.dp
                 }
                 destinationContent(state.selectedDestination, bottomOverlayInset)
 
-                state.playbackControls?.let { playbackState ->
-                    PlaybackControlsBar(
+                state.playbackSurface?.let { playbackState ->
+                    PlaybackSurface(
                         state = playbackState,
                         onPrevious = onPrevious,
                         onPlayPause = onPlayPause,
                         onNext = onNext,
-                        modifier = Modifier.align(Alignment.BottomCenter),
+                        onSeekTo = onSeekTo,
+                        onQueueItemSelected = onQueueItemSelected,
+                        onOpenPlaybackApp = onOpenPlaybackApp,
+                        onTranslationEnabledChanged = onTranslationEnabledChanged,
+                        artwork = playbackArtwork,
                     )
                 }
             }
