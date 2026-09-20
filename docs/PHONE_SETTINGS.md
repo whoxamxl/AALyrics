@@ -26,8 +26,9 @@ Settings
 ├─ Android Auto
 │  └─ Compatibility setup            <status> >
 └─ App
-   ├─ Check for updates                       >
-   ├─ Current version               <version>
+   ├─ Version / update
+   │  ├─ Version                    <version>
+   │  └─ <stateful update action>
    └─ About                                   >
 ```
 
@@ -263,17 +264,69 @@ Do not expose model-download internals or Translation Provider details in this p
 
 The final Settings section exposes app/distribution information without moving release-network behavior into `:ui:phone`.
 
-### Check for updates
+### Version and update
 
-`Check for updates` is an explicit navigation/action row. The Settings UI emits a callback only.
+Current version and update actions share one grouped Settings row.
 
-The eventual application/runtime implementation should check the GitHub Releases distribution channel defined in `docs/RELEASES.md`, compare a release version against the installed `BuildConfig.VERSION_NAME` / `versionCode`, and report an appropriate result to the Phone presentation.
+Initial presentation:
 
-The presentation layer must not make GitHub HTTP calls directly.
+```text
+Version                         v0.1.0-dev
+                         [Check for updates]
+```
 
-### Current version
+The Settings state carries the installed version plus an update lifecycle:
 
-The Settings state carries a presentation-ready app version string. Production mapping should use the installed app's `BuildConfig.VERSION_NAME`; debug builds currently default to `0.1.0-dev` unless the build environment overrides it.
+```text
+IDLE
+CHECKING
+UP_TO_DATE
+UPDATE_AVAILABLE
+CHECK_FAILED
+DOWNLOADING
+DOWNLOADED
+DOWNLOAD_FAILED
+```
+
+Expected presentation:
+
+```text
+Version                         v0.1.0-dev
+                         [Check for updates]
+
+Checking for updates…                    ◌
+
+Up to date                               ✓
+
+Update available: v0.1.2       [Download]
+
+Downloading v0.1.2                       ◌
+
+Downloaded v0.1.2                        ✓
+
+Update check failed            ⓘ [Retry]
+```
+
+The UI emits separate callbacks for checking and downloading. It does not perform GitHub HTTP requests or filesystem/download-manager work directly.
+
+Application/runtime wiring should:
+
+1. inspect the GitHub Releases distribution channel defined in `docs/RELEASES.md`;
+2. select the newest release eligible for the app's release channel;
+3. compare it against the installed `BuildConfig.VERSION_NAME` / `versionCode`;
+4. map the result into the update presentation lifecycle;
+5. when Download is pressed, download the release APK asset to the device;
+6. map download completion/failure back into presentation state.
+
+Release APK assets follow the existing workflow naming contract:
+
+```text
+AALyrics-vX.Y.Z[-suffix].apk
+```
+
+The matching `.sha256` asset should be used by the runtime implementation to verify file integrity before a downloaded APK is treated as complete.
+
+The installed version shown in Settings should come from `BuildConfig.VERSION_NAME`; debug builds currently default to `0.1.0-dev` unless the build environment overrides it.
 
 ### About
 
@@ -319,6 +372,10 @@ Deterministic debug Previews should cover at least:
 - Android Auto `Not reviewed`;
 - narrow width;
 - enlarged font;
+- app update checking;
+- app up-to-date state;
+- app update available state;
+- app update failure/retry state;
 - full Settings destination hosted inside `PhoneAppShell` with Playback Controls visible.
 
 ## Runtime wiring boundary
