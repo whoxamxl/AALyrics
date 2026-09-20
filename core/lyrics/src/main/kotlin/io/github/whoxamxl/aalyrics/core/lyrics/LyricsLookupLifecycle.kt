@@ -1,5 +1,6 @@
 package io.github.whoxamxl.aalyrics.core.lyrics
 
+import io.github.whoxamxl.aalyrics.core.model.PlaybackTrackIdentity
 import io.github.whoxamxl.aalyrics.core.model.Track
 
 /**
@@ -12,6 +13,7 @@ interface LyricsLookupLifecycle {
     fun startLookup(
         track: Track,
         preferences: CandidateSelectionPreferences = CandidateSelectionPreferences(),
+        playbackIdentity: PlaybackTrackIdentity? = null,
     ): LyricsLookup
 
     fun clear()

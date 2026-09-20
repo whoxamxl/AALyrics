@@ -1,6 +1,7 @@
 package io.github.whoxamxl.aalyrics.core.lyrics
 
 import io.github.whoxamxl.aalyrics.core.model.LyricsDocument
+import io.github.whoxamxl.aalyrics.core.model.PlaybackTrackIdentity
 import io.github.whoxamxl.aalyrics.core.model.Track
 
 /**
@@ -21,6 +22,12 @@ value class LyricsLookupId(val value: Long) {
 data class LyricsLookup(
     val id: LyricsLookupId,
     val track: Track,
+    val playbackIdentity: PlaybackTrackIdentity = PlaybackTrackIdentity.Metadata(
+        sourceId = null,
+        title = track.title,
+        artists = track.artists,
+        album = track.album,
+    ),
 )
 
 /**

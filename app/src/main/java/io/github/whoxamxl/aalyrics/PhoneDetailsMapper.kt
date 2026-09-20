@@ -3,7 +3,6 @@ package io.github.whoxamxl.aalyrics
 import io.github.whoxamxl.aalyrics.core.lyrics.LyricsState
 import io.github.whoxamxl.aalyrics.core.model.LyricsDocument
 import io.github.whoxamxl.aalyrics.core.model.PlaybackSnapshot
-import io.github.whoxamxl.aalyrics.core.model.Track
 import io.github.whoxamxl.aalyrics.ui.phone.details.DetailsDiagnosticsUiState
 import io.github.whoxamxl.aalyrics.ui.phone.details.DetailsLyricsUiState
 import io.github.whoxamxl.aalyrics.ui.phone.details.DetailsLyricsUiStatus
@@ -20,7 +19,7 @@ internal fun mapPhoneDetailsState(
     displayLocale: Locale = Locale.getDefault(),
 ): DetailsScreenUiState {
     val track = playback.track
-    val resolvedLyrics = currentLyrics(track, lyricsState)
+    val resolvedLyrics = currentLyrics(playback, lyricsState)
     val lyricsDocument = resolvedLyrics.document
 
     return DetailsScreenUiState(
@@ -68,9 +67,10 @@ private data class CurrentLyrics(
 )
 
 private fun currentLyrics(
-    track: Track?,
+    playback: PlaybackSnapshot,
     state: LyricsState,
 ): CurrentLyrics {
+    val track = playback.track
     if (track == null) {
         return CurrentLyrics(
             document = null,
@@ -80,7 +80,7 @@ private fun currentLyrics(
 
     val lookupState = state as? LyricsState.ForLookup
         ?: return CurrentLyrics(null, DetailsLyricsUiStatus.UNAVAILABLE)
-    if (!sameLookupTrack(track, lookupState.lookup.track)) {
+    if (lookupState.lookup.playbackIdentity != playback.trackIdentity) {
         return CurrentLyrics(null, DetailsLyricsUiStatus.UNAVAILABLE)
     }
 
@@ -99,16 +99,6 @@ private fun currentLyrics(
             CurrentLyrics(null, DetailsLyricsUiStatus.UNAVAILABLE)
     }
 }
-
-/**
- * Duration is deliberately excluded from lookup identity: the media runtime may
- * learn duration after lyrics lookup has already started without changing track.
- */
-private fun sameLookupTrack(
-    playbackTrack: Track,
-    lookupTrack: Track,
-): Boolean =
-    playbackTrack.copy(durationMs = null) == lookupTrack.copy(durationMs = null)
 
 private fun formatDuration(durationMs: Long): String {
     val totalSeconds = durationMs / 1_000L

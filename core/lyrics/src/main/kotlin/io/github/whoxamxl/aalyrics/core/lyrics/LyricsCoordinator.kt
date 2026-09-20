@@ -1,5 +1,6 @@
 package io.github.whoxamxl.aalyrics.core.lyrics
 
+import io.github.whoxamxl.aalyrics.core.model.PlaybackTrackIdentity
 import io.github.whoxamxl.aalyrics.core.model.Track
 import io.github.whoxamxl.aalyrics.provider.api.LyricsCandidate
 import io.github.whoxamxl.aalyrics.provider.api.LyricsProvider
@@ -54,10 +55,17 @@ class LyricsCoordinator(
     override fun startLookup(
         track: Track,
         preferences: CandidateSelectionPreferences,
+        playbackIdentity: PlaybackTrackIdentity?,
     ): LyricsLookup {
         val lookup = LyricsLookup(
             id = LyricsLookupId(lookupIds.getAndIncrement()),
             track = track,
+            playbackIdentity = playbackIdentity ?: PlaybackTrackIdentity.Metadata(
+                sourceId = null,
+                title = track.title,
+                artists = track.artists,
+                album = track.album,
+            ),
         )
 
         activeJob?.cancel()

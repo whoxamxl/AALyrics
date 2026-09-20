@@ -8,6 +8,7 @@ import io.github.whoxamxl.aalyrics.core.model.LyricsDocument
 import io.github.whoxamxl.aalyrics.core.model.LyricsSyncType
 import io.github.whoxamxl.aalyrics.core.model.PlaybackSnapshot
 import io.github.whoxamxl.aalyrics.core.model.PlaybackSource
+import io.github.whoxamxl.aalyrics.core.model.PlaybackTrackIdentity
 import io.github.whoxamxl.aalyrics.core.model.TimedLyricLine
 import io.github.whoxamxl.aalyrics.core.model.Track
 import io.github.whoxamxl.aalyrics.core.model.TrackReference
@@ -23,7 +24,7 @@ class PhoneDetailsMapperTest {
         val track = currentTrack()
         val state = mapPhoneDetailsState(
             playback = playback(track),
-            lyricsState = readyLyrics(track),
+            lyricsState = readyLyrics(track, playback(track).trackIdentity!!),
             verboseDetailsEnabled = false,
             playbackSourceLabel = "Spotify",
             displayLocale = Locale.ENGLISH,
@@ -47,7 +48,7 @@ class PhoneDetailsMapperTest {
         val track = currentTrack()
         val state = mapPhoneDetailsState(
             playback = playback(track),
-            lyricsState = readyLyrics(track),
+            lyricsState = readyLyrics(track, playback(track).trackIdentity!!),
             verboseDetailsEnabled = true,
             playbackSourceLabel = "Spotify",
             displayLocale = Locale.ENGLISH,
@@ -65,13 +66,79 @@ class PhoneDetailsMapperTest {
     }
 
     @Test
+    fun `referenced identity keeps lyrics across corrected descriptive metadata`() {
+        val reference = TrackReference("spotify", "4uLU6hMCjMI75M1A2tKUQC")
+        val lookupTrack = Track(
+            title = "Initial title",
+            artists = listOf("Initial artist"),
+            album = "Initial album",
+            references = setOf(reference),
+        )
+        val currentTrack = lookupTrack.copy(
+            title = "Corrected title",
+            artists = listOf("Corrected artist"),
+            album = "Corrected album",
+        )
+        val source = PlaybackSource(id = "com.spotify.music")
+        val lookupPlayback = PlaybackSnapshot(track = lookupTrack, source = source)
+        val currentPlayback = PlaybackSnapshot(track = currentTrack, source = source)
+
+        val state = mapPhoneDetailsState(
+            playback = currentPlayback,
+            lyricsState = readyLyrics(
+                lookupTrack,
+                requireNotNull(lookupPlayback.trackIdentity),
+            ),
+            verboseDetailsEnabled = false,
+            playbackSourceLabel = "Spotify",
+            displayLocale = Locale.ENGLISH,
+        )
+
+        assertEquals("Musixmatch", state.lyrics?.providerDisplayName)
+        assertEquals(DetailsLyricsUiStatus.READY, state.lyricsStatus)
+    }
+
+    @Test
+    fun `source media identity keeps lyrics across corrected descriptive metadata`() {
+        val lookupTrack = Track(
+            title = "Initial title",
+            artists = listOf("Initial artist"),
+        )
+        val currentTrack = lookupTrack.copy(
+            title = "Corrected title",
+            artists = listOf("Corrected artist"),
+            album = "Corrected album",
+        )
+        val source = PlaybackSource(
+            id = "com.example.player",
+            mediaId = "stable-item-1",
+        )
+        val lookupPlayback = PlaybackSnapshot(track = lookupTrack, source = source)
+        val currentPlayback = PlaybackSnapshot(track = currentTrack, source = source)
+
+        val state = mapPhoneDetailsState(
+            playback = currentPlayback,
+            lyricsState = readyLyrics(
+                lookupTrack,
+                requireNotNull(lookupPlayback.trackIdentity),
+            ),
+            verboseDetailsEnabled = false,
+            playbackSourceLabel = "Example Player",
+            displayLocale = Locale.ENGLISH,
+        )
+
+        assertEquals("Musixmatch", state.lyrics?.providerDisplayName)
+        assertEquals(DetailsLyricsUiStatus.READY, state.lyricsStatus)
+    }
+
+    @Test
     fun `late duration metadata does not hide current lyrics`() {
         val lookupTrack = currentTrack().copy(durationMs = null)
         val playbackTrack = lookupTrack.copy(durationMs = 221_000L)
 
         val state = mapPhoneDetailsState(
             playback = playback(playbackTrack),
-            lyricsState = readyLyrics(lookupTrack),
+            lyricsState = readyLyrics(lookupTrack, playback(lookupTrack).trackIdentity!!),
             verboseDetailsEnabled = false,
             playbackSourceLabel = "Spotify",
             displayLocale = Locale.ENGLISH,
@@ -88,7 +155,7 @@ class PhoneDetailsMapperTest {
         val staleTrack = current.copy(title = "Previous Track")
         val state = mapPhoneDetailsState(
             playback = playback(current),
-            lyricsState = readyLyrics(staleTrack),
+            lyricsState = readyLyrics(staleTrack, playback(staleTrack).trackIdentity!!),
             verboseDetailsEnabled = true,
             playbackSourceLabel = "Spotify",
             displayLocale = Locale.ENGLISH,
@@ -116,6 +183,7 @@ class PhoneDetailsMapperTest {
                 LyricsLookup(
                     id = LyricsLookupId(12L),
                     track = track,
+                    playbackIdentity = playback(track).trackIdentity!!,
                 ),
             ),
             verboseDetailsEnabled = true,
@@ -145,10 +213,14 @@ class PhoneDetailsMapperTest {
         source = PlaybackSource(id = "com.spotify.music"),
     )
 
-    private fun readyLyrics(track: Track) = LyricsState.Ready(
+    private fun readyLyrics(
+        track: Track,
+        playbackIdentity: PlaybackTrackIdentity,
+    ) = LyricsState.Ready(
         lookup = LyricsLookup(
             id = LyricsLookupId(11L),
             track = track,
+            playbackIdentity = playbackIdentity,
         ),
         lyrics = LyricsDocument(
             lines = listOf(
