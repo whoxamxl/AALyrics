@@ -6,16 +6,19 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -247,7 +250,13 @@ internal fun TargetLanguagePicker(
     options: List<SettingsLanguageOptionUiState>,
     selectedId: String,
     title: String,
+    downloadContentDescription: String,
+    downloadingContentDescription: String,
+    readyContentDescription: String,
+    builtInContentDescription: String,
+    retryContentDescription: String,
     onSelected: (String) -> Unit,
+    onDownloadRequested: (String) -> Unit,
     onDismissRequest: () -> Unit,
 ) {
     AlertDialog(
@@ -276,8 +285,10 @@ internal fun TargetLanguagePicker(
                                 onDismissRequest()
                             }
                             .padding(
-                                horizontal = AALyricsSpacing.Space8,
-                                vertical = AALyricsSpacing.Space8,
+                                start = AALyricsSpacing.Space8,
+                                end = AALyricsSpacing.Space4,
+                                top = AALyricsSpacing.Space8,
+                                bottom = AALyricsSpacing.Space8,
                             ),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
@@ -289,8 +300,22 @@ internal fun TargetLanguagePicker(
                             } else {
                                 AALyricsColors.TextPrimary
                             },
-                            modifier = Modifier.weight(1f),
+                            maxLines = 1,
                         )
+
+                        Spacer(Modifier.width(AALyricsSpacing.Space8))
+
+                        TranslationModelStatusAction(
+                            option = option,
+                            downloadContentDescription = downloadContentDescription,
+                            downloadingContentDescription = downloadingContentDescription,
+                            readyContentDescription = readyContentDescription,
+                            builtInContentDescription = builtInContentDescription,
+                            retryContentDescription = retryContentDescription,
+                            onDownloadRequested = onDownloadRequested,
+                        )
+
+                        Spacer(Modifier.weight(1f))
 
                         if (selected) {
                             Icon(
@@ -310,4 +335,86 @@ internal fun TargetLanguagePicker(
         textContentColor = AALyricsColors.TextPrimary,
         shape = RoundedCornerShape(AALyricsRadius.Radius16),
     )
+}
+
+@Composable
+private fun TranslationModelStatusAction(
+    option: SettingsLanguageOptionUiState,
+    downloadContentDescription: String,
+    downloadingContentDescription: String,
+    readyContentDescription: String,
+    builtInContentDescription: String,
+    retryContentDescription: String,
+    onDownloadRequested: (String) -> Unit,
+) {
+    when (option.modelState) {
+        TranslationModelUiState.BUILT_IN -> {
+            Box(
+                modifier = Modifier.size(AALyricsSpacing.Space40),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    imageVector = AALyricsIcons.DownloadDone,
+                    contentDescription = builtInContentDescription,
+                    tint = AALyricsColors.AccentCyan,
+                    modifier = Modifier.size(AALyricsSpacing.Space20),
+                )
+            }
+        }
+
+        TranslationModelUiState.NOT_DOWNLOADED -> {
+            IconButton(
+                onClick = { onDownloadRequested(option.id) },
+                modifier = Modifier.size(AALyricsSpacing.Space40),
+            ) {
+                Icon(
+                    imageVector = AALyricsIcons.Download,
+                    contentDescription = downloadContentDescription,
+                    tint = AALyricsColors.TextSecondary,
+                    modifier = Modifier.size(AALyricsSpacing.Space20),
+                )
+            }
+        }
+
+        TranslationModelUiState.DOWNLOADING -> {
+            Box(
+                modifier = Modifier.size(AALyricsSpacing.Space40),
+                contentAlignment = Alignment.Center,
+            ) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(AALyricsSpacing.Space20),
+                    color = AALyricsColors.AccentCyan,
+                    strokeWidth = AALyricsStroke.Strong,
+                )
+            }
+        }
+
+        TranslationModelUiState.READY -> {
+            Box(
+                modifier = Modifier.size(AALyricsSpacing.Space40),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    imageVector = AALyricsIcons.DownloadDone,
+                    contentDescription = readyContentDescription,
+                    tint = AALyricsColors.Success,
+                    modifier = Modifier.size(AALyricsSpacing.Space20),
+                )
+            }
+        }
+
+        TranslationModelUiState.FAILED -> {
+            IconButton(
+                onClick = { onDownloadRequested(option.id) },
+                modifier = Modifier.size(AALyricsSpacing.Space40),
+            ) {
+                Icon(
+                    imageVector = AALyricsIcons.DownloadFailed,
+                    contentDescription = retryContentDescription,
+                    tint = AALyricsColors.Error,
+                    modifier = Modifier.size(AALyricsSpacing.Space20),
+                )
+            }
+        }
+    }
 }
