@@ -28,6 +28,11 @@
     <string name="settings_section_translation">TRANSLATION</string>
     <string name="settings_translation_enabled">Translation</string>
     <string name="settings_translation_target">Target language</string>
+    <string name="settings_translation_model_download">Download translation model</string>
+    <string name="settings_translation_model_downloading">Downloading translation model</string>
+    <string name="settings_translation_model_ready">Translation model downloaded</string>
+    <string name="settings_translation_model_built_in">Translation support built in</string>
+    <string name="settings_translation_model_retry">Retry translation model download</string>
 
     <string name="settings_section_android_auto">ANDROID AUTO</string>
     <string name="settings_android_auto_compatibility">Compatibility setup</string>
