@@ -5,6 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -19,6 +20,7 @@ import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.HorizontalDivider
@@ -207,41 +209,245 @@ internal fun SettingsNavigationRow(
 }
 
 @Composable
-internal fun SettingsValueRow(
-    title: String,
-    value: String,
+internal fun AppUpdateRow(
+    versionLabel: String,
+    currentVersionName: String,
+    state: AppUpdateUiState,
+    checkLabel: String,
+    checkingLabel: String,
+    upToDateLabel: String,
+    updateAvailableLabel: String,
+    downloadLabel: String,
+    downloadingLabel: String,
+    downloadedLabel: String,
+    retryLabel: String,
+    failedLabel: String,
+    failureInfoContentDescription: String,
+    genericFailureReason: String,
+    onCheckForUpdates: () -> Unit,
+    onDownloadUpdate: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Row(
+    Column(
         modifier = modifier
             .fillMaxWidth()
-            .heightIn(min = AALyricsSpacing.Space64)
             .padding(
-                start = AALyricsSpacing.Space16,
-                end = AALyricsSpacing.Space16,
-                top = AALyricsSpacing.Space12,
-                bottom = AALyricsSpacing.Space12,
+                horizontal = AALyricsSpacing.Space16,
+                vertical = AALyricsSpacing.Space12,
             ),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = versionLabel,
+                style = AALyricsTypography.AppTitle,
+                color = AALyricsColors.TextPrimary,
+                modifier = Modifier.weight(1f),
+            )
+
+            Text(
+                text = currentVersionName.asVersionLabel(),
+                style = AALyricsTypography.TrackArtist,
+                color = AALyricsColors.TextSecondary,
+                maxLines = 1,
+            )
+        }
+
+        Spacer(Modifier.height(AALyricsSpacing.Space12))
+
+        when (state.phase) {
+            AppUpdateUiPhase.IDLE -> {
+                AppUpdateActionRow(
+                    actionLabel = checkLabel,
+                    onAction = onCheckForUpdates,
+                )
+            }
+
+            AppUpdateUiPhase.CHECKING -> {
+                AppUpdateProgressRow(label = checkingLabel)
+            }
+
+            AppUpdateUiPhase.UP_TO_DATE -> {
+                AppUpdateStatusRow(
+                    label = upToDateLabel,
+                    icon = AALyricsIcons.Check,
+                    iconTint = AALyricsColors.Success,
+                )
+            }
+
+            AppUpdateUiPhase.UPDATE_AVAILABLE -> {
+                AppUpdateActionRow(
+                    status = "${updateAvailableLabel} ${
+                        state.availableVersionName?.asVersionLabel().orEmpty()
+                    }".trim(),
+                    actionLabel = downloadLabel,
+                    onAction = onDownloadUpdate,
+                )
+            }
+
+            AppUpdateUiPhase.CHECK_FAILED -> {
+                AppUpdateFailureRow(
+                    label = failedLabel,
+                    reason = state.failureReason ?: genericFailureReason,
+                    failureInfoContentDescription = failureInfoContentDescription,
+                    retryLabel = retryLabel,
+                    onRetry = onCheckForUpdates,
+                )
+            }
+
+            AppUpdateUiPhase.DOWNLOADING -> {
+                AppUpdateProgressRow(
+                    label = if (state.availableVersionName.isNullOrBlank()) {
+                        downloadingLabel
+                    } else {
+                        "${downloadingLabel} ${state.availableVersionName.asVersionLabel()}"
+                    },
+                )
+            }
+
+            AppUpdateUiPhase.DOWNLOADED -> {
+                AppUpdateStatusRow(
+                    label = if (state.availableVersionName.isNullOrBlank()) {
+                        downloadedLabel
+                    } else {
+                        "${downloadedLabel} ${state.availableVersionName.asVersionLabel()}"
+                    },
+                    icon = AALyricsIcons.Check,
+                    iconTint = AALyricsColors.Success,
+                )
+            }
+
+            AppUpdateUiPhase.DOWNLOAD_FAILED -> {
+                AppUpdateFailureRow(
+                    label = failedLabel,
+                    reason = state.failureReason ?: genericFailureReason,
+                    failureInfoContentDescription = failureInfoContentDescription,
+                    retryLabel = retryLabel,
+                    onRetry = onDownloadUpdate,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun AppUpdateActionRow(
+    actionLabel: String,
+    onAction: () -> Unit,
+    status: String? = null,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.End,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        status?.let {
+            Text(
+                text = it,
+                style = AALyricsTypography.TrackArtist,
+                color = AALyricsColors.TextSecondary,
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(end = AALyricsSpacing.Space12),
+            )
+        }
+
+        Button(onClick = onAction) {
+            Text(text = actionLabel)
+        }
+    }
+}
+
+@Composable
+private fun AppUpdateProgressRow(
+    label: String,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
-            text = title,
-            style = AALyricsTypography.AppTitle,
-            color = AALyricsColors.TextPrimary,
-            modifier = Modifier.weight(1f),
-        )
-
-        Text(
-            text = value,
+            text = label,
             style = AALyricsTypography.TrackArtist,
             color = AALyricsColors.TextSecondary,
-            maxLines = 1,
-            modifier = Modifier
-                .widthIn(max = 160.dp)
-                .padding(start = AALyricsSpacing.Space12),
+        )
+        Spacer(Modifier.weight(1f))
+        CircularProgressIndicator(
+            modifier = Modifier.size(AALyricsSpacing.Space20),
+            color = AALyricsColors.AccentCyan,
+            strokeWidth = AALyricsStroke.Strong,
         )
     }
 }
+
+@Composable
+private fun AppUpdateStatusRow(
+    label: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    iconTint: Color,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = label,
+            style = AALyricsTypography.TrackArtist,
+            color = AALyricsColors.TextSecondary,
+        )
+        Spacer(Modifier.weight(1f))
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = iconTint,
+            modifier = Modifier.size(AALyricsSpacing.Space20),
+        )
+    }
+}
+
+@Composable
+private fun AppUpdateFailureRow(
+    label: String,
+    reason: String,
+    failureInfoContentDescription: String,
+    retryLabel: String,
+    onRetry: () -> Unit,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = label,
+            style = AALyricsTypography.TrackArtist,
+            color = AALyricsColors.Error,
+        )
+
+        SettingInfoTooltip(
+            text = reason,
+            contentDescription = failureInfoContentDescription,
+        )
+
+        Spacer(Modifier.weight(1f))
+
+        Button(onClick = onRetry) {
+            Icon(
+                imageVector = AALyricsIcons.Retry,
+                contentDescription = null,
+                modifier = Modifier.size(AALyricsSpacing.Space20),
+            )
+            Text(
+                text = retryLabel,
+                modifier = Modifier.padding(start = AALyricsSpacing.Space8),
+            )
+        }
+    }
+}
+
+private fun String.asVersionLabel(): String =
+    if (startsWith("v", ignoreCase = true)) this else "v$this"
 
 @Composable
 internal fun AboutDialog(
