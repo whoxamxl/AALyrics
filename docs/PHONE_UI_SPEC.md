@@ -2,7 +2,7 @@
 
 ## Status
 
-The Phone information architecture and persistent Compose shell are established. The Lyrics destination has a production composition boundary built from `TrackCard` and `LyricsViewport`. The first production Settings destination is implemented from the contract in `docs/PHONE_SETTINGS.md`; Sync, Details, runtime wiring, and final visual tuning remain deliberately deferred.
+The Phone information architecture and persistent Compose shell are established. The Lyrics destination has a production composition boundary built from `TrackCard` and `LyricsViewport`. The first production Settings destination is implemented from the contract in `docs/PHONE_SETTINGS.md`. The next shell-control contract is defined in `docs/PHONE_PLAYBACK_SURFACE.md`: the current fixed three-button playback bar will evolve into a compact collapsed Playback Bar plus an on-demand Expanded Player. Sync, Details, application/runtime wiring, and final visual tuning remain deliberately staged.
 
 ## Product intent
 
@@ -18,7 +18,7 @@ The approved shell is:
 │ Current Destination          │
 │                              │
 ├──────────────────────────────┤
-│ Playback Controls Bar        │  persistent when media is available
+│ Playback Bar        │  persistent when media is available
 ├──────────────────────────────┤
 │ Lyrics  Sync  Details  Settings │ persistent
 └──────────────────────────────┘
@@ -54,7 +54,7 @@ The production `LyricsScreen` composes the Track Card above a flexible `LyricsVi
 
 Artwork remains caller-owned. `LyricsScreen` forwards viewport interaction-mode changes but does not own media, provider, navigation, or playback-controller objects.
 
-Because the Playback Controls Bar is a floating shell overlay, `PhoneAppShell` also exposes its required bottom overlay inset to destination content. `LyricsScreen` applies that inset only to the flexible LyricsViewport region, keeping the Track Card unchanged while preventing the viewport return-to-playback control and bottom lyric content from sitting under the transport surface. When playback controls are absent, the inset is zero.
+Because the Playback Bar is a floating shell overlay, `PhoneAppShell` also exposes its required bottom overlay inset to destination content. `LyricsScreen` applies that inset only to the flexible LyricsViewport region, keeping the Track Card unchanged while preventing the viewport return-to-playback control and bottom lyric content from sitting under the transport surface. When playback controls are absent, the inset is zero.
 
 ### Sync
 
@@ -115,7 +115,7 @@ Conceptually:
 └──────────────────────────────┘
 ```
 
-The card is informational. Playback transport actions stay in the persistent Playback Controls Bar so information and actions have separate, predictable locations.
+The card is informational. Playback transport actions stay in the persistent Playback Bar so information and actions have separate, predictable locations.
 
 The production Track Card keeps album artwork caller-owned in a compact 64dp slot. When artwork is unavailable, the card shows a neutral placeholder rather than substituting the AALyrics brand mark. Artwork loading/decoding policy remains outside the component.
 
@@ -136,28 +136,40 @@ Goals:
 
 This is a layout target, not a hard line-count guarantee. Exact typography, spacing, and dp values must be tuned in Compose Preview and device testing rather than frozen in this architecture document.
 
-## Persistent playback controls
+## Persistent playback surface
 
-A compact floating playback-controls surface overlays the lower edge of the current destination immediately above bottom navigation when an active/controllable media session is available.
+The approved shell playback contract is defined in detail in `docs/PHONE_PLAYBACK_SURFACE.md`.
 
-It exposes only the high-frequency transport controls:
+The shell owns one two-state playback surface:
 
 ```text
-Previous    Play/Pause    Next
+Collapsed Playback Bar
+        ⇅
+Expanded Player
 ```
 
-The bar intentionally does **not** duplicate:
+The collapsed state remains continuously reachable immediately above bottom navigation and stays compact:
 
-- artwork
-- title
-- artist
-- provider metadata
+```text
+[art]  title / artist                         Play-Pause
+──────────────── thin playback progress ────────────────
+```
 
-Those already belong to the Lyrics Track Card or destination content.
+Play/Pause is the only direct transport action in the collapsed state. Tapping the remaining bar surface expands the player. The existing thin bottom progress indicator remains non-interactive.
 
-Transport controls are icon-first. Previous and Next use secondary icon buttons, while the center Play/Pause action uses the stronger filled cyan treatment. All three retain accessible touch targets and presentation-only enabled/disabled state. A thin non-interactive progress line along the bottom of the floating surface indicates the current normalized position within the track when that value is available.
+The Expanded Player grows upward from the same shell surface without creating a destination or forcing the destination body to re-layout to the expanded height. It adds:
 
-When no controllable media session exists, the final implementation may hide or disable the bar; that behavior is not fixed here.
+- compact artwork + one-line title/artist using Track Card-style delayed marquee behavior;
+- elapsed time + interactive seek control + duration;
+- Quick controls / Previous / Play-Pause / Next / Queue-or-Open-app;
+- Previous/Next long-press relative seek implemented as local preview followed by one `seekTo()` on release;
+- explicit collapse via backdrop tap, Back, downward gesture, header tap, or terminal session loss.
+
+Ordinary transport, seek, track changes, Queue use, Translation quick-toggle, and primary-destination switching do not implicitly collapse the player.
+
+Queue, seek, skip, Play/Pause, and source-app actions are capability-driven. The Phone UI receives normalized presentation facts and callbacks; it does not inspect Android MediaSession objects or action bitmasks.
+
+When no eligible/controllable selected media session remains, the playback surface is removed rather than leaving stale controls visible.
 
 ## Bottom navigation
 
@@ -169,7 +181,7 @@ Destinations:
 Lyrics   Sync   Details   Settings
 ```
 
-The navigation bar performs destination switching only. Each destination uses a stable semantic icon plus label, with cyan emphasis for the selected destination. Playback actions belong to the Playback Controls Bar and current-track information belongs to destination content.
+The navigation bar performs destination switching only. Each destination uses a stable semantic icon plus label, with cyan emphasis for the selected destination. Playback actions belong to the Playback Bar and current-track information belongs to destination content.
 
 ## Phone shell ownership
 
@@ -207,15 +219,19 @@ Phone shell + destination state
 Production composables
 ```
 
-Transport UI should depend on callbacks such as:
+Playback-surface UI should depend on presentation-ready capabilities/state plus callbacks such as:
 
 ```text
 onPrevious
 onPlayPause
 onNext
+onSeekTo
+onQueueItemSelected
+onOpenPlaybackApp
+onTranslationEnabledChanged
 ```
 
-rather than a `MediaController` reference.
+rather than a `MediaController`, raw `PlaybackState.actions`, framework queue objects, or Android launch intents.
 
 Likewise, lyrics screens consume presentation-ready values/state rather than provider DTOs or networking clients.
 
@@ -226,7 +242,7 @@ Phone-specific components should begin inside `:ui:phone` while their behavior a
 Examples:
 
 - `PhoneTopBar`
-- `PlaybackControlsBar`
+- `PlaybackSurface` / collapsed `PlaybackBar` / `ExpandedPlayer`
 - `PhoneNavigationBar`
 - `TrackCard`
 - `LyricsViewport`
@@ -242,7 +258,9 @@ ui/phone/src/main/java/io/github/whoxamxl/aalyrics/ui/phone/
 ├─ shell/
 │  ├─ PhoneAppShell.kt
 │  ├─ PhoneTopBar.kt
-│  ├─ PlaybackControlsBar.kt
+│  ├─ PlaybackSurface.kt
+│  ├─ PlaybackBar.kt
+│  ├─ ExpandedPlayer.kt
 │  └─ PhoneNavigationBar.kt
 ├─ navigation/
 │  └─ PhoneDestination.kt
@@ -264,7 +282,7 @@ ui/phone/src/main/java/io/github/whoxamxl/aalyrics/ui/phone/
    └─ PhoneShellUiState.kt
 ```
 
-The persistent shell, navigation identity, and shell-level state files contain production Compose behavior. `LyricsScreen` is the production Lyrics destination composition. The Settings destination follows the separately approved `docs/PHONE_SETTINGS.md` contract. Sync and Details may remain placeholders until their own approved implementation slices; do not invent destination behavior merely to complete the tree.
+The persistent shell, navigation identity, and shell-level state files contain production Compose behavior. The current `PlaybackControlsBar` is the implementation being superseded by the approved `PHONE_PLAYBACK_SURFACE` contract. `LyricsScreen` is the production Lyrics destination composition. The Settings destination follows the separately approved `docs/PHONE_SETTINGS.md` contract. Sync and Details may remain placeholders until their own approved implementation slices; do not invent destination behavior merely to complete the tree.
 
 ## Preview and validation direction
 
@@ -280,7 +298,7 @@ Preview coverage should eventually exercise at least:
 - long lyric lines
 - first/last-line boundaries
 - follow vs manual browse
-- playback-control enabled/disabled states
+- collapsed/expanded playback-surface states and capability combinations
 - narrow and typical phone widths
 
 Implementation should validate that the persistent top bar, playback controls, and bottom navigation still leave adequate room for the lyrics viewport.
@@ -293,7 +311,6 @@ The persistent shell implementation intentionally still does not decide or imple
 - final icons or animation
 - navigation framework/runtime
 - ViewModels or state-mapper classes
-- playback transport integration
 - media-session ownership
 - provider behavior
 - final Sync interaction model
