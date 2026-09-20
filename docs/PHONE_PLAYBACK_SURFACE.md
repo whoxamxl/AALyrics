@@ -177,18 +177,22 @@ Collapsed Player + Back
 
 ## Expanded seek visual language
 
-The Expanded Player seek control uses a One UI-inspired structural treatment rather than an animated waveform.
+The Expanded Player seek control uses a One UI-inspired asymmetric dynamic waveform rendered natively with Compose Canvas.
 
 Rules:
 
-- use a rigid, thick pill-shaped track;
-- keep the track visually stable across playing, paused, direct-seek, and long-press relative-seek states;
-- use AALyrics Accent Cyan for the active segment instead of album-art-derived color;
-- use a low-alpha Accent Cyan inactive segment so the control remains visually coherent with the rest of the player;
-- use an unobtrusive round thumb with no visible gap between thumb and track;
-- target an approximately 8dp track and 18dp thumb for the first implementation;
+- only the active/progress segment becomes a wave while playback is running;
+- the inactive segment always remains a straight, low-alpha track;
+- the active waveform uses a fixed amplitude envelope across the current active segment: zero at the start, swelling through the middle, and decaying back to zero exactly at the thumb;
+- playback animation advances only the sine phase, never the amplitude, so the wave travels without progressively "growing" over time;
+- paused/disabled playback renders the active segment flat;
+- use AALyrics Accent Cyan rather than album-art-derived color;
+- keep the waveform restrained: approximately 7dp maximum amplitude, 34dp wavelength, and 4dp stroke;
+- retain a compact 18dp round thumb;
 - keep elapsed/duration labels below the track;
 - the collapsed playback progress indicator remains the existing thin, straight, non-interactive line.
+
+The Material3 Slider continues to own gestures/accessibility/seek semantics. Only its visual track is replaced by the custom Canvas waveform, so the existing direct-seek commit/cancel behavior is preserved.
 
 No third-party slider dependency is required for this treatment.
 
