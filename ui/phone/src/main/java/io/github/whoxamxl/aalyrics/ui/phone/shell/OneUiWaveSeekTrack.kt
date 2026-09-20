@@ -25,8 +25,9 @@ import kotlinx.coroutines.isActive
  * One UI-inspired asymmetric media seek track.
  *
  * The active segment is always drawn at its final amplitude envelope. Playback animation only
- * advances the sine phase, so the wave travels without "growing" over time. The envelope starts
- * flat, crests through the active segment, and returns to zero amplitude at the thumb.
+ * advances the sine phase while playback is running, so the wave travels without "growing" over
+ * time. Pausing freezes the current shape instead of flattening it. The envelope starts flat,
+ * crests through the active segment, and returns to zero amplitude at the thumb.
  */
 @Composable
 internal fun OneUiWaveSeekTrack(
@@ -41,10 +42,7 @@ internal fun OneUiWaveSeekTrack(
     var phase by remember { mutableFloatStateOf(0f) }
 
     LaunchedEffect(isPlaying, enabled) {
-        if (!isPlaying || !enabled) {
-            phase = 0f
-            return@LaunchedEffect
-        }
+        if (!isPlaying || !enabled) return@LaunchedEffect
 
         var previousFrameNanos = withFrameNanos { it }
         while (isActive) {
@@ -69,7 +67,7 @@ internal fun OneUiWaveSeekTrack(
         val active = if (enabled) activeColor else disabledColor
         val inactive = if (enabled) inactiveColor else disabledColor.copy(alpha = 0.48f)
         val strokeWidthPx = 4.dp.toPx()
-        val maxAmplitudePx = if (isPlaying && enabled) 7.dp.toPx() else 0f
+        val maxAmplitudePx = if (enabled) 7.dp.toPx() else 0f
         val wavelengthPx = 34.dp.toPx()
 
         if (thumbX > 0f) {
