@@ -15,19 +15,19 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.dp
 import kotlin.math.PI
+import kotlin.math.exp
+import kotlin.math.min
 import kotlin.math.sin
 import kotlinx.coroutines.isActive
 
 /**
- * One UI-inspired asymmetric media seek track.
+ * One UI-inspired monochrome media waveform.
  *
- * The active segment is always drawn at its final amplitude envelope. Playback animation only
- * advances the sine phase while playback is running, so the wave travels without "growing" over
- * time. Pausing freezes the current shape instead of flattening it. The envelope starts flat,
- * crests through the active segment, and returns to zero amplitude at the thumb.
+ * The active segment is a filled pill that swells into two or three broad animated blobs while the
+ * inactive segment stays completely straight. Animation changes the blob profile/position slightly;
+ * it never grows the waveform progressively from a flat line.
  */
 @Composable
 internal fun OneUiWaveSeekTrack(
@@ -51,7 +51,7 @@ internal fun OneUiWaveSeekTrack(
             previousFrameNanos = frameNanos
 
             phase = (
-                phase + elapsedSeconds * TWO_PI / WAVE_PHASE_DURATION_SECONDS
+                phase + elapsedSeconds * TWO_PI / BLOB_CYCLE_SECONDS
             ) % TWO_PI
         }
     }
@@ -59,54 +59,83 @@ internal fun OneUiWaveSeekTrack(
     Canvas(
         modifier = modifier
             .fillMaxWidth()
-            .height(32.dp),
+            .height(36.dp),
     ) {
         val fraction = progressFraction.coerceIn(0f, 1f)
         val thumbX = size.width * fraction
         val centerY = size.height / 2f
         val active = if (enabled) activeColor else disabledColor
         val inactive = if (enabled) inactiveColor else disabledColor.copy(alpha = 0.48f)
-        val strokeWidthPx = 4.dp.toPx()
-        val maxAmplitudePx = if (enabled) 7.dp.toPx() else 0f
-        val wavelengthPx = 34.dp.toPx()
+
+        val baseHalfHeight = 4.dp.toPx()
+        val maxBlobExpansion = if (enabled) 7.dp.toPx() else 0f
+        val centerDrift = if (enabled) 1.25.dp.toPx() else 0f
+        val sampleStep = 1.5.dp.toPx().coerceAtLeast(1f)
 
         if (thumbX > 0f) {
-            if (maxAmplitudePx <= 0f || thumbX < wavelengthPx * 0.75f) {
+            if (thumbX < 48.dp.toPx() || maxBlobExpansion <= 0f) {
                 drawLine(
                     color = active,
                     start = Offset(0f, centerY),
                     end = Offset(thumbX, centerY),
-                    strokeWidth = strokeWidthPx,
+                    strokeWidth = baseHalfHeight * 2f,
                     cap = StrokeCap.Round,
                 )
             } else {
-                val wavePath = Path().apply {
-                    moveTo(0f, centerY)
-                }
-                val sampleStep = 1.5.dp.toPx().coerceAtLeast(1f)
-                var x = sampleStep
+                val activePath = Path()
+                var x = 0f
+                var firstPoint = true
 
-                while (x < thumbX) {
+                // Upper edge.
+                while (x <= thumbX) {
                     val ratio = (x / thumbX).coerceIn(0f, 1f)
-                    val amplitudeEnvelope = sin(ratio * PI).toFloat()
-                    val carrier = sin(
-                        (x / wavelengthPx) * TWO_PI - phase,
+                    val profile = blobProfile(
+                        ratio = ratio,
+                        phase = phase,
                     )
-                    val y = centerY + (
-                        amplitudeEnvelope * maxAmplitudePx * carrier
-                    )
-                    wavePath.lineTo(x, y)
+                    val edgeFade = edgeFade(ratio)
+                    val halfHeight = baseHalfHeight +
+                        maxBlobExpansion * profile * edgeFade
+                    val centerOffset = centerDrift *
+                        sin(ratio * TWO_PI * 1.35f + phase * 0.45f) *
+                        edgeFade
+                    val y = centerY + centerOffset - halfHeight
+
+                    if (firstPoint) {
+                        activePath.moveTo(x, y)
+                        firstPoint = false
+                    } else {
+                        activePath.lineTo(x, y)
+                    }
                     x += sampleStep
                 }
-                wavePath.lineTo(thumbX, centerY)
+                activePath.lineTo(thumbX, centerY - baseHalfHeight)
+
+                // Lower edge, reversed.
+                x = thumbX
+                while (x >= 0f) {
+                    val ratio = (x / thumbX).coerceIn(0f, 1f)
+                    val profile = blobProfile(
+                        ratio = ratio,
+                        phase = phase + LOWER_PROFILE_PHASE_OFFSET,
+                    )
+                    val edgeFade = edgeFade(ratio)
+                    val halfHeight = baseHalfHeight +
+                        maxBlobExpansion * profile * edgeFade
+                    val centerOffset = centerDrift *
+                        sin(ratio * TWO_PI * 1.18f + phase * 0.38f + 0.7f) *
+                        edgeFade
+                    val y = centerY + centerOffset + halfHeight
+
+                    activePath.lineTo(x, y)
+                    x -= sampleStep
+                }
+                activePath.lineTo(0f, centerY + baseHalfHeight)
+                activePath.close()
 
                 drawPath(
-                    path = wavePath,
+                    path = activePath,
                     color = active,
-                    style = Stroke(
-                        width = strokeWidthPx,
-                        cap = StrokeCap.Round,
-                    ),
                 )
             }
         }
@@ -116,12 +145,61 @@ internal fun OneUiWaveSeekTrack(
                 color = inactive,
                 start = Offset(thumbX, centerY),
                 end = Offset(size.width, centerY),
-                strokeWidth = strokeWidthPx,
+                strokeWidth = baseHalfHeight * 2f,
                 cap = StrokeCap.Round,
             )
         }
     }
 }
 
-private const val WAVE_PHASE_DURATION_SECONDS = 1.25f
+private fun blobProfile(
+    ratio: Float,
+    phase: Float,
+): Float {
+    val first = gaussianBlob(
+        ratio = ratio,
+        center = 0.22f + 0.018f * sin(phase * 0.72f),
+        width = 0.105f,
+        strength = 0.74f + 0.18f * sin(phase + 0.2f),
+    )
+    val second = gaussianBlob(
+        ratio = ratio,
+        center = 0.50f + 0.024f * sin(phase * 0.61f + 1.9f),
+        width = 0.13f,
+        strength = 0.86f + 0.14f * sin(phase + 2.1f),
+    )
+    val third = gaussianBlob(
+        ratio = ratio,
+        center = 0.77f + 0.019f * sin(phase * 0.67f + 3.6f),
+        width = 0.11f,
+        strength = 0.72f + 0.20f * sin(phase + 4.2f),
+    )
+
+    return min(1f, first + second + third)
+}
+
+private fun gaussianBlob(
+    ratio: Float,
+    center: Float,
+    width: Float,
+    strength: Float,
+): Float {
+    val normalizedDistance = (ratio - center) / width
+    return (
+        strength * exp((-0.5f * normalizedDistance * normalizedDistance).toDouble())
+    ).toFloat()
+}
+
+private fun edgeFade(ratio: Float): Float {
+    val leading = smoothStep((ratio / EDGE_FADE_FRACTION).coerceIn(0f, 1f))
+    val trailing = smoothStep(((1f - ratio) / EDGE_FADE_FRACTION).coerceIn(0f, 1f))
+    return min(leading, trailing)
+}
+
+private fun smoothStep(value: Float): Float =
+    value * value * (3f - 2f * value)
+
+private const val BLOB_CYCLE_SECONDS = 2.6f
+private const val EDGE_FADE_FRACTION = 0.10f
+private const val LOWER_PROFILE_PHASE_OFFSET = 0.85f
 private const val TWO_PI = (2.0 * PI).toFloat()
