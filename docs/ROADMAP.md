@@ -140,9 +140,20 @@ Playback lookup ownership now includes both track identity and candidate-selecti
 
 ### Phase 8.1 — UI foundation ✅
 
-Merged in PRs #27 and #28, with Phone information architecture/package scaffolding added in PR #31. PR #33 implements the persistent Phone Compose shell: top status, caller-owned destination content, compact playback controls, four-destination bottom navigation, and minimal shell presentation contracts, with deterministic debug-only Preview coverage.
+Merged in PRs #27 and #28, with Phone information architecture/package scaffolding added in PR #31 and the persistent Phone Compose shell in PR #33.
 
-Presentation uses `:ui:designsystem` for shared tokens/components, `:ui:phone` for phone-specific composition, and `:ui:automotive` for automotive-specific composition. Production UI lives in `src/main`; deterministic Preview/development fixtures live in `src/debug` and render the production composables. Phone and automotive remain separate presentation surfaces rather than one universal UI model. Destination behavior, runtime navigation, media transport wiring, and finished screen presentation remain later slices.
+Subsequent Phone presentation work has substantially advanced the production surface:
+
+- PR #35 refined the shell visuals;
+- PR #36 implemented the Phone Track Card;
+- PR #40 implemented the responsive LyricsViewport;
+- PR #42 composed the production Lyrics destination;
+- PRs #44 and #45 implemented and polished the first Settings destination;
+- PR #46 replaced the legacy fixed playback controls with the capability-aware collapsed Playback Bar + Expanded Player, including interactive seek, Queue/Open-app fallback, and Translation quick controls.
+
+Presentation uses `:ui:designsystem` for shared tokens/components, `:ui:phone` for phone-specific composition, and `:ui:automotive` for automotive-specific composition. Production UI lives in `src/main`; deterministic Preview/development fixtures live in `src/debug` and render the production composables. Phone and automotive remain separate presentation surfaces rather than one universal UI model.
+
+The two remaining primary Phone destinations are intentionally staged: Details now has an approved documentation contract in `docs/PHONE_DETAILS.md` but remains a production placeholder, while Sync remains both a placeholder and interaction-model-deferred pending timing/calibration redesign.
 
 ### Phase 9 — Live MediaSession runtime ✅
 
@@ -251,15 +262,17 @@ Prepare Translation without changing unfinished foreground presentation:
 
 The scaffold must not implement speculative LanguageProfiler thresholds, contextual block algorithms, Musixmatch Translation alignment, Translation Provider selection, or persistent Translation Cache.
 
-### Phase 11.2b — Translation execution/orchestration — active
+### Phase 11.2b — Translation execution/orchestration ✅
 
-Implement Translation as an additive derived capability over canonical lyrics without moving execution into Lyrics Providers or `LyricsCoordinator`.
+Merged in PR #43.
 
-This slice will implement the approved complete-lyrics LanguageProfiler, Primary/Secondary activation policy, contextual Core + Context Halo translation, structural alignment/fallback, independent Translation Provider selection, complete Translation Artifact assembly, stale-result rejection, and atomic publication.
+Translation now runs as an additive derived capability over canonical lyrics without moving execution into Lyrics Providers or `LyricsCoordinator`.
 
-Musixmatch native Translation may be added as a Translation Provider only after its endpoint/entitlement is re-verified and its source text can be aligned confidently to canonical lyrics.
+The implementation includes the approved complete-lyrics LanguageProfiler, Primary/Secondary activation policy, contextual Core + Context Halo translation, structural alignment/fallback, Translation-specific provider/session contracts, complete Translation Artifact assembly, stale-result rejection, cancellation, and atomic publication.
 
-Must follow `docs/TRANSLATION_ARCHITECTURE.md`.
+Musixmatch native Translation remains deferred until its endpoint/entitlement is re-verified and its source text can be aligned confidently to canonical lyrics.
+
+The durable ownership contract remains `docs/TRANSLATION_ARCHITECTURE.md`.
 
 ### Phase 11.3 — Timing / calibration
 
@@ -283,7 +296,7 @@ These implementation slices are separate responsibilities and should normally us
 
 ## Release engineering
 
-PR #38 introduces the release-engineering foundation alongside the Android Auto Now Playing slice. Until that PR is merged, it remains pending integration.
+PR #38 merged the release-engineering foundation alongside the Android Auto Now Playing slice. The first signed prerelease, `v0.1.0-alpha.1`, was subsequently published through the GitHub Release workflow with both APK and SHA-256 assets.
 
 The durable distribution policy is defined in `docs/RELEASES.md`:
 
@@ -294,7 +307,7 @@ The durable distribution policy is defined in `docs/RELEASES.md`:
 - release tags must point to commits contained in `main`;
 - one persistent release signing identity is required for update compatibility.
 
-The initial signed distribution is expected to be `v0.1.0-alpha.1` after PR #38 is merged and the release workflow is ready to exercise.
+The initial signed distribution `v0.1.0-alpha.1` has been published successfully; later tags continue to follow the same documented release policy.
 
 ## Android Auto media presentation track
 
