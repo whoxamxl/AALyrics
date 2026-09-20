@@ -27,6 +27,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -201,6 +202,98 @@ internal fun SettingsNavigationRow(
             modifier = Modifier.size(AALyricsSpacing.Space24),
         )
     }
+}
+
+@Composable
+internal fun SettingsValueRow(
+    title: String,
+    value: String,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .heightIn(min = AALyricsSpacing.Space64)
+            .padding(
+                start = AALyricsSpacing.Space16,
+                end = AALyricsSpacing.Space16,
+                top = AALyricsSpacing.Space12,
+                bottom = AALyricsSpacing.Space12,
+            ),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = title,
+            style = AALyricsTypography.AppTitle,
+            color = AALyricsColors.TextPrimary,
+            modifier = Modifier.weight(1f),
+        )
+
+        Text(
+            text = value,
+            style = AALyricsTypography.TrackArtist,
+            color = AALyricsColors.TextSecondary,
+            maxLines = 1,
+            modifier = Modifier
+                .widthIn(max = 160.dp)
+                .padding(start = AALyricsSpacing.Space12),
+        )
+    }
+}
+
+@Composable
+internal fun AboutDialog(
+    title: String,
+    body: String,
+    versionLabel: String,
+    versionName: String,
+    githubLabel: String,
+    closeLabel: String,
+    onOpenGitHub: () -> Unit,
+    onDismissRequest: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismissRequest,
+        title = {
+            Text(
+                text = title,
+                style = AALyricsTypography.TrackTitle,
+                color = AALyricsColors.TextPrimary,
+            )
+        },
+        text = {
+            Column {
+                Text(
+                    text = body,
+                    style = AALyricsTypography.TrackArtist,
+                    color = AALyricsColors.TextSecondary,
+                )
+
+                Spacer(Modifier.width(AALyricsSpacing.Space8))
+
+                Text(
+                    text = "$versionLabel $versionName",
+                    style = AALyricsTypography.Label,
+                    color = AALyricsColors.TextTertiary,
+                    modifier = Modifier.padding(top = AALyricsSpacing.Space16),
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onOpenGitHub) {
+                Text(text = githubLabel)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismissRequest) {
+                Text(text = closeLabel)
+            }
+        },
+        containerColor = AALyricsColors.BackgroundSurfaceStrong,
+        titleContentColor = AALyricsColors.TextPrimary,
+        textContentColor = AALyricsColors.TextPrimary,
+        shape = RoundedCornerShape(AALyricsRadius.Radius16),
+    )
 }
 
 @Composable
