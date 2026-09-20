@@ -673,7 +673,7 @@ internal fun SettingsBrandFooter(
         Image(
             painter = painterResource(R.drawable.aalyrics_brand_foreground),
             contentDescription = logoContentDescription,
-            modifier = Modifier.size(112.dp),
+            modifier = Modifier.size(134.4.dp),
         )
 
         Spacer(Modifier.height(AALyricsSpacing.Space8))
