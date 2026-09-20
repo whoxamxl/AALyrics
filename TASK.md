@@ -48,8 +48,10 @@ This slice should establish a durable Settings composition and reusable Phone-lo
 - Update lifecycle: idle, checking, up to date, update available, check failure, downloading, downloaded, download failure.
 - Check/Retry/Download are explicit buttons; checking/downloading use progress indication.
 - Download emits a dedicated callback for the latest eligible signed GitHub Release APK.
-- `About` dialog with app description, current version, and GitHub action.
-- Runtime GitHub release checking, APK download/checksum verification, and browser/intent launching remain outside `:ui:phone`.
+- `Changelog >` row below the Version/update block, backed by presentation-ready GitHub Release notes.
+- Always-visible AALyrics branding footer using the Android foreground mark, app name, installed version, current year, and `Yuta Miura (whoxamxl)`.
+- GitHub affordance is carried by the branding footer.
+- Runtime GitHub release/changelog loading, APK download/checksum verification, and browser/intent launching remain outside `:ui:phone`.
 
 ## Presentation boundary
 
@@ -115,7 +117,9 @@ Do not promote them to `:ui:designsystem` until another screen demonstrates genu
 - [x] Add check/loading/up-to-date/available/download/failure/retry presentation states.
 - [x] Add a dedicated update-download callback for the latest eligible signed GitHub Release APK.
 - [x] Reset completed/stale update results to IDLE on the next Settings entry while preserving active CHECKING/DOWNLOADING work.
-- [x] Add About/GitHub presentation to the Settings footer.
+- [x] Add Changelog loading/content/failure presentation sourced from GitHub Releases through callbacks.
+- [x] Replace the About row with a permanent branded footer using the AALyrics Android foreground artwork.
+- [x] Keep the GitHub link affordance in the branding footer.
 - [x] Keep `:ui:phone` free of concrete persistence/application/Translation-engine dependencies.
 - [x] Reserve the shell playback-overlay inset in Settings scroll content.
 - [x] Add deterministic Previews for typical, narrow, enlarged-font, Translation-off, and Android Auto status variants.
