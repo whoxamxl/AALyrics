@@ -26,6 +26,8 @@ import io.github.whoxamxl.aalyrics.ui.automotive.AutomotiveRuntimeHost
 import io.github.whoxamxl.aalyrics.ui.automotive.AutomotiveTransport
 import io.github.whoxamxl.aalyrics.ui.phone.details.DetailsScreenUiState
 import io.github.whoxamxl.aalyrics.ui.phone.state.PlaybackSurfaceUiState
+import io.github.whoxamxl.aalyrics.translation.api.TranslationModelPhase
+import io.github.whoxamxl.aalyrics.translation.api.TranslationModelState
 import io.github.whoxamxl.aalyrics.translation.api.TranslationSettings
 import io.github.whoxamxl.aalyrics.translation.core.LanguageProfiler
 import io.github.whoxamxl.aalyrics.translation.core.TranslationBlockPlanner
@@ -38,6 +40,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -57,9 +60,11 @@ class AALyricsApplication : Application() {
     private lateinit var translationExecutionRuntime: TranslationExecutionRuntime
     private lateinit var translationCoordinator: TranslationCoordinator
     private lateinit var translationLanguageIdentifier: MlKitLanguageIdentifier
+    private lateinit var translationModelManager: MlKitTranslationModelManager
     private lateinit var playbackAppLauncher: SelectedPlaybackAppLauncher
     private lateinit var playbackSourceLabelResolver: PlaybackSourceLabelResolver
     private lateinit var phonePlaybackSurfaceStateFlow: StateFlow<PlaybackSurfaceUiState?>
+    private lateinit var phoneMediaSourceLabelStateFlow: StateFlow<String?>
     private lateinit var phoneDetailsStateFlow: StateFlow<DetailsScreenUiState>
 
     val playbackLyricsController: PlaybackLyricsController
@@ -83,14 +88,35 @@ class AALyricsApplication : Application() {
     val phonePlaybackSurfaceState: StateFlow<PlaybackSurfaceUiState?>
         get() = phonePlaybackSurfaceStateFlow
 
+    val phoneMediaSourceLabel: StateFlow<String?>
+        get() = phoneMediaSourceLabelStateFlow
+
     val phoneDetailsState: StateFlow<DetailsScreenUiState>
         get() = phoneDetailsStateFlow
 
     val verboseDetailsEnabled: StateFlow<Boolean>
         get() = phonePresentationSettingsStore.verboseDetailsEnabled
 
+    val translationModelStates: StateFlow<Map<String, TranslationModelState>>
+        get() = translationModelManager.states
+
     fun setTranslationEnabled(enabled: Boolean) {
         translationSettingsStore.setEnabled(enabled)
+    }
+
+    fun setTranslationTargetLanguage(languageTag: String) {
+        translationSettingsStore.setTargetLanguage(languageTag)
+    }
+
+    fun requestTranslationModel(languageTag: String) {
+        applicationScope.launch {
+            val phase = translationModelManager.states.value[languageTag]?.phase
+            if (phase == TranslationModelPhase.FAILED || phase == TranslationModelPhase.TIMED_OUT) {
+                translationModelManager.retry(languageTag)
+            } else {
+                translationModelManager.ensureAvailable(languageTag)
+            }
+        }
     }
 
     fun setVerboseDetailsEnabled(enabled: Boolean) {
@@ -100,6 +126,13 @@ class AALyricsApplication : Application() {
     fun openSelectedPlaybackApp(): Boolean =
         playbackAppLauncher.open(graph.playbackControlState.value)
 
+    fun play() = MediaSessionRuntimeHost.play()
+    fun pause() = MediaSessionRuntimeHost.pause()
+    fun skipToPrevious() = MediaSessionRuntimeHost.skipToPrevious()
+    fun skipToNext() = MediaSessionRuntimeHost.skipToNext()
+    fun seekTo(positionMs: Long) = MediaSessionRuntimeHost.seekTo(positionMs)
+    fun skipToQueueItem(queueItemId: Long) = MediaSessionRuntimeHost.skipToQueueItem(queueItemId)
+
     override fun onCreate() {
         super.onCreate()
         graph = createProductionApplicationGraph(applicationScope)
@@ -107,6 +140,15 @@ class AALyricsApplication : Application() {
         phonePresentationSettingsStore = SharedPreferencesPhonePresentationSettingsStore(this)
         playbackAppLauncher = SelectedPlaybackAppLauncher(this)
         playbackSourceLabelResolver = PlaybackSourceLabelResolver(this)
+        phoneMediaSourceLabelStateFlow = graph.playbackState
+            .combine(phonePresentationSettingsStore.verboseDetailsEnabled) { playback, _ ->
+                playbackSourceLabelResolver.labelFor(playback.source?.id)
+            }
+            .stateIn(
+                scope = applicationScope,
+                started = SharingStarted.Eagerly,
+                initialValue = null,
+            )
         phonePlaybackSurfaceStateFlow = combine(
             graph.playbackState,
             graph.playbackControlState,
@@ -140,7 +182,7 @@ class AALyricsApplication : Application() {
             initialValue = DetailsScreenUiState(),
         )
 
-        val translationModelManager = MlKitTranslationModelManager(
+        translationModelManager = MlKitTranslationModelManager(
             context = this,
             applicationScope = applicationScope,
         )
