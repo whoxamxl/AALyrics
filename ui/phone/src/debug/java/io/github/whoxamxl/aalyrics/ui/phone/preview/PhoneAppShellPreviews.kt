@@ -111,6 +111,10 @@ private fun PhoneAppShellPreview(
             onPrevious = {},
             onPlayPause = {},
             onNext = {},
+            onSeekTo = {},
+            onQueueItemSelected = {},
+            onOpenPlaybackApp = {},
+            onTranslationEnabledChanged = {},
         ) { destination, bottomOverlayInset ->
             when (destination) {
                 PhoneDestination.Lyrics -> {
