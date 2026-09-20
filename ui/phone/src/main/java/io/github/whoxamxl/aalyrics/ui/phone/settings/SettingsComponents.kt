@@ -248,7 +248,7 @@ internal fun SettingsExternalLinkRow(
         Spacer(Modifier.size(AALyricsSpacing.Space8))
 
         Icon(
-            painter = painterResource(R.drawable.ic_external_link),
+            imageVector = AALyricsIcons.ExternalLink,
             contentDescription = null,
             tint = AALyricsColors.TextSecondary,
             modifier = Modifier.size(AALyricsSpacing.Space20),
