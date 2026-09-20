@@ -46,6 +46,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 
 /** Process-level owner of the first production lyrics object graph. */
@@ -141,7 +142,7 @@ class AALyricsApplication : Application() {
         playbackAppLauncher = SelectedPlaybackAppLauncher(this)
         playbackSourceLabelResolver = PlaybackSourceLabelResolver(this)
         phoneMediaSourceLabelStateFlow = graph.playbackState
-            .combine(phonePresentationSettingsStore.verboseDetailsEnabled) { playback, _ ->
+            .map { playback ->
                 playbackSourceLabelResolver.labelFor(playback.source?.id)
             }
             .stateIn(
