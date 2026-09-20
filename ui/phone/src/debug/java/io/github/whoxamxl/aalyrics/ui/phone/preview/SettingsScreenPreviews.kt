@@ -79,6 +79,19 @@ private fun SettingsUpdateFailedPreview() {
     SettingsScreenPreview(PhonePreviewFixtures.settingsUpdateFailed)
 }
 
+@Preview(name = "Update · downloading", group = "SettingsScreen", widthDp = 412, heightDp = 900)
+@Composable
+private fun SettingsUpdateDownloadingPreview() {
+    SettingsScreenPreview(PhonePreviewFixtures.settingsDownloadingUpdate)
+}
+
+@Preview(name = "Update · downloaded", group = "SettingsScreen", widthDp = 412, heightDp = 900)
+@Composable
+private fun SettingsUpdateDownloadedPreview() {
+    SettingsScreenPreview(PhonePreviewFixtures.settingsDownloadedUpdate)
+}
+
+
 @Preview(name = "About", group = "SettingsScreen", widthDp = 412, heightDp = 760)
 @Composable
 private fun SettingsAboutPreview() {
