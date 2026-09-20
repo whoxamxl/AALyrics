@@ -22,7 +22,7 @@ class PlaybackLyricsControllerTest {
 
         assertEquals(listOf(track), lifecycle.startedTracks)
         assertEquals(
-            listOf(
+            listOf<PlaybackTrackIdentity>(
                 PlaybackTrackIdentity.Metadata(
                     sourceId = null,
                     title = track.title,
@@ -59,7 +59,7 @@ class PlaybackLyricsControllerTest {
 
         assertEquals(listOf(track), lifecycle.startedTracks)
         assertEquals(
-            listOf(
+            listOf<PlaybackTrackIdentity>(
                 PlaybackTrackIdentity.SourceMedia(
                     sourceId = "com.example.player",
                     mediaId = "item-1",
@@ -117,7 +117,7 @@ class PlaybackLyricsControllerTest {
 
         assertEquals(listOf(firstTrack), lifecycle.startedTracks)
         assertEquals(
-            listOf(
+            listOf<PlaybackTrackIdentity>(
                 PlaybackTrackIdentity.Referenced(
                     sourceId = "com.spotify.music",
                     references = setOf(reference),
