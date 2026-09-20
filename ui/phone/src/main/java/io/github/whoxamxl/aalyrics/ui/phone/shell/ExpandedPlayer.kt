@@ -101,6 +101,10 @@ internal fun ExpandedPlayer(
 ) {
     var queueVisible by remember { mutableStateOf(false) }
 
+    LaunchedEffect(state.queueAvailable) {
+        if (!state.queueAvailable) queueVisible = false
+    }
+
     Surface(
         modifier = modifier
             .fillMaxWidth()
@@ -164,7 +168,7 @@ internal fun ExpandedPlayer(
         }
     }
 
-    if (queueVisible) {
+    if (queueVisible && state.queueAvailable) {
         PlaybackQueueSheet(
             queue = state.queue,
             canOpenPlaybackApp = state.canOpenPlaybackApp,
