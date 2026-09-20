@@ -17,6 +17,7 @@ data class SettingsLanguageOptionUiState(
     val id: String,
     val displayName: String,
     val modelState: TranslationModelUiState = TranslationModelUiState.NOT_DOWNLOADED,
+    val modelFailureReason: String? = null,
 )
 
 /** User acknowledgement shown for the legacy Android Auto compatibility setup. */
