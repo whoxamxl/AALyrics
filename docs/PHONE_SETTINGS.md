@@ -23,11 +23,15 @@ Settings
 ├─ Translation
 │  ├─ Translation                    [switch]
 │  └─ Target language                <value>  >
-└─ Android Auto
-   └─ Compatibility setup            <status> >
+├─ Android Auto
+│  └─ Compatibility setup            <status> >
+└─ App
+   ├─ Check for updates                       >
+   ├─ Current version               <version>
+   └─ About                                   >
 ```
 
-Provider preferences, appearance, About, diagnostics, and other future taxonomy are not part of this first slice.
+Provider preferences, appearance/theme selection, diagnostics, and other future taxonomy are not part of this first slice.
 
 ## Destination composition
 
@@ -242,6 +246,39 @@ Requirements:
 
 Do not expose model-download internals or Translation Provider details in this picker.
 
+## App and About section
+
+The final Settings section exposes app/distribution information without moving release-network behavior into `:ui:phone`.
+
+### Check for updates
+
+`Check for updates` is an explicit navigation/action row. The Settings UI emits a callback only.
+
+The eventual application/runtime implementation should check the GitHub Releases distribution channel defined in `docs/RELEASES.md`, compare a release version against the installed `BuildConfig.VERSION_NAME` / `versionCode`, and report an appropriate result to the Phone presentation.
+
+The presentation layer must not make GitHub HTTP calls directly.
+
+### Current version
+
+The Settings state carries a presentation-ready app version string. Production mapping should use the installed app's `BuildConfig.VERSION_NAME`; debug builds currently default to `0.1.0-dev` unless the build environment overrides it.
+
+### About
+
+The `About` row opens a compact AALyrics dialog containing:
+
+- a short AALyrics description;
+- the current version;
+- a GitHub action;
+- a close action.
+
+The GitHub action emits a callback. Application/runtime wiring should open the canonical AALyrics repository:
+
+```text
+https://github.com/whoxamxl/AALyrics
+```
+
+The Phone UI must not own Android intent/browser launching.
+
 ## Accessibility and responsive behavior
 
 Validate at least:
@@ -291,7 +328,6 @@ The first Settings slice does not define or implement:
 
 - provider ordering/preferences;
 - theme/appearance selection;
-- About/version UI;
 - diagnostics/log export;
 - notification-access management;
 - Translation Provider selection UI;
