@@ -76,7 +76,7 @@ Candidate scores, raw provider payloads, log export, and deeper resolver diagnos
 
 Owns user-facing application configuration while persistence and capability policy remain outside `:ui:phone`.
 
-The production Settings contract is defined in `docs/PHONE_SETTINGS.md`. Its implemented core settings remain deliberately focused, with the approved but not-yet-implemented Advanced extension limited to Verbose Details plus a disabled future Karaoke affordance:
+The production Settings contract is defined in `docs/PHONE_SETTINGS.md`. Its implemented settings remain deliberately focused, with the Advanced extension limited to Verbose Details plus a disabled future Karaoke affordance:
 
 - Plain lyrics auto-scroll;
 - Translation enabled/disabled;
@@ -316,8 +316,8 @@ Preview coverage should eventually exercise at least:
 - first/last-line boundaries
 - follow vs manual browse
 - collapsed/expanded playback-surface states and capability combinations
-- Details normal and Verbose modes once implemented
-- Advanced Settings with Verbose details and disabled Karaoke mode once implemented
+- Details normal and Verbose modes
+- Advanced Settings with Verbose details and disabled Karaoke mode
 - narrow and typical phone widths
 
 Implementation should validate that the persistent top bar, playback controls, and bottom navigation still leave adequate room for the lyrics viewport.

@@ -518,7 +518,7 @@ application/navigation owner
     -> AdvancedSettingsScreen
 ```
 
-Exact navigation/back-stack implementation remains deferred to the implementation slice.
+PR #49 keeps Advanced as local Settings-owned presentation state. Opening the row swaps the Settings body to `AdvancedSettingsScreen`; its Back affordance and system Back return to the main Settings body without introducing a fifth primary destination or an application navigation stack.
 
 ## Accessibility and responsive behavior
 
