@@ -1,5 +1,7 @@
 package io.github.whoxamxl.aalyrics.ui.phone.shell
 
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -265,13 +267,28 @@ private fun ExpandedSeekArea(
 
     val interactionSource = remember { MutableInteractionSource() }
     var cancelled by remember { mutableStateOf(false) }
+    var isDragging by remember { mutableStateOf(false) }
     val currentPosition by rememberUpdatedState(displayedPositionMs)
+    val blobScale by animateFloatAsState(
+        targetValue = if (isDragging) 0.45f else 1f,
+        animationSpec = tween(durationMillis = 180),
+        label = "seek-blob-scale",
+    )
 
     LaunchedEffect(interactionSource) {
         interactionSource.interactions.collect { interaction ->
             when (interaction) {
-                is DragInteraction.Start -> cancelled = false
+                is DragInteraction.Start -> {
+                    cancelled = false
+                    isDragging = true
+                }
+
+                is DragInteraction.Stop -> {
+                    isDragging = false
+                }
+
                 is DragInteraction.Cancel -> {
+                    isDragging = false
                     cancelled = true
                     onSeekCancel()
                 }
@@ -319,6 +336,7 @@ private fun ExpandedSeekArea(
                     activeColor = AALyricsColors.AccentCyan,
                     inactiveColor = AALyricsColors.AccentCyan.copy(alpha = 0.22f),
                     disabledColor = AALyricsColors.TextTertiary,
+                    blobScale = blobScale,
                 )
             },
             modifier = Modifier
