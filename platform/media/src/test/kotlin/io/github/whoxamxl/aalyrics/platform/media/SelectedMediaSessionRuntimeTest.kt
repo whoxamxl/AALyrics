@@ -100,6 +100,7 @@ class SelectedMediaSessionRuntimeTest {
         runtime.skipToPrevious()
         runtime.skipToNext()
         runtime.seekTo(12_345L)
+        runtime.skipToQueueItem(42L)
 
         first.playing = false
         runtime.updateSessions(listOf(first, second))
@@ -110,7 +111,50 @@ class SelectedMediaSessionRuntimeTest {
         assertEquals(1, first.previousCount)
         assertEquals(1, first.nextCount)
         assertEquals(listOf(12_345L), first.seekPositions)
+        assertEquals(listOf(42L), first.queueItemIds)
         assertEquals(1, second.playCount)
+    }
+
+
+    @Test
+    fun `control state follows selected session playback and queue changes`() {
+        val snapshots = mutableListOf<PlaybackSnapshot>()
+        val controlStates = mutableListOf<PlaybackControlState>()
+        val session = controller("session", "Track", playing = true).apply {
+            controls = PlaybackControlState(
+                sourcePackageName = packageName,
+                capabilities = PlaybackControlCapabilities(
+                    canPlay = true,
+                    canPause = true,
+                    canSkipNext = true,
+                    canSeek = true,
+                ),
+                queue = listOf(PlaybackQueueItem(1L, "First")),
+                hasSessionActivity = true,
+            )
+        }
+        val runtime = runtime(
+            scheduler = FakeScheduler(),
+            snapshots = snapshots,
+            controlStates = controlStates,
+        )
+
+        runtime.updateSessions(listOf(session))
+        session.controls = session.controls.copy(
+            queue = listOf(
+                PlaybackQueueItem(1L, "First"),
+                PlaybackQueueItem(2L, "Second", "Artist"),
+            ),
+        )
+        session.controlStateChanged()
+
+        assertEquals(2, controlStates.size)
+        assertEquals("com.example.session", controlStates.first().sourcePackageName)
+        assertEquals(true, controlStates.first().capabilities.canSeek)
+        assertEquals(listOf(1L, 2L), controlStates.last().queue.map { it.id })
+
+        runtime.disconnect()
+        assertEquals(PlaybackControlState(), controlStates.last())
     }
 
     @Test
@@ -176,9 +220,11 @@ class SelectedMediaSessionRuntimeTest {
         scheduler: FakeScheduler,
         snapshots: MutableList<PlaybackSnapshot>,
         refresh: () -> Unit = {},
+        controlStates: MutableList<PlaybackControlState> = mutableListOf(),
     ): SelectedMediaSessionRuntime<String> = SelectedMediaSessionRuntime(
         selfPackageName = SELF_PACKAGE,
         sink = PlaybackSnapshotSink { snapshots += it },
+        controlStateSink = PlaybackControlStateSink { controlStates += it },
         scheduler = scheduler,
         refreshSessions = refresh,
     )
@@ -211,9 +257,21 @@ class SelectedMediaSessionRuntimeTest {
         var previousCount = 0
         var nextCount = 0
         val seekPositions = mutableListOf<Long>()
+        val queueItemIds = mutableListOf<Long>()
+        var controls = PlaybackControlState(
+            sourcePackageName = packageName,
+            capabilities = PlaybackControlCapabilities(
+                canPlay = true,
+                canPause = true,
+                canSkipPrevious = true,
+                canSkipNext = true,
+                canSeek = true,
+            ),
+        )
 
         override val isPlaying: Boolean get() = playing
         override fun snapshot(): PlaybackSnapshot = snapshot
+        override fun controlState(): PlaybackControlState = controls
 
         override fun attach(callback: RuntimeMediaControllerCallback) {
             attachCount += 1
@@ -245,8 +303,13 @@ class SelectedMediaSessionRuntimeTest {
             seekPositions += positionMs
         }
 
+        override fun skipToQueueItem(queueItemId: Long) {
+            queueItemIds += queueItemId
+        }
+
         fun metadataChanged() = callbacks.toList().forEach { it.onMetadataChanged() }
         fun playbackChanged() = callbacks.toList().forEach { it.onPlaybackStateChanged() }
+        fun controlStateChanged() = callbacks.toList().forEach { it.onControlStateChanged() }
         fun destroy() = callbacks.toList().forEach { it.onSessionDestroyed() }
     }
 
