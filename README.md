@@ -72,7 +72,7 @@ Signed GitHub Releases are the durable distribution channel. Early functional sn
 - `v0.1.0-alpha.1`, `-beta.N`, and `-rc.N` are published as **Pre-releases**;
 - `v0.1.0`-style tags with no suffix are normal/stable GitHub Releases;
 - release tags must point to commits contained in `main`;
-- the initial signed distribution is planned as `v0.1.0-alpha.1`;
+- the initial signed distribution `v0.1.0-alpha.1` has been published as a GitHub Pre-release;
 - release signing material is stored only through GitHub Actions secrets, never in Git.
 
 An alpha release may be functionally incomplete. Its purpose can be to validate signing, installation, update compatibility, Android Auto discovery, and the durable distribution pipeline while clearly documenting current limitations.

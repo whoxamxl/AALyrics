@@ -2,14 +2,14 @@
 
 ## Status
 
-This document defines the approved Phone playback-surface direction that replaces the current fixed three-button `PlaybackControlsBar`.
+This document defines the approved and implemented Phone playback-surface contract that replaced the legacy fixed three-button `PlaybackControlsBar`.
 
-- Branch: `feature/phone-playback-surface`
-- Base: `main` at `575d53c`
+- Historical implementation branch: `feature/phone-playback-surface`
+- Historical base: `main` at `575d53c`
 - Classification: **PHONE PLAYBACK SURFACE / MEDIA CONTROL PRESENTATION**
-- State: **DOCUMENTED — implementation intentionally not started yet**
+- State: **IMPLEMENTED — merged into `main` via PR #46**
 
-The implementation may proceed on the same branch after this contract is reviewed.
+The production shell now uses `PlaybackSurface`, `PlaybackBar`, and `ExpandedPlayer`. This document remains the behavioral contract for that implementation; later changes should update the contract and production surface together.
 
 ## Product intent
 
@@ -53,7 +53,7 @@ PhoneAppShell
 
 ## Collapsed Playback Bar
 
-The collapsed bar replaces the current permanent Previous / Play-Pause / Next button row.
+The collapsed bar replaced the legacy permanent Previous / Play-Pause / Next button row.
 
 Conceptually:
 
@@ -540,9 +540,9 @@ This slice does not redesign:
 - full-screen now-playing presentation;
 - volume controls.
 
-## Implementation sequence
+## Historical implementation sequence
 
-After documentation approval, implementation on this branch should proceed in bounded layers:
+PR #46 implemented this contract in the following bounded layers:
 
 1. extend framework-neutral media capability/transport contracts only where required;
 2. add application/Phone presentation mapping for playback-surface state;

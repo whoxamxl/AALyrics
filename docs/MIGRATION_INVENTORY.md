@@ -182,7 +182,7 @@ Do not bulk-port the old application. Each provider or subsystem remains a separ
 - Lyrics demand gating: migrated and merged in PR #30.
 - Lyrics capability architecture foundation: merged in PR #32.
 - Translation background scaffold: merged in PR #41 as Phase 11.2a.
-- Translation execution/orchestration: active on `feature/translation-execution` as Phase 11.2b; persistent Translation Cache and Phone/Android Auto presentation remain deferred.
+- Translation execution/orchestration: merged in PR #43 as Phase 11.2b; persistent Translation Cache and Phone/Android Auto presentation remain deferred.
 
 
 ### Translation scaffold implementation re-check
