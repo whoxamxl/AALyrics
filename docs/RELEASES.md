@@ -166,6 +166,8 @@ When an update is available, the runtime should resolve the signed release asset
 
 The installed version shown in Settings should come from the app build metadata (`BuildConfig.VERSION_NAME`), not a duplicated UI constant.
 
+The Settings `Changelog` entry should load release-note content from GitHub Releases through application/runtime code and pass presentation-ready text to `:ui:phone`. The Compose layer does not own GitHub API access.
+
 ## Installation and updates
 
 Debug and release APKs use different signing identities. If a debug AALyrics build is installed, uninstall it before installing the first release-signed APK.
