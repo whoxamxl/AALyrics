@@ -1,96 +1,113 @@
-# Phone Details and Advanced Settings Implementation
+# Phone Shell Runtime Host
 
 ## Branch and baseline
 
-- Branch: `feature/phone-details-advanced`.
-- Base: current `main` at `dbeafbdb46ae40f38eb5d3f754772394c9610252`.
-- Classification: **PHONE DETAILS / ADVANCED SETTINGS IMPLEMENTATION**.
-- Authoritative references: `AGENTS.md`, `docs/PHONE_DETAILS.md`, `docs/PHONE_SETTINGS.md`, `docs/PHONE_UI_SPEC.md`, and `docs/UI_ARCHITECTURE.md`.
-- Product direction was approved in PR #47. This slice implements that approved contract without expanding Sync or Karaoke behavior.
+- Branch: `feature/phone-shell-runtime-host`.
+- Base: `main` at `105ef4a8511d2fc085cef215d5ecb1eb438a8d03` (PR #49 merged).
+- Classification: **PHONE RUNTIME HOST / DEVICE-TEST ENABLEMENT**.
+- Authoritative references: `AGENTS.md`, `docs/PHONE_RUNTIME_HOST.md`, `docs/PHONE_UI_SPEC.md`, `docs/UI_ARCHITECTURE.md`, plus the existing destination specifications.
+- This first checkpoint is **documentation-only**. Do not change production code until the user continues implementation work on this same branch.
 
 ## Goal
 
-Implement the Phone Details destination and the narrow Settings > Advanced extension:
+Replace the current READY-state foundation placeholder with the real production Phone Compose surface so a debug APK can be exercised on a physical device:
 
 ```text
-Settings
-└─ Advanced >
-   ├─ Debug
-   │  └─ Verbose details                  [ON/OFF]
-   └─ Experimental features
-      └─ Karaoke mode                     [OFF, disabled]
+MainActivity entry gate
+├─ Notification Access required -> existing setup View
+├─ Android Auto compatibility   -> existing setup View
+└─ READY
+    -> AALyricsTheme
+       -> PhoneAppShell
+          ├─ Lyrics
+          ├─ Sync placeholder
+          ├─ Details
+          └─ Settings
 ```
 
-`Verbose details` is an application-owned persisted presentation preference. It only controls whether the read-only Developer / Diagnostics section is shown in Details.
-
-`Karaoke mode` remains a disabled, non-interactive affordance with no persisted state and no runtime wiring.
+This is an application-composition slice. It must connect already-approved Phone presentation contracts without moving Android framework, provider, persistence, or capability ownership into `:ui:phone`.
 
 ## Implementation acceptance criteria
 
-### Planning / ownership
+### Entry / host ownership
 - [x] Start from current `main` on a topic branch.
-- [x] Record this implementation plan before production changes.
-- [x] Preserve existing Settings and playback behavior.
-- [x] Keep provider lookup/scoring, timing, Translation execution, MediaSession selection, and Sync untouched.
+- [x] Align runtime-host documentation before production changes.
+- [ ] Preserve Notification Access and Android Auto compatibility entry gating.
+- [ ] Change only the READY path from the foundation `TextView` to the production Compose host.
+- [ ] Keep `Lyrics` as the default/home destination.
+- [ ] Keep primary destination selection host-owned and saveable across normal Activity recreation where practical.
 
-### Advanced Settings
-- [x] Add an `Advanced` navigation row to Settings.
-- [x] Add a second-level Advanced Settings presentation.
-- [x] Add functional `Verbose details` switch.
-- [x] Persist Verbose Details outside `:ui:phone`.
-- [x] Add disabled `Karaoke mode` row with no callback/runtime behavior.
-- [x] Preserve back/navigation behavior without creating a fifth primary destination.
+### Phone shell
+- [ ] Host the production `PhoneAppShell` under `AALyricsTheme`.
+- [ ] Supply shell state from application-owned presentation/runtime state.
+- [ ] Keep Top Bar, Playback Surface, and Bottom Navigation shell-owned.
+- [ ] Wire playback actions through the application/platform boundary rather than importing media framework objects into `:ui:phone`.
+- [ ] Keep playback-app launching application-owned.
+- [ ] Keep Translation toggle ownership outside `:ui:phone`.
 
-### Details
-- [x] Replace the Details placeholder with a production read-only screen.
-- [x] Add Phone-local Details presentation state.
-- [x] Show Track fields from authoritative current playback/track state.
-- [x] Show Lyrics provider display name, sync type, language, and line count when available.
-- [x] Show Developer / Diagnostics only when Verbose Details is enabled.
-- [x] Limit diagnostics to already-available framework-neutral provider/source IDs and normalized track references.
-- [x] Avoid stale previous-track metadata during loading/no-session states.
-- [x] Respect the shell Playback Surface bottom inset.
+### Destinations
+- [ ] Render the production `LyricsScreen` from presentation-ready runtime state.
+- [ ] Preserve current Lyrics follow/browse ownership rules and do not redesign lyric timing.
+- [ ] Render a deliberate non-functional Sync placeholder without inventing calibration behavior.
+- [ ] Render the production `DetailsScreen` from `AALyricsApplication.phoneDetailsState`.
+- [ ] Render the production `SettingsScreen` from application-owned presentation state and callbacks.
+- [ ] Wire `Verbose details` to its existing application-owned persisted preference.
+- [ ] Keep Karaoke mode disabled/unwired.
+- [ ] Do not expose provider DTOs, `MediaController`, raw `PlaybackState`, Android intents, or persistence objects to Phone composables.
 
-### Integration / validation
-- [x] Wire Settings and Details through the existing application/Phone composition boundary.
-- [x] Add deterministic Previews for normal/partial/verbose/Advanced states.
-- [x] Add focused JVM/UI-state tests where durable.
+### Settings/runtime scope
+- [ ] Wire existing implemented capabilities where application/runtime support already exists.
+- [ ] Add only the minimal application-owned presentation mapping/state required to render the approved Settings contract on-device.
+- [ ] Do not fabricate update/changelog/model-management behavior merely to make controls appear active.
+- [ ] Controls whose backing runtime is not yet implemented must be presented honestly (disabled/unavailable or otherwise non-misleading) until separately implemented.
+- [ ] Re-entering Android Auto compatibility setup must reuse the existing entry/onboarding ownership rather than duplicate it inside `:ui:phone`.
+
+### Device-test readiness
+- [ ] Debug APK launches the real Phone shell after onboarding prerequisites are satisfied.
+- [ ] Bottom navigation can exercise Lyrics / Sync / Details / Settings on a physical device.
+- [ ] Playback Surface can be exercised against a selected live MediaSession when available.
+- [ ] Details updates from current playback/lyrics state.
+- [ ] Advanced > Verbose details can be toggled and reflected in Details.
+- [ ] Existing onboarding remains reachable/functional after host migration.
+
+### Validation
+- [ ] Add focused state/host tests where durable.
 - [ ] Run architecture checks, unit tests, and debug APK build.
-- [ ] Review the final diff and complete bounded Codex review.
+- [ ] Perform bounded Codex review.
 - [ ] Stop before merge until explicit user approval.
 
-## Commit plan
+## Expected implementation shape
 
-Keep commits small and single-purpose. Expected shape:
+Keep commits small and single-purpose. Expected sequence after this documentation checkpoint:
 
-1. `docs: plan Phone Details and Advanced implementation`
-2. application-owned Verbose Details preference
-3. Advanced Settings presentation/navigation
-4. Details presentation model/screen
-5. runtime mapping/wiring
-6. Preview/test coverage
-7. documentation/status cleanup if implementation changes require it
+1. host/application presentation-state contracts;
+2. READY-path Compose host;
+3. Lyrics runtime mapping/route wiring;
+4. Settings runtime mapping/callback wiring;
+5. Sync placeholder presentation;
+6. focused host/runtime tests;
+7. documentation/status cleanup.
 
-The exact split may be adjusted to keep each commit coherent.
-
-## Runtime host boundary
-
-This slice exposes production Details state and the Verbose Details preference through `AALyricsApplication`, and keeps the Compose screens callback/state driven. The repository's `MainActivity` READY path still does not host the production Phone shell; attaching the overall Phone shell/navigation runtime is a separate project slice and is not invented here merely to make Details reachable from the current foundation placeholder.
-
-Lyrics lookup state now records the canonical `PlaybackTrackIdentity` chosen by `PlaybackLyricsController`. Details compares that stored identity with the current `PlaybackSnapshot.trackIdentity`, so reference-backed and source-media-backed tracks survive descriptive metadata enrichment without re-exposing stale lyrics from a genuinely different playback identity.
+The exact split may change when the existing runtime seams make a smaller coherent commit preferable.
 
 ## Scope guard
 
-Do not implement:
+Do not implement in this slice:
 
+- Sync timing/calibration algorithms or controls;
 - functional Karaoke mode;
-- Karaoke projection or WORD highlighting;
-- provider preference changes;
-- candidate scoring/ranking UI;
-- extra provider/network diagnostics;
+- WORD-level Karaoke highlighting activation;
+- provider ordering/preferences or provider migration work;
+- new lyrics matching/scoring behavior;
+- new Translation algorithms;
+- persistent Translation Cache;
+- new GitHub update/download capability unless already present behind an application-owned runtime seam;
 - log viewer/export;
-- timing/calibration changes;
-- Sync destination behavior;
-- cache controls;
-- unrelated Settings taxonomy;
-- MediaSession selection-policy changes.
+- theme/appearance settings;
+- MediaSession selection-policy changes;
+- Android Auto browsing/template redesign;
+- unrelated UI redesign.
+
+## Stop point for this checkpoint
+
+The branch and documentation are aligned for the upcoming runtime-host implementation. **Stop after docs.** Continue production work on this same branch only after the user explicitly resumes implementation.
