@@ -53,14 +53,14 @@ private fun ExpandedPlayerQueuePreview() {
 }
 
 @Preview(
-    name = "Expanded · Paused pill seek",
+    name = "Expanded · Paused flat wave",
     group = "PlaybackSurface",
     widthDp = 412,
     heightDp = 240,
     showBackground = true,
 )
 @Composable
-private fun ExpandedPlayerPausedPillPreview() {
+private fun ExpandedPlayerPausedFlatWavePreview() {
     ExpandedPlayerPreview(PhonePreviewFixtures.pausedSurface)
 }
 
