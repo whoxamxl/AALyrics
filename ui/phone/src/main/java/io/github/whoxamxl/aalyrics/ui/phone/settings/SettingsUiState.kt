@@ -51,6 +51,21 @@ fun AppUpdateUiState.normalizedForSettingsEntry(): AppUpdateUiState =
         else -> AppUpdateUiState()
     }
 
+enum class ChangelogUiPhase {
+    IDLE,
+    LOADING,
+    READY,
+    FAILED,
+}
+
+@Immutable
+data class ChangelogUiState(
+    val phase: ChangelogUiPhase = ChangelogUiPhase.IDLE,
+    val releaseVersionName: String? = null,
+    val body: String? = null,
+    val failureReason: String? = null,
+)
+
 /** User acknowledgement shown for the legacy Android Auto compatibility setup. */
 enum class AndroidAutoCompatibilityUiStatus {
     NOT_REVIEWED,
@@ -68,5 +83,7 @@ data class SettingsScreenUiState(
     val androidAutoCompatibilityStatus: AndroidAutoCompatibilityUiStatus =
         AndroidAutoCompatibilityUiStatus.NOT_REVIEWED,
     val appVersionName: String,
+    val currentYear: Int,
     val appUpdate: AppUpdateUiState = AppUpdateUiState(),
+    val changelog: ChangelogUiState = ChangelogUiState(),
 )
