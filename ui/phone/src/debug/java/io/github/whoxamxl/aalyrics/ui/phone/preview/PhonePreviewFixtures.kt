@@ -200,6 +200,7 @@ internal object PhonePreviewFixtures {
         translationTarget = settingsLanguages.first { it.id == "en" },
         translationTargets = settingsLanguages,
         androidAutoCompatibilityStatus = AndroidAutoCompatibilityUiStatus.ENABLED,
+        appVersionName = "0.1.0-dev",
     )
     val settingsTranslationOff = settingsTypical.copy(translationEnabled = false)
     val settingsAndroidAutoSkipped = settingsTypical.copy(
