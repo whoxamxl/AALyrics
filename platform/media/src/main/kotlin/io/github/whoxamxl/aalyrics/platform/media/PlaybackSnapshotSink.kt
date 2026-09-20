@@ -53,6 +53,11 @@ interface PlaybackTransport {
     fun skipToQueueItem(queueItemId: Long)
 }
 
+/** Framework-neutral request to launch the currently selected session's explicit activity. */
+fun interface PlaybackSessionLauncher {
+    fun openSessionActivity(): Boolean
+}
+
 /** Process-local attachment point used by Android-created media services. */
 object MediaSessionRuntimeHost {
     @Volatile
@@ -63,6 +68,9 @@ object MediaSessionRuntimeHost {
 
     @Volatile
     private var transport: PlaybackTransport? = null
+
+    @Volatile
+    private var sessionLauncher: PlaybackSessionLauncher? = null
 
     @Synchronized
     fun attach(sink: PlaybackSnapshotSink) {
@@ -92,6 +100,16 @@ object MediaSessionRuntimeHost {
     @Synchronized
     internal fun detachTransport(transport: PlaybackTransport) {
         if (this.transport === transport) this.transport = null
+    }
+
+    @Synchronized
+    internal fun attachSessionLauncher(launcher: PlaybackSessionLauncher) {
+        sessionLauncher = launcher
+    }
+
+    @Synchronized
+    internal fun detachSessionLauncher(launcher: PlaybackSessionLauncher) {
+        if (sessionLauncher === launcher) sessionLauncher = null
     }
 
     internal fun forward(snapshot: PlaybackSnapshot) {
@@ -125,4 +143,7 @@ object MediaSessionRuntimeHost {
     fun skipToQueueItem(queueItemId: Long) {
         transport?.skipToQueueItem(queueItemId)
     }
+
+    fun openSessionActivity(): Boolean =
+        sessionLauncher?.openSessionActivity() == true
 }
