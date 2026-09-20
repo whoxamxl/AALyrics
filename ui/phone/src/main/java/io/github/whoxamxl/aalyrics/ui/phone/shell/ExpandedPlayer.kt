@@ -445,6 +445,7 @@ private fun RelativeSeekTransportButton(
                 role = Role.Button,
                 onClickLabel = contentDescription,
                 onLongClickLabel = longClickDescription,
+                hapticFeedbackEnabled = false,
                 onLongClick = if (relativeSeekEnabled && durationMs != null) {
                     {
                         scrubStartPositionMs = currentPositionMs.coerceIn(0L, durationMs)
