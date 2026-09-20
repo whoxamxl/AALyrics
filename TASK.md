@@ -6,7 +6,7 @@
 - Base: `main` at `575d53c00aec66e788b45378b44b91d7d9e8a60d`.
 - Classification: **PHONE PLAYBACK SURFACE / MEDIA CONTROL PRESENTATION**.
 - Authoritative references: `AGENTS.md`, `docs/PHONE_UI_SPEC.md`, `docs/PHONE_PLAYBACK_SURFACE.md`, and `docs/MEDIA_SESSION_RUNTIME.md`.
-- Documentation direction is approved. Implementation is intentionally deferred until the documentation checkpoint is reported back to the user.
+- Documentation direction is approved. Core implementation is complete enough for the user visual/interaction checkpoint; final review and merge remain deferred.
 
 ## Goal
 
@@ -138,21 +138,22 @@ The current framework-neutral `PlaybackTransport` already exposes play/pause/pre
 
 Implementation begins only after the documentation checkpoint above.
 
-- [ ] Add capability-aware playback presentation state.
-- [ ] Preserve Android framework ownership in `:platform:media`.
-- [ ] Replace current fixed `PlaybackControlsBar` presentation with collapsed Playback Bar.
-- [ ] Add Expanded Player overlay and deterministic collapse/back handling.
-- [ ] Add direct interactive seek preview/one-shot commit.
-- [ ] Add Previous/Next long-press relative-seek state machine.
-- [ ] Prevent long press from also dispatching tap skip.
-- [ ] Add haptic confirmation on long-press recognition.
-- [ ] Add Queue/Open-app trailing capability slot.
-- [ ] Add Translation quick-control popup using existing application state.
-- [ ] Reuse/tune Track Card marquee semantics for compact player identity.
-- [ ] Keep existing collapsed bottom progress indicator semantics.
-- [ ] Preserve at least 48dp touch targets and accessibility semantics.
-- [ ] Add deterministic Preview and test coverage described by the spec.
-- [ ] Run CI and review final diff.
+- [x] Add capability-aware playback presentation state.
+- [x] Preserve Android framework ownership in `:platform:media`.
+- [x] Replace current fixed `PlaybackControlsBar` presentation with collapsed Playback Bar.
+- [x] Add Expanded Player overlay and deterministic collapse/back handling.
+- [x] Add direct interactive seek preview/one-shot commit.
+- [x] Add Previous/Next long-press relative-seek state machine.
+- [x] Prevent long press from also dispatching tap skip.
+- [x] Add haptic confirmation on long-press recognition.
+- [x] Add Queue/Open-app trailing capability slot.
+- [x] Add Translation quick-control popup using existing application state.
+- [x] Reuse/tune Track Card marquee semantics for compact player identity.
+- [x] Keep existing collapsed bottom progress indicator semantics.
+- [x] Preserve at least 48dp touch targets and accessibility semantics.
+- [x] Add deterministic Preview and test coverage described by the spec.
+- [ ] User confirms the visual/interaction direction in Android Studio Preview / Interactive Preview.
+- [ ] Run final CI and bounded Codex review after any user-requested visual tuning.
 - [ ] Stop before merge until explicit user approval.
 
 ## Scope guard
