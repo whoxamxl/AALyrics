@@ -27,8 +27,12 @@ This slice should establish a durable Settings composition and reusable Phone-lo
 - `Translation` enabled/disabled switch.
 - `Target language` navigation row showing the selected display name.
 - A compact target-language picker driven entirely by presentation-provided options.
+- English remains the default target.
+- Each language shows model readiness with explicit manual download/retry action, loading state, and ready state.
+- English is represented as built-in/ready and never offers a remote download action.
 - The target-language row remains available while Translation is disabled so the user can preconfigure the target.
-- `:ui:phone` must not depend directly on `:translation:api` or concrete SharedPreferences.
+- Model download action is independent from target selection.
+- `:ui:phone` must not depend directly on `:translation:api`, ML Kit, or concrete SharedPreferences.
 
 ### Android Auto
 
@@ -94,6 +98,7 @@ Do not promote them to `:ui:designsystem` until another screen demonstrates genu
 - [x] Replace the Settings placeholder with an immutable Phone-local presentation contract.
 - [x] Implement the production `SettingsScreen`.
 - [x] Implement the first-slice Lyrics, Translation, and Android Auto sections described above.
+- [x] Add presentation states and callbacks for manual Translation model download/retry, including built-in English, loading, ready, and failure states.
 - [x] Keep `:ui:phone` free of concrete persistence/application/Translation-engine dependencies.
 - [x] Reserve the shell playback-overlay inset in Settings scroll content.
 - [x] Add deterministic Previews for typical, narrow, enlarged-font, Translation-off, and Android Auto status variants.
