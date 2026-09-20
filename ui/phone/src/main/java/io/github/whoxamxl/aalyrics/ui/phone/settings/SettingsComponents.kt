@@ -699,11 +699,12 @@ internal fun SettingsBrandFooter(
             style = AALyricsTypography.TrackArtist,
             color = AALyricsColors.TextSecondary,
             modifier = Modifier
-                .clickable(onClick = onOpenGitHub)
-                .padding(
-                    horizontal = AALyricsSpacing.Space8,
-                    vertical = AALyricsSpacing.Space4,
-                ),
+                .heightIn(min = AALyricsSpacing.Space48)
+                .clickable(
+                    role = Role.Button,
+                    onClick = onOpenGitHub,
+                )
+                .padding(horizontal = AALyricsSpacing.Space8),
         )
     }
 }
