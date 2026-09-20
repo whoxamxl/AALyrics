@@ -21,7 +21,6 @@ import io.github.whoxamxl.aalyrics.ui.phone.shell.PlaybackBar
 import io.github.whoxamxl.aalyrics.ui.phone.shell.PlaybackQueueSheetContent
 import io.github.whoxamxl.aalyrics.ui.phone.shell.QuickControlTranslationRow
 import io.github.whoxamxl.aalyrics.ui.phone.shell.PlaybackSurface
-import io.github.whoxamxl.aalyrics.ui.phone.shell.OneUiWaveSeekTrack
 import io.github.whoxamxl.aalyrics.ui.phone.state.PlaybackSurfaceUiState
 
 @Preview(name = "Collapsed · Playing", group = "PlaybackSurface", widthDp = 412, showBackground = true)
@@ -43,36 +42,6 @@ private fun PlaybackBarLongMetadataPreview() {
 }
 
 @Preview(
-    name = "Seek wave · 25 50 75",
-    group = "PlaybackSurface",
-    widthDp = 412,
-    heightDp = 132,
-    showBackground = true,
-)
-@Composable
-private fun OneUiSeekWaveEnvelopePreview() {
-    AALyricsTheme {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(AALyricsColors.BackgroundBase)
-                .padding(horizontal = 20.dp, vertical = 12.dp),
-        ) {
-            listOf(0.25f, 0.50f, 0.75f).forEach { progress ->
-                OneUiWaveSeekTrack(
-                    progressFraction = progress,
-                    isPlaying = false,
-                    enabled = true,
-                    activeColor = AALyricsColors.AccentCyan,
-                    inactiveColor = AALyricsColors.AccentCyan.copy(alpha = 0.22f),
-                    disabledColor = AALyricsColors.TextTertiary,
-                )
-            }
-        }
-    }
-}
-
-@Preview(
     name = "Expanded · Queue",
     group = "PlaybackSurface",
     widthDp = 412,
@@ -85,14 +54,14 @@ private fun ExpandedPlayerQueuePreview() {
 }
 
 @Preview(
-    name = "Expanded · Paused frozen wave",
+    name = "Expanded · Paused",
     group = "PlaybackSurface",
     widthDp = 412,
     heightDp = 240,
     showBackground = true,
 )
 @Composable
-private fun ExpandedPlayerPausedFrozenWavePreview() {
+private fun ExpandedPlayerPausedPreview() {
     ExpandedPlayerPreview(PhonePreviewFixtures.pausedSurface)
 }
 
