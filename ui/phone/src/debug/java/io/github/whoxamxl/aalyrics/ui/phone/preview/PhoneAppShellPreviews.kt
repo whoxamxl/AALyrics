@@ -176,6 +176,7 @@ internal fun PreviewSettingsDestination(
         onTranslationModelDownloadRequested = {},
         onAndroidAutoCompatibilitySetup = {},
         onCheckForUpdates = {},
+        onDownloadUpdate = {},
         onOpenGitHub = {},
         modifier = Modifier.fillMaxSize(),
         bottomOverlayInset = bottomOverlayInset,
