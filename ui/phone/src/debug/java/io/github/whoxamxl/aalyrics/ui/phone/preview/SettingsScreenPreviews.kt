@@ -1,0 +1,108 @@
+package io.github.whoxamxl.aalyrics.ui.phone.preview
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
+import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsColors
+import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsTheme
+import io.github.whoxamxl.aalyrics.ui.phone.settings.SettingsScreenContent
+import io.github.whoxamxl.aalyrics.ui.phone.settings.SettingsScreenUiState
+
+@Preview(name = "Typical", group = "SettingsScreen", widthDp = 412, heightDp = 760)
+@Composable
+private fun SettingsScreenTypicalPreview() {
+    SettingsScreenPreview(PhonePreviewFixtures.settingsTypical)
+}
+
+@Preview(name = "Translation off", group = "SettingsScreen", widthDp = 412, heightDp = 760)
+@Composable
+private fun SettingsScreenTranslationOffPreview() {
+    SettingsScreenPreview(PhonePreviewFixtures.settingsTranslationOff)
+}
+
+@Preview(name = "Android Auto · skipped", group = "SettingsScreen", widthDp = 412, heightDp = 760)
+@Composable
+private fun SettingsScreenSkippedPreview() {
+    SettingsScreenPreview(PhonePreviewFixtures.settingsAndroidAutoSkipped)
+}
+
+@Preview(name = "Android Auto · not reviewed", group = "SettingsScreen", widthDp = 412, heightDp = 760)
+@Composable
+private fun SettingsScreenNotReviewedPreview() {
+    SettingsScreenPreview(PhonePreviewFixtures.settingsAndroidAutoNotReviewed)
+}
+
+@Preview(name = "Target language picker", group = "SettingsScreen", widthDp = 412, heightDp = 760)
+@Composable
+private fun SettingsTargetLanguagePickerPreview() {
+    SettingsScreenPreview(
+        initialState = PhonePreviewFixtures.settingsTypical,
+        initialPickerVisible = true,
+    )
+}
+
+@Preview(name = "Narrow · 320dp", group = "SettingsScreen", widthDp = 320, heightDp = 700)
+@Composable
+private fun SettingsScreenNarrowPreview() {
+    SettingsScreenPreview(PhonePreviewFixtures.settingsTypical)
+}
+
+@Preview(
+    name = "Enlarged font",
+    group = "SettingsScreen",
+    widthDp = 412,
+    heightDp = 820,
+    fontScale = 1.4f,
+)
+@Composable
+private fun SettingsScreenLargeFontPreview() {
+    SettingsScreenPreview(PhonePreviewFixtures.settingsTypical)
+}
+
+@Composable
+internal fun SettingsScreenPreview(
+    initialState: SettingsScreenUiState,
+    initialPickerVisible: Boolean = false,
+    modifier: Modifier = Modifier,
+) {
+    AALyricsTheme {
+        var state by remember(initialState) { mutableStateOf(initialState) }
+        var pickerVisible by remember(initialPickerVisible) {
+            mutableStateOf(initialPickerVisible)
+        }
+
+        Box(
+            modifier = modifier
+                .fillMaxSize()
+                .background(AALyricsColors.BackgroundBase),
+        ) {
+            SettingsScreenContent(
+                state = state,
+                targetLanguagePickerVisible = pickerVisible,
+                onTargetLanguagePickerVisibilityChanged = { pickerVisible = it },
+                onPlainLyricsAutoScrollChanged = {
+                    state = state.copy(plainLyricsAutoScrollEnabled = it)
+                },
+                onTranslationEnabledChanged = {
+                    state = state.copy(translationEnabled = it)
+                },
+                onTranslationTargetSelected = { id ->
+                    state.translationTargets
+                        .firstOrNull { it.id == id }
+                        ?.let { target ->
+                            state = state.copy(translationTarget = target)
+                        }
+                },
+                onAndroidAutoCompatibilitySetup = {},
+                modifier = Modifier.fillMaxSize(),
+            )
+        }
+    }
+}
