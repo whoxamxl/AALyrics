@@ -1,7 +1,8 @@
 package io.github.whoxamxl.aalyrics.ui.phone.shell
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.LocalIndication
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.interaction.DragInteraction
@@ -13,25 +14,28 @@ import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -44,9 +48,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
@@ -54,11 +61,13 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.github.whoxamxl.aalyrics.ui.designsystem.icon.AALyricsIcons
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsColors
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsRadius
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsSpacing
+import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsStroke
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsTypography
 import io.github.whoxamxl.aalyrics.ui.phone.R
 import io.github.whoxamxl.aalyrics.ui.phone.component.TrackIdentityMarquee
@@ -89,32 +98,30 @@ internal fun ExpandedPlayer(
     Surface(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = AALyricsSpacing.Space4),
-        shape = RoundedCornerShape(AALyricsRadius.Radius16),
-        color = AALyricsColors.BackgroundSurfaceStrong,
-        border = BorderStroke(
-            width = io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsStroke.Thin,
-            color = AALyricsColors.BorderSoft,
-        ),
-        shadowElevation = AALyricsSpacing.Space8,
+            .padding(horizontal = AALyricsSpacing.Space8),
+        shape = RoundedCornerShape(AALyricsRadius.Radius24),
+        color = AALyricsColors.BackgroundSurfaceStrong.copy(alpha = 0.98f),
+        shadowElevation = AALyricsSpacing.Space12,
     ) {
         Column(
             modifier = Modifier.padding(
-                start = AALyricsSpacing.Space12,
+                start = AALyricsSpacing.Space16,
                 top = AALyricsSpacing.Space8,
-                end = AALyricsSpacing.Space12,
-                bottom = AALyricsSpacing.Space8,
+                end = AALyricsSpacing.Space16,
+                bottom = AALyricsSpacing.Space12,
             ),
         ) {
+            PlaybackDragHandle()
+
             ExpandedPlayerHeader(
                 state = state,
                 onCollapse = onCollapse,
                 artwork = artwork,
             )
 
-            Spacer(Modifier.size(AALyricsSpacing.Space8))
+            Spacer(Modifier.height(AALyricsSpacing.Space8))
 
-            ExpandedSeekRow(
+            ExpandedSeekArea(
                 enabled = state.seekEnabled,
                 displayedPositionMs = displayedPositionMs,
                 durationMs = state.durationMs,
@@ -123,95 +130,52 @@ internal fun ExpandedPlayer(
                 onSeekCancel = onSeekCancel,
             )
 
-            Spacer(Modifier.size(AALyricsSpacing.Space4))
+            Spacer(Modifier.height(AALyricsSpacing.Space4))
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                QuickControlsButton(
-                    translationEnabled = state.translationEnabled,
-                    onTranslationEnabledChanged = onTranslationEnabledChanged,
-                )
-
-                RelativeSeekTransportButton(
-                    imageVector = AALyricsIcons.Previous,
-                    contentDescription = stringResource(R.string.playback_previous),
-                    longClickDescription = stringResource(R.string.playback_seek_backward),
-                    skipEnabled = state.canSkipPrevious,
-                    relativeSeekEnabled = state.seekEnabled,
-                    currentPositionMs = displayedPositionMs,
-                    durationMs = state.durationMs,
-                    direction = RelativeSeekDirection.BACKWARD,
-                    onSkip = onPrevious,
-                    onSeekPreview = onSeekPreview,
-                    onSeekCommit = onSeekCommit,
-                    onSeekCancel = onSeekCancel,
-                )
-
-                ExpandedPlayPauseButton(
-                    isPlaying = state.isPlaying,
-                    enabled = state.playPauseEnabled,
-                    onClick = onPlayPause,
-                )
-
-                RelativeSeekTransportButton(
-                    imageVector = AALyricsIcons.Next,
-                    contentDescription = stringResource(R.string.playback_next),
-                    longClickDescription = stringResource(R.string.playback_seek_forward),
-                    skipEnabled = state.canSkipNext,
-                    relativeSeekEnabled = state.seekEnabled,
-                    currentPositionMs = displayedPositionMs,
-                    durationMs = state.durationMs,
-                    direction = RelativeSeekDirection.FORWARD,
-                    onSkip = onNext,
-                    onSeekPreview = onSeekPreview,
-                    onSeekCommit = onSeekCommit,
-                    onSeekCancel = onSeekCancel,
-                )
-
-                when {
-                    state.queueAvailable -> {
-                        IconButton(
-                            onClick = { queueVisible = true },
-                            modifier = Modifier.size(AALyricsSpacing.Space48),
-                        ) {
-                            Icon(
-                                imageVector = AALyricsIcons.Queue,
-                                contentDescription = stringResource(R.string.playback_queue),
-                                tint = AALyricsColors.TextPrimary,
-                            )
-                        }
-                    }
-
-                    state.canOpenPlaybackApp -> {
-                        IconButton(
-                            onClick = onOpenPlaybackApp,
-                            modifier = Modifier.size(AALyricsSpacing.Space48),
-                        ) {
-                            Icon(
-                                imageVector = AALyricsIcons.OpenPlaybackApp,
-                                contentDescription = stringResource(R.string.playback_open_app),
-                                tint = AALyricsColors.TextPrimary,
-                            )
-                        }
-                    }
-
-                    else -> Spacer(Modifier.size(AALyricsSpacing.Space48))
-                }
-            }
+            ExpandedTransportRow(
+                state = state,
+                displayedPositionMs = displayedPositionMs,
+                onPrevious = onPrevious,
+                onPlayPause = onPlayPause,
+                onNext = onNext,
+                onSeekPreview = onSeekPreview,
+                onSeekCommit = onSeekCommit,
+                onSeekCancel = onSeekCancel,
+                onQueue = { queueVisible = true },
+                onOpenPlaybackApp = onOpenPlaybackApp,
+                onTranslationEnabledChanged = onTranslationEnabledChanged,
+            )
         }
     }
 
     if (queueVisible) {
-        PlaybackQueueDialog(
+        PlaybackQueueSheet(
             queue = state.queue,
+            canOpenPlaybackApp = state.canOpenPlaybackApp,
+            onOpenPlaybackApp = onOpenPlaybackApp,
             onQueueItemSelected = {
                 queueVisible = false
                 onQueueItemSelected(it)
             },
             onDismissRequest = { queueVisible = false },
+        )
+    }
+}
+
+@Composable
+private fun PlaybackDragHandle() {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(bottom = AALyricsSpacing.Space4),
+        contentAlignment = Alignment.Center,
+    ) {
+        Box(
+            modifier = Modifier
+                .width(AALyricsSpacing.Space32)
+                .height(3.dp)
+                .clip(RoundedCornerShape(AALyricsRadius.Full))
+                .background(AALyricsColors.TextTertiary.copy(alpha = 0.48f)),
         )
     }
 }
@@ -258,17 +222,21 @@ private fun ExpandedPlayerHeader(
             artwork = artwork,
             modifier = Modifier.size(AALyricsSpacing.Space48),
         )
+
         Spacer(Modifier.width(AALyricsSpacing.Space12))
+
         TrackIdentityMarquee(
             title = state.title,
             artist = state.artist,
+            titleStyle = AALyricsTypography.AppTitle,
+            artistStyle = AALyricsTypography.TrackArtist,
             modifier = Modifier.weight(1f),
         )
     }
 }
 
 @Composable
-private fun ExpandedSeekRow(
+private fun ExpandedSeekArea(
     enabled: Boolean,
     displayedPositionMs: Long,
     durationMs: Long?,
@@ -285,6 +253,7 @@ private fun ExpandedSeekRow(
             formatPlaybackTime(it),
         )
     } ?: formatPlaybackTime(displayedPositionMs)
+
     val interactionSource = remember { MutableInteractionSource() }
     var cancelled by remember { mutableStateOf(false) }
     val currentPosition by rememberUpdatedState(displayedPositionMs)
@@ -301,17 +270,7 @@ private fun ExpandedSeekRow(
         }
     }
 
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(
-            text = formatPlaybackTime(displayedPositionMs),
-            style = AALyricsTypography.Label,
-            color = AALyricsColors.TextSecondary,
-            modifier = Modifier.width(52.dp),
-        )
-
+    Column(Modifier.fillMaxWidth()) {
         Slider(
             value = displayedPositionMs.coerceIn(0L, duration).toFloat(),
             onValueChange = { value ->
@@ -324,20 +283,141 @@ private fun ExpandedSeekRow(
             enabled = enabled,
             valueRange = 0f..duration.toFloat(),
             interactionSource = interactionSource,
+            colors = SliderDefaults.colors(
+                thumbColor = AALyricsColors.AccentCyan,
+                activeTrackColor = AALyricsColors.AccentCyan,
+                inactiveTrackColor = AALyricsColors.BorderSoft,
+                disabledThumbColor = AALyricsColors.TextTertiary,
+                disabledActiveTrackColor = AALyricsColors.TextTertiary,
+                disabledInactiveTrackColor = AALyricsColors.BorderSoft.copy(alpha = 0.56f),
+            ),
             modifier = Modifier
-                .weight(1f)
+                .fillMaxWidth()
                 .semantics {
                     contentDescription = positionDescription
                     stateDescription = positionStateDescription
-                }
-                .padding(horizontal = AALyricsSpacing.Space4),
+                },
         )
 
-        Text(
-            text = durationMs?.let(::formatPlaybackTime) ?: "--:--",
-            style = AALyricsTypography.Label,
-            color = AALyricsColors.TextSecondary,
-            modifier = Modifier.width(52.dp),
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = AALyricsSpacing.Space4),
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Text(
+                text = formatPlaybackTime(displayedPositionMs),
+                style = AALyricsTypography.Label,
+                color = AALyricsColors.TextTertiary,
+            )
+            Text(
+                text = durationMs?.let(::formatPlaybackTime) ?: "--:--",
+                style = AALyricsTypography.Label,
+                color = AALyricsColors.TextTertiary,
+            )
+        }
+    }
+}
+
+@Composable
+private fun ExpandedTransportRow(
+    state: PlaybackSurfaceUiState,
+    displayedPositionMs: Long,
+    onPrevious: () -> Unit,
+    onPlayPause: () -> Unit,
+    onNext: () -> Unit,
+    onSeekPreview: (Long) -> Unit,
+    onSeekCommit: (Long) -> Unit,
+    onSeekCancel: () -> Unit,
+    onQueue: () -> Unit,
+    onOpenPlaybackApp: () -> Unit,
+    onTranslationEnabledChanged: (Boolean) -> Unit,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        QuickControlsButton(
+            translationEnabled = state.translationEnabled,
+            onTranslationEnabledChanged = onTranslationEnabledChanged,
+        )
+
+        RelativeSeekTransportButton(
+            imageVector = AALyricsIcons.Previous,
+            contentDescription = stringResource(R.string.playback_previous),
+            longClickDescription = stringResource(R.string.playback_seek_backward),
+            skipEnabled = state.canSkipPrevious,
+            relativeSeekEnabled = state.seekEnabled,
+            currentPositionMs = displayedPositionMs,
+            durationMs = state.durationMs,
+            direction = RelativeSeekDirection.BACKWARD,
+            onSkip = onPrevious,
+            onSeekPreview = onSeekPreview,
+            onSeekCommit = onSeekCommit,
+            onSeekCancel = onSeekCancel,
+        )
+
+        ExpandedPlayPauseButton(
+            isPlaying = state.isPlaying,
+            enabled = state.playPauseEnabled,
+            onClick = onPlayPause,
+        )
+
+        RelativeSeekTransportButton(
+            imageVector = AALyricsIcons.Next,
+            contentDescription = stringResource(R.string.playback_next),
+            longClickDescription = stringResource(R.string.playback_seek_forward),
+            skipEnabled = state.canSkipNext,
+            relativeSeekEnabled = state.seekEnabled,
+            currentPositionMs = displayedPositionMs,
+            durationMs = state.durationMs,
+            direction = RelativeSeekDirection.FORWARD,
+            onSkip = onNext,
+            onSeekPreview = onSeekPreview,
+            onSeekCommit = onSeekCommit,
+            onSeekCancel = onSeekCancel,
+        )
+
+        when {
+            state.queueAvailable -> PlayerIconAction(
+                imageVector = AALyricsIcons.Queue,
+                contentDescription = stringResource(R.string.playback_queue),
+                onClick = onQueue,
+            )
+
+            state.canOpenPlaybackApp -> PlayerIconAction(
+                imageVector = AALyricsIcons.OpenPlaybackApp,
+                contentDescription = stringResource(R.string.playback_open_app),
+                onClick = onOpenPlaybackApp,
+            )
+
+            else -> Spacer(Modifier.size(AALyricsSpacing.Space48))
+        }
+    }
+}
+
+@Composable
+private fun PlayerIconAction(
+    imageVector: ImageVector,
+    contentDescription: String,
+    onClick: () -> Unit,
+    enabled: Boolean = true,
+) {
+    IconButton(
+        onClick = onClick,
+        enabled = enabled,
+        modifier = Modifier.size(AALyricsSpacing.Space48),
+    ) {
+        Icon(
+            imageVector = imageVector,
+            contentDescription = contentDescription,
+            tint = if (enabled) {
+                AALyricsColors.TextSecondary
+            } else {
+                AALyricsColors.TextTertiary
+            },
+            modifier = Modifier.size(AALyricsSpacing.Space24),
         )
     }
 }
@@ -350,16 +430,11 @@ private fun QuickControlsButton(
     var expanded by remember { mutableStateOf(false) }
 
     Box {
-        IconButton(
+        PlayerIconAction(
+            imageVector = AALyricsIcons.QuickControls,
+            contentDescription = stringResource(R.string.playback_quick_controls),
             onClick = { expanded = true },
-            modifier = Modifier.size(AALyricsSpacing.Space48),
-        ) {
-            Icon(
-                imageVector = AALyricsIcons.QuickControls,
-                contentDescription = stringResource(R.string.playback_quick_controls),
-                tint = AALyricsColors.TextPrimary,
-            )
-        }
+        )
 
         DropdownMenu(
             expanded = expanded,
@@ -452,14 +527,13 @@ private fun RelativeSeekTransportButton(
         }
     }
 
-    val enabled = skipEnabled
     Box(
         modifier = Modifier
             .size(AALyricsSpacing.Space48)
             .combinedClickable(
                 interactionSource = interactionSource,
                 indication = LocalIndication.current,
-                enabled = enabled,
+                enabled = skipEnabled,
                 role = Role.Button,
                 onClickLabel = contentDescription,
                 onLongClickLabel = longClickDescription,
@@ -482,7 +556,11 @@ private fun RelativeSeekTransportButton(
         Icon(
             imageVector = imageVector,
             contentDescription = contentDescription,
-            tint = if (enabled) AALyricsColors.TextPrimary else AALyricsColors.TextTertiary,
+            tint = if (skipEnabled) {
+                AALyricsColors.TextPrimary
+            } else {
+                AALyricsColors.TextTertiary
+            },
             modifier = Modifier.size(28.dp),
         )
     }
@@ -497,12 +575,16 @@ private fun ExpandedPlayPauseButton(
     IconButton(
         onClick = onClick,
         enabled = enabled,
-        modifier = Modifier.size(AALyricsSpacing.Space48),
+        modifier = Modifier.size(52.dp),
     ) {
         Surface(
-            modifier = Modifier.size(AALyricsSpacing.Space40),
+            modifier = Modifier.size(44.dp),
             shape = RoundedCornerShape(AALyricsRadius.Full),
-            color = if (enabled) AALyricsColors.AccentCyan else AALyricsColors.OverlaySoft,
+            color = if (enabled) {
+                AALyricsColors.AccentCyan
+            } else {
+                AALyricsColors.OverlaySoft
+            },
         ) {
             Box(contentAlignment = Alignment.Center) {
                 Icon(
@@ -510,7 +592,11 @@ private fun ExpandedPlayPauseButton(
                     contentDescription = stringResource(
                         if (isPlaying) R.string.playback_pause else R.string.playback_play,
                     ),
-                    tint = if (enabled) AALyricsColors.BackgroundBase else AALyricsColors.TextTertiary,
+                    tint = if (enabled) {
+                        AALyricsColors.BackgroundBase
+                    } else {
+                        AALyricsColors.TextTertiary
+                    },
                     modifier = Modifier.size(AALyricsSpacing.Space24),
                 )
             }
@@ -518,71 +604,160 @@ private fun ExpandedPlayPauseButton(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun PlaybackQueueDialog(
+private fun PlaybackQueueSheet(
     queue: List<PlaybackQueueItemUiState>,
+    canOpenPlaybackApp: Boolean,
+    onOpenPlaybackApp: () -> Unit,
     onQueueItemSelected: (Long) -> Unit,
     onDismissRequest: () -> Unit,
 ) {
-    AlertDialog(
+    ModalBottomSheet(
         onDismissRequest = onDismissRequest,
-        title = {
+        containerColor = AALyricsColors.BackgroundSurfaceStrong,
+        contentColor = AALyricsColors.TextPrimary,
+        scrimColor = Color.Black.copy(alpha = 0.48f),
+        shape = RoundedCornerShape(
+            topStart = AALyricsRadius.Radius24,
+            topEnd = AALyricsRadius.Radius24,
+        ),
+    ) {
+        PlaybackQueueSheetContent(
+            queue = queue,
+            canOpenPlaybackApp = canOpenPlaybackApp,
+            onOpenPlaybackApp = onOpenPlaybackApp,
+            onQueueItemSelected = onQueueItemSelected,
+        )
+    }
+}
+
+@Composable
+internal fun PlaybackQueueSheetContent(
+    queue: List<PlaybackQueueItemUiState>,
+    canOpenPlaybackApp: Boolean,
+    onOpenPlaybackApp: () -> Unit,
+    onQueueItemSelected: (Long) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val maxListHeight = LocalConfiguration.current.screenHeightDp.dp * 0.62f
+
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(
+                start = AALyricsSpacing.Space16,
+                end = AALyricsSpacing.Space16,
+                bottom = AALyricsSpacing.Space24,
+            ),
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(min = AALyricsSpacing.Space48),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
             Text(
                 text = stringResource(R.string.playback_queue),
                 style = AALyricsTypography.TrackTitle,
                 color = AALyricsColors.TextPrimary,
+                modifier = Modifier.weight(1f),
             )
-        },
-        text = {
-            Column(
-                modifier = Modifier
-                    .heightIn(max = 420.dp)
-                    .verticalScroll(rememberScrollState()),
-            ) {
-                queue.forEach { item ->
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .heightIn(min = AALyricsSpacing.Space48)
-                            .combinedClickable(
-                                role = Role.Button,
-                                onClick = { onQueueItemSelected(item.id) },
-                            )
-                            .padding(
-                                horizontal = AALyricsSpacing.Space8,
-                                vertical = AALyricsSpacing.Space4,
-                            ),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Column(Modifier.weight(1f)) {
-                            Text(
-                                text = item.title,
-                                style = AALyricsTypography.AppTitle,
-                                color = AALyricsColors.TextPrimary,
-                                maxLines = 1,
-                            )
-                            item.subtitle?.let {
-                                Text(
-                                    text = it,
-                                    style = AALyricsTypography.TrackArtist,
-                                    color = AALyricsColors.TextSecondary,
-                                    maxLines = 1,
-                                )
-                            }
-                        }
-                    }
+
+            if (canOpenPlaybackApp) {
+                PlayerIconAction(
+                    imageVector = AALyricsIcons.OpenPlaybackApp,
+                    contentDescription = stringResource(R.string.playback_open_app),
+                    onClick = onOpenPlaybackApp,
+                )
+            }
+        }
+
+        Spacer(Modifier.height(AALyricsSpacing.Space4))
+
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(max = maxListHeight),
+        ) {
+            items(
+                items = queue,
+                key = { it.id },
+            ) { item ->
+                QueueTrackRow(
+                    item = item,
+                    onClick = { onQueueItemSelected(item.id) },
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun QueueTrackRow(
+    item: PlaybackQueueItemUiState,
+    onClick: () -> Unit,
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(
+                role = Role.Button,
+                onClick = onClick,
+            ),
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(min = 60.dp)
+                .padding(
+                    horizontal = AALyricsSpacing.Space4,
+                    vertical = AALyricsSpacing.Space8,
+                ),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            PlaybackArtwork(
+                artwork = {
+                    Icon(
+                        imageVector = AALyricsIcons.MusicNote,
+                        contentDescription = null,
+                        tint = AALyricsColors.TextTertiary,
+                        modifier = Modifier.size(AALyricsSpacing.Space20),
+                    )
+                },
+                modifier = Modifier.size(AALyricsSpacing.Space40),
+            )
+
+            Spacer(Modifier.width(AALyricsSpacing.Space12))
+
+            Column(Modifier.weight(1f)) {
+                Text(
+                    text = item.title,
+                    style = AALyricsTypography.AppTitle,
+                    color = AALyricsColors.TextPrimary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                item.subtitle?.let {
+                    Text(
+                        text = it,
+                        style = AALyricsTypography.Label,
+                        color = AALyricsColors.TextSecondary,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
                 }
             }
-        },
-        confirmButton = {},
-        dismissButton = {
-            TextButton(onClick = onDismissRequest) {
-                Text(stringResource(R.string.playback_close))
-            }
-        },
-        containerColor = AALyricsColors.BackgroundSurfaceStrong,
-        shape = RoundedCornerShape(AALyricsRadius.Radius16),
-    )
+        }
+
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 56.dp)
+                .height(AALyricsStroke.Thin)
+                .background(AALyricsColors.BorderSoft.copy(alpha = 0.56f)),
+        )
+    }
 }
 
 internal fun formatPlaybackTime(positionMs: Long): String {
