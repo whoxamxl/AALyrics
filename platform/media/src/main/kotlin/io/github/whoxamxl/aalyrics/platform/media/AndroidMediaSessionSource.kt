@@ -75,6 +75,7 @@ internal class AndroidRuntimeMediaController(
                 ),
                 canSkipPrevious = actions.supports(PlaybackState.ACTION_SKIP_TO_PREVIOUS),
                 canSkipNext = actions.supports(PlaybackState.ACTION_SKIP_TO_NEXT),
+                canSkipToQueueItem = actions.supports(PlaybackState.ACTION_SKIP_TO_QUEUE_ITEM),
                 canSeek = actions.supports(PlaybackState.ACTION_SEEK_TO),
             ),
             queue = controller.queue.orEmpty().mapNotNull { item ->
