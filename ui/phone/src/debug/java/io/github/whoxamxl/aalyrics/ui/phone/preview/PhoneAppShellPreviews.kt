@@ -178,6 +178,7 @@ internal fun PreviewSettingsDestination(
         onAndroidAutoCompatibilitySetup = {},
         onCheckForUpdates = {},
         onDownloadUpdate = {},
+        onChangelogRequested = {},
         onSettingsEntered = {
             state = state.copy(
                 appUpdate = state.appUpdate.normalizedForSettingsEntry(),
