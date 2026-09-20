@@ -238,8 +238,8 @@ class SelectedMediaSessionRuntimeTest {
     private fun runtime(
         scheduler: FakeScheduler,
         snapshots: MutableList<PlaybackSnapshot>,
-        refresh: () -> Unit = {},
         controlStates: MutableList<PlaybackControlState> = mutableListOf(),
+        refresh: () -> Unit = {},
     ): SelectedMediaSessionRuntime<String> = SelectedMediaSessionRuntime(
         selfPackageName = SELF_PACKAGE,
         sink = PlaybackSnapshotSink { snapshots += it },
