@@ -151,25 +151,28 @@ The persisted default target is English.
 
 The target-language row remains available while Translation is disabled. Changing the target while disabled is valid configuration and can be applied when Translation is later enabled.
 
-Each language row also exposes Translation-model readiness:
+Each language row also exposes Translation-model readiness through one stable trailing action slot:
 
-- English is shown as ready from the start because AALyrics treats ML Kit English support as built in and requires no remote language-pack download;
-- an unavailable remote model shows an explicit download action;
-- an active download shows an indeterminate loading indicator;
-- a ready remote model shows a downloaded/ready icon;
-- a failed download shows a retry affordance.
+- English is selectable from the start because AALyrics treats ML Kit English support as built in and requires no remote language-pack download;
+- an unavailable remote model is not selectable and shows an explicit download action;
+- an active download is not selectable and shows an indeterminate loading indicator;
+- a ready remote model becomes selectable and shows no status icon unless it is the selected target;
+- the selected ready/built-in target shows the check mark in the same trailing slot;
+- a failed download is not selectable and shows a retry action in the trailing slot.
 
-The model icon is a separate action from selecting the target language. Downloading a model must not implicitly change the selected target.
+A successful manual download therefore transitions the row from disabled + download/loading UI to an ordinary selectable row. Downloading a model must not implicitly change the selected target.
 
-Language rows use a stable three-column layout rather than text-width-dependent spacer math:
+The primary trailing action uses one fixed token-sized slot on every row:
 
 ```text
-language label (flex) | model-status slot | selected slot
+language label (flex) | primary trailing action
 ```
 
-Both trailing slots reserve the same token-sized touch area on every row, so download/loading/ready/retry icons and the selected check remain vertically aligned regardless of language-name length or model state.
+The primary action is exactly one of download, loading, retry, selected check, or empty. This avoids duplicate downloaded + selected icons and keeps the right edge aligned regardless of language-name length or model state.
 
-The picker should clearly mark the selected language, remain open when a model download action is used, dismiss after target selection, and remain usable at narrow widths and enlarged font scales.
+Only a failed row adds a failure-info icon immediately before the primary retry slot. Pressing that info icon opens a tooltip containing the presentation-ready failure reason. If no specific reason is available, the UI may show a generic download-failure explanation. Non-failed rows do not show or reserve a visible failure-info action.
+
+The picker should clearly mark the selected language, remain open when a model download/retry action or failure tooltip is used, dismiss after selecting an available target, and remain usable at narrow widths and enlarged font scales.
 
 ## Android Auto section
 
@@ -246,6 +249,8 @@ Requirements:
 - list only the presentation-provided options;
 - identify the current selection;
 - show presentation-provided model readiness for every language;
+- allow selection only for built-in/ready languages;
+- expose a failure-reason tooltip only for failed models;
 - emit one selected language identifier;
 - emit a separate manual model-download/retry request;
 - dismiss after a valid target selection;
