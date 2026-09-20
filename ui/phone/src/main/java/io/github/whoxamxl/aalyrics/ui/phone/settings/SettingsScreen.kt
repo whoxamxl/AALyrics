@@ -168,7 +168,8 @@ internal fun SettingsScreenContent(
                 downloadingLabel = stringResource(R.string.settings_downloading_update),
                 downloadedLabel = stringResource(R.string.settings_update_downloaded),
                 retryLabel = stringResource(R.string.settings_retry),
-                failedLabel = stringResource(R.string.settings_update_failed),
+                checkFailedLabel = stringResource(R.string.settings_update_check_failed),
+                downloadFailedLabel = stringResource(R.string.settings_update_download_failed),
                 failureInfoContentDescription =
                     stringResource(R.string.settings_update_failure_info),
                 genericFailureReason =
