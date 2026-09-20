@@ -192,6 +192,7 @@ Rules:
 - distinguish the two-to-three broad blobs with opacity layers of the same cyan, keeping a translucent cyan base pill underneath;
 - keep the waveform restrained: approximately 8dp base thickness with up to about 7dp additional blob expansion;
 - retain a compact 18dp round thumb;
+- during direct Slider drag, animate only the blob expansion to about 45% over roughly 180ms; keep the base pill, thumb, and inactive track dimensions unchanged;
 - keep elapsed/duration labels below the track;
 - the collapsed playback progress indicator remains the existing thin, straight, non-interactive line.
 
