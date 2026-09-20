@@ -76,6 +76,7 @@
     <string name="playback_quick_controls">Quick controls</string>
     <string name="playback_queue">Queue</string>
     <string name="playback_open_app">Open playback app</string>
+    <string name="playback_expand">Expand player</string>
     <string name="playback_collapse">Collapse player</string>
     <string name="playback_translation">Translation</string>
     <string name="playback_close">Close</string>
