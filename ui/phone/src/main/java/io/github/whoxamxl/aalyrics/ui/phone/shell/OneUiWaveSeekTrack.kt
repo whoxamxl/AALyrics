@@ -1,16 +1,15 @@
 package io.github.whoxamxl.aalyrics.ui.phone.shell
 
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
@@ -20,6 +19,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.dp
 import kotlin.math.PI
 import kotlin.math.sin
+import kotlinx.coroutines.isActive
 
 /**
  * One UI-inspired asymmetric media seek track.
@@ -38,20 +38,25 @@ internal fun OneUiWaveSeekTrack(
     inactiveColor: Color,
     disabledColor: Color,
 ) {
-    val infiniteTransition = rememberInfiniteTransition(label = "playback-wave-phase")
-    val animatedPhase by infiniteTransition.animateFloat(
-        initialValue = 0f,
-        targetValue = TWO_PI,
-        animationSpec = infiniteRepeatable(
-            animation = tween(
-                durationMillis = WAVE_PHASE_DURATION_MS,
-                easing = LinearEasing,
-            ),
-            repeatMode = RepeatMode.Restart,
-        ),
-        label = "playback-wave-phase-value",
-    )
-    val phase = if (isPlaying && enabled) animatedPhase else 0f
+    var phase by remember { mutableFloatStateOf(0f) }
+
+    LaunchedEffect(isPlaying, enabled) {
+        if (!isPlaying || !enabled) {
+            phase = 0f
+            return@LaunchedEffect
+        }
+
+        var previousFrameNanos = withFrameNanos { it }
+        while (isActive) {
+            val frameNanos = withFrameNanos { it }
+            val elapsedSeconds = (frameNanos - previousFrameNanos) / 1_000_000_000f
+            previousFrameNanos = frameNanos
+
+            phase = (
+                phase + elapsedSeconds * TWO_PI / WAVE_PHASE_DURATION_SECONDS
+            ) % TWO_PI
+        }
+    }
 
     Canvas(
         modifier = modifier
@@ -85,11 +90,13 @@ internal fun OneUiWaveSeekTrack(
 
                 while (x < thumbX) {
                     val ratio = (x / thumbX).coerceIn(0f, 1f)
-                    val envelope = sin(ratio * PI).toFloat()
+                    val amplitudeEnvelope = sin(ratio * PI).toFloat()
                     val carrier = sin(
                         (x / wavelengthPx) * TWO_PI - phase,
                     )
-                    val y = centerY + (envelope * maxAmplitudePx * carrier)
+                    val y = centerY + (
+                        amplitudeEnvelope * maxAmplitudePx * carrier
+                    )
                     wavePath.lineTo(x, y)
                     x += sampleStep
                 }
@@ -118,5 +125,5 @@ internal fun OneUiWaveSeekTrack(
     }
 }
 
-private const val WAVE_PHASE_DURATION_MS = 1_250
+private const val WAVE_PHASE_DURATION_SECONDS = 1.25f
 private const val TWO_PI = (2.0 * PI).toFloat()
