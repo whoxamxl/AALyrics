@@ -29,7 +29,9 @@ Settings
    ├─ Version / update
    │  ├─ Version                    <version>
    │  └─ <stateful update action>
-   └─ Changelog                               >
+   ├─ Changelog                               >
+   ├─ Source code                 GitHub       ↗
+   └─ License                                 >
 
 [branding footer]
 AALyrics mark
@@ -372,6 +374,30 @@ Application/runtime wiring fetches release notes from the canonical GitHub Relea
 - optional failure reason.
 
 The UI does not call GitHub directly. Retry emits the same changelog-load callback again.
+
+### Source code
+
+A `Source code` row sits below Changelog and opens the canonical repository through the existing `onOpenGitHub` callback.
+
+Presentation:
+
+```text
+Source code                  GitHub   [external-link icon]
+```
+
+The trailing glyph is a proper external-link icon rather than a text arrow. The row is visually distinct from internal navigation rows, which continue to use the standard chevron.
+
+Canonical repository:
+
+```text
+https://github.com/whoxamxl/AALyrics
+```
+
+### License
+
+A `License >` internal navigation row sits directly below Source code.
+
+The repository license is **PolyForm Noncommercial License 1.0.0**. The Phone Settings surface emits `onLicenseRequested`; the detailed license presentation may be supplied by the application/navigation layer without duplicating license ownership in the Settings row itself.
 
 ### Branding footer
 
