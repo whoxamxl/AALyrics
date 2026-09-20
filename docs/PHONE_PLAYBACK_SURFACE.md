@@ -183,11 +183,13 @@ Rules:
 
 - only the active/progress segment becomes a wave while playback is running;
 - the inactive segment always remains a straight, low-alpha track;
-- the active waveform uses a fixed amplitude envelope across the current active segment: zero at the start, swelling through the middle, and decaying back to zero exactly at the thumb;
-- playback animation advances only the sine phase, never the amplitude, so the wave travels without progressively "growing" over time;
-- pausing freezes the current waveform shape; disabling the seek capability renders the active segment flat;
-- use AALyrics Accent Cyan rather than album-art-derived color;
-- keep the waveform restrained: approximately 7dp maximum amplitude, 34dp wavelength, and 4dp stroke;
+- the active waveform is a filled pill that swells into roughly two or three broad blobs rather than a regular repeating sine wave;
+- the blob profile is intentionally slightly asymmetric above/below the centerline so it reads as a fluid waveform rather than a geometric squiggle;
+- each blob keeps a stable overall scale while its position and strength drift slowly during playback, avoiding any progressive "wave growth" effect;
+- the profile returns smoothly to the normal pill thickness at both the start and the thumb;
+- pausing freezes the current blob shape; disabling the seek capability renders the active segment flat;
+- use AALyrics Accent Cyan as a single monochrome fill rather than One UI's artwork-derived multicolor treatment;
+- keep the waveform restrained: approximately 8dp base thickness with up to about 7dp additional blob expansion;
 - retain a compact 18dp round thumb;
 - keep elapsed/duration labels below the track;
 - the collapsed playback progress indicator remains the existing thin, straight, non-interactive line.
