@@ -135,8 +135,10 @@ The onboarding slice does not:
 
 Those templated-media changes belong to a separate implementation slice defined by `docs/ANDROID_AUTO_MEDIA_STRATEGY.md`.
 
-## Follow-up
+## Settings integration
 
-A later Settings surface should expose the recorded compatibility status and let the user reopen the setup instructions.
+The first Phone Settings presentation contract is defined in `docs/PHONE_SETTINGS.md`.
+
+Settings exposes the recorded compatibility acknowledgement as presentation status and lets the user reopen the existing setup instructions. This does not change the verification boundary: the status remains the user's acknowledgement, not a programmatically verified Android Auto setting.
 
 When the Car App Library templated-media path is implemented, this onboarding remains useful because the legacy MediaBrowser fallback is intentionally retained.
