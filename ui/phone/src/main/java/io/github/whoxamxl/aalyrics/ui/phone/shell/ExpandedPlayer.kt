@@ -122,6 +122,7 @@ internal fun ExpandedPlayer(
 
             ExpandedSeekArea(
                 enabled = state.seekEnabled,
+                isPlaying = state.isPlaying,
                 displayedPositionMs = displayedPositionMs,
                 durationMs = state.durationMs,
                 onSeekPreview = onSeekPreview,
@@ -244,6 +245,7 @@ private fun ExpandedPlayerHeader(
 @Composable
 private fun ExpandedSeekArea(
     enabled: Boolean,
+    isPlaying: Boolean,
     displayedPositionMs: Long,
     durationMs: Long?,
     onSeekPreview: (Long) -> Unit,
@@ -308,16 +310,14 @@ private fun ExpandedSeekArea(
                 )
             },
             track = { sliderState ->
-                SliderDefaults.Track(
-                    sliderState = sliderState,
-                    modifier = Modifier
-                        .height(8.dp)
-                        .clip(RoundedCornerShape(AALyricsRadius.Full)),
+                OneUiWaveSeekTrack(
+                    progressFraction = (sliderState.value / duration.toFloat())
+                        .coerceIn(0f, 1f),
+                    isPlaying = isPlaying,
                     enabled = enabled,
-                    colors = seekColors,
-                    drawStopIndicator = null,
-                    thumbTrackGapSize = 0.dp,
-                    trackInsideCornerSize = 0.dp,
+                    activeColor = AALyricsColors.AccentCyan,
+                    inactiveColor = AALyricsColors.AccentCyan.copy(alpha = 0.22f),
+                    disabledColor = AALyricsColors.TextTertiary,
                 )
             },
             modifier = Modifier
