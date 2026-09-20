@@ -24,6 +24,7 @@ internal fun mapPhonePlaybackSurfaceState(
         artist = track.artists
             .takeIf { it.isNotEmpty() }
             ?.joinToString(separator = ", "),
+        playbackIdentityKey = playback.trackIdentity.toString(),
         positionMs = playback.positionMs,
         durationMs = track.durationMs,
         playbackRate = playback.playbackRate,
