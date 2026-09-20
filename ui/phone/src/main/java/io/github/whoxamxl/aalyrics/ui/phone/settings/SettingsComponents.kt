@@ -36,6 +36,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import io.github.whoxamxl.aalyrics.ui.designsystem.icon.AALyricsIcons
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsColors
@@ -378,7 +380,11 @@ private fun TranslationModelStatusAction(
 
         TranslationModelUiState.DOWNLOADING -> {
             Box(
-                modifier = Modifier.size(AALyricsSpacing.Space40),
+                modifier = Modifier
+                    .size(AALyricsSpacing.Space40)
+                    .semantics {
+                        contentDescription = downloadingContentDescription
+                    },
                 contentAlignment = Alignment.Center,
             ) {
                 CircularProgressIndicator(
