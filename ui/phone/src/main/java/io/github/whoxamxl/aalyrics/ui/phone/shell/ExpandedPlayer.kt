@@ -43,6 +43,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -57,6 +58,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -102,7 +104,17 @@ internal fun ExpandedPlayer(
     Surface(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = AALyricsSpacing.Space8),
+            .padding(horizontal = AALyricsSpacing.Space8)
+            .pointerInput(Unit) {
+                awaitPointerEventScope {
+                    while (true) {
+                        val event = awaitPointerEvent(PointerEventPass.Final)
+                        event.changes
+                            .filterNot { it.isConsumed }
+                            .forEach { it.consume() }
+                    }
+                }
+            },
         shape = RoundedCornerShape(AALyricsRadius.Radius24),
         color = AALyricsColors.BackgroundSurfaceStrong.copy(alpha = 0.98f),
         shadowElevation = AALyricsSpacing.Space12,
@@ -123,14 +135,16 @@ internal fun ExpandedPlayer(
 
             Spacer(Modifier.height(AALyricsSpacing.Space8))
 
-            ExpandedSeekArea(
-                enabled = state.seekEnabled,
-                displayedPositionMs = displayedPositionMs,
-                durationMs = state.durationMs,
-                onSeekPreview = onSeekPreview,
-                onSeekCommit = onSeekCommit,
-                onSeekCancel = onSeekCancel,
-            )
+            key(state.playbackIdentityKey) {
+                ExpandedSeekArea(
+                    enabled = state.seekEnabled,
+                    displayedPositionMs = displayedPositionMs,
+                    durationMs = state.durationMs,
+                    onSeekPreview = onSeekPreview,
+                    onSeekCommit = onSeekCommit,
+                    onSeekCancel = onSeekCancel,
+                )
+            }
 
             Spacer(Modifier.height(AALyricsSpacing.Space4))
 
@@ -388,20 +402,22 @@ private fun ExpandedTransportRow(
             onTranslationEnabledChanged = onTranslationEnabledChanged,
         )
 
-        RelativeSeekTransportButton(
-            imageVector = AALyricsIcons.Previous,
-            contentDescription = stringResource(R.string.playback_previous),
-            longClickDescription = stringResource(R.string.playback_seek_backward),
-            skipEnabled = state.canSkipPrevious,
-            relativeSeekEnabled = state.seekEnabled,
-            currentPositionMs = displayedPositionMs,
-            durationMs = state.durationMs,
-            direction = RelativeSeekDirection.BACKWARD,
-            onSkip = onPrevious,
-            onSeekPreview = onSeekPreview,
-            onSeekCommit = onSeekCommit,
-            onSeekCancel = onSeekCancel,
-        )
+        key(state.playbackIdentityKey) {
+            RelativeSeekTransportButton(
+                imageVector = AALyricsIcons.Previous,
+                contentDescription = stringResource(R.string.playback_previous),
+                longClickDescription = stringResource(R.string.playback_seek_backward),
+                skipEnabled = state.canSkipPrevious,
+                relativeSeekEnabled = state.seekEnabled,
+                currentPositionMs = displayedPositionMs,
+                durationMs = state.durationMs,
+                direction = RelativeSeekDirection.BACKWARD,
+                onSkip = onPrevious,
+                onSeekPreview = onSeekPreview,
+                onSeekCommit = onSeekCommit,
+                onSeekCancel = onSeekCancel,
+            )
+        }
 
         ExpandedPlayPauseButton(
             isPlaying = state.isPlaying,
@@ -409,20 +425,22 @@ private fun ExpandedTransportRow(
             onClick = onPlayPause,
         )
 
-        RelativeSeekTransportButton(
-            imageVector = AALyricsIcons.Next,
-            contentDescription = stringResource(R.string.playback_next),
-            longClickDescription = stringResource(R.string.playback_seek_forward),
-            skipEnabled = state.canSkipNext,
-            relativeSeekEnabled = state.seekEnabled,
-            currentPositionMs = displayedPositionMs,
-            durationMs = state.durationMs,
-            direction = RelativeSeekDirection.FORWARD,
-            onSkip = onNext,
-            onSeekPreview = onSeekPreview,
-            onSeekCommit = onSeekCommit,
-            onSeekCancel = onSeekCancel,
-        )
+        key(state.playbackIdentityKey) {
+            RelativeSeekTransportButton(
+                imageVector = AALyricsIcons.Next,
+                contentDescription = stringResource(R.string.playback_next),
+                longClickDescription = stringResource(R.string.playback_seek_forward),
+                skipEnabled = state.canSkipNext,
+                relativeSeekEnabled = state.seekEnabled,
+                currentPositionMs = displayedPositionMs,
+                durationMs = state.durationMs,
+                direction = RelativeSeekDirection.FORWARD,
+                onSkip = onNext,
+                onSeekPreview = onSeekPreview,
+                onSeekCommit = onSeekCommit,
+                onSeekCancel = onSeekCancel,
+            )
+        }
 
         when {
             state.queueAvailable -> PlayerIconAction(
