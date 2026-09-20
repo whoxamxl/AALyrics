@@ -20,7 +20,6 @@ import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.HorizontalDivider
@@ -355,8 +354,12 @@ private fun AppUpdateActionRow(
             )
         }
 
-        Button(onClick = onAction) {
-            Text(text = actionLabel)
+        TextButton(onClick = onAction) {
+            Text(
+                text = actionLabel,
+                style = AALyricsTypography.TrackArtist,
+                color = AALyricsColors.AccentCyan,
+            )
         }
     }
 }
@@ -433,15 +436,18 @@ private fun AppUpdateFailureRow(
 
         Spacer(Modifier.weight(1f))
 
-        Button(onClick = onRetry) {
+        TextButton(onClick = onRetry) {
             Icon(
                 imageVector = AALyricsIcons.Retry,
                 contentDescription = null,
-                modifier = Modifier.size(AALyricsSpacing.Space20),
+                tint = AALyricsColors.AccentCyan,
+                modifier = Modifier.size(AALyricsSpacing.Space16),
             )
             Text(
                 text = retryLabel,
-                modifier = Modifier.padding(start = AALyricsSpacing.Space8),
+                style = AALyricsTypography.TrackArtist,
+                color = AALyricsColors.AccentCyan,
+                modifier = Modifier.padding(start = AALyricsSpacing.Space4),
             )
         }
     }
