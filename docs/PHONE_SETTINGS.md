@@ -326,6 +326,22 @@ AALyrics-vX.Y.Z[-suffix].apk
 
 The matching `.sha256` asset should be used by the runtime implementation to verify file integrity before a downloaded APK is treated as complete.
 
+### Update state lifetime
+
+Update results are intentionally short-lived so Settings does not keep presenting a stale GitHub Release result.
+
+When the Settings destination is entered, the UI emits `onSettingsEntered`. Application/presentation wiring normalizes the update state with one rule:
+
+```text
+CHECKING     -> keep
+DOWNLOADING  -> keep
+everything else -> IDLE
+```
+
+Therefore `UP_TO_DATE`, `UPDATE_AVAILABLE`, `CHECK_FAILED`, `DOWNLOADED`, and `DOWNLOAD_FAILED` are results for the current Settings visit only. Leaving Settings and returning presents `Check for updates` again, forcing the next explicit check to query the current GitHub Releases state instead of reusing an old available-version result.
+
+Active checking/downloading work remains application-owned and continues across destination changes. If that work completes while Settings is away, its completed result is normalized back to `IDLE` on the next Settings entry.
+
 The installed version shown in Settings should come from `BuildConfig.VERSION_NAME`; debug builds currently default to `0.1.0-dev` unless the build environment overrides it.
 
 ### About
