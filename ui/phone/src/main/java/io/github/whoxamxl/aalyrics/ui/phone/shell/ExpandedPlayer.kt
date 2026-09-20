@@ -32,6 +32,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -61,6 +62,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import io.github.whoxamxl.aalyrics.ui.designsystem.icon.AALyricsIcons
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsColors
@@ -72,8 +74,6 @@ import io.github.whoxamxl.aalyrics.ui.phone.R
 import io.github.whoxamxl.aalyrics.ui.phone.component.TrackIdentityMarquee
 import io.github.whoxamxl.aalyrics.ui.phone.state.PlaybackQueueItemUiState
 import io.github.whoxamxl.aalyrics.ui.phone.state.PlaybackSurfaceUiState
-import ir.mahozad.multiplatform.wavyslider.WaveDirection.HEAD
-import ir.mahozad.multiplatform.wavyslider.material3.WavySlider
 import kotlinx.coroutines.flow.collect
 
 /** On-demand compact player expanded upward from the persistent Playback Bar. */
@@ -81,7 +81,6 @@ import kotlinx.coroutines.flow.collect
 internal fun ExpandedPlayer(
     state: PlaybackSurfaceUiState,
     displayedPositionMs: Long,
-    seekPreviewActive: Boolean = false,
     onCollapse: () -> Unit,
     onPrevious: () -> Unit,
     onPlayPause: () -> Unit,
@@ -123,8 +122,6 @@ internal fun ExpandedPlayer(
 
             ExpandedSeekArea(
                 enabled = state.seekEnabled,
-                isPlaying = state.isPlaying,
-                seekPreviewActive = seekPreviewActive,
                 displayedPositionMs = displayedPositionMs,
                 durationMs = state.durationMs,
                 onSeekPreview = onSeekPreview,
@@ -247,8 +244,6 @@ private fun ExpandedPlayerHeader(
 @Composable
 private fun ExpandedSeekArea(
     enabled: Boolean,
-    isPlaying: Boolean,
-    seekPreviewActive: Boolean,
     displayedPositionMs: Long,
     durationMs: Long?,
     onSeekPreview: (Long) -> Unit,
@@ -281,10 +276,17 @@ private fun ExpandedSeekArea(
         }
     }
 
-    val waveActive = enabled && isPlaying && !seekPreviewActive
+    val seekColors = SliderDefaults.colors(
+        thumbColor = AALyricsColors.TextPrimary,
+        activeTrackColor = AALyricsColors.AccentCyan,
+        inactiveTrackColor = AALyricsColors.AccentCyan.copy(alpha = 0.22f),
+        disabledThumbColor = AALyricsColors.TextTertiary,
+        disabledActiveTrackColor = AALyricsColors.TextTertiary,
+        disabledInactiveTrackColor = AALyricsColors.BorderSoft.copy(alpha = 0.56f),
+    )
 
     Column(Modifier.fillMaxWidth()) {
-        WavySlider(
+        Slider(
             value = displayedPositionMs.coerceIn(0L, duration).toFloat(),
             onValueChange = { value ->
                 if (enabled) onSeekPreview(value.toLong())
@@ -296,20 +298,28 @@ private fun ExpandedSeekArea(
             enabled = enabled,
             valueRange = 0f..duration.toFloat(),
             interactionSource = interactionSource,
-            waveHeight = if (waveActive) 4.dp else 0.dp,
-            waveLength = 22.dp,
-            waveVelocity = if (waveActive) 10.dp to HEAD else 0.dp to HEAD,
-            waveThickness = 3.dp,
-            trackThickness = 3.dp,
-            incremental = false,
-            colors = SliderDefaults.colors(
-                thumbColor = AALyricsColors.TextPrimary,
-                activeTrackColor = AALyricsColors.AccentCyan,
-                inactiveTrackColor = AALyricsColors.BorderSoft,
-                disabledThumbColor = AALyricsColors.TextTertiary,
-                disabledActiveTrackColor = AALyricsColors.TextTertiary,
-                disabledInactiveTrackColor = AALyricsColors.BorderSoft.copy(alpha = 0.56f),
-            ),
+            colors = seekColors,
+            thumb = {
+                SliderDefaults.Thumb(
+                    interactionSource = interactionSource,
+                    enabled = enabled,
+                    colors = seekColors,
+                    thumbSize = DpSize(18.dp, 18.dp),
+                )
+            },
+            track = { sliderState ->
+                SliderDefaults.Track(
+                    sliderState = sliderState,
+                    modifier = Modifier
+                        .height(8.dp)
+                        .clip(RoundedCornerShape(AALyricsRadius.Full)),
+                    enabled = enabled,
+                    colors = seekColors,
+                    drawStopIndicator = null,
+                    thumbTrackGapSize = 0.dp,
+                    trackInsideCornerSize = 0.dp,
+                )
+            },
             modifier = Modifier
                 .fillMaxWidth()
                 .semantics {
