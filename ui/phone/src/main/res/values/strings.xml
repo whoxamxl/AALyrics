@@ -54,10 +54,13 @@
     <string name="settings_update_download_failed">Download failed</string>
     <string name="settings_update_failure_info">Why the update action failed</string>
     <string name="settings_update_failure_generic">The update action could not complete. Check the network connection and try again.</string>
-    <string name="settings_current_version">Current version</string>
-    <string name="settings_about">About</string>
-    <string name="settings_about_title">About AALyrics</string>
-    <string name="settings_about_body">AALyrics is an open-source lyrics companion focused on synchronized playback, translation, and Android Auto presentation.</string>
-    <string name="settings_github">GitHub</string>
+    <string name="settings_changelog">Changelog</string>
+    <string name="settings_changelog_loading">Loading release notes…</string>
+    <string name="settings_changelog_failed">Could not load changelog</string>
+    <string name="settings_changelog_failure_generic">GitHub Release notes could not be loaded. Check the network connection and try again.</string>
     <string name="settings_close">Close</string>
+
+    <string name="settings_brand_name">AALyrics</string>
+    <string name="settings_brand_copyright_owner">Yuta Miura (whoxamxl)</string>
+    <string name="settings_brand_logo_description">AALyrics logo</string>
 </resources>
