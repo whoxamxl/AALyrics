@@ -136,6 +136,21 @@ Demand gating belongs between the platform playback sink and `PlaybackLyricsCont
 - Android framework objects do not leak into pure core/provider APIs.
 - Live runtime callbacks do not start provider work directly; they feed normalized playback through the application boundary.
 
+## Phone playback-surface follow-up
+
+The later Phone playback-surface contract is defined in `docs/PHONE_PLAYBACK_SURFACE.md`.
+
+That feature may extend the existing selected-session boundary with normalized playback capabilities needed by presentation, including supported action availability, queue availability/identity, source-app launch capability, and artwork/source metadata. The architectural ownership rule does not change:
+
+- Android `MediaController`, `PlaybackState`, `MediaSession.Token`, framework queue items, and `PendingIntent` remain outside `:ui:phone`;
+- the Phone layer receives presentation-ready capability state and callbacks only;
+- the existing framework-neutral `PlaybackTransport` remains the transport boundary for play, pause, previous, next, and `seekTo`;
+- Previous/Next long-press relative seek is deliberately implemented by local preview plus a single `seekTo()` on release, not by adding framework `rewind()` / `fastForward()` behavior;
+- queue selection may add a framework-neutral queue-item command if required;
+- opening the selected playback app remains application/platform navigation behavior rather than a media transport command.
+
+The original PR #29 runtime did not own finished transport presentation. This follow-up consumes and may narrowly extend that runtime without changing its session-selection policy.
+
 ## Explicitly out of scope
 
 The following remain separate work from the MediaSession runtime itself:
@@ -147,7 +162,7 @@ The following remain separate work from the MediaSession runtime itself:
 - cache;
 - translation;
 - artwork/color extraction;
-- transport controls;
+- finished Phone playback-surface presentation and its capability mapping (specified separately in `docs/PHONE_PLAYBACK_SURFACE.md`);
 - current-line/current-word rendering state;
 - timing offset/calibration;
 - karaoke rendering;
