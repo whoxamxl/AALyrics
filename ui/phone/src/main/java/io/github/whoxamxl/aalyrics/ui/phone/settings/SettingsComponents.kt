@@ -237,11 +237,32 @@ internal fun SettingsExternalLinkRow(
             modifier = Modifier.weight(1f),
         )
 
-        AppUpdateInlineAction(
-            label = value,
-            icon = AALyricsIcons.ExternalLink,
-            onClick = onClick,
-        )
+        Row(
+            modifier = Modifier
+                .heightIn(min = AALyricsSpacing.Space48)
+                .clickable(
+                    role = Role.Button,
+                    onClick = onClick,
+                ),
+            horizontalArrangement = Arrangement.End,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = value,
+                style = AALyricsTypography.TrackArtist,
+                color = AALyricsColors.AccentCyan,
+                maxLines = 1,
+            )
+
+            Spacer(Modifier.size(AALyricsSpacing.Space4))
+
+            Icon(
+                imageVector = AALyricsIcons.ExternalLink,
+                contentDescription = null,
+                tint = AALyricsColors.AccentCyan,
+                modifier = Modifier.size(AALyricsSpacing.Space16),
+            )
+        }
     }
 }
 
