@@ -30,10 +30,13 @@ fun SettingsScreen(
     onTranslationTargetSelected: (String) -> Unit,
     onTranslationModelDownloadRequested: (String) -> Unit,
     onAndroidAutoCompatibilitySetup: () -> Unit,
+    onCheckForUpdates: () -> Unit,
+    onOpenGitHub: () -> Unit,
     modifier: Modifier = Modifier,
     bottomOverlayInset: Dp = 0.dp,
 ) {
     var targetLanguagePickerVisible by rememberSaveable { mutableStateOf(false) }
+    var aboutVisible by rememberSaveable { mutableStateOf(false) }
 
     SettingsScreenContent(
         state = state,
@@ -46,9 +49,24 @@ fun SettingsScreen(
         onTranslationTargetSelected = onTranslationTargetSelected,
         onTranslationModelDownloadRequested = onTranslationModelDownloadRequested,
         onAndroidAutoCompatibilitySetup = onAndroidAutoCompatibilitySetup,
+        onCheckForUpdates = onCheckForUpdates,
+        onAboutRequested = { aboutVisible = true },
         modifier = modifier,
         bottomOverlayInset = bottomOverlayInset,
     )
+
+    if (aboutVisible) {
+        AboutDialog(
+            title = stringResource(R.string.settings_about_title),
+            body = stringResource(R.string.settings_about_body),
+            versionLabel = stringResource(R.string.settings_current_version),
+            versionName = state.appVersionName,
+            githubLabel = stringResource(R.string.settings_github),
+            closeLabel = stringResource(R.string.settings_close),
+            onOpenGitHub = onOpenGitHub,
+            onDismissRequest = { aboutVisible = false },
+        )
+    }
 }
 
 @Composable
@@ -61,6 +79,8 @@ internal fun SettingsScreenContent(
     onTranslationTargetSelected: (String) -> Unit,
     onTranslationModelDownloadRequested: (String) -> Unit,
     onAndroidAutoCompatibilitySetup: () -> Unit,
+    onCheckForUpdates: () -> Unit,
+    onAboutRequested: () -> Unit,
     modifier: Modifier = Modifier,
     bottomOverlayInset: Dp = 0.dp,
 ) {
@@ -125,6 +145,33 @@ internal fun SettingsScreenContent(
                 value = androidAutoStatusLabel(state.androidAutoCompatibilityStatus),
                 valueColor = androidAutoStatusColor(state.androidAutoCompatibilityStatus),
                 onClick = onAndroidAutoCompatibilitySetup,
+            )
+        }
+
+        Spacer(Modifier.height(AALyricsSpacing.Space20))
+
+        SettingsSection(
+            title = stringResource(R.string.settings_section_app),
+        ) {
+            SettingsNavigationRow(
+                title = stringResource(R.string.settings_check_for_updates),
+                value = null,
+                onClick = onCheckForUpdates,
+            )
+
+            SettingsDivider()
+
+            SettingsValueRow(
+                title = stringResource(R.string.settings_current_version),
+                value = state.appVersionName,
+            )
+
+            SettingsDivider()
+
+            SettingsNavigationRow(
+                title = stringResource(R.string.settings_about),
+                value = null,
+                onClick = onAboutRequested,
             )
         }
     }
