@@ -24,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import io.github.whoxamxl.aalyrics.ui.designsystem.icon.AALyricsIcons
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsColors
@@ -45,6 +46,8 @@ internal fun PlaybackBar(
     modifier: Modifier = Modifier,
     artwork: (@Composable BoxScope.() -> Unit)? = null,
 ) {
+    val expandLabel = stringResource(R.string.playback_expand)
+
     Box(
         modifier = modifier
             .fillMaxWidth()
@@ -73,7 +76,11 @@ internal fun PlaybackBar(
                         modifier = Modifier
                             .weight(1f)
                             .heightIn(min = 56.dp)
-                            .clickable(onClick = onExpand)
+                            .clickable(
+                                role = Role.Button,
+                                onClickLabel = expandLabel,
+                                onClick = onExpand,
+                            )
                             .padding(
                                 start = AALyricsSpacing.Space8,
                                 end = AALyricsSpacing.Space8,
