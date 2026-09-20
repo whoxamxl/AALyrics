@@ -13,6 +13,7 @@ data class PlaybackControlCapabilities(
     val canPause: Boolean = false,
     val canSkipPrevious: Boolean = false,
     val canSkipNext: Boolean = false,
+    val canSkipToQueueItem: Boolean = false,
     val canSeek: Boolean = false,
 )
 
