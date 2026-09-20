@@ -53,6 +53,33 @@ private fun ExpandedPlayerQueuePreview() {
 }
 
 @Preview(
+    name = "Expanded · Paused flat seek",
+    group = "PlaybackSurface",
+    widthDp = 412,
+    heightDp = 240,
+    showBackground = true,
+)
+@Composable
+private fun ExpandedPlayerPausedFlatPreview() {
+    ExpandedPlayerPreview(PhonePreviewFixtures.pausedSurface)
+}
+
+@Preview(
+    name = "Expanded · Seek preview flat",
+    group = "PlaybackSurface",
+    widthDp = 412,
+    heightDp = 240,
+    showBackground = true,
+)
+@Composable
+private fun ExpandedPlayerSeekPreviewFlatPreview() {
+    ExpandedPlayerPreview(
+        state = PhonePreviewFixtures.playingSurface,
+        seekPreviewActive = true,
+    )
+}
+
+@Preview(
     name = "Expanded · Open app fallback",
     group = "PlaybackSurface",
     widthDp = 412,
@@ -234,7 +261,10 @@ private fun PlaybackBarPreview(state: PlaybackSurfaceUiState) {
 }
 
 @Composable
-private fun ExpandedPlayerPreview(state: PlaybackSurfaceUiState) {
+private fun ExpandedPlayerPreview(
+    state: PlaybackSurfaceUiState,
+    seekPreviewActive: Boolean = false,
+) {
     AALyricsTheme {
         Box(
             modifier = Modifier
@@ -245,6 +275,7 @@ private fun ExpandedPlayerPreview(state: PlaybackSurfaceUiState) {
             ExpandedPlayer(
                 state = state,
                 displayedPositionMs = state.positionMs,
+                seekPreviewActive = seekPreviewActive,
                 onCollapse = {},
                 onPrevious = {},
                 onPlayPause = {},
