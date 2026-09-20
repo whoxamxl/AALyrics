@@ -49,6 +49,8 @@ This slice should establish a durable Settings composition and reusable Phone-lo
 - Check/Retry/Download are explicit buttons; checking/downloading use progress indication.
 - Download emits a dedicated callback for the latest eligible signed GitHub Release APK.
 - `Changelog >` row below the Version/update block, backed by presentation-ready GitHub Release notes.
+- `Source code    GitHub ↗` external-link row using a real external-link icon and the existing GitHub callback.
+- `License >` internal row for the repository's PolyForm Noncommercial License 1.0.0.
 - Always-visible AALyrics branding footer using the Android foreground mark, app name, installed version, current year, and `Yuta Miura (whoxamxl)`.
 - GitHub affordance is carried by the branding footer.
 - Runtime GitHub release/changelog loading, APK download/checksum verification, and browser/intent launching remain outside `:ui:phone`.
@@ -118,6 +120,7 @@ Do not promote them to `:ui:designsystem` until another screen demonstrates genu
 - [x] Add a dedicated update-download callback for the latest eligible signed GitHub Release APK.
 - [x] Reset completed/stale update results to IDLE on the next Settings entry while preserving active CHECKING/DOWNLOADING work.
 - [x] Add Changelog loading/content/failure presentation sourced from GitHub Releases through callbacks.
+- [x] Add Source code / GitHub external-link row and License navigation row.
 - [x] Replace the About row with a permanent branded footer using the AALyrics Android foreground artwork.
 - [x] Keep the GitHub link affordance in the branding footer.
 - [x] Keep `:ui:phone` free of concrete persistence/application/Translation-engine dependencies.
