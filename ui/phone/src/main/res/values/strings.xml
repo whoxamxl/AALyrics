@@ -18,4 +18,20 @@
     <string name="android_auto_compat_enabled">I’ve enabled Unknown sources</string>
     <string name="android_auto_compat_skip">Continue without it</string>
     <string name="android_auto_compat_footer">This setup is only for the legacy sideloaded media fallback. The templated Car App Library path does not require Android Auto Unknown sources.</string>
+
+    <string name="settings_title">Settings</string>
+    <string name="settings_section_lyrics">LYRICS</string>
+    <string name="settings_plain_auto_scroll">Plain lyrics auto-scroll</string>
+    <string name="settings_plain_auto_scroll_info">Estimates where playback is in untimed lyrics and scrolls smoothly to match. Requires track duration.</string>
+    <string name="settings_plain_auto_scroll_info_description">About Plain lyrics auto-scroll</string>
+
+    <string name="settings_section_translation">TRANSLATION</string>
+    <string name="settings_translation_enabled">Translation</string>
+    <string name="settings_translation_target">Target language</string>
+
+    <string name="settings_section_android_auto">ANDROID AUTO</string>
+    <string name="settings_android_auto_compatibility">Compatibility setup</string>
+    <string name="settings_android_auto_status_enabled">Enabled</string>
+    <string name="settings_android_auto_status_skipped">Skipped</string>
+    <string name="settings_android_auto_status_not_reviewed">Not reviewed</string>
 </resources>
