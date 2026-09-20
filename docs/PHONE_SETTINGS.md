@@ -29,7 +29,13 @@ Settings
    ├─ Version / update
    │  ├─ Version                    <version>
    │  └─ <stateful update action>
-   └─ About                                   >
+   └─ Changelog                               >
+
+[branding footer]
+AALyrics mark
+AALyrics
+Version: vX.X.X
+© <current year> Yuta Miura (whoxamxl)
 ```
 
 Provider preferences, appearance/theme selection, diagnostics, and other future taxonomy are not part of this first slice.
@@ -344,16 +350,45 @@ Active checking/downloading work remains application-owned and continues across 
 
 The installed version shown in Settings should come from `BuildConfig.VERSION_NAME`; debug builds currently default to `0.1.0-dev` unless the build environment overrides it.
 
-### About
+### Changelog
 
-The `About` row opens a compact AALyrics dialog containing:
+A `Changelog >` navigation row sits directly below the Version/update block.
 
-- a short AALyrics description;
-- the current version;
-- a GitHub action;
-- a close action.
+Pressing it opens an on-demand changelog dialog. The Phone UI renders presentation state only:
 
-The GitHub action emits a callback. Application/runtime wiring should open the canonical AALyrics repository:
+```text
+IDLE
+LOADING
+READY
+FAILED
+```
+
+Application/runtime wiring fetches release notes from the canonical GitHub Releases source and maps the result into:
+
+- release version;
+- presentation-ready release-note body;
+- optional failure reason.
+
+The UI does not call GitHub directly. Retry emits the same changelog-load callback again.
+
+### Branding footer
+
+The Settings destination ends with a centered, always-visible AALyrics branding footer modeled after a compact About surface:
+
+```text
+[AALyrics foreground mark]
+
+AALyrics
+
+Version: vX.X.X
+© <current year> Yuta Miura (whoxamxl)
+```
+
+The mark is derived from `branding/android/AALyrics_foreground_android.svg` and rendered from a Phone-local VectorDrawable so `:ui:phone` does not depend on `:app` resources.
+
+The installed version comes from presentation state. The current year is also supplied as presentation state so it is not hard-coded into the Composable.
+
+The copyright/username line acts as the GitHub affordance and emits `onOpenGitHub`. Application/runtime wiring should open:
 
 ```text
 https://github.com/whoxamxl/AALyrics
@@ -392,6 +427,8 @@ Deterministic debug Previews should cover at least:
 - app up-to-date state;
 - app update available state;
 - app update failure/retry state;
+- changelog ready/failure states;
+- branding footer;
 - full Settings destination hosted inside `PhoneAppShell` with Playback Controls visible.
 
 ## Runtime wiring boundary
