@@ -30,31 +30,31 @@ Settings
 ### Planning / ownership
 - [x] Start from current `main` on a topic branch.
 - [x] Record this implementation plan before production changes.
-- [ ] Preserve existing Settings and playback behavior.
-- [ ] Keep provider lookup/scoring, timing, Translation execution, MediaSession selection, and Sync untouched.
+- [x] Preserve existing Settings and playback behavior.
+- [x] Keep provider lookup/scoring, timing, Translation execution, MediaSession selection, and Sync untouched.
 
 ### Advanced Settings
-- [ ] Add an `Advanced` navigation row to Settings.
-- [ ] Add a second-level Advanced Settings presentation.
-- [ ] Add functional `Verbose details` switch.
-- [ ] Persist Verbose Details outside `:ui:phone`.
-- [ ] Add disabled `Karaoke mode` row with no callback/runtime behavior.
-- [ ] Preserve back/navigation behavior without creating a fifth primary destination.
+- [x] Add an `Advanced` navigation row to Settings.
+- [x] Add a second-level Advanced Settings presentation.
+- [x] Add functional `Verbose details` switch.
+- [x] Persist Verbose Details outside `:ui:phone`.
+- [x] Add disabled `Karaoke mode` row with no callback/runtime behavior.
+- [x] Preserve back/navigation behavior without creating a fifth primary destination.
 
 ### Details
-- [ ] Replace the Details placeholder with a production read-only screen.
-- [ ] Add Phone-local Details presentation state.
-- [ ] Show Track fields from authoritative current playback/track state.
-- [ ] Show Lyrics provider display name, sync type, language, and line count when available.
-- [ ] Show Developer / Diagnostics only when Verbose Details is enabled.
-- [ ] Limit diagnostics to already-available framework-neutral provider/source IDs and normalized track references.
-- [ ] Avoid stale previous-track metadata during loading/no-session states.
-- [ ] Respect the shell Playback Surface bottom inset.
+- [x] Replace the Details placeholder with a production read-only screen.
+- [x] Add Phone-local Details presentation state.
+- [x] Show Track fields from authoritative current playback/track state.
+- [x] Show Lyrics provider display name, sync type, language, and line count when available.
+- [x] Show Developer / Diagnostics only when Verbose Details is enabled.
+- [x] Limit diagnostics to already-available framework-neutral provider/source IDs and normalized track references.
+- [x] Avoid stale previous-track metadata during loading/no-session states.
+- [x] Respect the shell Playback Surface bottom inset.
 
 ### Integration / validation
-- [ ] Wire Settings and Details through the existing application/Phone composition boundary.
-- [ ] Add deterministic Previews for normal/partial/verbose/Advanced states.
-- [ ] Add focused JVM/UI-state tests where durable.
+- [x] Wire Settings and Details through the existing application/Phone composition boundary.
+- [x] Add deterministic Previews for normal/partial/verbose/Advanced states.
+- [x] Add focused JVM/UI-state tests where durable.
 - [ ] Run architecture checks, unit tests, and debug APK build.
 - [ ] Review the final diff and complete bounded Codex review.
 - [ ] Stop before merge until explicit user approval.
@@ -72,6 +72,12 @@ Keep commits small and single-purpose. Expected shape:
 7. documentation/status cleanup if implementation changes require it
 
 The exact split may be adjusted to keep each commit coherent.
+
+## Runtime host boundary
+
+This slice exposes production Details state and the Verbose Details preference through `AALyricsApplication`, and keeps the Compose screens callback/state driven. The repository's `MainActivity` READY path still does not host the production Phone shell; attaching the overall Phone shell/navigation runtime is a separate project slice and is not invented here merely to make Details reachable from the current foundation placeholder.
+
+The mapper deliberately treats a duration-only metadata update as the same lookup track, matching the existing playback identity rule that duration churn must not restart lyrics lookup.
 
 ## Scope guard
 
