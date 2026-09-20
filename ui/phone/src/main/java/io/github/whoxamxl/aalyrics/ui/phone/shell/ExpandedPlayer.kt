@@ -51,6 +51,9 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.dp
 import io.github.whoxamxl.aalyrics.ui.designsystem.icon.AALyricsIcons
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsColors
@@ -274,6 +277,14 @@ private fun ExpandedSeekRow(
     onSeekCancel: () -> Unit,
 ) {
     val duration = durationMs ?: 1L
+    val positionDescription = stringResource(R.string.playback_position)
+    val positionStateDescription = durationMs?.let {
+        stringResource(
+            R.string.playback_position_state,
+            formatPlaybackTime(displayedPositionMs),
+            formatPlaybackTime(it),
+        )
+    } ?: formatPlaybackTime(displayedPositionMs)
     val interactionSource = remember { MutableInteractionSource() }
     var cancelled by remember { mutableStateOf(false) }
     val currentPosition by rememberUpdatedState(displayedPositionMs)
@@ -298,7 +309,7 @@ private fun ExpandedSeekRow(
             text = formatPlaybackTime(displayedPositionMs),
             style = AALyricsTypography.Label,
             color = AALyricsColors.TextSecondary,
-            modifier = Modifier.width(44.dp),
+            modifier = Modifier.width(52.dp),
         )
 
         Slider(
@@ -315,6 +326,10 @@ private fun ExpandedSeekRow(
             interactionSource = interactionSource,
             modifier = Modifier
                 .weight(1f)
+                .semantics {
+                    contentDescription = positionDescription
+                    stateDescription = positionStateDescription
+                }
                 .padding(horizontal = AALyricsSpacing.Space4),
         )
 
@@ -322,7 +337,7 @@ private fun ExpandedSeekRow(
             text = durationMs?.let(::formatPlaybackTime) ?: "--:--",
             style = AALyricsTypography.Label,
             color = AALyricsColors.TextSecondary,
-            modifier = Modifier.width(44.dp),
+            modifier = Modifier.width(52.dp),
         )
     }
 }
