@@ -26,6 +26,7 @@ import io.github.whoxamxl.aalyrics.ui.phone.lyrics.LyricsScreenUiState
 import io.github.whoxamxl.aalyrics.ui.phone.navigation.PhoneDestination
 import io.github.whoxamxl.aalyrics.ui.phone.settings.SettingsScreen
 import io.github.whoxamxl.aalyrics.ui.phone.settings.SettingsScreenUiState
+import io.github.whoxamxl.aalyrics.ui.phone.settings.normalizedForSettingsEntry
 import io.github.whoxamxl.aalyrics.ui.phone.shell.PhoneAppShell
 import io.github.whoxamxl.aalyrics.ui.phone.state.PhoneShellUiState
 
@@ -177,6 +178,11 @@ internal fun PreviewSettingsDestination(
         onAndroidAutoCompatibilitySetup = {},
         onCheckForUpdates = {},
         onDownloadUpdate = {},
+        onSettingsEntered = {
+            state = state.copy(
+                appUpdate = state.appUpdate.normalizedForSettingsEntry(),
+            )
+        },
         onOpenGitHub = {},
         modifier = Modifier.fillMaxSize(),
         bottomOverlayInset = bottomOverlayInset,
