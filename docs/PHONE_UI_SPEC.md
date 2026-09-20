@@ -76,7 +76,7 @@ Candidate scores, raw provider payloads, log export, and deeper resolver diagnos
 
 Owns user-facing application configuration while persistence and capability policy remain outside `:ui:phone`.
 
-The first production Settings contract is defined in `docs/PHONE_SETTINGS.md` and intentionally includes only already-established product settings:
+The production Settings contract is defined in `docs/PHONE_SETTINGS.md`. Its implemented core settings remain deliberately focused, with the approved but not-yet-implemented Advanced extension limited to Verbose Details plus a disabled future Karaoke affordance:
 
 - Plain lyrics auto-scroll;
 - Translation enabled/disabled;
