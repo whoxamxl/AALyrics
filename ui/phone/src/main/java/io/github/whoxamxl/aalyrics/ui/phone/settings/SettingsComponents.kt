@@ -508,7 +508,7 @@ private fun TargetLanguagePrimaryAction(
         TranslationModelUiState.FAILED -> {
             TargetLanguageIconSlot(onClick = onDownloadRequested) {
                 Icon(
-                    imageVector = AALyricsIcons.DownloadFailed,
+                    imageVector = AALyricsIcons.Retry,
                     contentDescription = retryContentDescription,
                     tint = AALyricsColors.Error,
                     modifier = Modifier.size(AALyricsSpacing.Space20),
