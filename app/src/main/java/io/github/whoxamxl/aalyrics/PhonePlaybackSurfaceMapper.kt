@@ -10,7 +10,7 @@ internal fun mapPhonePlaybackSurfaceState(
     playback: PlaybackSnapshot,
     controlState: PlaybackControlState,
     translationEnabled: Boolean,
-    canLaunchSourcePackage: Boolean,
+    canOpenPlaybackApp: Boolean,
 ): PlaybackSurfaceUiState? {
     val track = playback.track ?: return null
     val sourcePackageName = playback.source?.id
