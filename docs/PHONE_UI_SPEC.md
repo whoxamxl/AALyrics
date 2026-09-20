@@ -73,9 +73,10 @@ The first production Settings contract is defined in `docs/PHONE_SETTINGS.md` an
 - Plain lyrics auto-scroll;
 - Translation enabled/disabled;
 - Translation target language;
-- Android Auto compatibility acknowledgement/status and setup re-entry.
+- Android Auto compatibility acknowledgement/status and setup re-entry;
+- app update entry, installed version, and About/GitHub presentation.
 
-Provider preferences, appearance, About/diagnostics, and other future taxonomy remain deferred until separately approved.
+Provider preferences, appearance/theme selection, diagnostics, and other future taxonomy remain deferred until separately approved.
 
 ## Persistent top status bar
 
