@@ -3,6 +3,7 @@ package io.github.whoxamxl.aalyrics.ui.phone.settings
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
@@ -39,6 +40,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.github.whoxamxl.aalyrics.ui.designsystem.icon.AALyricsIcons
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsColors
@@ -425,6 +427,7 @@ private fun TargetLanguageRow(
                 AALyricsColors.TextPrimary
             },
             maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
             modifier = Modifier.weight(1f),
         )
 
@@ -438,10 +441,7 @@ private fun TargetLanguageRow(
             onDownloadRequested = { onDownloadRequested() },
         )
 
-        Box(
-            modifier = Modifier.size(AALyricsSpacing.Space48),
-            contentAlignment = Alignment.Center,
-        ) {
+        TargetLanguageIconSlot {
             if (selected) {
                 Icon(
                     imageVector = AALyricsIcons.Check,
@@ -466,10 +466,7 @@ private fun TranslationModelStatusAction(
 ) {
     when (option.modelState) {
         TranslationModelUiState.BUILT_IN -> {
-            Box(
-                modifier = Modifier.size(AALyricsSpacing.Space48),
-                contentAlignment = Alignment.Center,
-            ) {
+            TargetLanguageIconSlot {
                 Icon(
                     imageVector = AALyricsIcons.DownloadDone,
                     contentDescription = builtInContentDescription,
@@ -480,9 +477,8 @@ private fun TranslationModelStatusAction(
         }
 
         TranslationModelUiState.NOT_DOWNLOADED -> {
-            IconButton(
+            TargetLanguageIconSlot(
                 onClick = { onDownloadRequested(option.id) },
-                modifier = Modifier.size(AALyricsSpacing.Space48),
             ) {
                 Icon(
                     imageVector = AALyricsIcons.Download,
@@ -494,13 +490,10 @@ private fun TranslationModelStatusAction(
         }
 
         TranslationModelUiState.DOWNLOADING -> {
-            Box(
-                modifier = Modifier
-                    .size(AALyricsSpacing.Space40)
-                    .semantics {
-                        contentDescription = downloadingContentDescription
-                    },
-                contentAlignment = Alignment.Center,
+            TargetLanguageIconSlot(
+                modifier = Modifier.semantics {
+                    contentDescription = downloadingContentDescription
+                },
             ) {
                 CircularProgressIndicator(
                     modifier = Modifier.size(AALyricsSpacing.Space20),
@@ -511,10 +504,7 @@ private fun TranslationModelStatusAction(
         }
 
         TranslationModelUiState.READY -> {
-            Box(
-                modifier = Modifier.size(AALyricsSpacing.Space48),
-                contentAlignment = Alignment.Center,
-            ) {
+            TargetLanguageIconSlot {
                 Icon(
                     imageVector = AALyricsIcons.DownloadDone,
                     contentDescription = readyContentDescription,
@@ -525,9 +515,8 @@ private fun TranslationModelStatusAction(
         }
 
         TranslationModelUiState.FAILED -> {
-            IconButton(
+            TargetLanguageIconSlot(
                 onClick = { onDownloadRequested(option.id) },
-                modifier = Modifier.size(AALyricsSpacing.Space48),
             ) {
                 Icon(
                     imageVector = AALyricsIcons.DownloadFailed,
@@ -537,5 +526,30 @@ private fun TranslationModelStatusAction(
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun TargetLanguageIconSlot(
+    modifier: Modifier = Modifier,
+    onClick: (() -> Unit)? = null,
+    content: @Composable BoxScope.() -> Unit,
+) {
+    if (onClick != null) {
+        IconButton(
+            onClick = onClick,
+            modifier = modifier.size(AALyricsSpacing.Space48),
+        ) {
+            Box(
+                contentAlignment = Alignment.Center,
+                content = content,
+            )
+        }
+    } else {
+        Box(
+            modifier = modifier.size(AALyricsSpacing.Space48),
+            contentAlignment = Alignment.Center,
+            content = content,
+        )
     }
 }
