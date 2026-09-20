@@ -14,6 +14,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsColors
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsTheme
 import io.github.whoxamxl.aalyrics.ui.phone.settings.AboutDialog
+import io.github.whoxamxl.aalyrics.ui.phone.settings.AppUpdateUiPhase
+import io.github.whoxamxl.aalyrics.ui.phone.settings.AppUpdateUiState
 import io.github.whoxamxl.aalyrics.ui.phone.settings.SettingsScreenContent
 import io.github.whoxamxl.aalyrics.ui.phone.settings.SettingsScreenUiState
 import io.github.whoxamxl.aalyrics.ui.phone.settings.TranslationModelUiState
@@ -51,6 +53,30 @@ private fun SettingsTargetLanguagePickerPreview() {
         initialState = PhonePreviewFixtures.settingsTypical,
         initialPickerVisible = true,
     )
+}
+
+@Preview(name = "Update · checking", group = "SettingsScreen", widthDp = 412, heightDp = 900)
+@Composable
+private fun SettingsUpdateCheckingPreview() {
+    SettingsScreenPreview(PhonePreviewFixtures.settingsCheckingUpdate)
+}
+
+@Preview(name = "Update · up to date", group = "SettingsScreen", widthDp = 412, heightDp = 900)
+@Composable
+private fun SettingsUpdateUpToDatePreview() {
+    SettingsScreenPreview(PhonePreviewFixtures.settingsUpToDate)
+}
+
+@Preview(name = "Update · available", group = "SettingsScreen", widthDp = 412, heightDp = 900)
+@Composable
+private fun SettingsUpdateAvailablePreview() {
+    SettingsScreenPreview(PhonePreviewFixtures.settingsUpdateAvailable)
+}
+
+@Preview(name = "Update · failed", group = "SettingsScreen", widthDp = 412, heightDp = 900)
+@Composable
+private fun SettingsUpdateFailedPreview() {
+    SettingsScreenPreview(PhonePreviewFixtures.settingsUpdateFailed)
 }
 
 @Preview(name = "About", group = "SettingsScreen", widthDp = 412, heightDp = 760)
@@ -167,7 +193,40 @@ internal fun SettingsScreenPreview(
                     }
                 },
                 onAndroidAutoCompatibilitySetup = {},
-                onCheckForUpdates = {},
+                onCheckForUpdates = {
+                    state = state.copy(
+                        appUpdate = AppUpdateUiState(
+                            phase = AppUpdateUiPhase.CHECKING,
+                        ),
+                    )
+                    scope.launch {
+                        delay(1200)
+                        state = state.copy(
+                            appUpdate = AppUpdateUiState(
+                                phase = AppUpdateUiPhase.UPDATE_AVAILABLE,
+                                availableVersionName = "0.1.2",
+                            ),
+                        )
+                    }
+                },
+                onDownloadUpdate = {
+                    val version = state.appUpdate.availableVersionName ?: "0.1.2"
+                    state = state.copy(
+                        appUpdate = AppUpdateUiState(
+                            phase = AppUpdateUiPhase.DOWNLOADING,
+                            availableVersionName = version,
+                        ),
+                    )
+                    scope.launch {
+                        delay(1200)
+                        state = state.copy(
+                            appUpdate = AppUpdateUiState(
+                                phase = AppUpdateUiPhase.DOWNLOADED,
+                                availableVersionName = version,
+                            ),
+                        )
+                    }
+                },
                 onAboutRequested = {},
                 modifier = Modifier.fillMaxSize(),
             )
