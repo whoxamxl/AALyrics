@@ -32,7 +32,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -73,6 +72,8 @@ import io.github.whoxamxl.aalyrics.ui.phone.R
 import io.github.whoxamxl.aalyrics.ui.phone.component.TrackIdentityMarquee
 import io.github.whoxamxl.aalyrics.ui.phone.state.PlaybackQueueItemUiState
 import io.github.whoxamxl.aalyrics.ui.phone.state.PlaybackSurfaceUiState
+import ir.mahozad.multiplatform.wavyslider.WaveDirection.HEAD
+import ir.mahozad.multiplatform.wavyslider.material3.WavySlider
 import kotlinx.coroutines.flow.collect
 
 /** On-demand compact player expanded upward from the persistent Playback Bar. */
@@ -80,6 +81,7 @@ import kotlinx.coroutines.flow.collect
 internal fun ExpandedPlayer(
     state: PlaybackSurfaceUiState,
     displayedPositionMs: Long,
+    seekPreviewActive: Boolean = false,
     onCollapse: () -> Unit,
     onPrevious: () -> Unit,
     onPlayPause: () -> Unit,
@@ -121,6 +123,8 @@ internal fun ExpandedPlayer(
 
             ExpandedSeekArea(
                 enabled = state.seekEnabled,
+                isPlaying = state.isPlaying,
+                seekPreviewActive = seekPreviewActive,
                 displayedPositionMs = displayedPositionMs,
                 durationMs = state.durationMs,
                 onSeekPreview = onSeekPreview,
@@ -243,6 +247,8 @@ private fun ExpandedPlayerHeader(
 @Composable
 private fun ExpandedSeekArea(
     enabled: Boolean,
+    isPlaying: Boolean,
+    seekPreviewActive: Boolean,
     displayedPositionMs: Long,
     durationMs: Long?,
     onSeekPreview: (Long) -> Unit,
@@ -275,8 +281,10 @@ private fun ExpandedSeekArea(
         }
     }
 
+    val waveActive = enabled && isPlaying && !seekPreviewActive
+
     Column(Modifier.fillMaxWidth()) {
-        Slider(
+        WavySlider(
             value = displayedPositionMs.coerceIn(0L, duration).toFloat(),
             onValueChange = { value ->
                 if (enabled) onSeekPreview(value.toLong())
@@ -288,8 +296,14 @@ private fun ExpandedSeekArea(
             enabled = enabled,
             valueRange = 0f..duration.toFloat(),
             interactionSource = interactionSource,
+            waveHeight = if (waveActive) 4.dp else 0.dp,
+            waveLength = 22.dp,
+            waveVelocity = if (waveActive) 10.dp to HEAD else 0.dp to HEAD,
+            waveThickness = 3.dp,
+            trackThickness = 3.dp,
+            incremental = false,
             colors = SliderDefaults.colors(
-                thumbColor = AALyricsColors.AccentCyan,
+                thumbColor = AALyricsColors.TextPrimary,
                 activeTrackColor = AALyricsColors.AccentCyan,
                 inactiveTrackColor = AALyricsColors.BorderSoft,
                 disabledThumbColor = AALyricsColors.TextTertiary,
