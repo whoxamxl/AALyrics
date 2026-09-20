@@ -177,28 +177,23 @@ Collapsed Player + Back
 
 ## Expanded seek visual language
 
-The Expanded Player seek control uses a One UI-inspired asymmetric dynamic waveform rendered natively with Compose Canvas.
+The Expanded Player seek control follows the simpler iPhone media-player interaction shown in the recorded reference.
 
 Rules:
 
-- only the active/progress segment becomes a wave while playback is running;
-- the inactive segment always remains a straight, low-alpha track;
-- the active waveform is a filled pill that swells into roughly two or three broad blobs rather than a regular repeating sine wave;
-- the blob profile is intentionally slightly asymmetric above/below the centerline so it reads as a fluid waveform rather than a geometric squiggle;
-- each blob keeps a stable overall scale while its position and strength drift slowly during playback, avoiding any progressive "wave growth" effect;
-- the profile returns smoothly to the normal pill thickness at both the start and the thumb;
-- pausing freezes the current blob shape; disabling the seek capability renders the active segment flat;
-- use AALyrics Accent Cyan as the only hue rather than One UI's artwork-derived multicolor treatment;
-- distinguish the two-to-three broad blobs with opacity layers of the same cyan, keeping a translucent cyan base pill underneath;
-- keep the waveform restrained: approximately 8dp base thickness with up to about 7dp additional blob expansion;
-- retain a compact 18dp round thumb;
-- during direct Slider drag, animate only the blob expansion to about 45% over roughly 180ms; keep the base pill, thumb, and inactive track dimensions unchanged;
+- the resting state is a thin rounded pill with no visible standalone thumb;
+- the active segment is bright and the inactive segment remains muted;
+- while the user directly drags the Slider, animate the entire track thickness from about 4dp to about 12dp;
+- the active/inactive boundary itself reads as the seek position while dragging, rather than exposing a separate circular thumb;
+- return the track smoothly to the thin resting state after drag stop/cancel;
+- keep the track shape stable across playing and paused playback; playback state does not create decorative waveform animation;
 - keep elapsed/duration labels below the track;
+- preserve the existing direct-seek preview / one-shot commit behavior;
 - the collapsed playback progress indicator remains the existing thin, straight, non-interactive line.
 
-The Material3 Slider continues to own gestures/accessibility/seek semantics. Only its visual track is replaced by the custom Canvas waveform, so the existing direct-seek commit/cancel behavior is preserved.
+The Material3 Slider continues to own gestures/accessibility/seek semantics. The implementation customizes only the visual track and hides the visual thumb, keeping the interaction model small and framework-native.
 
-No third-party slider dependency is required for this treatment.
+No third-party slider dependency is required.
 
 ## Interactive seek bar
 
