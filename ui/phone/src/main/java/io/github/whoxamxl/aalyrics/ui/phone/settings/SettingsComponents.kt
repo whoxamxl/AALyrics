@@ -39,6 +39,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -286,6 +287,7 @@ internal fun AppUpdateRow(
                         state.availableVersionName?.asVersionLabel().orEmpty()
                     }".trim(),
                     actionLabel = downloadLabel,
+                    actionIcon = AALyricsIcons.Download,
                     onAction = onDownloadUpdate,
                 )
             }
@@ -340,30 +342,67 @@ private fun AppUpdateActionRow(
     actionLabel: String,
     onAction: () -> Unit,
     status: String? = null,
+    actionIcon: ImageVector? = null,
 ) {
     Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.End,
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = AALyricsSpacing.Space48),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        status?.let {
+        if (status != null) {
             Text(
-                text = it,
+                text = status,
                 style = AALyricsTypography.TrackArtist,
                 color = AALyricsColors.TextSecondary,
                 modifier = Modifier
                     .weight(1f)
                     .padding(end = AALyricsSpacing.Space12),
             )
+        } else {
+            Spacer(Modifier.weight(1f))
         }
 
-        TextButton(onClick = onAction) {
-            Text(
-                text = actionLabel,
-                style = AALyricsTypography.TrackArtist,
-                color = AALyricsColors.AccentCyan,
+        AppUpdateInlineAction(
+            label = actionLabel,
+            icon = actionIcon,
+            onClick = onAction,
+        )
+    }
+}
+
+@Composable
+private fun AppUpdateInlineAction(
+    label: String,
+    icon: ImageVector?,
+    onClick: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .widthIn(min = AALyricsSpacing.Space48)
+            .heightIn(min = AALyricsSpacing.Space48)
+            .clickable(
+                role = Role.Button,
+                onClick = onClick,
+            ),
+        horizontalArrangement = Arrangement.End,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        if (icon != null) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = AALyricsColors.AccentCyan,
+                modifier = Modifier.size(AALyricsSpacing.Space16),
             )
+            Spacer(Modifier.size(AALyricsSpacing.Space4))
         }
+
+        Text(
+            text = label,
+            style = AALyricsTypography.TrackArtist,
+            color = AALyricsColors.AccentCyan,
+        )
     }
 }
 
@@ -372,15 +411,17 @@ private fun AppUpdateProgressRow(
     label: String,
 ) {
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = AALyricsSpacing.Space48),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
             text = label,
             style = AALyricsTypography.TrackArtist,
             color = AALyricsColors.TextSecondary,
+            modifier = Modifier.weight(1f),
         )
-        Spacer(Modifier.weight(1f))
         CircularProgressIndicator(
             modifier = Modifier.size(AALyricsSpacing.Space20),
             color = AALyricsColors.AccentCyan,
@@ -392,19 +433,21 @@ private fun AppUpdateProgressRow(
 @Composable
 private fun AppUpdateStatusRow(
     label: String,
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    icon: ImageVector,
     iconTint: Color,
 ) {
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = AALyricsSpacing.Space48),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
             text = label,
             style = AALyricsTypography.TrackArtist,
             color = AALyricsColors.TextSecondary,
+            modifier = Modifier.weight(1f),
         )
-        Spacer(Modifier.weight(1f))
         Icon(
             imageVector = icon,
             contentDescription = null,
@@ -423,7 +466,9 @@ private fun AppUpdateFailureRow(
     onRetry: () -> Unit,
 ) {
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = AALyricsSpacing.Space48),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
@@ -439,20 +484,11 @@ private fun AppUpdateFailureRow(
 
         Spacer(Modifier.weight(1f))
 
-        TextButton(onClick = onRetry) {
-            Icon(
-                imageVector = AALyricsIcons.Retry,
-                contentDescription = null,
-                tint = AALyricsColors.AccentCyan,
-                modifier = Modifier.size(AALyricsSpacing.Space16),
-            )
-            Text(
-                text = retryLabel,
-                style = AALyricsTypography.TrackArtist,
-                color = AALyricsColors.AccentCyan,
-                modifier = Modifier.padding(start = AALyricsSpacing.Space4),
-            )
-        }
+        AppUpdateInlineAction(
+            label = retryLabel,
+            icon = AALyricsIcons.Retry,
+            onClick = onRetry,
+        )
     }
 }
 
