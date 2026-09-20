@@ -6,7 +6,7 @@ The Phone information architecture and persistent Compose shell are established.
 
 PR #49 implements the approved Details contract from `docs/PHONE_DETAILS.md` together with the narrow `Settings > Advanced` extension from `docs/PHONE_SETTINGS.md`. Details remains read-only, Verbose Details is presentation-only, and Karaoke mode remains disabled/unwired. Sync remains intentionally deferred while its timing/calibration interaction model is reconsidered.
 
-The remaining blocker to physical-device Phone UI testing is now application composition: `MainActivity` still renders a foundation `TextView` for the READY state rather than hosting the production Compose shell. The next approved slice is defined in `docs/PHONE_RUNTIME_HOST.md`: preserve the existing entry gates, host `PhoneAppShell` in READY, and add only the minimal application-owned presentation wiring needed to exercise the approved Phone surfaces honestly on-device.
+PR #50 implements the application-composition slice defined in `docs/PHONE_RUNTIME_HOST.md`. `MainActivity` preserves the existing entry gates and now hosts the production `PhoneAppShell` for READY. Live app-owned state drives Lyrics, Playback Surface, Details, and Settings; Sync remains an explicit non-functional placeholder. The generated debug APK is therefore suitable for physical-device Phone UI smoke testing, with actual device interaction still requiring manual validation.
 
 ## Product intent
 

@@ -155,7 +155,7 @@ Presentation uses `:ui:designsystem` for shared tokens/components, `:ui:phone` f
 
 PR #49 implements the approved read-only Details destination plus the Settings-owned Advanced surface with a persisted presentation-only Verbose Details preference and an intentionally disabled/unwired Karaoke affordance. Sync remains the only primary Phone destination that is both a placeholder and interaction-model-deferred pending timing/calibration redesign.
 
-The next approved Phone slice is **Phone runtime host / device-test enablement**, documented in `docs/PHONE_RUNTIME_HOST.md`. The current debug APK can build successfully but `MainActivity` still shows the foundation READY placeholder, so the production Phone shell is not yet reachable for end-to-end manual UI testing. The runtime-host slice preserves onboarding, replaces only the READY placeholder with `PhoneAppShell`, and completes the minimum honest application-owned presentation wiring needed for device testing without implementing deferred Sync/Karaoke/update capabilities.
+PR #50 implements the **Phone runtime host / device-test enablement** slice documented in `docs/PHONE_RUNTIME_HOST.md`. `MainActivity` preserves onboarding and now hosts `PhoneAppShell` for READY, with live application-owned Lyrics/Playback/Details/Settings wiring. Sync remains a deliberate placeholder, Karaoke remains disabled/unwired, and unfinished Update/Changelog capabilities are shown unavailable. The debug APK is now structurally ready for physical-device Phone UI smoke testing.
 
 ### Phase 9 — Live MediaSession runtime ✅
 

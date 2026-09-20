@@ -6,19 +6,20 @@ This document defines the approved application-composition slice that makes the 
 
 The implementation branch is `feature/phone-shell-runtime-host`, based on `main` after PR #49.
 
-At the current documentation checkpoint:
+PR #50 implements this application-composition slice on `feature/phone-shell-runtime-host`.
 
-- the entry/onboarding flow is production code;
-- `PhoneAppShell`, Lyrics, Settings, Details, and Playback Surface production composables exist;
-- `AALyricsApplication` exposes live playback, lyrics, Translation, Playback Surface, Details, and Verbose Details state;
-- `MainActivity` still renders a foundation `TextView` for `AppEntryState.READY`;
-- `LyricsRoute.kt` is still a placeholder rather than a production runtime route;
-- Settings has presentation contracts whose application/runtime mapping is not yet complete;
-- Sync remains intentionally undefined and must not gain timing/calibration behavior in this slice.
+The current production branch state now has:
 
-Therefore a successful debug APK build does **not** yet mean the production Phone UI can be exercised end-to-end on-device.
+- the existing entry/onboarding flow preserved;
+- `MainActivity` migrated to a Compose-capable Activity while retaining the existing View-based setup screens;
+- `AppEntryState.READY` hosting `AALyricsTheme -> PhoneAppShell`;
+- live app-owned playback, lyrics, Details, Translation, model, and Verbose Details state collected lifecycle-aware;
+- Playback Surface commands routed through the existing application/platform media boundary;
+- production Lyrics and Settings presentation mapping;
+- an explicit non-functional Sync placeholder;
+- unsupported Update/Changelog controls presented unavailable rather than wired to no-ops.
 
-This document aligns the next implementation boundary. The initial commit on the branch is documentation-only; production work begins only when the user resumes work on the same branch.
+The debug APK now builds with the real Phone shell reachable after onboarding prerequisites are satisfied. Physical-device smoke testing remains the final empirical validation step; CI alone does not claim that device interaction has been observed.
 
 ## Goal
 
@@ -95,7 +96,7 @@ Re-entering Android Auto compatibility setup from Settings may use host-local tr
 
 ## Compose host
 
-The READY path should render:
+The READY path now renders:
 
 ```text
 AALyricsTheme {
@@ -116,7 +117,7 @@ Primary destination selection:
 
 ## Shell state
 
-The runtime host must provide a real `PhoneShellUiState`:
+The runtime host provides a real `PhoneShellUiState`:
 
 ```text
 PhoneShellUiState
@@ -141,7 +142,7 @@ The runtime-host slice may add the minimal application-owned source-label/shell 
 - Open playback app;
 - Translation enabled/disabled.
 
-The READY host must route these through application/platform seams that already own media/runtime behavior. The UI module must not import platform media objects.
+The READY host routes these through application/platform seams that already own media/runtime behavior. The UI module must not import platform media objects.
 
 Capability state remains authoritative. A control must not be made to appear functional by wiring a no-op callback.
 
