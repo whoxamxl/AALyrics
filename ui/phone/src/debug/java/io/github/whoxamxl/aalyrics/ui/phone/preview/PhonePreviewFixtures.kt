@@ -10,6 +10,7 @@ import io.github.whoxamxl.aalyrics.ui.phone.navigation.PhoneDestination
 import io.github.whoxamxl.aalyrics.ui.phone.settings.AndroidAutoCompatibilityUiStatus
 import io.github.whoxamxl.aalyrics.ui.phone.settings.SettingsLanguageOptionUiState
 import io.github.whoxamxl.aalyrics.ui.phone.settings.SettingsScreenUiState
+import io.github.whoxamxl.aalyrics.ui.phone.settings.TranslationModelUiState
 import io.github.whoxamxl.aalyrics.ui.phone.state.PhoneShellUiState
 import io.github.whoxamxl.aalyrics.ui.phone.state.PlaybackControlsUiState
 
@@ -163,11 +164,31 @@ internal object PhonePreviewFixtures {
     )
 
     val settingsLanguages = listOf(
-        SettingsLanguageOptionUiState("en", "English"),
-        SettingsLanguageOptionUiState("ja", "Japanese"),
-        SettingsLanguageOptionUiState("fr", "French"),
-        SettingsLanguageOptionUiState("de", "German"),
-        SettingsLanguageOptionUiState("es", "Spanish"),
+        SettingsLanguageOptionUiState(
+            id = "en",
+            displayName = "English",
+            modelState = TranslationModelUiState.BUILT_IN,
+        ),
+        SettingsLanguageOptionUiState(
+            id = "ja",
+            displayName = "Japanese",
+            modelState = TranslationModelUiState.NOT_DOWNLOADED,
+        ),
+        SettingsLanguageOptionUiState(
+            id = "fr",
+            displayName = "French",
+            modelState = TranslationModelUiState.DOWNLOADING,
+        ),
+        SettingsLanguageOptionUiState(
+            id = "de",
+            displayName = "German",
+            modelState = TranslationModelUiState.READY,
+        ),
+        SettingsLanguageOptionUiState(
+            id = "es",
+            displayName = "Spanish",
+            modelState = TranslationModelUiState.FAILED,
+        ),
         SettingsLanguageOptionUiState("ko", "Korean"),
         SettingsLanguageOptionUiState("zh", "Chinese"),
         SettingsLanguageOptionUiState("it", "Italian"),
@@ -176,7 +197,7 @@ internal object PhonePreviewFixtures {
     val settingsTypical = SettingsScreenUiState(
         plainLyricsAutoScrollEnabled = true,
         translationEnabled = true,
-        translationTarget = settingsLanguages.first { it.id == "ja" },
+        translationTarget = settingsLanguages.first { it.id == "en" },
         translationTargets = settingsLanguages,
         androidAutoCompatibilityStatus = AndroidAutoCompatibilityUiStatus.ENABLED,
     )
