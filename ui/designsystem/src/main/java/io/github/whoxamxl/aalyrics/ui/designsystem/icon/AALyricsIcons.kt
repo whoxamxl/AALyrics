@@ -32,7 +32,7 @@ object AALyricsIcons {
     val NavigateNext: ImageVector = Icons.Rounded.ChevronRight
     val Check: ImageVector = Icons.Rounded.Check
     val Download: ImageVector = Icons.Rounded.Download
-    val Retry: ImageVector = Icons.Rounded.Refresh
+    val Retry: ImageVector = Icons.Rounded.Sync
 
     val PlaybackAbove: ImageVector = Icons.Rounded.ExpandLess
     val PlaybackBelow: ImageVector = Icons.Rounded.ExpandMore
