@@ -28,7 +28,7 @@ Development milestones use semantic-version-style prerelease tags:
 
 Any accepted release tag containing a prerelease suffix is published with GitHub's **Pre-release** flag.
 
-The initial signed distribution should use `v0.1.0-alpha.1`. It is acceptable for this release to be functionally incomplete. Its immediate purpose is to validate the durable signing/distribution path and provide an installable baseline.
+The initial signed distribution, `v0.1.0-alpha.1`, has been published successfully as a GitHub Pre-release. It is intentionally functionally incomplete; its immediate purpose is to validate the durable signing/distribution path and provide an installable baseline.
 
 ### Stable releases
 
