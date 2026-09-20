@@ -138,6 +138,7 @@ internal object PhonePreviewFixtures {
         canPause = true,
         canSkipPrevious = true,
         canSkipNext = true,
+        canSkipToQueueItem = true,
         canSeek = true,
         queue = listOf(
             PlaybackQueueItemUiState(101L, "Midnight Signals", "The Northbound Lights"),
