@@ -130,9 +130,9 @@ The current framework-neutral `PlaybackTransport` already exposes play/pause/pre
 - [x] Define Queue/Open-app capability fallback.
 - [x] Define Translation quick-control ownership.
 - [x] Define capability/presentation boundaries.
-- [ ] Align `docs/PHONE_UI_SPEC.md`.
-- [ ] Align `docs/MEDIA_SESSION_RUNTIME.md`.
-- [ ] Report documentation checkpoint to the user before implementation.
+- [x] Align `docs/PHONE_UI_SPEC.md`.
+- [x] Align `docs/MEDIA_SESSION_RUNTIME.md`.
+- [x] Report documentation checkpoint to the user before implementation.
 
 ## Implementation acceptance criteria
 
