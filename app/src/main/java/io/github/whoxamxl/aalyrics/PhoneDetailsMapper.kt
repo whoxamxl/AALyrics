@@ -28,7 +28,7 @@ internal fun mapPhoneDetailsState(
             DetailsTrackUiState(
                 title = it.title,
                 artist = it.artists
-                    .takeIf(List<String>::isNotEmpty)
+                    .takeIf { artists -> artists.isNotEmpty() }
                     ?.joinToString(separator = ", "),
                 album = it.album,
                 durationLabel = it.durationMs?.let(::formatDuration),
