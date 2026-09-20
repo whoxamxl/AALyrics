@@ -28,6 +28,7 @@ fun SettingsScreen(
     onPlainLyricsAutoScrollChanged: (Boolean) -> Unit,
     onTranslationEnabledChanged: (Boolean) -> Unit,
     onTranslationTargetSelected: (String) -> Unit,
+    onTranslationModelDownloadRequested: (String) -> Unit,
     onAndroidAutoCompatibilitySetup: () -> Unit,
     modifier: Modifier = Modifier,
     bottomOverlayInset: Dp = 0.dp,
@@ -43,6 +44,7 @@ fun SettingsScreen(
         onPlainLyricsAutoScrollChanged = onPlainLyricsAutoScrollChanged,
         onTranslationEnabledChanged = onTranslationEnabledChanged,
         onTranslationTargetSelected = onTranslationTargetSelected,
+        onTranslationModelDownloadRequested = onTranslationModelDownloadRequested,
         onAndroidAutoCompatibilitySetup = onAndroidAutoCompatibilitySetup,
         modifier = modifier,
         bottomOverlayInset = bottomOverlayInset,
@@ -57,6 +59,7 @@ internal fun SettingsScreenContent(
     onPlainLyricsAutoScrollChanged: (Boolean) -> Unit,
     onTranslationEnabledChanged: (Boolean) -> Unit,
     onTranslationTargetSelected: (String) -> Unit,
+    onTranslationModelDownloadRequested: (String) -> Unit,
     onAndroidAutoCompatibilitySetup: () -> Unit,
     modifier: Modifier = Modifier,
     bottomOverlayInset: Dp = 0.dp,
@@ -131,7 +134,18 @@ internal fun SettingsScreenContent(
             options = state.translationTargets,
             selectedId = state.translationTarget.id,
             title = stringResource(R.string.settings_translation_target),
+            downloadContentDescription =
+                stringResource(R.string.settings_translation_model_download),
+            downloadingContentDescription =
+                stringResource(R.string.settings_translation_model_downloading),
+            readyContentDescription =
+                stringResource(R.string.settings_translation_model_ready),
+            builtInContentDescription =
+                stringResource(R.string.settings_translation_model_built_in),
+            retryContentDescription =
+                stringResource(R.string.settings_translation_model_retry),
             onSelected = onTranslationTargetSelected,
+            onDownloadRequested = onTranslationModelDownloadRequested,
             onDismissRequest = {
                 onTargetLanguagePickerVisibilityChanged(false)
             },
