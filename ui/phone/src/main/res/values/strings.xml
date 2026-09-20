@@ -76,6 +76,9 @@
     <string name="settings_brand_copyright_owner">Yuta Miura (whoxamxl)</string>
     <string name="settings_brand_logo_description">AALyrics logo</string>
 
+    <string name="sync_title">Sync</string>
+    <string name="sync_unavailable">Not available yet. Timing and calibration controls are still being redesigned.</string>
+
     <string name="details_title">Details</string>
     <string name="details_section_track">TRACK</string>
     <string name="details_track_title">Title</string>
