@@ -201,7 +201,7 @@ internal fun SettingsScreenContent(
         }
 
         SettingsBrandFooter(
-            appName = stringResource(R.string.app_name),
+            appName = stringResource(R.string.settings_brand_name),
             versionLabel = stringResource(R.string.settings_version),
             versionName = state.appVersionName,
             currentYear = state.currentYear,
