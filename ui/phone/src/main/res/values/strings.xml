@@ -33,6 +33,8 @@
     <string name="settings_translation_model_ready">Translation model downloaded</string>
     <string name="settings_translation_model_built_in">Translation support built in</string>
     <string name="settings_translation_model_retry">Retry translation model download</string>
+    <string name="settings_translation_model_failure_info">Why the translation model download failed</string>
+    <string name="settings_translation_model_failure_generic">The translation model download failed. Retry when the connection and system conditions are ready.</string>
 
     <string name="settings_section_android_auto">ANDROID AUTO</string>
     <string name="settings_android_auto_compatibility">Compatibility setup</string>
