@@ -17,6 +17,8 @@ import io.github.whoxamxl.aalyrics.provider.selection.CrossProviderCandidateSele
 import io.github.whoxamxl.aalyrics.provider.synclrc.SyncLrcProvider
 import io.github.whoxamxl.aalyrics.platform.media.MediaBrowserClientTrust
 import io.github.whoxamxl.aalyrics.platform.media.MediaSessionRuntimeHost
+import io.github.whoxamxl.aalyrics.platform.media.PlaybackControlState
+import io.github.whoxamxl.aalyrics.platform.media.PlaybackControlStateSink
 import io.github.whoxamxl.aalyrics.platform.media.PlaybackSnapshotSink
 import io.github.whoxamxl.aalyrics.ui.automotive.AutomotiveBrowserClientTrust
 import io.github.whoxamxl.aalyrics.ui.automotive.AutomotiveRuntimeBinding
@@ -55,6 +57,12 @@ class AALyricsApplication : Application() {
     val lyricsState: StateFlow<LyricsState>
         get() = graph.lyricsState
 
+    val playbackState: StateFlow<PlaybackSnapshot>
+        get() = graph.playbackState
+
+    val playbackControlState: StateFlow<PlaybackControlState>
+        get() = graph.playbackControlState
+
     val translationState: StateFlow<TranslationState>
         get() = translationCoordinator.state
 
@@ -85,6 +93,7 @@ class AALyricsApplication : Application() {
             applicationScope = applicationScope,
         ).also { it.start() }
         MediaSessionRuntimeHost.attach(graph.playbackSnapshotSink)
+        MediaSessionRuntimeHost.attachControlState(graph.playbackControlStateSink)
         automotiveBinding = AutomotiveRuntimeBinding(
             playback = graph.playbackState,
             lyrics = graph.lyricsState,
@@ -114,6 +123,7 @@ class AALyricsApplication : Application() {
         translationSettingsStore.close()
         demandLifecycle.stop()
         AutomotiveRuntimeHost.detach(automotiveBinding)
+        MediaSessionRuntimeHost.detachControlState(graph.playbackControlStateSink)
         MediaSessionRuntimeHost.detach(graph.playbackSnapshotSink)
         applicationScope.cancel()
         super.onTerminate()
@@ -129,6 +139,7 @@ internal class ApplicationGraph(
     internal val providers = providers.toList()
     internal val coordinator = LyricsCoordinator(this.providers, selector, applicationScope)
     private val mutablePlaybackState = MutableStateFlow(PlaybackSnapshot())
+    private val mutablePlaybackControlState = MutableStateFlow(PlaybackControlState())
 
     val playbackLyricsController = PlaybackLyricsController(
         lookupLifecycle = coordinator,
@@ -139,7 +150,12 @@ internal class ApplicationGraph(
         mutablePlaybackState.value = snapshot
         lyricsDemandGate.onPlaybackSnapshot(snapshot)
     }
+    val playbackControlStateSink = PlaybackControlStateSink { state ->
+        mutablePlaybackControlState.value = state
+    }
     val playbackState: StateFlow<PlaybackSnapshot> = mutablePlaybackState.asStateFlow()
+    val playbackControlState: StateFlow<PlaybackControlState> =
+        mutablePlaybackControlState.asStateFlow()
     val lyricsState: StateFlow<LyricsState> = coordinator.state
 }
 
