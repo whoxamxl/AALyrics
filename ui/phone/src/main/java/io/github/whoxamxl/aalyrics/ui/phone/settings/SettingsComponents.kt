@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -192,6 +193,7 @@ internal fun SettingsNavigationRow(
                 style = AALyricsTypography.TrackArtist,
                 color = if (enabled) valueColor else AALyricsColors.TextTertiary,
                 maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
                 modifier = Modifier
                     .widthIn(max = 144.dp)
                     .padding(start = AALyricsSpacing.Space12),
@@ -827,8 +829,10 @@ private fun TargetLanguageRow(
         modifier = Modifier
             .fillMaxWidth()
             .heightIn(min = AALyricsSpacing.Space48)
-            .clickable(
+            .selectable(
+                selected = selected,
                 enabled = selectable,
+                role = Role.RadioButton,
                 onClick = onSelected,
             )
             .padding(start = AALyricsSpacing.Space8),
