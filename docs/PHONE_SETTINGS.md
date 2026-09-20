@@ -562,14 +562,18 @@ Deterministic debug Previews should cover at least:
 
 The production Settings slice now includes the Advanced presentation contract. PR #49 keeps Verbose Details persistence application-owned and leaves Karaoke mode intentionally disabled and unwired.
 
-A later application-composition slice may map:
+The approved Phone runtime-host slice in `docs/PHONE_RUNTIME_HOST.md` is the application-composition boundary that will make Settings reachable on-device. It may map existing application/capability state into `SettingsScreenUiState` and expose existing application-owned actions through callbacks, including:
 
 - `TranslationSettingsStore.settings` -> Translation rows;
-- Translation callbacks -> `setEnabled` / `setTargetLanguage`;
+- existing Translation callbacks/capability seams where already implemented;
 - Android Auto acknowledgement -> presentation status;
 - compatibility-row callback -> existing compatibility setup flow;
-- a durable Plain auto-scroll preference -> LyricsViewport presentation state;
-- application-owned Verbose Details preference -> Settings and Details presentation state.
+- application-owned Verbose Details preference -> Settings and Details presentation state;
+- build/version facts and other already-owned application presentation data.
+
+A durable Plain auto-scroll preference remains a separate ownership decision unless the runtime-host implementation has an already-approved backing seam.
+
+The host must not wire active no-op callbacks for unfinished Settings capabilities. If a control has no production runtime backing, the smallest honest unavailable/disabled presentation should be used rather than expanding this slice into that capability's implementation.
 
 That wiring must preserve the existing capability ownership documented in the relevant architecture files.
 

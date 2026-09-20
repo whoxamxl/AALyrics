@@ -6,6 +6,8 @@ The Phone information architecture and persistent Compose shell are established.
 
 PR #49 implements the approved Details contract from `docs/PHONE_DETAILS.md` together with the narrow `Settings > Advanced` extension from `docs/PHONE_SETTINGS.md`. Details remains read-only, Verbose Details is presentation-only, and Karaoke mode remains disabled/unwired. Sync remains intentionally deferred while its timing/calibration interaction model is reconsidered.
 
+The remaining blocker to physical-device Phone UI testing is now application composition: `MainActivity` still renders a foundation `TextView` for the READY state rather than hosting the production Compose shell. The next approved slice is defined in `docs/PHONE_RUNTIME_HOST.md`: preserve the existing entry gates, host `PhoneAppShell` in READY, and add only the minimal application-owned presentation wiring needed to exercise the approved Phone surfaces honestly on-device.
+
 ## Product intent
 
 The Phone surface should keep lyrics as the primary content while making app state, playback controls, and destination switching consistently reachable with one hand.
@@ -328,8 +330,8 @@ The persistent shell implementation intentionally still does not decide or imple
 
 - exact dp heights or typography sizes for shell elements
 - final icons or animation
-- navigation framework/runtime
-- ViewModels or state-mapper classes
+- a general navigation framework beyond host-local primary destination selection
+- speculative ViewModel layers; the approved runtime-host slice may add minimal application-owned presentation mappers
 - media-session ownership
 - provider behavior
 - final Sync interaction model

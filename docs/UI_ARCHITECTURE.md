@@ -119,6 +119,8 @@ The richer current-track card remains Lyrics-destination content. The shell-leve
 
 PR #33 established the persistent shell boundary in production Compose. Subsequent Phone slices added Track Card, LyricsViewport/LyricsScreen, production Settings, and the capability-aware two-state Playback Surface. PR #46 completed the current shell playback contract with collapsed/expanded presentation, seek, Queue/Open-app fallback, and Translation quick controls. PR #49 implements the approved Details destination and the Settings-owned Advanced sub-surface while preserving the existing shell/application boundaries. Sync remains intentionally undefined pending timing/calibration redesign.
 
+The shell is not yet the READY-state Activity content. The approved application-composition boundary is documented in `docs/PHONE_RUNTIME_HOST.md`: `MainActivity` keeps the existing onboarding/permission entry gates, while READY becomes the lifecycle-aware Compose host for `PhoneAppShell`. Host-local destination selection remains presentation state; durable settings and media/runtime ownership stay outside `:ui:phone`.
+
 ## Shared vs automotive design system
 
 AALyrics has one shared semantic design language, but it is rendered through different UI technologies.
@@ -393,9 +395,13 @@ Presentation modules may map domain/application state into surface-specific stat
 ```text
 Application/domain state
         ↓
-Phone presentation mapping
+AALyricsApplication / app-owned presentation mapping
+        ↓
+MainActivity READY host
         ├─> PhoneShellUiState ------> PhoneAppShell
-        └─> LyricsUiState ----------> LyricsScreen
+        ├─> LyricsUiState ----------> LyricsScreen
+        ├─> DetailsScreenUiState ---> DetailsScreen
+        └─> SettingsScreenUiState --> SettingsScreen
 
 LyricsState
         ↓

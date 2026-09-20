@@ -149,7 +149,7 @@ No large duplicate Track Card is required merely to repeat the Lyrics destinatio
 
 ## Presentation state boundary
 
-A future Phone-local state may contain presentation facts equivalent to:
+The production Phone-local state contains presentation facts equivalent to:
 
 ```text
 DetailsScreenUiState
@@ -171,7 +171,7 @@ DetailsScreenUiState
    └─ trackReferences
 ```
 
-The exact Kotlin shape remains an implementation detail. Do not pass provider DTOs, `MediaController`, `PlaybackState`, framework queue objects, or Android intents into the screen.
+PR #49 established the concrete `DetailsScreenUiState` shape and application-owned `phoneDetailsState` mapping. The Phone runtime host defined in `docs/PHONE_RUNTIME_HOST.md` should consume that existing state rather than remapping provider/media facts in the Activity. Do not pass provider DTOs, `MediaController`, `PlaybackState`, framework queue objects, or Android intents into the screen.
 
 ## Empty and partial state
 
