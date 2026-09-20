@@ -18,4 +18,52 @@
     <string name="android_auto_compat_enabled">I’ve enabled Unknown sources</string>
     <string name="android_auto_compat_skip">Continue without it</string>
     <string name="android_auto_compat_footer">This setup is only for the legacy sideloaded media fallback. The templated Car App Library path does not require Android Auto Unknown sources.</string>
+
+    <string name="settings_title">Settings</string>
+    <string name="settings_section_lyrics">LYRICS</string>
+    <string name="settings_plain_auto_scroll">Plain lyrics auto-scroll</string>
+    <string name="settings_plain_auto_scroll_info">Estimates where playback is in untimed lyrics and scrolls smoothly to match. Requires track duration.</string>
+    <string name="settings_plain_auto_scroll_info_description">About Plain lyrics auto-scroll</string>
+
+    <string name="settings_section_translation">TRANSLATION</string>
+    <string name="settings_translation_enabled">Translation</string>
+    <string name="settings_translation_target">Target language</string>
+    <string name="settings_translation_model_download">Download translation model</string>
+    <string name="settings_translation_model_downloading">Downloading translation model</string>
+    <string name="settings_translation_model_retry">Retry translation model download</string>
+    <string name="settings_translation_model_failure_info">Why the translation model download failed</string>
+    <string name="settings_translation_model_failure_generic">The translation model download failed. Retry when the connection and system conditions are ready.</string>
+
+    <string name="settings_section_android_auto">ANDROID AUTO</string>
+    <string name="settings_android_auto_compatibility">Compatibility setup</string>
+    <string name="settings_android_auto_status_enabled">Enabled</string>
+    <string name="settings_android_auto_status_skipped">Skipped</string>
+    <string name="settings_android_auto_status_not_reviewed">Not reviewed</string>
+
+    <string name="settings_section_app">APP</string>
+    <string name="settings_version">Version</string>
+    <string name="settings_check_for_updates">Check for updates</string>
+    <string name="settings_checking_for_updates">Checking for updates…</string>
+    <string name="settings_up_to_date">Up to date</string>
+    <string name="settings_update_available">Update available:</string>
+    <string name="settings_download_update">Download</string>
+    <string name="settings_downloading_update">Downloading</string>
+    <string name="settings_update_downloaded">Downloaded</string>
+    <string name="settings_retry">Retry</string>
+    <string name="settings_update_check_failed">Update check failed</string>
+    <string name="settings_update_download_failed">Download failed</string>
+    <string name="settings_update_failure_info">Why the update action failed</string>
+    <string name="settings_update_failure_generic">The update action could not complete. Check the network connection and try again.</string>
+    <string name="settings_changelog">Changelog</string>
+    <string name="settings_source_code">Source code</string>
+    <string name="settings_github">GitHub</string>
+    <string name="settings_license">License</string>
+    <string name="settings_changelog_loading">Loading release notes…</string>
+    <string name="settings_changelog_failed">Could not load changelog</string>
+    <string name="settings_changelog_failure_generic">GitHub Release notes could not be loaded. Check the network connection and try again.</string>
+    <string name="settings_close">Close</string>
+
+    <string name="settings_brand_name">AALyrics</string>
+    <string name="settings_brand_copyright_owner">Yuta Miura (whoxamxl)</string>
+    <string name="settings_brand_logo_description">AALyrics logo</string>
 </resources>

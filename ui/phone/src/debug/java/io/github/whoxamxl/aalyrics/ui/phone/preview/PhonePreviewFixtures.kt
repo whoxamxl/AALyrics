@@ -7,6 +7,14 @@ import io.github.whoxamxl.aalyrics.ui.phone.lyrics.LyricsViewportLineUiState
 import io.github.whoxamxl.aalyrics.ui.phone.lyrics.LyricsViewportUiState
 import io.github.whoxamxl.aalyrics.ui.phone.lyrics.TrackCardUiState
 import io.github.whoxamxl.aalyrics.ui.phone.navigation.PhoneDestination
+import io.github.whoxamxl.aalyrics.ui.phone.settings.AndroidAutoCompatibilityUiStatus
+import io.github.whoxamxl.aalyrics.ui.phone.settings.AppUpdateUiPhase
+import io.github.whoxamxl.aalyrics.ui.phone.settings.AppUpdateUiState
+import io.github.whoxamxl.aalyrics.ui.phone.settings.ChangelogUiPhase
+import io.github.whoxamxl.aalyrics.ui.phone.settings.ChangelogUiState
+import io.github.whoxamxl.aalyrics.ui.phone.settings.SettingsLanguageOptionUiState
+import io.github.whoxamxl.aalyrics.ui.phone.settings.SettingsScreenUiState
+import io.github.whoxamxl.aalyrics.ui.phone.settings.TranslationModelUiState
 import io.github.whoxamxl.aalyrics.ui.phone.state.PhoneShellUiState
 import io.github.whoxamxl.aalyrics.ui.phone.state.PlaybackControlsUiState
 
@@ -157,6 +165,103 @@ internal object PhonePreviewFixtures {
         selectedDestination = PhoneDestination.Sync,
         mediaSourceLabel = "Poweramp",
         playbackControls = pausedControls,
+    )
+
+    val settingsLanguages = listOf(
+        SettingsLanguageOptionUiState(
+            id = "en",
+            displayName = "English",
+            modelState = TranslationModelUiState.BUILT_IN,
+        ),
+        SettingsLanguageOptionUiState(
+            id = "ja",
+            displayName = "Japanese",
+            modelState = TranslationModelUiState.NOT_DOWNLOADED,
+        ),
+        SettingsLanguageOptionUiState(
+            id = "fr",
+            displayName = "French",
+            modelState = TranslationModelUiState.DOWNLOADING,
+        ),
+        SettingsLanguageOptionUiState(
+            id = "de",
+            displayName = "German",
+            modelState = TranslationModelUiState.READY,
+        ),
+        SettingsLanguageOptionUiState(
+            id = "es",
+            displayName = "Spanish",
+            modelState = TranslationModelUiState.FAILED,
+            modelFailureReason = "Model download failed because the network request did not complete.",
+        ),
+        SettingsLanguageOptionUiState("ko", "Korean"),
+        SettingsLanguageOptionUiState("zh", "Chinese"),
+        SettingsLanguageOptionUiState("it", "Italian"),
+        SettingsLanguageOptionUiState("pt", "Portuguese"),
+    )
+    val settingsTypical = SettingsScreenUiState(
+        plainLyricsAutoScrollEnabled = true,
+        translationEnabled = true,
+        translationTarget = settingsLanguages.first { it.id == "en" },
+        translationTargets = settingsLanguages,
+        androidAutoCompatibilityStatus = AndroidAutoCompatibilityUiStatus.ENABLED,
+        appVersionName = "0.1.0-dev",
+        currentYear = 2026,
+    )
+    val settingsCheckingUpdate = settingsTypical.copy(
+        appUpdate = AppUpdateUiState(phase = AppUpdateUiPhase.CHECKING),
+    )
+    val settingsUpToDate = settingsTypical.copy(
+        appUpdate = AppUpdateUiState(phase = AppUpdateUiPhase.UP_TO_DATE),
+    )
+    val settingsUpdateAvailable = settingsTypical.copy(
+        appUpdate = AppUpdateUiState(
+            phase = AppUpdateUiPhase.UPDATE_AVAILABLE,
+            availableVersionName = "0.1.2",
+        ),
+    )
+    val settingsUpdateFailed = settingsTypical.copy(
+        appUpdate = AppUpdateUiState(
+            phase = AppUpdateUiPhase.CHECK_FAILED,
+            failureReason = "GitHub Releases could not be reached.",
+        ),
+    )
+    val settingsDownloadingUpdate = settingsTypical.copy(
+        appUpdate = AppUpdateUiState(
+            phase = AppUpdateUiPhase.DOWNLOADING,
+            availableVersionName = "0.1.2",
+        ),
+    )
+    val settingsDownloadedUpdate = settingsTypical.copy(
+        appUpdate = AppUpdateUiState(
+            phase = AppUpdateUiPhase.DOWNLOADED,
+            availableVersionName = "0.1.2",
+        ),
+    )
+    val settingsChangelogReady = settingsTypical.copy(
+        changelog = ChangelogUiState(
+            phase = ChangelogUiPhase.READY,
+            releaseVersionName = "0.1.0-alpha.1",
+            body = "Highlights\n\n• Added the Phone Settings foundation.\n• Added Translation model management.\n• Added Android Auto compatibility onboarding.",
+        ),
+    )
+    val settingsChangelogFailed = settingsTypical.copy(
+        changelog = ChangelogUiState(
+            phase = ChangelogUiPhase.FAILED,
+            failureReason = "GitHub Releases could not be reached.",
+        ),
+    )
+    val settingsTranslationOff = settingsTypical.copy(translationEnabled = false)
+    val settingsAndroidAutoSkipped = settingsTypical.copy(
+        androidAutoCompatibilityStatus = AndroidAutoCompatibilityUiStatus.SKIPPED,
+    )
+    val settingsAndroidAutoNotReviewed = settingsTypical.copy(
+        androidAutoCompatibilityStatus = AndroidAutoCompatibilityUiStatus.NOT_REVIEWED,
+    )
+    val settingsShell = PhoneShellUiState(
+        selectedDestination = PhoneDestination.Settings,
+        mediaSourceLabel = "Spotify",
+        playbackControls = playingControls,
     )
 
     val lyricsLines = listOf(

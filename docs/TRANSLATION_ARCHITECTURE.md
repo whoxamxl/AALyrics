@@ -368,9 +368,13 @@ The background scaffold persists:
 - Translation enabled/disabled;
 - selected target language.
 
-The unfinished Phone Settings UI is not part of the scaffold.
+The first Phone Settings presentation contract is defined in `docs/PHONE_SETTINGS.md`.
 
-Future foreground Settings should consume/update the same state boundary rather than owning SharedPreferences keys directly.
+Foreground Settings must consume/update the existing Translation settings boundary through application-provided presentation state and callbacks rather than owning SharedPreferences keys directly. `:ui:phone` must not add a direct dependency on the concrete SharedPreferences store or ML Kit lifecycle in order to render these rows.
+
+The Settings presentation may show model readiness and emit explicit manual preparation/retry requests. Application/runtime wiring maps those presentation requests onto `TranslationModelManager.ensureAvailable` / `retry` and maps lifecycle phases back into presentation state. When a model is `FAILED` or `TIMED_OUT`, the manager's diagnostic `error` may be adapted into presentation-ready failure text for an on-demand Settings tooltip; raw engine exceptions remain outside `:ui:phone`. The UI must not invoke the concrete ML Kit manager directly.
+
+English is the built-in model language in the current ML Kit adapter. It requires no remote language-pack download and should present as ready without network preparation.
 
 Changing Translation settings must not refetch lyrics providers merely because Translation configuration changed.
 

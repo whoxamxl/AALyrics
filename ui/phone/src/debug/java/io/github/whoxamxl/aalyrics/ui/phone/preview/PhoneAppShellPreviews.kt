@@ -24,6 +24,9 @@ import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsTypography
 import io.github.whoxamxl.aalyrics.ui.phone.lyrics.LyricsScreen
 import io.github.whoxamxl.aalyrics.ui.phone.lyrics.LyricsScreenUiState
 import io.github.whoxamxl.aalyrics.ui.phone.navigation.PhoneDestination
+import io.github.whoxamxl.aalyrics.ui.phone.settings.SettingsScreen
+import io.github.whoxamxl.aalyrics.ui.phone.settings.SettingsScreenUiState
+import io.github.whoxamxl.aalyrics.ui.phone.settings.normalizedForSettingsEntry
 import io.github.whoxamxl.aalyrics.ui.phone.shell.PhoneAppShell
 import io.github.whoxamxl.aalyrics.ui.phone.state.PhoneShellUiState
 
@@ -69,6 +72,21 @@ private fun PhoneAppShellBrowseOverlayPreview() {
 }
 
 @Preview(
+    name = "Settings selected",
+    group = "PhoneAppShell",
+    widthDp = 412,
+    heightDp = 892,
+    showBackground = true,
+)
+@Composable
+private fun PhoneAppShellSettingsPreview() {
+    PhoneAppShellPreview(
+        state = PhonePreviewFixtures.settingsShell,
+        settingsState = PhonePreviewFixtures.settingsTypical,
+    )
+}
+
+@Preview(
     name = "Sync selected",
     group = "PhoneAppShell",
     widthDp = 412,
@@ -84,6 +102,7 @@ private fun PhoneAppShellSyncPreview() {
 private fun PhoneAppShellPreview(
     state: PhoneShellUiState,
     lyricsState: LyricsScreenUiState = PhonePreviewFixtures.lyricsScreenLine,
+    settingsState: SettingsScreenUiState = PhonePreviewFixtures.settingsTypical,
 ) {
     AALyricsTheme {
         PhoneAppShell(
@@ -97,6 +116,12 @@ private fun PhoneAppShellPreview(
                 PhoneDestination.Lyrics -> {
                     PreviewLyricsDestination(
                         initialState = lyricsState,
+                        bottomOverlayInset = bottomOverlayInset,
+                    )
+                }
+                PhoneDestination.Settings -> {
+                    PreviewSettingsDestination(
+                        initialState = settingsState,
                         bottomOverlayInset = bottomOverlayInset,
                     )
                 }
@@ -123,6 +148,46 @@ internal fun PreviewLyricsDestination(
                 viewport = state.viewport.copy(interactionMode = mode),
             )
         },
+    )
+}
+
+/** Debug-only stateful host for the production Settings destination. */
+@Composable
+internal fun PreviewSettingsDestination(
+    initialState: SettingsScreenUiState,
+    bottomOverlayInset: Dp = 0.dp,
+) {
+    var state by remember(initialState) { mutableStateOf(initialState) }
+
+    SettingsScreen(
+        state = state,
+        onPlainLyricsAutoScrollChanged = {
+            state = state.copy(plainLyricsAutoScrollEnabled = it)
+        },
+        onTranslationEnabledChanged = {
+            state = state.copy(translationEnabled = it)
+        },
+        onTranslationTargetSelected = { id ->
+            state.translationTargets
+                .firstOrNull { it.id == id }
+                ?.let { target ->
+                    state = state.copy(translationTarget = target)
+                }
+        },
+        onTranslationModelDownloadRequested = {},
+        onAndroidAutoCompatibilitySetup = {},
+        onCheckForUpdates = {},
+        onDownloadUpdate = {},
+        onChangelogRequested = {},
+        onLicenseRequested = {},
+        onSettingsEntered = {
+            state = state.copy(
+                appUpdate = state.appUpdate.normalizedForSettingsEntry(),
+            )
+        },
+        onOpenGitHub = {},
+        modifier = Modifier.fillMaxSize(),
+        bottomOverlayInset = bottomOverlayInset,
     )
 }
 
