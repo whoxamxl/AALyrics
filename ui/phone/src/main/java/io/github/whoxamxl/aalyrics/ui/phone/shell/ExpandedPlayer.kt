@@ -123,7 +123,6 @@ internal fun ExpandedPlayer(
 
             ExpandedSeekArea(
                 enabled = state.seekEnabled,
-                isPlaying = state.isPlaying,
                 displayedPositionMs = displayedPositionMs,
                 durationMs = state.durationMs,
                 onSeekPreview = onSeekPreview,
@@ -247,7 +246,6 @@ private fun ExpandedPlayerHeader(
 @Composable
 private fun ExpandedSeekArea(
     enabled: Boolean,
-    isPlaying: Boolean,
     displayedPositionMs: Long,
     durationMs: Long?,
     onSeekPreview: (Long) -> Unit,
