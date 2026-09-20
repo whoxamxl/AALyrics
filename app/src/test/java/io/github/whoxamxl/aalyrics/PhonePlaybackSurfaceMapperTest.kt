@@ -37,7 +37,7 @@ class PhonePlaybackSurfaceMapperTest {
                 playback = playback,
                 controlState = controls,
                 translationEnabled = false,
-                canLaunchSourcePackage = false,
+                canOpenPlaybackApp = true,
             ),
         )
 
@@ -65,7 +65,7 @@ class PhonePlaybackSurfaceMapperTest {
                     hasSessionActivity = true,
                 ),
                 translationEnabled = true,
-                canLaunchSourcePackage = true,
+                canOpenPlaybackApp = true,
             ),
         )
 
