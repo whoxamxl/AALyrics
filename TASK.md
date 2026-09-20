@@ -41,6 +41,13 @@ This slice should establish a durable Settings composition and reusable Phone-lo
 - Tapping the row emits a callback to reopen the already implemented compatibility setup flow.
 - Do not claim automatic verification of Android Auto `Unknown sources`.
 
+### App
+
+- `Check for updates` action row.
+- `Current version` value row supplied by presentation state.
+- `About` dialog with app description, current version, and GitHub action.
+- Runtime GitHub release checking and browser/intent launching remain outside `:ui:phone`.
+
 ## Presentation boundary
 
 The Settings screen consumes a Phone-local immutable presentation model and emits callbacks.
@@ -99,6 +106,7 @@ Do not promote them to `:ui:designsystem` until another screen demonstrates genu
 - [x] Implement the production `SettingsScreen`.
 - [x] Implement the first-slice Lyrics, Translation, and Android Auto sections described above.
 - [x] Add presentation states and callbacks for manual Translation model download/retry, including built-in English, loading, ready, and failure states.
+- [x] Add Check for updates, current version, and About/GitHub presentation to the Settings footer.
 - [x] Keep `:ui:phone` free of concrete persistence/application/Translation-engine dependencies.
 - [x] Reserve the shell playback-overlay inset in Settings scroll content.
 - [x] Add deterministic Previews for typical, narrow, enlarged-font, Translation-off, and Android Auto status variants.
@@ -116,6 +124,6 @@ This slice does not implement:
 - Android Auto Developer Mode or `Unknown sources` verification;
 - provider preference UI;
 - appearance/theme settings;
-- About/diagnostics;
+- diagnostics;
 - Sync or Details destination behavior;
 - navigation-framework/ViewModel architecture.
