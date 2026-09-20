@@ -101,7 +101,6 @@ internal fun PhoneRuntimeHost(
             )
 
             PhoneDestination.Sync -> SyncScreen(
-                modifier = Modifier.fillMaxSize(),
                 bottomOverlayInset = bottomOverlayInset,
             )
 
