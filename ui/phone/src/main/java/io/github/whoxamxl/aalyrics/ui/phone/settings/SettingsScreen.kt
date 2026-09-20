@@ -9,6 +9,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -32,12 +33,17 @@ fun SettingsScreen(
     onAndroidAutoCompatibilitySetup: () -> Unit,
     onCheckForUpdates: () -> Unit,
     onDownloadUpdate: () -> Unit,
+    onSettingsEntered: () -> Unit,
     onOpenGitHub: () -> Unit,
     modifier: Modifier = Modifier,
     bottomOverlayInset: Dp = 0.dp,
 ) {
     var targetLanguagePickerVisible by rememberSaveable { mutableStateOf(false) }
     var aboutVisible by rememberSaveable { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        onSettingsEntered()
+    }
 
     SettingsScreenContent(
         state = state,
