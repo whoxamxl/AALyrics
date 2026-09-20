@@ -8,6 +8,7 @@ internal interface RuntimeMediaController<Token> {
     val isPlaying: Boolean
 
     fun snapshot(): PlaybackSnapshot
+    fun controlState(): PlaybackControlState
     fun attach(callback: RuntimeMediaControllerCallback)
     fun detach(callback: RuntimeMediaControllerCallback)
     fun play()
@@ -15,11 +16,13 @@ internal interface RuntimeMediaController<Token> {
     fun skipToPrevious()
     fun skipToNext()
     fun seekTo(positionMs: Long)
+    fun skipToQueueItem(queueItemId: Long)
 }
 
 internal interface RuntimeMediaControllerCallback {
     fun onMetadataChanged()
     fun onPlaybackStateChanged()
+    fun onControlStateChanged()
     fun onSessionDestroyed()
 }
 
@@ -58,6 +61,7 @@ internal object MediaSessionSelectionPolicy {
 internal class SelectedMediaSessionRuntime<Token>(
     private val selfPackageName: String,
     private val sink: PlaybackSnapshotSink,
+    private val controlStateSink: PlaybackControlStateSink,
     private val scheduler: MetadataTaskScheduler,
     private val refreshSessions: () -> Unit,
     private val metadataStabilizationMs: Long = DEFAULT_METADATA_STABILIZATION_MS,
@@ -94,6 +98,10 @@ internal class SelectedMediaSessionRuntime<Token>(
         if (positionMs >= 0L) routeTransport { it.seekTo(positionMs) }
     }
 
+    override fun skipToQueueItem(queueItemId: Long) {
+        routeTransport { it.skipToQueueItem(queueItemId) }
+    }
+
     private fun routeTransport(command: (RuntimeMediaController<Token>) -> Unit) {
         val controller = selectedController ?: return
         try {
@@ -122,6 +130,7 @@ internal class SelectedMediaSessionRuntime<Token>(
         stableSnapshot = null
         if (next == null) {
             sink.onPlaybackSnapshot(PlaybackSnapshot())
+            controlStateSink.onPlaybackControlState(PlaybackControlState())
             return
         }
 
@@ -133,6 +142,7 @@ internal class SelectedMediaSessionRuntime<Token>(
             val snapshot = next.snapshot()
             stableSnapshot = snapshot
             sink.onPlaybackSnapshot(snapshot)
+            controlStateSink.onPlaybackControlState(next.controlState())
         } catch (failure: RuntimeException) {
             try {
                 next.detach(callback)
@@ -143,6 +153,7 @@ internal class SelectedMediaSessionRuntime<Token>(
             selectedCallback = null
             stableSnapshot = null
             sink.onPlaybackSnapshot(PlaybackSnapshot())
+            controlStateSink.onPlaybackControlState(PlaybackControlState())
             throw failure
         }
     }
@@ -163,6 +174,7 @@ internal class SelectedMediaSessionRuntime<Token>(
             override fun onPlaybackStateChanged() {
                 val current = selectedController?.takeIf { it.token == token } ?: return
                 val latest = current.snapshot()
+                controlStateSink.onPlaybackControlState(current.controlState())
                 if (
                     pendingMetadataTask == null &&
                     latest.trackIdentity != stableSnapshot?.trackIdentity
@@ -181,6 +193,11 @@ internal class SelectedMediaSessionRuntime<Token>(
                 if (!current.isPlaying) {
                     refreshSessions()
                 }
+            }
+
+            override fun onControlStateChanged() {
+                val current = selectedController?.takeIf { it.token == token } ?: return
+                controlStateSink.onPlaybackControlState(current.controlState())
             }
 
             override fun onSessionDestroyed() {
