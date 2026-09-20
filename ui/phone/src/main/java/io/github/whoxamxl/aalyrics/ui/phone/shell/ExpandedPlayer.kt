@@ -2,6 +2,7 @@ package io.github.whoxamxl.aalyrics.ui.phone.shell
 
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
@@ -34,7 +35,6 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -49,6 +49,7 @@ import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
@@ -227,7 +228,7 @@ private fun ExpandedPlayerHeader(
                 modifier = Modifier.size(AALyricsSpacing.Space48),
             )
 
-            Spacer(Modifier.width(AALyricsSpacing.Space12))
+            Spacer(Modifier.width(AALyricsSpacing.Space8))
 
             TrackIdentityMarquee(
                 title = state.title,
@@ -444,32 +445,101 @@ private fun QuickControlsButton(
         DropdownMenu(
             expanded = expanded,
             onDismissRequest = { expanded = false },
-            modifier = Modifier.widthIn(min = 220.dp),
+            modifier = Modifier
+                .width(208.dp)
+                .border(
+                    width = AALyricsStroke.Thin,
+                    color = AALyricsColors.BorderSoft,
+                    shape = RoundedCornerShape(AALyricsRadius.Radius16),
+                ),
+            shape = RoundedCornerShape(AALyricsRadius.Radius16),
+            containerColor = AALyricsColors.BackgroundSurfaceStrong,
+            tonalElevation = 0.dp,
+            shadowElevation = AALyricsSpacing.Space12,
         ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(min = AALyricsSpacing.Space48)
-                    .toggleable(
-                        value = translationEnabled,
-                        role = Role.Switch,
-                        onValueChange = onTranslationEnabledChanged,
-                    )
-                    .padding(horizontal = AALyricsSpacing.Space16),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    text = stringResource(R.string.playback_translation),
-                    style = AALyricsTypography.AppTitle,
-                    color = AALyricsColors.TextPrimary,
-                    modifier = Modifier.weight(1f),
-                )
-                Switch(
-                    checked = translationEnabled,
-                    onCheckedChange = null,
-                )
-            }
+            QuickControlTranslationRow(
+                enabled = translationEnabled,
+                onEnabledChanged = onTranslationEnabledChanged,
+            )
         }
+    }
+}
+
+@Composable
+internal fun QuickControlTranslationRow(
+    enabled: Boolean,
+    onEnabledChanged: (Boolean) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .heightIn(min = 52.dp)
+            .toggleable(
+                value = enabled,
+                role = Role.Switch,
+                onValueChange = onEnabledChanged,
+            )
+            .padding(
+                start = AALyricsSpacing.Space16,
+                end = AALyricsSpacing.Space12,
+                top = AALyricsSpacing.Space8,
+                bottom = AALyricsSpacing.Space8,
+            ),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = stringResource(R.string.playback_translation),
+            style = AALyricsTypography.TrackArtist,
+            color = AALyricsColors.TextPrimary,
+            modifier = Modifier.weight(1f),
+        )
+
+        CompactPlaybackToggle(checked = enabled)
+    }
+}
+
+@Composable
+private fun CompactPlaybackToggle(
+    checked: Boolean,
+) {
+    Box(
+        modifier = Modifier
+            .size(width = 38.dp, height = 22.dp)
+            .clip(RoundedCornerShape(AALyricsRadius.Full))
+            .background(
+                if (checked) {
+                    AALyricsColors.AccentCyan
+                } else {
+                    AALyricsColors.OverlaySoft
+                },
+            )
+            .then(
+                if (checked) {
+                    Modifier
+                } else {
+                    Modifier.border(
+                        width = AALyricsStroke.Thin,
+                        color = AALyricsColors.BorderSoft,
+                        shape = RoundedCornerShape(AALyricsRadius.Full),
+                    )
+                },
+            )
+            .padding(3.dp),
+    ) {
+        Box(
+            modifier = Modifier
+                .align(if (checked) Alignment.CenterEnd else Alignment.CenterStart)
+                .size(16.dp)
+                .clip(RoundedCornerShape(AALyricsRadius.Full))
+                .background(
+                    if (checked) {
+                        AALyricsColors.BackgroundBase
+                    } else {
+                        AALyricsColors.TextSecondary
+                    },
+                ),
+        )
     }
 }
 
@@ -620,6 +690,7 @@ private fun PlaybackQueueSheet(
 ) {
     ModalBottomSheet(
         onDismissRequest = onDismissRequest,
+        dragHandle = null,
         containerColor = AALyricsColors.BackgroundSurfaceStrong,
         contentColor = AALyricsColors.TextPrimary,
         scrimColor = Color.Black.copy(alpha = 0.48f),
@@ -664,7 +735,7 @@ internal fun PlaybackQueueSheetContent(
         ) {
             Text(
                 text = stringResource(R.string.playback_queue),
-                style = AALyricsTypography.TrackTitle,
+                style = AALyricsTypography.AppTitle,
                 color = AALyricsColors.TextPrimary,
                 modifier = Modifier.weight(1f),
             )
@@ -677,8 +748,6 @@ internal fun PlaybackQueueSheetContent(
                 )
             }
         }
-
-        Spacer(Modifier.height(AALyricsSpacing.Space4))
 
         LazyColumn(
             modifier = Modifier
@@ -714,10 +783,10 @@ private fun QueueTrackRow(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .heightIn(min = 60.dp)
+                .heightIn(min = AALyricsSpacing.Space56Compat)
                 .padding(
                     horizontal = AALyricsSpacing.Space4,
-                    vertical = AALyricsSpacing.Space8,
+                    vertical = AALyricsSpacing.Space4,
                 ),
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -730,7 +799,7 @@ private fun QueueTrackRow(
                         modifier = Modifier.size(AALyricsSpacing.Space20),
                     )
                 },
-                modifier = Modifier.size(AALyricsSpacing.Space40),
+                modifier = Modifier.size(36.dp),
             )
 
             Spacer(Modifier.width(AALyricsSpacing.Space12))
@@ -758,7 +827,7 @@ private fun QueueTrackRow(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(start = 56.dp)
+                .padding(start = 48.dp)
                 .height(AALyricsStroke.Thin)
                 .background(AALyricsColors.BorderSoft.copy(alpha = 0.56f)),
         )
@@ -777,3 +846,5 @@ internal fun formatPlaybackTime(positionMs: Long): String {
         minutes.toString() + ":" + secondText
     }
 }
+
+private val AALyricsSpacing.Space56Compat get() = 56.dp
