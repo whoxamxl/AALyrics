@@ -51,6 +51,7 @@ class AALyricsApplication : Application() {
     private lateinit var demandLifecycle: LyricsDemandLifecycle
     private lateinit var automotiveBinding: AutomotiveRuntimeBinding
     private lateinit var translationSettingsStore: SharedPreferencesTranslationSettingsStore
+    private lateinit var phonePresentationSettingsStore: SharedPreferencesPhonePresentationSettingsStore
     private lateinit var translationBackgroundRuntime: TranslationBackgroundRuntime
     private lateinit var translationExecutionRuntime: TranslationExecutionRuntime
     private lateinit var translationCoordinator: TranslationCoordinator
@@ -79,8 +80,15 @@ class AALyricsApplication : Application() {
     val phonePlaybackSurfaceState: StateFlow<PlaybackSurfaceUiState?>
         get() = phonePlaybackSurfaceStateFlow
 
+    val verboseDetailsEnabled: StateFlow<Boolean>
+        get() = phonePresentationSettingsStore.verboseDetailsEnabled
+
     fun setTranslationEnabled(enabled: Boolean) {
         translationSettingsStore.setEnabled(enabled)
+    }
+
+    fun setVerboseDetailsEnabled(enabled: Boolean) {
+        phonePresentationSettingsStore.setVerboseDetailsEnabled(enabled)
     }
 
     fun openSelectedPlaybackApp(): Boolean =
@@ -90,6 +98,7 @@ class AALyricsApplication : Application() {
         super.onCreate()
         graph = createProductionApplicationGraph(applicationScope)
         translationSettingsStore = SharedPreferencesTranslationSettingsStore(this)
+        phonePresentationSettingsStore = SharedPreferencesPhonePresentationSettingsStore(this)
         playbackAppLauncher = SelectedPlaybackAppLauncher(this)
         phonePlaybackSurfaceStateFlow = combine(
             graph.playbackState,
@@ -158,6 +167,7 @@ class AALyricsApplication : Application() {
         translationExecutionRuntime.stop()
         translationLanguageIdentifier.close()
         translationBackgroundRuntime.stop()
+        phonePresentationSettingsStore.close()
         translationSettingsStore.close()
         demandLifecycle.stop()
         AutomotiveRuntimeHost.detach(automotiveBinding)
