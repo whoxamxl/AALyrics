@@ -91,13 +91,13 @@ Do not promote them to `:ui:designsystem` until another screen demonstrates genu
 ## Acceptance criteria
 
 - [x] Add `docs/PHONE_SETTINGS.md` and align the related durable docs.
-- [ ] Replace the Settings placeholder with an immutable Phone-local presentation contract.
-- [ ] Implement the production `SettingsScreen`.
-- [ ] Implement the first-slice Lyrics, Translation, and Android Auto sections described above.
-- [ ] Keep `:ui:phone` free of concrete persistence/application/Translation-engine dependencies.
-- [ ] Reserve the shell playback-overlay inset in Settings scroll content.
-- [ ] Add deterministic Previews for typical, narrow, enlarged-font, Translation-off, and Android Auto status variants.
-- [ ] Render the production Settings destination in the shell Preview.
+- [x] Replace the Settings placeholder with an immutable Phone-local presentation contract.
+- [x] Implement the production `SettingsScreen`.
+- [x] Implement the first-slice Lyrics, Translation, and Android Auto sections described above.
+- [x] Keep `:ui:phone` free of concrete persistence/application/Translation-engine dependencies.
+- [x] Reserve the shell playback-overlay inset in Settings scroll content.
+- [x] Add deterministic Previews for typical, narrow, enlarged-font, Translation-off, and Android Auto status variants.
+- [x] Render the production Settings destination in the shell Preview.
 - [ ] Run CI and review the final diff before integration.
 - [ ] Stop before merge until explicit user approval.
 
