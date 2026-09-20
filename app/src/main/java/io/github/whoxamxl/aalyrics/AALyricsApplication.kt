@@ -24,6 +24,8 @@ import io.github.whoxamxl.aalyrics.ui.automotive.AutomotiveBrowserClientTrust
 import io.github.whoxamxl.aalyrics.ui.automotive.AutomotiveRuntimeBinding
 import io.github.whoxamxl.aalyrics.ui.automotive.AutomotiveRuntimeHost
 import io.github.whoxamxl.aalyrics.ui.automotive.AutomotiveTransport
+import io.github.whoxamxl.aalyrics.ui.phone.state.PlaybackSurfaceUiState
+import io.github.whoxamxl.aalyrics.translation.api.TranslationSettings
 import io.github.whoxamxl.aalyrics.translation.core.LanguageProfiler
 import io.github.whoxamxl.aalyrics.translation.core.TranslationBlockPlanner
 import io.github.whoxamxl.aalyrics.translation.core.TranslationCoordinator
@@ -36,8 +38,11 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
 
 /** Process-level owner of the first production lyrics object graph. */
 class AALyricsApplication : Application() {
@@ -50,6 +55,8 @@ class AALyricsApplication : Application() {
     private lateinit var translationExecutionRuntime: TranslationExecutionRuntime
     private lateinit var translationCoordinator: TranslationCoordinator
     private lateinit var translationLanguageIdentifier: MlKitLanguageIdentifier
+    private lateinit var playbackAppLauncher: SelectedPlaybackAppLauncher
+    private lateinit var phonePlaybackSurfaceStateFlow: StateFlow<PlaybackSurfaceUiState?>
 
     val playbackLyricsController: PlaybackLyricsController
         get() = graph.playbackLyricsController
@@ -66,10 +73,41 @@ class AALyricsApplication : Application() {
     val translationState: StateFlow<TranslationState>
         get() = translationCoordinator.state
 
+    val translationSettings: StateFlow<TranslationSettings>
+        get() = translationSettingsStore.settings
+
+    val phonePlaybackSurfaceState: StateFlow<PlaybackSurfaceUiState?>
+        get() = phonePlaybackSurfaceStateFlow
+
+    fun setTranslationEnabled(enabled: Boolean) {
+        translationSettingsStore.setEnabled(enabled)
+    }
+
+    fun openSelectedPlaybackApp(): Boolean =
+        playbackAppLauncher.open(graph.playbackControlState.value)
+
     override fun onCreate() {
         super.onCreate()
         graph = createProductionApplicationGraph(applicationScope)
         translationSettingsStore = SharedPreferencesTranslationSettingsStore(this)
+        playbackAppLauncher = SelectedPlaybackAppLauncher(this)
+        phonePlaybackSurfaceStateFlow = combine(
+            graph.playbackState,
+            graph.playbackControlState,
+            translationSettingsStore.settings,
+        ) { playback, controlState, translationSettings ->
+            mapPhonePlaybackSurfaceState(
+                playback = playback,
+                controlState = controlState,
+                translationEnabled = translationSettings.enabled,
+                canLaunchSourcePackage = playbackAppLauncher.canOpen(controlState),
+            )
+        }.stateIn(
+            scope = applicationScope,
+            started = SharingStarted.Eagerly,
+            initialValue = null,
+        )
+
         val translationModelManager = MlKitTranslationModelManager(
             context = this,
             applicationScope = applicationScope,
