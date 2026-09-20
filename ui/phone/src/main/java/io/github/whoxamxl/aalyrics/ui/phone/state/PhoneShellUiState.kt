@@ -37,6 +37,7 @@ data class PlaybackSurfaceUiState(
     val canPause: Boolean = true,
     val canSkipPrevious: Boolean = true,
     val canSkipNext: Boolean = true,
+    val canSkipToQueueItem: Boolean = false,
     val canSeek: Boolean = false,
     val queue: List<PlaybackQueueItemUiState> = emptyList(),
     val canOpenPlaybackApp: Boolean = false,
@@ -61,7 +62,7 @@ data class PlaybackSurfaceUiState(
         get() = if (isPlaying) canPause else canPlay
 
     val queueAvailable: Boolean
-        get() = queue.isNotEmpty()
+        get() = canSkipToQueueItem && queue.isNotEmpty()
 
     val seekEnabled: Boolean
         get() = canSeek && durationMs != null
