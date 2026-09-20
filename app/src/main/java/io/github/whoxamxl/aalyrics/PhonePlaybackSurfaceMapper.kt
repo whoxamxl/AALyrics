@@ -45,7 +45,7 @@ internal fun mapPhonePlaybackSurfaceState(
             emptyList()
         },
         canOpenPlaybackApp = controlsMatchPlayback &&
-            (controlState.hasSessionActivity || canLaunchSourcePackage),
+            (canOpenPlaybackApp),
         translationEnabled = translationEnabled,
     )
 }
