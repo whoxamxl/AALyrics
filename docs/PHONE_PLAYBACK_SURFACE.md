@@ -330,11 +330,16 @@ When available, Queue opens as a compact bottom sheet rather than an alert dialo
 
 The Queue sheet:
 
+- uses the same rounded top corners in production and Preview;
+- exposes a small centered drag handle without the oversized default Material handle region;
 - keeps a compact `Queue` header;
 - shows the same Open playback app affordance at the right edge of the header when that fallback is available;
 - presents each item as a compact artwork/identity row;
 - keeps title and artist to one line each with graceful overflow;
-- scrolls vertically when its contents exceed the available viewport;
+- lets the Queue list consume all remaining sheet height instead of leaving unused space below short viewport caps;
+- scrolls only the rows that no longer fit inside that remaining viewport;
+- overlays the bottom approximately 15% of the list viewport with a transparent-to-surface fade so clipped rows visually dissolve into the sheet edge;
+- keeps enough bottom list padding for the final row to scroll above the fade and remain fully readable/selectable;
 - keeps the sheet itself within the phone viewport rather than growing off-screen;
 - selects an item through the corresponding queue-item callback.
 
