@@ -298,20 +298,22 @@ Expected presentation:
 
 ```text
 Version                         v0.1.0-dev
-                         [Check for updates]
+                         Check for updates
 
 Checking for updates…                    ◌
 
 Up to date                               ✓
 
-Update available: v0.1.2       [Download]
+Update available: v0.1.2        ↓ Download
 
 Downloading v0.1.2                       ◌
 
 Downloaded v0.1.2                        ✓
 
-Update check failed            ⓘ [Retry]
+Update check failed            ⓘ   ↻ Retry
 ```
+
+Every update-state row uses the same trailing-edge alignment as the installed version value. Download and Retry are compact inline actions rather than filled buttons; Download uses the same leading-action-icon pattern as Retry. Spinner/check/action content therefore terminates on the same right-edge guide across all phases.
 
 The UI emits separate callbacks for checking and downloading. It does not perform GitHub HTTP requests or filesystem/download-manager work directly.
 
