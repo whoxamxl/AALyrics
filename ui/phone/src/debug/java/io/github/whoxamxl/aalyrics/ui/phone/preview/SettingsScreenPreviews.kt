@@ -13,9 +13,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsColors
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsTheme
-import io.github.whoxamxl.aalyrics.ui.phone.settings.AboutDialog
 import io.github.whoxamxl.aalyrics.ui.phone.settings.AppUpdateUiPhase
 import io.github.whoxamxl.aalyrics.ui.phone.settings.AppUpdateUiState
+import io.github.whoxamxl.aalyrics.ui.phone.settings.ChangelogDialog
+import io.github.whoxamxl.aalyrics.ui.phone.settings.ChangelogUiPhase
+import io.github.whoxamxl.aalyrics.ui.phone.settings.ChangelogUiState
 import io.github.whoxamxl.aalyrics.ui.phone.settings.SettingsScreenContent
 import io.github.whoxamxl.aalyrics.ui.phone.settings.SettingsScreenUiState
 import io.github.whoxamxl.aalyrics.ui.phone.settings.TranslationModelUiState
@@ -92,23 +94,48 @@ private fun SettingsUpdateDownloadedPreview() {
 }
 
 
-@Preview(name = "About", group = "SettingsScreen", widthDp = 412, heightDp = 760)
+@Preview(name = "Changelog · ready", group = "SettingsScreen", widthDp = 412, heightDp = 760)
 @Composable
-private fun SettingsAboutPreview() {
+private fun SettingsChangelogReadyPreview() {
     AALyricsTheme {
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .background(AALyricsColors.BackgroundBase),
         ) {
-            AboutDialog(
-                title = "About AALyrics",
-                body = "AALyrics is an open-source lyrics companion focused on synchronized playback, translation, and Android Auto presentation.",
-                versionLabel = "Current version",
-                versionName = PhonePreviewFixtures.settingsTypical.appVersionName,
-                githubLabel = "GitHub",
+            ChangelogDialog(
+                state = PhonePreviewFixtures.settingsChangelogReady.changelog,
+                title = "Changelog",
+                loadingLabel = "Loading release notes…",
+                failureLabel = "Could not load changelog",
+                retryLabel = "Retry",
                 closeLabel = "Close",
-                onOpenGitHub = {},
+                genericFailureReason = "GitHub Release notes could not be loaded.",
+                onRetry = {},
+                onDismissRequest = {},
+            )
+        }
+    }
+}
+
+@Preview(name = "Changelog · failed", group = "SettingsScreen", widthDp = 412, heightDp = 760)
+@Composable
+private fun SettingsChangelogFailedPreview() {
+    AALyricsTheme {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(AALyricsColors.BackgroundBase),
+        ) {
+            ChangelogDialog(
+                state = PhonePreviewFixtures.settingsChangelogFailed.changelog,
+                title = "Changelog",
+                loadingLabel = "Loading release notes…",
+                failureLabel = "Could not load changelog",
+                retryLabel = "Retry",
+                closeLabel = "Close",
+                genericFailureReason = "GitHub Release notes could not be loaded.",
+                onRetry = {},
                 onDismissRequest = {},
             )
         }
@@ -240,7 +267,20 @@ internal fun SettingsScreenPreview(
                         )
                     }
                 },
-                onAboutRequested = {},
+                onChangelogRequested = {
+                    state = state.copy(
+                        changelog = ChangelogUiState(
+                            phase = ChangelogUiPhase.LOADING,
+                        ),
+                    )
+                    scope.launch {
+                        delay(900)
+                        state = state.copy(
+                            changelog = PhonePreviewFixtures.settingsChangelogReady.changelog,
+                        )
+                    }
+                },
+                onOpenGitHub = {},
                 modifier = Modifier.fillMaxSize(),
             )
         }
