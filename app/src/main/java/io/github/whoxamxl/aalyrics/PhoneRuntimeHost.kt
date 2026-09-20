@@ -1,14 +1,12 @@
 package io.github.whoxamxl.aalyrics
 
 import android.os.SystemClock
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.whoxamxl.aalyrics.ui.phone.details.DetailsScreen
 import io.github.whoxamxl.aalyrics.ui.phone.lyrics.LyricsScreen
@@ -94,12 +92,10 @@ internal fun PhoneRuntimeHost(
         onQueueItemSelected = application::skipToQueueItem,
         onOpenPlaybackApp = { application.openSelectedPlaybackApp() },
         onTranslationEnabledChanged = application::setTranslationEnabled,
-        modifier = Modifier.fillMaxSize(),
     ) { destination, bottomOverlayInset ->
         when (destination) {
             PhoneDestination.Lyrics -> LyricsScreen(
                 state = lyricsUiState,
-                modifier = Modifier.fillMaxSize(),
                 bottomOverlayInset = bottomOverlayInset,
                 onViewportInteractionModeChange = { lyricsInteractionMode = it },
             )
@@ -111,7 +107,6 @@ internal fun PhoneRuntimeHost(
 
             PhoneDestination.Details -> DetailsScreen(
                 state = detailsState,
-                modifier = Modifier.fillMaxSize(),
                 bottomOverlayInset = bottomOverlayInset,
             )
 
@@ -129,7 +124,6 @@ internal fun PhoneRuntimeHost(
                 onLicenseRequested = onOpenLicense,
                 onSettingsEntered = {},
                 onOpenGitHub = onOpenSourceCode,
-                modifier = Modifier.fillMaxSize(),
                 bottomOverlayInset = bottomOverlayInset,
             )
         }
