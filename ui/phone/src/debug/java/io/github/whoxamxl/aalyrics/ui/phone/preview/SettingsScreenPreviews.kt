@@ -7,6 +7,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
@@ -14,6 +15,9 @@ import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsColors
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsTheme
 import io.github.whoxamxl.aalyrics.ui.phone.settings.SettingsScreenContent
 import io.github.whoxamxl.aalyrics.ui.phone.settings.SettingsScreenUiState
+import io.github.whoxamxl.aalyrics.ui.phone.settings.TranslationModelUiState
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 @Preview(name = "Typical", group = "SettingsScreen", widthDp = 412, heightDp = 760)
 @Composable
@@ -77,6 +81,7 @@ internal fun SettingsScreenPreview(
         var pickerVisible by remember(initialPickerVisible) {
             mutableStateOf(initialPickerVisible)
         }
+        val scope = rememberCoroutineScope()
 
         Box(
             modifier = modifier
@@ -99,6 +104,43 @@ internal fun SettingsScreenPreview(
                         ?.let { target ->
                             state = state.copy(translationTarget = target)
                         }
+                },
+                onTranslationModelDownloadRequested = { id ->
+                    val index = state.translationTargets.indexOfFirst { it.id == id }
+                    if (index >= 0) {
+                        val downloading = state.translationTargets.toMutableList().apply {
+                            this[index] = this[index].copy(
+                                modelState = TranslationModelUiState.DOWNLOADING,
+                            )
+                        }
+                        state = state.copy(
+                            translationTargets = downloading,
+                            translationTarget = if (state.translationTarget.id == id) {
+                                downloading[index]
+                            } else {
+                                state.translationTarget
+                            },
+                        )
+                        scope.launch {
+                            delay(1200)
+                            val ready = state.translationTargets.toMutableList().apply {
+                                val currentIndex = indexOfFirst { it.id == id }
+                                if (currentIndex >= 0) {
+                                    this[currentIndex] = this[currentIndex].copy(
+                                        modelState = TranslationModelUiState.READY,
+                                    )
+                                }
+                            }
+                            state = state.copy(
+                                translationTargets = ready,
+                                translationTarget = if (state.translationTarget.id == id) {
+                                    ready.first { it.id == id }
+                                } else {
+                                    state.translationTarget
+                                },
+                            )
+                        }
+                    }
                 },
                 onAndroidAutoCompatibilitySetup = {},
                 modifier = Modifier.fillMaxSize(),
