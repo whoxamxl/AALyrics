@@ -294,12 +294,12 @@ private fun ExpandedSeekArea(
     }
 
     val seekColors = SliderDefaults.colors(
-        thumbColor = AALyricsColors.TextPrimary,
-        activeTrackColor = AALyricsColors.AccentCyan,
-        inactiveTrackColor = AALyricsColors.AccentCyan.copy(alpha = 0.22f),
-        disabledThumbColor = AALyricsColors.TextTertiary,
-        disabledActiveTrackColor = AALyricsColors.TextTertiary,
-        disabledInactiveTrackColor = AALyricsColors.BorderSoft.copy(alpha = 0.56f),
+        thumbColor = Color.Transparent,
+        activeTrackColor = AALyricsColors.TextPrimary.copy(alpha = 0.92f),
+        inactiveTrackColor = AALyricsColors.TextTertiary.copy(alpha = 0.42f),
+        disabledThumbColor = Color.Transparent,
+        disabledActiveTrackColor = AALyricsColors.TextTertiary.copy(alpha = 0.58f),
+        disabledInactiveTrackColor = AALyricsColors.BorderSoft.copy(alpha = 0.42f),
     )
 
     Column(Modifier.fillMaxWidth()) {
