@@ -70,6 +70,7 @@ class MediaSessionSelectionPolicyTest {
         override val packageName: String = packageName
         override val isPlaying = playing
         override fun snapshot() = PlaybackSnapshot()
+        override fun controlState() = PlaybackControlState(sourcePackageName = packageName)
         override fun attach(callback: RuntimeMediaControllerCallback) = Unit
         override fun detach(callback: RuntimeMediaControllerCallback) = Unit
         override fun play() = Unit
@@ -77,6 +78,8 @@ class MediaSessionSelectionPolicyTest {
         override fun skipToPrevious() = Unit
         override fun skipToNext() = Unit
         override fun seekTo(positionMs: Long) = Unit
+        override fun skipToQueueItem(queueItemId: Long) = Unit
+        override fun openSessionActivity(): Boolean = false
     }
 
     private companion object {

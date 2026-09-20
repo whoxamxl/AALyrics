@@ -25,10 +25,12 @@ class MediaSessionListenerService : NotificationListenerService() {
         runtime = SelectedMediaSessionRuntime(
             selfPackageName = packageName,
             sink = PlaybackSnapshotSink(MediaSessionRuntimeHost::forward),
+            controlStateSink = PlaybackControlStateSink(MediaSessionRuntimeHost::forwardControlState),
             scheduler = HandlerMetadataTaskScheduler(handler),
             refreshSessions = { observation.refresh() },
         )
         MediaSessionRuntimeHost.attachTransport(runtime)
+        MediaSessionRuntimeHost.attachSessionLauncher(runtime)
         observation = MediaSessionObservation(source, runtime)
     }
 
@@ -48,6 +50,7 @@ class MediaSessionListenerService : NotificationListenerService() {
 
     override fun onDestroy() {
         observation.disconnect()
+        MediaSessionRuntimeHost.detachSessionLauncher(runtime)
         MediaSessionRuntimeHost.detachTransport(runtime)
         super.onDestroy()
     }

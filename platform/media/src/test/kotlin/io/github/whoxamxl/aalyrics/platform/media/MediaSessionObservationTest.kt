@@ -60,6 +60,7 @@ class MediaSessionObservationTest {
         val runtime = SelectedMediaSessionRuntime<String>(
             selfPackageName = SELF_PACKAGE,
             sink = PlaybackSnapshotSink { snapshots += it },
+            controlStateSink = PlaybackControlStateSink {},
             scheduler = MetadataTaskScheduler { _, _ -> ScheduledMetadataTask {} },
             refreshSessions = { observation.refresh() },
         )
@@ -103,6 +104,9 @@ class MediaSessionObservationTest {
         override fun snapshot() = PlaybackSnapshot(
             track = Track(title = token, artists = listOf("Artist")),
         )
+        override fun controlState() = PlaybackControlState(
+            sourcePackageName = packageName,
+        )
 
         override fun attach(callback: RuntimeMediaControllerCallback) {
             this.callback = callback
@@ -118,6 +122,8 @@ class MediaSessionObservationTest {
         override fun skipToPrevious() = Unit
         override fun skipToNext() = Unit
         override fun seekTo(positionMs: Long) = Unit
+        override fun skipToQueueItem(queueItemId: Long) = Unit
+        override fun openSessionActivity(): Boolean = false
     }
 
     private companion object {

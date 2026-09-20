@@ -17,11 +17,15 @@ import io.github.whoxamxl.aalyrics.provider.selection.CrossProviderCandidateSele
 import io.github.whoxamxl.aalyrics.provider.synclrc.SyncLrcProvider
 import io.github.whoxamxl.aalyrics.platform.media.MediaBrowserClientTrust
 import io.github.whoxamxl.aalyrics.platform.media.MediaSessionRuntimeHost
+import io.github.whoxamxl.aalyrics.platform.media.PlaybackControlState
+import io.github.whoxamxl.aalyrics.platform.media.PlaybackControlStateSink
 import io.github.whoxamxl.aalyrics.platform.media.PlaybackSnapshotSink
 import io.github.whoxamxl.aalyrics.ui.automotive.AutomotiveBrowserClientTrust
 import io.github.whoxamxl.aalyrics.ui.automotive.AutomotiveRuntimeBinding
 import io.github.whoxamxl.aalyrics.ui.automotive.AutomotiveRuntimeHost
 import io.github.whoxamxl.aalyrics.ui.automotive.AutomotiveTransport
+import io.github.whoxamxl.aalyrics.ui.phone.state.PlaybackSurfaceUiState
+import io.github.whoxamxl.aalyrics.translation.api.TranslationSettings
 import io.github.whoxamxl.aalyrics.translation.core.LanguageProfiler
 import io.github.whoxamxl.aalyrics.translation.core.TranslationBlockPlanner
 import io.github.whoxamxl.aalyrics.translation.core.TranslationCoordinator
@@ -34,8 +38,11 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
 
 /** Process-level owner of the first production lyrics object graph. */
 class AALyricsApplication : Application() {
@@ -48,6 +55,8 @@ class AALyricsApplication : Application() {
     private lateinit var translationExecutionRuntime: TranslationExecutionRuntime
     private lateinit var translationCoordinator: TranslationCoordinator
     private lateinit var translationLanguageIdentifier: MlKitLanguageIdentifier
+    private lateinit var playbackAppLauncher: SelectedPlaybackAppLauncher
+    private lateinit var phonePlaybackSurfaceStateFlow: StateFlow<PlaybackSurfaceUiState?>
 
     val playbackLyricsController: PlaybackLyricsController
         get() = graph.playbackLyricsController
@@ -55,13 +64,50 @@ class AALyricsApplication : Application() {
     val lyricsState: StateFlow<LyricsState>
         get() = graph.lyricsState
 
+    val playbackState: StateFlow<PlaybackSnapshot>
+        get() = graph.playbackState
+
+    val playbackControlState: StateFlow<PlaybackControlState>
+        get() = graph.playbackControlState
+
     val translationState: StateFlow<TranslationState>
         get() = translationCoordinator.state
+
+    val translationSettings: StateFlow<TranslationSettings>
+        get() = translationSettingsStore.settings
+
+    val phonePlaybackSurfaceState: StateFlow<PlaybackSurfaceUiState?>
+        get() = phonePlaybackSurfaceStateFlow
+
+    fun setTranslationEnabled(enabled: Boolean) {
+        translationSettingsStore.setEnabled(enabled)
+    }
+
+    fun openSelectedPlaybackApp(): Boolean =
+        playbackAppLauncher.open(graph.playbackControlState.value)
 
     override fun onCreate() {
         super.onCreate()
         graph = createProductionApplicationGraph(applicationScope)
         translationSettingsStore = SharedPreferencesTranslationSettingsStore(this)
+        playbackAppLauncher = SelectedPlaybackAppLauncher(this)
+        phonePlaybackSurfaceStateFlow = combine(
+            graph.playbackState,
+            graph.playbackControlState,
+            translationSettingsStore.settings,
+        ) { playback, controlState, translationSettings ->
+            mapPhonePlaybackSurfaceState(
+                playback = playback,
+                controlState = controlState,
+                translationEnabled = translationSettings.enabled,
+                canOpenPlaybackApp = playbackAppLauncher.canOpen(controlState),
+            )
+        }.stateIn(
+            scope = applicationScope,
+            started = SharingStarted.Eagerly,
+            initialValue = null,
+        )
+
         val translationModelManager = MlKitTranslationModelManager(
             context = this,
             applicationScope = applicationScope,
@@ -85,6 +131,7 @@ class AALyricsApplication : Application() {
             applicationScope = applicationScope,
         ).also { it.start() }
         MediaSessionRuntimeHost.attach(graph.playbackSnapshotSink)
+        MediaSessionRuntimeHost.attachControlState(graph.playbackControlStateSink)
         automotiveBinding = AutomotiveRuntimeBinding(
             playback = graph.playbackState,
             lyrics = graph.lyricsState,
@@ -114,6 +161,7 @@ class AALyricsApplication : Application() {
         translationSettingsStore.close()
         demandLifecycle.stop()
         AutomotiveRuntimeHost.detach(automotiveBinding)
+        MediaSessionRuntimeHost.detachControlState(graph.playbackControlStateSink)
         MediaSessionRuntimeHost.detach(graph.playbackSnapshotSink)
         applicationScope.cancel()
         super.onTerminate()
@@ -129,6 +177,7 @@ internal class ApplicationGraph(
     internal val providers = providers.toList()
     internal val coordinator = LyricsCoordinator(this.providers, selector, applicationScope)
     private val mutablePlaybackState = MutableStateFlow(PlaybackSnapshot())
+    private val mutablePlaybackControlState = MutableStateFlow(PlaybackControlState())
 
     val playbackLyricsController = PlaybackLyricsController(
         lookupLifecycle = coordinator,
@@ -139,7 +188,12 @@ internal class ApplicationGraph(
         mutablePlaybackState.value = snapshot
         lyricsDemandGate.onPlaybackSnapshot(snapshot)
     }
+    val playbackControlStateSink = PlaybackControlStateSink { state ->
+        mutablePlaybackControlState.value = state
+    }
     val playbackState: StateFlow<PlaybackSnapshot> = mutablePlaybackState.asStateFlow()
+    val playbackControlState: StateFlow<PlaybackControlState> =
+        mutablePlaybackControlState.asStateFlow()
     val lyricsState: StateFlow<LyricsState> = coordinator.state
 }
 

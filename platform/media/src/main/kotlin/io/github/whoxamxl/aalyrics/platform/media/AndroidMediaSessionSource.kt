@@ -1,5 +1,6 @@
 package io.github.whoxamxl.aalyrics.platform.media
 
+import android.app.PendingIntent
 import android.content.ComponentName
 import android.media.MediaMetadata
 import android.media.session.MediaController
@@ -59,6 +60,43 @@ internal class AndroidRuntimeMediaController(
 
     override fun snapshot() = MediaControllerSnapshotAdapter.snapshot(controller)
 
+    override fun controlState(): PlaybackControlState {
+        val actions = controller.playbackState?.actions ?: 0L
+        return PlaybackControlState(
+            sourcePackageName = controller.packageName,
+            capabilities = PlaybackControlCapabilities(
+                canPlay = actions.supports(
+                    PlaybackState.ACTION_PLAY,
+                    PlaybackState.ACTION_PLAY_PAUSE,
+                ),
+                canPause = actions.supports(
+                    PlaybackState.ACTION_PAUSE,
+                    PlaybackState.ACTION_PLAY_PAUSE,
+                ),
+                canSkipPrevious = actions.supports(PlaybackState.ACTION_SKIP_TO_PREVIOUS),
+                canSkipNext = actions.supports(PlaybackState.ACTION_SKIP_TO_NEXT),
+                canSkipToQueueItem = actions.supports(PlaybackState.ACTION_SKIP_TO_QUEUE_ITEM),
+                canSeek = actions.supports(PlaybackState.ACTION_SEEK_TO),
+            ),
+            queue = controller.queue.orEmpty().mapNotNull { item ->
+                val title = item.description.title?.toString()?.trim().orEmpty()
+                if (title.isEmpty()) {
+                    null
+                } else {
+                    PlaybackQueueItem(
+                        id = item.queueId,
+                        title = title,
+                        subtitle = item.description.subtitle
+                            ?.toString()
+                            ?.trim()
+                            ?.takeIf(String::isNotEmpty),
+                    )
+                }
+            },
+            hasSessionActivity = controller.sessionActivity != null,
+        )
+    }
+
     override fun attach(callback: RuntimeMediaControllerCallback) {
         check(attached == null) { "Media controller callback is already attached" }
         val frameworkCallback = object : MediaController.Callback() {
@@ -68,6 +106,10 @@ internal class AndroidRuntimeMediaController(
 
             override fun onPlaybackStateChanged(state: PlaybackState?) {
                 callback.onPlaybackStateChanged()
+            }
+
+            override fun onQueueChanged(queue: MutableList<MediaSession.QueueItem>?) {
+                callback.onControlStateChanged()
             }
 
             override fun onSessionDestroyed() {
@@ -108,6 +150,23 @@ internal class AndroidRuntimeMediaController(
     override fun seekTo(positionMs: Long) {
         controller.transportControls.seekTo(positionMs)
     }
+
+    override fun skipToQueueItem(queueItemId: Long) {
+        controller.transportControls.skipToQueueItem(queueItemId)
+    }
+
+    override fun openSessionActivity(): Boolean {
+        val sessionActivity = controller.sessionActivity ?: return false
+        return try {
+            sessionActivity.send()
+            true
+        } catch (_: PendingIntent.CanceledException) {
+            false
+        }
+    }
+
+    private fun Long.supports(vararg actions: Long): Boolean =
+        actions.any { action -> this and action != 0L }
 
     private data class AttachedCallback(
         val runtimeCallback: RuntimeMediaControllerCallback,

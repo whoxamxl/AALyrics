@@ -100,6 +100,7 @@ class SelectedMediaSessionRuntimeTest {
         runtime.skipToPrevious()
         runtime.skipToNext()
         runtime.seekTo(12_345L)
+        runtime.skipToQueueItem(42L)
 
         first.playing = false
         runtime.updateSessions(listOf(first, second))
@@ -110,7 +111,71 @@ class SelectedMediaSessionRuntimeTest {
         assertEquals(1, first.previousCount)
         assertEquals(1, first.nextCount)
         assertEquals(listOf(12_345L), first.seekPositions)
+        assertEquals(listOf(42L), first.queueItemIds)
         assertEquals(1, second.playCount)
+    }
+
+
+    @Test
+    fun `selected session launch routes only to the selected controller`() {
+        val snapshots = mutableListOf<PlaybackSnapshot>()
+        val first = controller("first", "First", playing = true)
+        val second = controller("second", "Second", playing = true)
+        val runtime = runtime(FakeScheduler(), snapshots)
+
+        runtime.updateSessions(listOf(first))
+        assertEquals(true, runtime.openSessionActivity())
+
+        first.playing = false
+        runtime.updateSessions(listOf(first, second))
+        second.sessionLaunchResult = false
+        assertEquals(false, runtime.openSessionActivity())
+
+        assertEquals(1, first.sessionLaunchCount)
+        assertEquals(1, second.sessionLaunchCount)
+    }
+
+    @Test
+    fun `control state follows selected session playback and queue changes`() {
+        val snapshots = mutableListOf<PlaybackSnapshot>()
+        val controlStates = mutableListOf<PlaybackControlState>()
+        val session = controller("session", "Track", playing = true).apply {
+            controls = PlaybackControlState(
+                sourcePackageName = packageName,
+                capabilities = PlaybackControlCapabilities(
+                    canPlay = true,
+                    canPause = true,
+                    canSkipNext = true,
+                    canSkipToQueueItem = true,
+                    canSeek = true,
+                ),
+                queue = listOf(PlaybackQueueItem(1L, "First")),
+                hasSessionActivity = true,
+            )
+        }
+        val runtime = runtime(
+            scheduler = FakeScheduler(),
+            snapshots = snapshots,
+            controlStates = controlStates,
+        )
+
+        runtime.updateSessions(listOf(session))
+        session.controls = session.controls.copy(
+            queue = listOf(
+                PlaybackQueueItem(1L, "First"),
+                PlaybackQueueItem(2L, "Second", "Artist"),
+            ),
+        )
+        session.controlStateChanged()
+
+        assertEquals(2, controlStates.size)
+        assertEquals("com.example.session", controlStates.first().sourcePackageName)
+        assertEquals(true, controlStates.first().capabilities.canSeek)
+        assertEquals(true, controlStates.first().capabilities.canSkipToQueueItem)
+        assertEquals(listOf(1L, 2L), controlStates.last().queue.map { it.id })
+
+        runtime.disconnect()
+        assertEquals(PlaybackControlState(), controlStates.last())
     }
 
     @Test
@@ -175,10 +240,12 @@ class SelectedMediaSessionRuntimeTest {
     private fun runtime(
         scheduler: FakeScheduler,
         snapshots: MutableList<PlaybackSnapshot>,
+        controlStates: MutableList<PlaybackControlState> = mutableListOf(),
         refresh: () -> Unit = {},
     ): SelectedMediaSessionRuntime<String> = SelectedMediaSessionRuntime(
         selfPackageName = SELF_PACKAGE,
         sink = PlaybackSnapshotSink { snapshots += it },
+        controlStateSink = PlaybackControlStateSink { controlStates += it },
         scheduler = scheduler,
         refreshSessions = refresh,
     )
@@ -211,9 +278,23 @@ class SelectedMediaSessionRuntimeTest {
         var previousCount = 0
         var nextCount = 0
         val seekPositions = mutableListOf<Long>()
+        val queueItemIds = mutableListOf<Long>()
+        var sessionLaunchCount = 0
+        var sessionLaunchResult = true
+        var controls = PlaybackControlState(
+            sourcePackageName = packageName,
+            capabilities = PlaybackControlCapabilities(
+                canPlay = true,
+                canPause = true,
+                canSkipPrevious = true,
+                canSkipNext = true,
+                canSeek = true,
+            ),
+        )
 
         override val isPlaying: Boolean get() = playing
         override fun snapshot(): PlaybackSnapshot = snapshot
+        override fun controlState(): PlaybackControlState = controls
 
         override fun attach(callback: RuntimeMediaControllerCallback) {
             attachCount += 1
@@ -245,8 +326,18 @@ class SelectedMediaSessionRuntimeTest {
             seekPositions += positionMs
         }
 
+        override fun skipToQueueItem(queueItemId: Long) {
+            queueItemIds += queueItemId
+        }
+
+        override fun openSessionActivity(): Boolean {
+            sessionLaunchCount += 1
+            return sessionLaunchResult
+        }
+
         fun metadataChanged() = callbacks.toList().forEach { it.onMetadataChanged() }
         fun playbackChanged() = callbacks.toList().forEach { it.onPlaybackStateChanged() }
+        fun controlStateChanged() = callbacks.toList().forEach { it.onControlStateChanged() }
         fun destroy() = callbacks.toList().forEach { it.onSessionDestroyed() }
     }
 

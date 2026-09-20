@@ -66,4 +66,20 @@
     <string name="settings_brand_name">AALyrics</string>
     <string name="settings_brand_copyright_owner">Yuta Miura (whoxamxl)</string>
     <string name="settings_brand_logo_description">AALyrics logo</string>
+
+    <string name="playback_play">Play</string>
+    <string name="playback_pause">Pause</string>
+    <string name="playback_previous">Previous</string>
+    <string name="playback_next">Next</string>
+    <string name="playback_seek_backward">Seek backward</string>
+    <string name="playback_seek_forward">Seek forward</string>
+    <string name="playback_quick_controls">Quick controls</string>
+    <string name="playback_queue">Queue</string>
+    <string name="playback_open_app">Open playback app</string>
+    <string name="playback_expand">Expand player</string>
+    <string name="playback_collapse">Collapse player</string>
+    <string name="playback_translation">Translation</string>
+    <string name="playback_close">Close</string>
+    <string name="playback_position">Playback position</string>
+    <string name="playback_position_state">%1$s of %2$s</string>
 </resources>

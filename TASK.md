@@ -1,145 +1,171 @@
-# Phone Settings Foundation
+# Phone Playback Surface
 
-## Integration status
+## Branch and baseline
 
-- Integrated into `main` via PR #44 (`1867e35`).
-- Post-merge review fixes are tracked separately.
-- Classification: **PHONE SETTINGS PRESENTATION FOUNDATION**.
-- Authoritative references: `AGENTS.md`, `docs/PHONE_UI_SPEC.md`, `docs/PHONE_SETTINGS.md`, `docs/PHONE_LYRICS_VIEWPORT.md`, `docs/TRANSLATION_ARCHITECTURE.md`, and `docs/ANDROID_AUTO_COMPATIBILITY.md`.
-- The user explicitly authorized this UI implementation slice.
+- Branch: `feature/phone-playback-surface`.
+- Base: `main` at `575d53c00aec66e788b45378b44b91d7d9e8a60d`.
+- Classification: **PHONE PLAYBACK SURFACE / MEDIA CONTROL PRESENTATION**.
+- Authoritative references: `AGENTS.md`, `docs/PHONE_UI_SPEC.md`, `docs/PHONE_PLAYBACK_SURFACE.md`, and `docs/MEDIA_SESSION_RUNTIME.md`.
+- Documentation direction is approved. Core implementation is complete enough for the user visual/interaction checkpoint; final review and merge remain deferred.
 
 ## Goal
 
-Define and implement the first production Phone Settings destination using presentation-ready state and callbacks only.
-
-This slice should establish a durable Settings composition and reusable Phone-local setting-row primitives without moving persistence, Translation policy, Android Auto acknowledgement ownership, or other application state into `:ui:phone`.
-
-## Accepted first-slice content
-
-### Lyrics
-
-- `Plain lyrics auto-scroll` switch.
-- Compact on-demand info affordance using the approved explanatory copy from the LyricsViewport specification.
-- The UI exposes state and a callback only; durable preference ownership/wiring is not introduced by this slice.
-
-### Translation
-
-- `Translation` enabled/disabled switch.
-- `Target language` navigation row showing the selected display name.
-- A compact target-language picker driven entirely by presentation-provided options.
-- English remains the default target.
-- Each language shows model readiness with explicit manual download/retry action, loading state, and ready state.
-- English is represented as built-in/ready and never offers a remote download action.
-- The target-language row remains available while Translation is disabled so the user can preconfigure the target.
-- Model download action is independent from target selection.
-- `:ui:phone` must not depend directly on `:translation:api`, ML Kit, or concrete SharedPreferences.
-
-### Android Auto
-
-- `Compatibility setup` navigation row.
-- Show presentation status as `Enabled`, `Skipped`, or `Not reviewed`.
-- Tapping the row emits a callback to reopen the already implemented compatibility setup flow.
-- Do not claim automatic verification of Android Auto `Unknown sources`.
-
-### App
-
-- One combined Version/update row.
-- Show the installed version supplied by presentation state.
-- Update lifecycle: idle, checking, up to date, update available, check failure, downloading, downloaded, download failure.
-- Check/Retry/Download are explicit buttons; checking/downloading use progress indication.
-- Download emits a dedicated callback for the latest eligible signed GitHub Release APK.
-- `Changelog >` row below the Version/update block, backed by presentation-ready GitHub Release notes.
-- `Source code    GitHub ↗` external-link row using a real external-link icon and the existing GitHub callback.
-- `License >` internal row for the repository's PolyForm Noncommercial License 1.0.0.
-- Always-visible AALyrics branding footer using the Android foreground mark, app name, installed version, current year, and `Yuta Miura (whoxamxl)`.
-- GitHub affordances are provided by the Source code action and the branding footer.
-- Runtime GitHub release/changelog loading, APK download/checksum verification, and browser/intent launching remain outside `:ui:phone`.
-
-## Presentation boundary
-
-The Settings screen consumes a Phone-local immutable presentation model and emits callbacks.
-
-Conceptually:
+Replace the current fixed Previous / Play-Pause / Next shell bar with one shell-owned two-state playback surface:
 
 ```text
-application / capability state
-        ↓
-Phone Settings presentation mapping
-        ↓
-SettingsScreenUiState
-        ↓
-SettingsScreen
-        ↓
-callbacks
+Collapsed Playback Bar
+        ⇅
+Expanded Player
 ```
 
-The UI must not own:
+The collapsed state should stay compact and expose only Play/Pause directly. The expanded state should provide interactive seek, transport controls, Queue/Open-app fallback, and a Translation quick-control without changing MediaSession ownership or moving Android framework objects into `:ui:phone`.
 
-- SharedPreferences keys;
-- `TranslationSettingsStore`;
-- `AndroidAutoCompatibilityOnboarding`;
-- ML Kit model lifecycle;
-- Android Auto setting verification;
-- Lyrics provider preferences or provider execution.
+## Accepted interaction model
 
-The screen should accept the shell-provided playback overlay inset and reserve it in scroll content so the final settings rows remain reachable above the floating Playback Controls Bar.
+### Collapsed Playback Bar
 
-## Local component direction
+- compact artwork + one-line title + one-line artist;
+- Track Card-style delayed marquee for overflowing identity text;
+- Play/Pause is the only direct transport button;
+- all other non-Play/Pause bar area expands the player;
+- retain the current thin bottom playback-position indicator unchanged in role: informational and non-interactive;
+- no permanent Previous/Next buttons in collapsed state.
 
-Prove these components inside `:ui:phone` first:
+### Expanded Player
 
-- `SettingsSection`;
-- `SettingsSwitchRow`;
-- `SettingsNavigationRow`;
-- `SettingInfoTooltip`;
-- target-language picker presentation.
+- shell-owned overlay that grows upward from the Playback Bar;
+- compact artwork + animated one-line title/artist;
+- elapsed time + interactive seek bar + duration;
+- control row: Quick controls / Previous / Play-Pause / Next / Queue-or-Open-app;
+- destination content should not reflow to the full expanded height.
 
-Do not promote them to `:ui:designsystem` until another screen demonstrates genuine reuse.
+### Collapse rules
 
-## Visual direction
+Collapse on:
 
-- Vertically scrollable destination.
-- Compact section headers and grouped setting rows.
-- Avoid a separate oversized card for every row; related rows should read as one section.
-- Preserve accessible touch targets.
-- Keep explanatory copy on demand rather than permanently expanding the page.
-- Use existing AALyrics colors, typography, radius, spacing, and stroke tokens.
-- Validate normal, narrow, and enlarged-font layouts.
+- destination/backdrop tap outside the player;
+- system Back while expanded;
+- downward collapse gesture;
+- player identity/header tap;
+- selected-session loss with no eligible replacement.
 
-## Acceptance criteria
+Do not auto-collapse for ordinary transport, seek, track changes, Translation toggle, Queue open/close, or Phone destination switching.
 
-- [x] Add `docs/PHONE_SETTINGS.md` and align the related durable docs.
-- [x] Replace the Settings placeholder with an immutable Phone-local presentation contract.
-- [x] Implement the production `SettingsScreen`.
-- [x] Implement the first-slice Lyrics, Translation, and Android Auto sections described above.
-- [x] Add presentation states and callbacks for manual Translation model download/retry, including built-in English, loading, ready, and failure states.
-- [x] Use one aligned trailing action slot: unavailable -> download, downloading -> spinner, ready -> selectable/empty, selected -> check, failed -> retry.
-- [x] Show a failure-reason tooltip only beside the failed/retry state.
-- [x] Combine current version and update controls into one stateful Settings row.
-- [x] Add check/loading/up-to-date/available/download/failure/retry presentation states.
-- [x] Add a dedicated update-download callback for the latest eligible signed GitHub Release APK.
-- [x] Reset completed/stale update results to IDLE on the next Settings entry while preserving active CHECKING/DOWNLOADING work.
-- [x] Add Changelog loading/content/failure presentation sourced from GitHub Releases through callbacks.
-- [x] Add Source code / GitHub external-link row and License navigation row.
-- [x] Replace the About row with a permanent branded footer using the AALyrics Android foreground artwork.
-- [x] Keep the GitHub link affordance in the branding footer.
-- [x] Keep `:ui:phone` free of concrete persistence/application/Translation-engine dependencies.
-- [x] Reserve the shell playback-overlay inset in Settings scroll content.
-- [x] Add deterministic Previews for typical, narrow, enlarged-font, Translation-off, and Android Auto status variants.
-- [x] Render the production Settings destination in the shell Preview.
-- [x] Run CI and review the final diff before integration.
-- [x] Merge after explicit user approval.
+### Seek behavior
+
+- direct seek dragging previews locally and emits one `seekTo()` on release;
+- cancelled seek emits no command;
+- incoming live position must not overwrite active local preview;
+- all preview positions clamp to track duration.
+
+### Previous / Next
+
+Tap behavior stays:
+
+```text
+Previous tap -> skipToPrevious()
+Next tap     -> skipToNext()
+```
+
+Long press uses deterministic AALyrics-owned relative-seek preview rather than MediaSession `rewind()` / `fastForward()`:
+
+- platform long-press threshold starts scrub mode;
+- one haptic confirms long-press recognition;
+- corresponding tap/skip is suppressed;
+- seek bar/time preview moves smoothly while held;
+- initial target rate is 5 seconds of media per 1 second of continued hold;
+- release emits exactly one `seekTo(previewPositionMs)`;
+- cancellation emits no seek;
+- long press is unavailable when seek is unsupported even if skip is supported.
+
+### Queue / Open playback app
+
+Rightmost slot priority:
+
+```text
+usable queue -> Queue
+otherwise launchable source -> Open playback app
+otherwise -> no active trailing action
+```
+
+Queue is capability-driven and never inferred only from package name.
+
+### Quick controls
+
+Leftmost slot opens a compact quick-controls popup.
+
+First approved item only:
+
+```text
+Translation                     [ON/OFF]
+```
+
+It must use the same application-owned Translation enabled state as Settings.
+
+## Architecture boundaries
+
+`:ui:phone` receives presentation-ready state and callbacks only.
+
+It must not depend on:
+
+- raw `MediaController`;
+- `PlaybackState` action bitmasks;
+- `MediaSession.Token`;
+- framework queue objects;
+- `PendingIntent`;
+- Android launch intents.
+
+`:platform:media` remains the selected-session/framework owner and may normalize supported actions, queue, launch capability, and other session facts needed by application presentation mapping.
+
+The current framework-neutral `PlaybackTransport` already exposes play/pause/previous/next/seek. The long-press design must compose on `seekTo()`; do not add `rewind()` or `fastForward()` for this feature.
+
+## Documentation checkpoint
+
+- [x] Create `docs/PHONE_PLAYBACK_SURFACE.md`.
+- [x] Define collapsed and expanded presentation.
+- [x] Define explicit collapse triggers and non-triggers.
+- [x] Define direct seek preview/commit behavior.
+- [x] Define tap-vs-long-press gesture state machine.
+- [x] Define deterministic relative-seek behavior using one-shot `seekTo()`.
+- [x] Define Queue/Open-app capability fallback.
+- [x] Define Translation quick-control ownership.
+- [x] Define capability/presentation boundaries.
+- [x] Align `docs/PHONE_UI_SPEC.md`.
+- [x] Align `docs/MEDIA_SESSION_RUNTIME.md`.
+- [x] Report documentation checkpoint to the user before implementation.
+
+## Implementation acceptance criteria
+
+Implementation begins only after the documentation checkpoint above.
+
+- [x] Add capability-aware playback presentation state.
+- [x] Preserve Android framework ownership in `:platform:media`.
+- [x] Replace current fixed `PlaybackControlsBar` presentation with collapsed Playback Bar.
+- [x] Add Expanded Player overlay and deterministic collapse/back handling.
+- [x] Add direct interactive seek preview/one-shot commit.
+- [x] Add Previous/Next long-press relative-seek state machine.
+- [x] Prevent long press from also dispatching tap skip.
+- [x] Add haptic confirmation on long-press recognition.
+- [x] Add Queue/Open-app trailing capability slot.
+- [x] Add Translation quick-control popup using existing application state.
+- [x] Reuse/tune Track Card marquee semantics for compact player identity.
+- [x] Keep existing collapsed bottom progress indicator semantics.
+- [x] Preserve at least 48dp touch targets and accessibility semantics.
+- [x] Add deterministic Preview and test coverage described by the spec.
+- [ ] User confirms the visual/interaction direction in Android Studio Preview / Interactive Preview.
+- [ ] Run final CI and bounded Codex review after any user-requested visual tuning.
+- [ ] Stop before merge until explicit user approval.
 
 ## Scope guard
 
-This slice does not implement:
+Do not expand this slice into:
 
-- application/runtime wiring for the setting callbacks;
-- durable Plain lyrics auto-scroll persistence;
-- new Translation algorithms, providers, or model-lifecycle behavior;
-- Android Auto Developer Mode or `Unknown sources` verification;
-- provider preference UI;
-- appearance/theme settings;
-- diagnostics;
-- Sync or Details destination behavior;
-- navigation-framework/ViewModel architecture.
+- MediaSession selection-policy changes;
+- Notification Access onboarding;
+- provider/scoring work;
+- Android Auto player redesign;
+- volume controls;
+- shuffle/repeat;
+- arbitrary custom MediaSession actions;
+- full-screen now-playing;
+- unrelated Settings work.

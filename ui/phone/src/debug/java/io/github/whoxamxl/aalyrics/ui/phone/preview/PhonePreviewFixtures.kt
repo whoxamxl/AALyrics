@@ -16,7 +16,8 @@ import io.github.whoxamxl.aalyrics.ui.phone.settings.SettingsLanguageOptionUiSta
 import io.github.whoxamxl.aalyrics.ui.phone.settings.SettingsScreenUiState
 import io.github.whoxamxl.aalyrics.ui.phone.settings.TranslationModelUiState
 import io.github.whoxamxl.aalyrics.ui.phone.state.PhoneShellUiState
-import io.github.whoxamxl.aalyrics.ui.phone.state.PlaybackControlsUiState
+import io.github.whoxamxl.aalyrics.ui.phone.state.PlaybackQueueItemUiState
+import io.github.whoxamxl.aalyrics.ui.phone.state.PlaybackSurfaceUiState
 
 /** Deterministic debug-only inputs shared by Phone shell component Previews. */
 internal object PhonePreviewFixtures {
@@ -126,45 +127,75 @@ internal object PhonePreviewFixtures {
         viewport = viewportLineMiddle,
     )
 
-    val playingControls = PlaybackControlsUiState(
+    val playingSurface = PlaybackSurfaceUiState(
         isPlaying = true,
-        progressFraction = 0.42f,
+        title = "Midnight Signals",
+        artist = "The Northbound Lights",
+        positionMs = 92_000L,
+        durationMs = 221_000L,
+        playbackRate = 1.0f,
+        canPlay = true,
+        canPause = true,
+        canSkipPrevious = true,
+        canSkipNext = true,
+        canSkipToQueueItem = true,
+        canSeek = true,
+        queue = listOf(
+            PlaybackQueueItemUiState(101L, "Midnight Signals", "The Northbound Lights"),
+            PlaybackQueueItemUiState(102L, "Afterglow Transit", "The Northbound Lights"),
+            PlaybackQueueItemUiState(103L, "Static Horizon", "Northern Relay"),
+            PlaybackQueueItemUiState(104L, "Glass Stations", "The Northbound Lights"),
+            PlaybackQueueItemUiState(105L, "Low Orbit", "Northern Relay"),
+            PlaybackQueueItemUiState(106L, "Last Train Through Neon", "The Northbound Lights"),
+            PlaybackQueueItemUiState(107L, "Signal Bloom", "Polar Avenue"),
+            PlaybackQueueItemUiState(108L, "A Very Long Queue Title That Should Stay on One Line", "An Equally Long Artist Name for Queue Overflow"),
+            PlaybackQueueItemUiState(109L, "Blue Hour", "Northern Relay"),
+            PlaybackQueueItemUiState(110L, "Terminal Lights", "The Northbound Lights"),
+        ),
+        canOpenPlaybackApp = true,
+        translationEnabled = true,
     )
-    val pausedControls = PlaybackControlsUiState(
+    val pausedSurface = playingSurface.copy(
         isPlaying = false,
-        progressFraction = 0.61f,
+        positionMs = 134_000L,
     )
-    val previousDisabledControls = PlaybackControlsUiState(
-        isPlaying = true,
-        previousEnabled = false,
-        progressFraction = 0.08f,
+    val previousDisabledSurface = playingSurface.copy(
+        canSkipPrevious = false,
+        positionMs = 18_000L,
     )
-    val nextDisabledControls = PlaybackControlsUiState(
-        isPlaying = false,
-        nextEnabled = false,
-        progressFraction = 0.93f,
+    val nextDisabledSurface = pausedSurface.copy(
+        canSkipNext = false,
+        positionMs = 205_000L,
     )
-    val allDisabledControls = PlaybackControlsUiState(
-        isPlaying = false,
-        previousEnabled = false,
-        playPauseEnabled = false,
-        nextEnabled = false,
-        progressFraction = 0.37f,
+    val nonSeekableSurface = playingSurface.copy(
+        canSeek = false,
+        durationMs = null,
+        queue = emptyList(),
+        canOpenPlaybackApp = true,
+    )
+    val openAppFallbackSurface = playingSurface.copy(queue = emptyList())
+    val noTrailingActionSurface = playingSurface.copy(
+        queue = emptyList(),
+        canOpenPlaybackApp = false,
+    )
+    val longMetadataSurface = playingSurface.copy(
+        title = "A Track Title Long Enough to Demonstrate the Playback Bar Marquee",
+        artist = "An Artist Name That Is Also Deliberately Longer Than the Available Player Width",
     )
 
     val typicalLyricsShell = PhoneShellUiState(
         mediaSourceLabel = "Spotify",
-        playbackControls = playingControls,
+        playbackSurface = playingSurface,
     )
     val narrowLyricsShell = PhoneShellUiState(
         mediaSourceLabel = "YouTube Music",
-        playbackControls = pausedControls,
+        playbackSurface = pausedSurface,
     )
     val lyricsWithoutControls = PhoneShellUiState(mediaSourceLabel = null)
     val syncShell = PhoneShellUiState(
         selectedDestination = PhoneDestination.Sync,
         mediaSourceLabel = "Poweramp",
-        playbackControls = pausedControls,
+        playbackSurface = pausedSurface,
     )
 
     val settingsLanguages = listOf(
@@ -261,7 +292,7 @@ internal object PhonePreviewFixtures {
     val settingsShell = PhoneShellUiState(
         selectedDestination = PhoneDestination.Settings,
         mediaSourceLabel = "Spotify",
-        playbackControls = playingControls,
+        playbackSurface = playingSurface,
     )
 
     val lyricsLines = listOf(

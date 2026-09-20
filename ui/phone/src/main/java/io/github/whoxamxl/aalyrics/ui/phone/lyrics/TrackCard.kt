@@ -1,9 +1,7 @@
 package io.github.whoxamxl.aalyrics.ui.phone.lyrics
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.MarqueeSpacing
 import androidx.compose.foundation.background
-import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
@@ -21,12 +19,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.dp
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsColors
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsRadius
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsSpacing
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsStroke
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsTypography
+import io.github.whoxamxl.aalyrics.ui.phone.component.TrackIdentityMarquee
 
 /**
  * Compact current-track identity for the Lyrics destination.
@@ -90,32 +88,10 @@ private fun TrackIdentity(
     ).joinToString(separator = " • ")
 
     Column(modifier = modifier) {
-        Column(
-            modifier = Modifier.basicMarquee(
-                iterations = Int.MAX_VALUE,
-                repeatDelayMillis = TrackMarqueePauseMillis,
-                initialDelayMillis = TrackMarqueePauseMillis,
-                spacing = MarqueeSpacing(AALyricsSpacing.Space32),
-                velocity = TrackMarqueeVelocity,
-            ),
-        ) {
-            Text(
-                text = state.title,
-                style = AALyricsTypography.TrackTitle,
-                color = AALyricsColors.TextPrimary,
-                maxLines = 1,
-                overflow = TextOverflow.Clip,
-            )
-            artist?.let {
-                Text(
-                    text = it,
-                    style = AALyricsTypography.TrackArtist,
-                    color = AALyricsColors.TextSecondary,
-                    maxLines = 1,
-                    overflow = TextOverflow.Clip,
-                )
-            }
-        }
+        TrackIdentityMarquee(
+            title = state.title,
+            artist = artist,
+        )
         if (metadata.isNotEmpty()) {
             Text(
                 text = metadata,
@@ -128,5 +104,3 @@ private fun TrackIdentity(
     }
 }
 
-private const val TrackMarqueePauseMillis = 4_000
-private val TrackMarqueeVelocity = 30.dp
