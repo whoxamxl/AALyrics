@@ -1,6 +1,6 @@
 package io.github.whoxamxl.aalyrics.ui.phone.shell
 
-import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
@@ -269,10 +269,10 @@ private fun ExpandedSeekArea(
     var cancelled by remember { mutableStateOf(false) }
     var isDragging by remember { mutableStateOf(false) }
     val currentPosition by rememberUpdatedState(displayedPositionMs)
-    val blobScale by animateFloatAsState(
-        targetValue = if (isDragging) 0.45f else 1f,
-        animationSpec = tween(durationMillis = 180),
-        label = "seek-blob-scale",
+    val trackHeight by animateDpAsState(
+        targetValue = if (isDragging) 12.dp else 4.dp,
+        animationSpec = tween(durationMillis = 160),
+        label = "seek-track-height",
     )
 
     LaunchedEffect(interactionSource) {
@@ -320,23 +320,21 @@ private fun ExpandedSeekArea(
             interactionSource = interactionSource,
             colors = seekColors,
             thumb = {
-                SliderDefaults.Thumb(
-                    interactionSource = interactionSource,
-                    enabled = enabled,
-                    colors = seekColors,
-                    thumbSize = DpSize(18.dp, 18.dp),
+                Box(
+                    modifier = Modifier.size(18.dp),
                 )
             },
             track = { sliderState ->
-                OneUiWaveSeekTrack(
-                    progressFraction = (sliderState.value / duration.toFloat())
-                        .coerceIn(0f, 1f),
-                    isPlaying = isPlaying,
+                SliderDefaults.Track(
+                    sliderState = sliderState,
+                    modifier = Modifier
+                        .height(trackHeight)
+                        .clip(RoundedCornerShape(AALyricsRadius.Full)),
                     enabled = enabled,
-                    activeColor = AALyricsColors.AccentCyan,
-                    inactiveColor = AALyricsColors.AccentCyan.copy(alpha = 0.22f),
-                    disabledColor = AALyricsColors.TextTertiary,
-                    blobScale = blobScale,
+                    colors = seekColors,
+                    drawStopIndicator = null,
+                    thumbTrackGapSize = 0.dp,
+                    trackInsideCornerSize = 0.dp,
                 )
             },
             modifier = Modifier
