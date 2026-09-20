@@ -146,6 +146,7 @@ class SelectedMediaSessionRuntimeTest {
                     canPlay = true,
                     canPause = true,
                     canSkipNext = true,
+                    canSkipToQueueItem = true,
                     canSeek = true,
                 ),
                 queue = listOf(PlaybackQueueItem(1L, "First")),
@@ -170,6 +171,7 @@ class SelectedMediaSessionRuntimeTest {
         assertEquals(2, controlStates.size)
         assertEquals("com.example.session", controlStates.first().sourcePackageName)
         assertEquals(true, controlStates.first().capabilities.canSeek)
+        assertEquals(true, controlStates.first().capabilities.canSkipToQueueItem)
         assertEquals(listOf(1L, 2L), controlStates.last().queue.map { it.id })
 
         runtime.disconnect()
