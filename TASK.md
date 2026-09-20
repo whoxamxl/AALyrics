@@ -1,9 +1,9 @@
 # Phone Settings Foundation
 
-## Branch and baseline
+## Integration status
 
-- Branch: `feature/phone-settings-foundation`.
-- Base: `main` at `e5443e52673cd130a437f2b5185d4d1978ee45e9` after PR #42 merged.
+- Integrated into `main` via PR #44 (`1867e35`).
+- Post-merge review fixes are tracked separately.
 - Classification: **PHONE SETTINGS PRESENTATION FOUNDATION**.
 - Authoritative references: `AGENTS.md`, `docs/PHONE_UI_SPEC.md`, `docs/PHONE_SETTINGS.md`, `docs/PHONE_LYRICS_VIEWPORT.md`, `docs/TRANSLATION_ARCHITECTURE.md`, and `docs/ANDROID_AUTO_COMPATIBILITY.md`.
 - The user explicitly authorized this UI implementation slice.
@@ -52,7 +52,7 @@ This slice should establish a durable Settings composition and reusable Phone-lo
 - `Source code    GitHub ↗` external-link row using a real external-link icon and the existing GitHub callback.
 - `License >` internal row for the repository's PolyForm Noncommercial License 1.0.0.
 - Always-visible AALyrics branding footer using the Android foreground mark, app name, installed version, current year, and `Yuta Miura (whoxamxl)`.
-- GitHub affordance is carried by the branding footer.
+- GitHub affordances are provided by the Source code action and the branding footer.
 - Runtime GitHub release/changelog loading, APK download/checksum verification, and browser/intent launching remain outside `:ui:phone`.
 
 ## Presentation boundary
@@ -127,8 +127,8 @@ Do not promote them to `:ui:designsystem` until another screen demonstrates genu
 - [x] Reserve the shell playback-overlay inset in Settings scroll content.
 - [x] Add deterministic Previews for typical, narrow, enlarged-font, Translation-off, and Android Auto status variants.
 - [x] Render the production Settings destination in the shell Preview.
-- [ ] Run CI and review the final diff before integration.
-- [ ] Stop before merge until explicit user approval.
+- [x] Run CI and review the final diff before integration.
+- [x] Merge after explicit user approval.
 
 ## Scope guard
 
