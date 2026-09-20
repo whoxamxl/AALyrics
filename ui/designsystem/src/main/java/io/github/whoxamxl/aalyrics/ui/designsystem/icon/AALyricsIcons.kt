@@ -8,6 +8,7 @@ import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.Download
 import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.Lyrics
+import androidx.compose.material.icons.rounded.MusicNote
 import androidx.compose.material.icons.rounded.OpenInNew
 import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.QueueMusic
@@ -40,6 +41,7 @@ object AALyricsIcons {
     val QuickControls: ImageVector = Icons.Rounded.Tune
     val Queue: ImageVector = Icons.Rounded.QueueMusic
     val OpenPlaybackApp: ImageVector = Icons.Rounded.OpenInNew
+    val MusicNote: ImageVector = Icons.Rounded.MusicNote
 
     val PlaybackAbove: ImageVector = Icons.Rounded.ExpandLess
     val PlaybackBelow: ImageVector = Icons.Rounded.ExpandMore
