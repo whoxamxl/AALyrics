@@ -1,3 +1,160 @@
 package io.github.whoxamxl.aalyrics.ui.phone.settings
 
-// Settings destination placeholder. Final settings taxonomy and UI are intentionally deferred.
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
+import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsColors
+import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsSpacing
+import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsTypography
+import io.github.whoxamxl.aalyrics.ui.phone.R
+
+@Composable
+fun SettingsScreen(
+    state: SettingsScreenUiState,
+    onPlainLyricsAutoScrollChanged: (Boolean) -> Unit,
+    onTranslationEnabledChanged: (Boolean) -> Unit,
+    onTranslationTargetSelected: (String) -> Unit,
+    onAndroidAutoCompatibilitySetup: () -> Unit,
+    modifier: Modifier = Modifier,
+    bottomOverlayInset: Dp = 0.dp,
+) {
+    var targetLanguagePickerVisible by rememberSaveable { mutableStateOf(false) }
+
+    SettingsScreenContent(
+        state = state,
+        targetLanguagePickerVisible = targetLanguagePickerVisible,
+        onTargetLanguagePickerVisibilityChanged = {
+            targetLanguagePickerVisible = it
+        },
+        onPlainLyricsAutoScrollChanged = onPlainLyricsAutoScrollChanged,
+        onTranslationEnabledChanged = onTranslationEnabledChanged,
+        onTranslationTargetSelected = onTranslationTargetSelected,
+        onAndroidAutoCompatibilitySetup = onAndroidAutoCompatibilitySetup,
+        modifier = modifier,
+        bottomOverlayInset = bottomOverlayInset,
+    )
+}
+
+@Composable
+internal fun SettingsScreenContent(
+    state: SettingsScreenUiState,
+    targetLanguagePickerVisible: Boolean,
+    onTargetLanguagePickerVisibilityChanged: (Boolean) -> Unit,
+    onPlainLyricsAutoScrollChanged: (Boolean) -> Unit,
+    onTranslationEnabledChanged: (Boolean) -> Unit,
+    onTranslationTargetSelected: (String) -> Unit,
+    onAndroidAutoCompatibilitySetup: () -> Unit,
+    modifier: Modifier = Modifier,
+    bottomOverlayInset: Dp = 0.dp,
+) {
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(
+                start = AALyricsSpacing.Space16,
+                top = AALyricsSpacing.Space16,
+                end = AALyricsSpacing.Space16,
+                bottom = bottomOverlayInset + AALyricsSpacing.Space16,
+            ),
+    ) {
+        Text(
+            text = stringResource(R.string.settings_title),
+            style = AALyricsTypography.LyricsSupporting,
+            color = AALyricsColors.TextPrimary,
+        )
+
+        Spacer(Modifier.height(AALyricsSpacing.Space20))
+
+        SettingsSection(
+            title = stringResource(R.string.settings_section_lyrics),
+        ) {
+            SettingsSwitchRow(
+                title = stringResource(R.string.settings_plain_auto_scroll),
+                checked = state.plainLyricsAutoScrollEnabled,
+                onCheckedChange = onPlainLyricsAutoScrollChanged,
+                infoText = stringResource(R.string.settings_plain_auto_scroll_info),
+                infoContentDescription = stringResource(R.string.settings_plain_auto_scroll_info_description),
+            )
+        }
+
+        Spacer(Modifier.height(AALyricsSpacing.Space20))
+
+        SettingsSection(
+            title = stringResource(R.string.settings_section_translation),
+        ) {
+            SettingsSwitchRow(
+                title = stringResource(R.string.settings_translation_enabled),
+                checked = state.translationEnabled,
+                onCheckedChange = onTranslationEnabledChanged,
+            )
+
+            SettingsDivider()
+
+            SettingsNavigationRow(
+                title = stringResource(R.string.settings_translation_target),
+                value = state.translationTarget.displayName,
+                onClick = { onTargetLanguagePickerVisibilityChanged(true) },
+            )
+        }
+
+        Spacer(Modifier.height(AALyricsSpacing.Space20))
+
+        SettingsSection(
+            title = stringResource(R.string.settings_section_android_auto),
+        ) {
+            SettingsNavigationRow(
+                title = stringResource(R.string.settings_android_auto_compatibility),
+                value = androidAutoStatusLabel(state.androidAutoCompatibilityStatus),
+                valueColor = androidAutoStatusColor(state.androidAutoCompatibilityStatus),
+                onClick = onAndroidAutoCompatibilitySetup,
+            )
+        }
+    }
+
+    if (targetLanguagePickerVisible) {
+        TargetLanguagePicker(
+            options = state.translationTargets,
+            selectedId = state.translationTarget.id,
+            title = stringResource(R.string.settings_translation_target),
+            onSelected = onTranslationTargetSelected,
+            onDismissRequest = {
+                onTargetLanguagePickerVisibilityChanged(false)
+            },
+        )
+    }
+}
+
+@Composable
+private fun androidAutoStatusLabel(
+    status: AndroidAutoCompatibilityUiStatus,
+): String = when (status) {
+    AndroidAutoCompatibilityUiStatus.ENABLED ->
+        stringResource(R.string.settings_android_auto_status_enabled)
+    AndroidAutoCompatibilityUiStatus.SKIPPED ->
+        stringResource(R.string.settings_android_auto_status_skipped)
+    AndroidAutoCompatibilityUiStatus.NOT_REVIEWED ->
+        stringResource(R.string.settings_android_auto_status_not_reviewed)
+}
+
+private fun androidAutoStatusColor(
+    status: AndroidAutoCompatibilityUiStatus,
+) = when (status) {
+    AndroidAutoCompatibilityUiStatus.ENABLED -> AALyricsColors.Success
+    AndroidAutoCompatibilityUiStatus.SKIPPED -> AALyricsColors.Warning
+    AndroidAutoCompatibilityUiStatus.NOT_REVIEWED -> AALyricsColors.TextSecondary
+}
