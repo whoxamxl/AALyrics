@@ -12,7 +12,7 @@ The first Settings surface was integrated into `main` via PR #44 and polished in
 
 Settings should expose stable user configuration without turning the Phone UI into an owner of application state.
 
-The first surface is intentionally small and based only on settings whose product meaning is already established elsewhere in the repository.
+The production Settings surface remains intentionally focused. The Advanced extension adds only one functional presentation preference and one explicitly unavailable future affordance; it does not open a general developer-settings surface.
 
 Initial structure:
 
@@ -560,7 +560,7 @@ Deterministic debug Previews should cover at least:
 
 ## Runtime wiring boundary
 
-This first production Settings slice proves the presentation contract and interactions only.
+The existing production Settings slice proves the core presentation contract and interactions. The Advanced additions in this document remain documentation-only until a separately authorized implementation slice.
 
 A later application-composition slice may map:
 
