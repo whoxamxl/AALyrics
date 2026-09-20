@@ -32,6 +32,7 @@ dependencies {
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3")
     implementation("androidx.activity:activity-compose:1.11.0")
+    implementation("ir.mahozad.multiplatform:wavy-slider:2.2.0")
     debugImplementation("androidx.compose.ui:ui-tooling")
     testImplementation(kotlin("test-junit"))
 }
