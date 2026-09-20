@@ -48,15 +48,18 @@ class MainActivity : ComponentActivity() {
         if (state == renderedEntryState) return
         renderedEntryState = state
 
-        setContentView(
-            when (state) {
-                AppEntryState.NOTIFICATION_ACCESS_REQUIRED ->
+        when (state) {
+            AppEntryState.NOTIFICATION_ACCESS_REQUIRED -> {
+                setContentView(
                     createNotificationAccessSetupView(
                         context = this,
                         onGrantAccess = notificationAccessController::openSettings,
-                    )
+                    ),
+                )
+            }
 
-                AppEntryState.ANDROID_AUTO_COMPATIBILITY ->
+            AppEntryState.ANDROID_AUTO_COMPATIBILITY -> {
+                setContentView(
                     createAndroidAutoCompatibilitySetupView(
                         context = this,
                         onEnabled = {
@@ -71,34 +74,34 @@ class MainActivity : ComponentActivity() {
                             renderedEntryState = null
                             renderEntryState()
                         },
-                    )
+                    ),
+                )
+            }
 
-                AppEntryState.READY -> {
-                    setContent {
-                        AALyricsTheme {
-                            PhoneRuntimeHost(
-                                application = application as AALyricsApplication,
-                                androidAutoStatus = androidAutoCompatibilityOnboarding
-                                    .status()
-                                    .toUiStatus(),
-                                onAndroidAutoCompatibilitySetup = {
-                                    compatibilitySetupRequested = true
-                                    renderedEntryState = null
-                                    renderEntryState()
-                                },
-                                onOpenSourceCode = {
-                                    openUrl(SOURCE_CODE_URL)
-                                },
-                                onOpenLicense = {
-                                    openUrl(LICENSE_URL)
-                                },
-                            )
-                        }
+            AppEntryState.READY -> {
+                setContent {
+                    AALyricsTheme {
+                        PhoneRuntimeHost(
+                            application = application as AALyricsApplication,
+                            androidAutoStatus = androidAutoCompatibilityOnboarding
+                                .status()
+                                .toUiStatus(),
+                            onAndroidAutoCompatibilitySetup = {
+                                compatibilitySetupRequested = true
+                                renderedEntryState = null
+                                renderEntryState()
+                            },
+                            onOpenSourceCode = {
+                                openUrl(SOURCE_CODE_URL)
+                            },
+                            onOpenLicense = {
+                                openUrl(LICENSE_URL)
+                            },
+                        )
                     }
-                    return
                 }
-            },
-        )
+            }
+        }
     }
 
     private fun currentEntryState(): AppEntryState {
