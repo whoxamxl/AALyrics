@@ -77,7 +77,7 @@ The exact split may be adjusted to keep each commit coherent.
 
 This slice exposes production Details state and the Verbose Details preference through `AALyricsApplication`, and keeps the Compose screens callback/state driven. The repository's `MainActivity` READY path still does not host the production Phone shell; attaching the overall Phone shell/navigation runtime is a separate project slice and is not invented here merely to make Details reachable from the current foundation placeholder.
 
-The mapper deliberately treats a duration-only metadata update as the same lookup track, matching the existing playback identity rule that duration churn must not restart lyrics lookup.
+Lyrics lookup state now records the canonical `PlaybackTrackIdentity` chosen by `PlaybackLyricsController`. Details compares that stored identity with the current `PlaybackSnapshot.trackIdentity`, so reference-backed and source-media-backed tracks survive descriptive metadata enrichment without re-exposing stale lyrics from a genuinely different playback identity.
 
 ## Scope guard
 
