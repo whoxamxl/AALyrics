@@ -143,9 +143,21 @@ The current product target set is:
 - Italian;
 - Portuguese.
 
+The persisted default target is English.
+
 The target-language row remains available while Translation is disabled. Changing the target while disabled is valid configuration and can be applied when Translation is later enabled.
 
-The picker should clearly mark the selected language, dismiss after selection, and remain usable at narrow widths and enlarged font scales.
+Each language row also exposes Translation-model readiness:
+
+- English is shown as ready from the start because AALyrics treats ML Kit English support as built in and requires no remote language-pack download;
+- an unavailable remote model shows an explicit download action;
+- an active download shows an indeterminate loading indicator;
+- a ready remote model shows a downloaded/ready icon;
+- a failed download shows a retry affordance.
+
+The model icon is a separate action from selecting the target language. Downloading a model must not implicitly change the selected target.
+
+The picker should clearly mark the selected language, remain open when a model download action is used, dismiss after target selection, and remain usable at narrow widths and enlarged font scales.
 
 ## Android Auto section
 
@@ -215,14 +227,17 @@ The first demonstrated use is Plain lyrics auto-scroll.
 
 ## Target-language picker
 
-The first implementation may use a compact Material 3 modal bottom sheet because the supported target set is short and finite.
+The first implementation uses a compact Material 3 modal picker because the supported target set is short and finite.
 
 Requirements:
 
 - list only the presentation-provided options;
 - identify the current selection;
+- show presentation-provided model readiness for every language;
 - emit one selected language identifier;
-- dismiss after a valid selection;
+- emit a separate manual model-download/retry request;
+- dismiss after a valid target selection;
+- remain open for download actions;
 - remain presentation-only.
 
 Do not expose model-download internals or Translation Provider details in this picker.
@@ -279,7 +294,6 @@ The first Settings slice does not define or implement:
 - About/version UI;
 - diagnostics/log export;
 - notification-access management;
-- Translation model download status UI;
 - Translation Provider selection UI;
 - Android Auto runtime/projection settings;
 - Sync/calibration settings;
