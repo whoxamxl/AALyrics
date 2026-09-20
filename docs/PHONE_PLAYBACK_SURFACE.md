@@ -185,7 +185,7 @@ Rules:
 - the inactive segment always remains a straight, low-alpha track;
 - the active waveform uses a fixed amplitude envelope across the current active segment: zero at the start, swelling through the middle, and decaying back to zero exactly at the thumb;
 - playback animation advances only the sine phase, never the amplitude, so the wave travels without progressively "growing" over time;
-- paused/disabled playback renders the active segment flat;
+- pausing freezes the current waveform shape; disabling the seek capability renders the active segment flat;
 - use AALyrics Accent Cyan rather than album-art-derived color;
 - keep the waveform restrained: approximately 7dp maximum amplitude, 34dp wavelength, and 4dp stroke;
 - retain a compact 18dp round thumb;
