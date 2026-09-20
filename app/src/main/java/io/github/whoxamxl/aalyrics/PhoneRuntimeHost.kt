@@ -51,9 +51,13 @@ internal fun PhoneRuntimeHost(
         mutableStateOf(SystemClock.elapsedRealtime())
     }
 
-    LaunchedEffect(playback.isPlaying, playback.trackIdentity) {
+    LaunchedEffect(playback.isPlaying, playback.trackIdentity, selectedDestination) {
         monotonicTimeMs = SystemClock.elapsedRealtime()
-        while (isActive && playback.isPlaying) {
+        while (
+            isActive &&
+            playback.isPlaying &&
+            selectedDestination == PhoneDestination.Lyrics
+        ) {
             delay(250L)
             monotonicTimeMs = SystemClock.elapsedRealtime()
         }
