@@ -348,9 +348,9 @@ internal fun TargetLanguagePicker(
     title: String,
     downloadContentDescription: String,
     downloadingContentDescription: String,
-    readyContentDescription: String,
-    builtInContentDescription: String,
     retryContentDescription: String,
+    failureInfoContentDescription: String,
+    genericFailureReason: String,
     onSelected: (String) -> Unit,
     onDownloadRequested: (String) -> Unit,
     onDismissRequest: () -> Unit,
@@ -376,9 +376,9 @@ internal fun TargetLanguagePicker(
                         selected = option.id == selectedId,
                         downloadContentDescription = downloadContentDescription,
                         downloadingContentDescription = downloadingContentDescription,
-                        readyContentDescription = readyContentDescription,
-                        builtInContentDescription = builtInContentDescription,
                         retryContentDescription = retryContentDescription,
+                        failureInfoContentDescription = failureInfoContentDescription,
+                        genericFailureReason = genericFailureReason,
                         onSelected = {
                             onSelected(option.id)
                             onDismissRequest()
@@ -404,82 +404,84 @@ private fun TargetLanguageRow(
     selected: Boolean,
     downloadContentDescription: String,
     downloadingContentDescription: String,
-    readyContentDescription: String,
-    builtInContentDescription: String,
     retryContentDescription: String,
+    failureInfoContentDescription: String,
+    genericFailureReason: String,
     onSelected: () -> Unit,
     onDownloadRequested: () -> Unit,
 ) {
+    val selectable =
+        option.modelState == TranslationModelUiState.BUILT_IN ||
+            option.modelState == TranslationModelUiState.READY
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .heightIn(min = AALyricsSpacing.Space48)
-            .clickable(onClick = onSelected)
+            .clickable(
+                enabled = selectable,
+                onClick = onSelected,
+            )
             .padding(start = AALyricsSpacing.Space8),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
             text = option.displayName,
             style = AALyricsTypography.AppTitle,
-            color = if (selected) {
-                AALyricsColors.AccentCyan
-            } else {
-                AALyricsColors.TextPrimary
+            color = when {
+                selected -> AALyricsColors.AccentCyan
+                selectable -> AALyricsColors.TextPrimary
+                else -> AALyricsColors.TextTertiary
             },
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.weight(1f),
         )
 
-        TranslationModelStatusAction(
+        if (option.modelState == TranslationModelUiState.FAILED) {
+            SettingInfoTooltip(
+                text = option.modelFailureReason ?: genericFailureReason,
+                contentDescription = failureInfoContentDescription,
+            )
+        }
+
+        TargetLanguagePrimaryAction(
             option = option,
+            selected = selected,
             downloadContentDescription = downloadContentDescription,
             downloadingContentDescription = downloadingContentDescription,
-            readyContentDescription = readyContentDescription,
-            builtInContentDescription = builtInContentDescription,
             retryContentDescription = retryContentDescription,
-            onDownloadRequested = { onDownloadRequested() },
+            onDownloadRequested = onDownloadRequested,
         )
-
-        TargetLanguageIconSlot {
-            if (selected) {
-                Icon(
-                    imageVector = AALyricsIcons.Check,
-                    contentDescription = null,
-                    tint = AALyricsColors.AccentCyan,
-                    modifier = Modifier.size(AALyricsSpacing.Space24),
-                )
-            }
-        }
     }
 }
 
 @Composable
-private fun TranslationModelStatusAction(
+private fun TargetLanguagePrimaryAction(
     option: SettingsLanguageOptionUiState,
+    selected: Boolean,
     downloadContentDescription: String,
     downloadingContentDescription: String,
-    readyContentDescription: String,
-    builtInContentDescription: String,
     retryContentDescription: String,
-    onDownloadRequested: (String) -> Unit,
+    onDownloadRequested: () -> Unit,
 ) {
     when (option.modelState) {
-        TranslationModelUiState.BUILT_IN -> {
+        TranslationModelUiState.BUILT_IN,
+        TranslationModelUiState.READY -> {
             TargetLanguageIconSlot {
-                Icon(
-                    imageVector = AALyricsIcons.DownloadDone,
-                    contentDescription = builtInContentDescription,
-                    tint = AALyricsColors.AccentCyan,
-                    modifier = Modifier.size(AALyricsSpacing.Space20),
-                )
+                if (selected) {
+                    Icon(
+                        imageVector = AALyricsIcons.Check,
+                        contentDescription = null,
+                        tint = AALyricsColors.AccentCyan,
+                        modifier = Modifier.size(AALyricsSpacing.Space24),
+                    )
+                }
             }
         }
 
         TranslationModelUiState.NOT_DOWNLOADED -> {
-            TargetLanguageIconSlot(
-                onClick = { onDownloadRequested(option.id) },
-            ) {
+            TargetLanguageIconSlot(onClick = onDownloadRequested) {
                 Icon(
                     imageVector = AALyricsIcons.Download,
                     contentDescription = downloadContentDescription,
@@ -503,21 +505,8 @@ private fun TranslationModelStatusAction(
             }
         }
 
-        TranslationModelUiState.READY -> {
-            TargetLanguageIconSlot {
-                Icon(
-                    imageVector = AALyricsIcons.DownloadDone,
-                    contentDescription = readyContentDescription,
-                    tint = AALyricsColors.Success,
-                    modifier = Modifier.size(AALyricsSpacing.Space20),
-                )
-            }
-        }
-
         TranslationModelUiState.FAILED -> {
-            TargetLanguageIconSlot(
-                onClick = { onDownloadRequested(option.id) },
-            ) {
+            TargetLanguageIconSlot(onClick = onDownloadRequested) {
                 Icon(
                     imageVector = AALyricsIcons.DownloadFailed,
                     contentDescription = retryContentDescription,
