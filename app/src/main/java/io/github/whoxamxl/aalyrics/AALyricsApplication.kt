@@ -100,7 +100,7 @@ class AALyricsApplication : Application() {
                 playback = playback,
                 controlState = controlState,
                 translationEnabled = translationSettings.enabled,
-                canLaunchSourcePackage = playbackAppLauncher.canOpen(controlState),
+                canOpenPlaybackApp = playbackAppLauncher.canOpen(controlState),
             )
         }.stateIn(
             scope = applicationScope,
