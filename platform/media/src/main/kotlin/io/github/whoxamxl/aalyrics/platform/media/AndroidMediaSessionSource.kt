@@ -1,5 +1,6 @@
 package io.github.whoxamxl.aalyrics.platform.media
 
+import android.app.PendingIntent
 import android.content.ComponentName
 import android.media.MediaMetadata
 import android.media.session.MediaController
@@ -151,6 +152,16 @@ internal class AndroidRuntimeMediaController(
 
     override fun skipToQueueItem(queueItemId: Long) {
         controller.transportControls.skipToQueueItem(queueItemId)
+    }
+
+    override fun openSessionActivity(): Boolean {
+        val sessionActivity = controller.sessionActivity ?: return false
+        return try {
+            sessionActivity.send()
+            true
+        } catch (_: PendingIntent.CanceledException) {
+            false
+        }
     }
 
     private fun Long.supports(vararg actions: Long): Boolean =
