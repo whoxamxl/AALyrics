@@ -49,6 +49,7 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import io.github.whoxamxl.aalyrics.ui.designsystem.icon.AALyricsIcons
@@ -56,6 +57,7 @@ import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsColors
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsRadius
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsSpacing
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsTypography
+import io.github.whoxamxl.aalyrics.ui.phone.R
 import io.github.whoxamxl.aalyrics.ui.phone.component.TrackIdentityMarquee
 import io.github.whoxamxl.aalyrics.ui.phone.state.PlaybackQueueItemUiState
 import io.github.whoxamxl.aalyrics.ui.phone.state.PlaybackSurfaceUiState
@@ -132,8 +134,8 @@ internal fun ExpandedPlayer(
 
                 RelativeSeekTransportButton(
                     imageVector = AALyricsIcons.Previous,
-                    contentDescription = "Previous",
-                    longClickDescription = "Seek backward",
+                    contentDescription = stringResource(R.string.playback_previous),
+                    longClickDescription = stringResource(R.string.playback_seek_backward),
                     skipEnabled = state.canSkipPrevious,
                     relativeSeekEnabled = state.seekEnabled,
                     currentPositionMs = displayedPositionMs,
@@ -153,8 +155,8 @@ internal fun ExpandedPlayer(
 
                 RelativeSeekTransportButton(
                     imageVector = AALyricsIcons.Next,
-                    contentDescription = "Next",
-                    longClickDescription = "Seek forward",
+                    contentDescription = stringResource(R.string.playback_next),
+                    longClickDescription = stringResource(R.string.playback_seek_forward),
                     skipEnabled = state.canSkipNext,
                     relativeSeekEnabled = state.seekEnabled,
                     currentPositionMs = displayedPositionMs,
@@ -174,7 +176,7 @@ internal fun ExpandedPlayer(
                         ) {
                             Icon(
                                 imageVector = AALyricsIcons.Queue,
-                                contentDescription = "Queue",
+                                contentDescription = stringResource(R.string.playback_queue),
                                 tint = AALyricsColors.TextPrimary,
                             )
                         }
@@ -187,7 +189,7 @@ internal fun ExpandedPlayer(
                         ) {
                             Icon(
                                 imageVector = AALyricsIcons.OpenPlaybackApp,
-                                contentDescription = "Open playback app",
+                                contentDescription = stringResource(R.string.playback_open_app),
                                 tint = AALyricsColors.TextPrimary,
                             )
                         }
@@ -218,6 +220,7 @@ private fun ExpandedPlayerHeader(
     artwork: (@Composable BoxScope.() -> Unit)?,
 ) {
     val density = LocalDensity.current
+    val collapseLabel = stringResource(R.string.playback_collapse)
     var downwardDragPx by remember { mutableFloatStateOf(0f) }
 
     Row(
@@ -243,7 +246,7 @@ private fun ExpandedPlayerHeader(
             }
             .combinedClickable(
                 role = Role.Button,
-                onClickLabel = "Collapse player",
+                onClickLabel = collapseLabel,
                 onClick = onCollapse,
             ),
         verticalAlignment = Alignment.CenterVertically,
@@ -338,7 +341,7 @@ private fun QuickControlsButton(
         ) {
             Icon(
                 imageVector = AALyricsIcons.QuickControls,
-                contentDescription = "Quick controls",
+                contentDescription = stringResource(R.string.playback_quick_controls),
                 tint = AALyricsColors.TextPrimary,
             )
         }
@@ -361,7 +364,7 @@ private fun QuickControlsButton(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = "Translation",
+                    text = stringResource(R.string.playback_translation),
                     style = AALyricsTypography.AppTitle,
                     color = AALyricsColors.TextPrimary,
                     modifier = Modifier.weight(1f),
@@ -463,7 +466,7 @@ private fun RelativeSeekTransportButton(
     ) {
         Icon(
             imageVector = imageVector,
-            contentDescription = null,
+            contentDescription = contentDescription,
             tint = if (enabled) AALyricsColors.TextPrimary else AALyricsColors.TextTertiary,
             modifier = Modifier.size(28.dp),
         )
@@ -489,7 +492,9 @@ private fun ExpandedPlayPauseButton(
             Box(contentAlignment = Alignment.Center) {
                 Icon(
                     imageVector = if (isPlaying) AALyricsIcons.Pause else AALyricsIcons.Play,
-                    contentDescription = if (isPlaying) "Pause" else "Play",
+                    contentDescription = stringResource(
+                        if (isPlaying) R.string.playback_pause else R.string.playback_play,
+                    ),
                     tint = if (enabled) AALyricsColors.BackgroundBase else AALyricsColors.TextTertiary,
                     modifier = Modifier.size(AALyricsSpacing.Space24),
                 )
@@ -508,7 +513,7 @@ private fun PlaybackQueueDialog(
         onDismissRequest = onDismissRequest,
         title = {
             Text(
-                text = "Queue",
+                text = stringResource(R.string.playback_queue),
                 style = AALyricsTypography.TrackTitle,
                 color = AALyricsColors.TextPrimary,
             )
@@ -557,7 +562,7 @@ private fun PlaybackQueueDialog(
         confirmButton = {},
         dismissButton = {
             TextButton(onClick = onDismissRequest) {
-                Text("Close")
+                Text(stringResource(R.string.playback_close))
             }
         },
         containerColor = AALyricsColors.BackgroundSurfaceStrong,
