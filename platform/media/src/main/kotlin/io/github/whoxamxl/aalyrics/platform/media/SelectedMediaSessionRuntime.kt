@@ -17,6 +17,7 @@ internal interface RuntimeMediaController<Token> {
     fun skipToNext()
     fun seekTo(positionMs: Long)
     fun skipToQueueItem(queueItemId: Long)
+    fun openSessionActivity(): Boolean
 }
 
 internal interface RuntimeMediaControllerCallback {
@@ -65,7 +66,7 @@ internal class SelectedMediaSessionRuntime<Token>(
     private val scheduler: MetadataTaskScheduler,
     private val refreshSessions: () -> Unit,
     private val metadataStabilizationMs: Long = DEFAULT_METADATA_STABILIZATION_MS,
-) : PlaybackTransport {
+) : PlaybackTransport, PlaybackSessionLauncher {
     private var selectedController: RuntimeMediaController<Token>? = null
     private var selectedCallback: RuntimeMediaControllerCallback? = null
     private var stableSnapshot: PlaybackSnapshot? = null
@@ -100,6 +101,15 @@ internal class SelectedMediaSessionRuntime<Token>(
 
     override fun skipToQueueItem(queueItemId: Long) {
         routeTransport { it.skipToQueueItem(queueItemId) }
+    }
+
+    override fun openSessionActivity(): Boolean {
+        val controller = selectedController ?: return false
+        return try {
+            controller.openSessionActivity()
+        } catch (_: RuntimeException) {
+            false
+        }
     }
 
     private fun routeTransport(command: (RuntimeMediaController<Token>) -> Unit) {
