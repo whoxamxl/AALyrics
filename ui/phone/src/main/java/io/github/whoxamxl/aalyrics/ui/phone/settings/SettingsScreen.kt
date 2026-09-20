@@ -33,13 +33,14 @@ fun SettingsScreen(
     onAndroidAutoCompatibilitySetup: () -> Unit,
     onCheckForUpdates: () -> Unit,
     onDownloadUpdate: () -> Unit,
+    onChangelogRequested: () -> Unit,
     onSettingsEntered: () -> Unit,
     onOpenGitHub: () -> Unit,
     modifier: Modifier = Modifier,
     bottomOverlayInset: Dp = 0.dp,
 ) {
     var targetLanguagePickerVisible by rememberSaveable { mutableStateOf(false) }
-    var aboutVisible by rememberSaveable { mutableStateOf(false) }
+    var changelogVisible by rememberSaveable { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         onSettingsEntered()
@@ -58,21 +59,26 @@ fun SettingsScreen(
         onAndroidAutoCompatibilitySetup = onAndroidAutoCompatibilitySetup,
         onCheckForUpdates = onCheckForUpdates,
         onDownloadUpdate = onDownloadUpdate,
-        onAboutRequested = { aboutVisible = true },
+        onChangelogRequested = {
+            changelogVisible = true
+            onChangelogRequested()
+        },
+        onOpenGitHub = onOpenGitHub,
         modifier = modifier,
         bottomOverlayInset = bottomOverlayInset,
     )
 
-    if (aboutVisible) {
-        AboutDialog(
-            title = stringResource(R.string.settings_about_title),
-            body = stringResource(R.string.settings_about_body),
-            versionLabel = stringResource(R.string.settings_current_version),
-            versionName = state.appVersionName,
-            githubLabel = stringResource(R.string.settings_github),
+    if (changelogVisible) {
+        ChangelogDialog(
+            state = state.changelog,
+            title = stringResource(R.string.settings_changelog),
+            loadingLabel = stringResource(R.string.settings_changelog_loading),
+            failureLabel = stringResource(R.string.settings_changelog_failed),
+            retryLabel = stringResource(R.string.settings_retry),
             closeLabel = stringResource(R.string.settings_close),
-            onOpenGitHub = onOpenGitHub,
-            onDismissRequest = { aboutVisible = false },
+            genericFailureReason = stringResource(R.string.settings_changelog_failure_generic),
+            onRetry = onChangelogRequested,
+            onDismissRequest = { changelogVisible = false },
         )
     }
 }
@@ -89,7 +95,8 @@ internal fun SettingsScreenContent(
     onAndroidAutoCompatibilitySetup: () -> Unit,
     onCheckForUpdates: () -> Unit,
     onDownloadUpdate: () -> Unit,
-    onAboutRequested: () -> Unit,
+    onChangelogRequested: () -> Unit,
+    onOpenGitHub: () -> Unit,
     modifier: Modifier = Modifier,
     bottomOverlayInset: Dp = 0.dp,
 ) {
@@ -187,11 +194,21 @@ internal fun SettingsScreenContent(
             SettingsDivider()
 
             SettingsNavigationRow(
-                title = stringResource(R.string.settings_about),
+                title = stringResource(R.string.settings_changelog),
                 value = null,
-                onClick = onAboutRequested,
+                onClick = onChangelogRequested,
             )
         }
+
+        SettingsBrandFooter(
+            appName = stringResource(R.string.app_name),
+            versionLabel = stringResource(R.string.settings_version),
+            versionName = state.appVersionName,
+            currentYear = state.currentYear,
+            copyrightOwner = stringResource(R.string.settings_brand_copyright_owner),
+            logoContentDescription = stringResource(R.string.settings_brand_logo_description),
+            onOpenGitHub = onOpenGitHub,
+        )
     }
 
     if (targetLanguagePickerVisible) {
