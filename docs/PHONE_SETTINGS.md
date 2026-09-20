@@ -4,7 +4,7 @@
 
 This document defines the first production presentation contract for the Phone `Settings` destination.
 
-The initial implementation is intentionally presentation-only: `:ui:phone` receives immutable state and emits callbacks. Application/capability layers continue to own persistence and runtime policy.
+The production `SettingsScreen` and its Phone-local row components are implemented as a presentation-only destination: `:ui:phone` receives immutable state and emits callbacks. Application/capability layers continue to own persistence and runtime policy.
 
 Implementation branch: `feature/phone-settings-foundation`.
 
