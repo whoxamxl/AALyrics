@@ -324,7 +324,7 @@ otherwise
 
 ### Queue
 
-Queue is optional because not every media app publishes a useful MediaSession queue.
+Queue is optional because not every media app publishes a useful MediaSession queue. A non-empty framework queue is not sufficient by itself: Queue is actionable only when the selected session also advertises skip-to-queue-item capability.
 
 When available, Queue opens as a compact bottom sheet rather than an alert dialog. The sheet uses the same visual language as the collapsed Playback Bar, but each queue item is a list row with the playback progress indicator and Play/Pause action removed.
 
