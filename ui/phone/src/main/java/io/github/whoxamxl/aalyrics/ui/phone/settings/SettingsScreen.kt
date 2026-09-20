@@ -185,12 +185,12 @@ internal fun SettingsScreenContent(
                 stringResource(R.string.settings_translation_model_download),
             downloadingContentDescription =
                 stringResource(R.string.settings_translation_model_downloading),
-            readyContentDescription =
-                stringResource(R.string.settings_translation_model_ready),
-            builtInContentDescription =
-                stringResource(R.string.settings_translation_model_built_in),
             retryContentDescription =
                 stringResource(R.string.settings_translation_model_retry),
+            failureInfoContentDescription =
+                stringResource(R.string.settings_translation_model_failure_info),
+            genericFailureReason =
+                stringResource(R.string.settings_translation_model_failure_generic),
             onSelected = onTranslationTargetSelected,
             onDownloadRequested = onTranslationModelDownloadRequested,
             onDismissRequest = {
