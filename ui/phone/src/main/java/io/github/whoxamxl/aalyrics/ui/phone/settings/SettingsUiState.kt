@@ -20,6 +20,25 @@ data class SettingsLanguageOptionUiState(
     val modelFailureReason: String? = null,
 )
 
+/** Presentation lifecycle for checking/downloading an AALyrics GitHub Release update. */
+enum class AppUpdateUiPhase {
+    IDLE,
+    CHECKING,
+    UP_TO_DATE,
+    UPDATE_AVAILABLE,
+    CHECK_FAILED,
+    DOWNLOADING,
+    DOWNLOADED,
+    DOWNLOAD_FAILED,
+}
+
+@Immutable
+data class AppUpdateUiState(
+    val phase: AppUpdateUiPhase = AppUpdateUiPhase.IDLE,
+    val availableVersionName: String? = null,
+    val failureReason: String? = null,
+)
+
 /** User acknowledgement shown for the legacy Android Auto compatibility setup. */
 enum class AndroidAutoCompatibilityUiStatus {
     NOT_REVIEWED,
@@ -37,4 +56,5 @@ data class SettingsScreenUiState(
     val androidAutoCompatibilityStatus: AndroidAutoCompatibilityUiStatus =
         AndroidAutoCompatibilityUiStatus.NOT_REVIEWED,
     val appVersionName: String,
+    val appUpdate: AppUpdateUiState = AppUpdateUiState(),
 )
