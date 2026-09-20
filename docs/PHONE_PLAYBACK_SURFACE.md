@@ -175,6 +175,23 @@ Collapsed Player + Back
     -> normal destination/activity back behavior
 ```
 
+## Expanded seek visual language
+
+The Expanded Player seek control uses a subtle Pixel-inspired wavy active track while normal playback is running.
+
+Rules:
+
+- only the active/progress segment is wavy;
+- use AALyrics Accent Cyan rather than album-art-derived color;
+- keep the wave deliberately restrained (about 4dp height, 22dp wavelength, 3dp track thickness);
+- flatten the seek control when playback is paused;
+- flatten it during direct drag preview;
+- flatten it during Previous/Next long-press relative-seek preview;
+- return to the animated wave after a committed/cancelled seek when playback is still running;
+- the collapsed playback progress indicator remains a straight, non-interactive line.
+
+The implementation currently uses `ir.mahozad.multiplatform:wavy-slider:2.2.0` (Apache-2.0) for the Expanded Player only.
+
 ## Interactive seek bar
 
 The seek bar is interactive only when the selected session exposes seek capability and a usable duration.
