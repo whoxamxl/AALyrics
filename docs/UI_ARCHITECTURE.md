@@ -6,7 +6,7 @@ This document defines the UI module layout, source-set rules, Compose design-sys
 
 The project uses Jetpack Compose itself as the executable design specification for Compose surfaces. Static design artifacts may inform visual decisions, but production UI code is the source of truth for behavior and appearance. Android Auto host-rendered templates are a distinct presentation technology and adapt the same semantic design intent through automotive-local builders/components.
 
-Surface-specific product structure is documented separately when useful. The current Phone information architecture is defined in `docs/PHONE_UI_SPEC.md`, with the first Settings destination contract in `docs/PHONE_SETTINGS.md`.
+Surface-specific product structure is documented separately when useful. The current Phone information architecture is defined in `docs/PHONE_UI_SPEC.md`, with Settings/Advanced behavior in `docs/PHONE_SETTINGS.md`, Details behavior in `docs/PHONE_DETAILS.md`, and the shell playback contract in `docs/PHONE_PLAYBACK_SURFACE.md`.
 
 Branding authority and derivative rules are defined in `docs/BRANDING.md`; `branding/AALyrics_MASTER.svg` is the canonical AALyrics master icon.
 
@@ -87,7 +87,9 @@ PhoneAppShell
 │  ├─ Sync
 │  ├─ Details
 │  └─ Settings
-├─ PlaybackControlsBar
+├─ PlaybackSurface
+│  ├─ PlaybackBar
+│  └─ ExpandedPlayer
 └─ PhoneNavigationBar
 ```
 
@@ -113,9 +115,9 @@ ui/phone/state       shell-level presentation state
 
 The shell may compose the selected destination and expose presentation-ready transport callbacks, but it does not discover media sessions, own `MediaController`, perform provider lookup, or select lyrics candidates.
 
-The richer current-track card is Lyrics-destination content, not persistent shell chrome. Persistent playback controls remain compact and do not duplicate artwork/title/artist metadata.
+The richer current-track card remains Lyrics-destination content. The shell-level Playback Surface may repeat only the compact track identity/artwork needed to make playback control context clear; it must not turn persistent chrome into a second full Track Card.
 
-PR #33 implements this persistent shell boundary in production Compose with caller-owned destination content, presentation-only shell state, and callback-only transport/navigation actions. `PhoneTopBar` consumes the status-bar inset for edge-to-edge layouts, and deterministic debug Previews render the same production shell at typical and narrow sizes. Destination APIs, navigation runtime/back-stack ownership, transport integration, state mapping, and final visual tuning remain deferred. See `docs/PHONE_UI_SPEC.md` for the product-level structure and deferred decisions.
+PR #33 established the persistent shell boundary in production Compose. Subsequent Phone slices added Track Card, LyricsViewport/LyricsScreen, production Settings, and the capability-aware two-state Playback Surface. PR #46 completed the current shell playback contract with collapsed/expanded presentation, seek, Queue/Open-app fallback, and Translation quick controls. Details and Sync remain destination-local work; Details now has an approved contract in `docs/PHONE_DETAILS.md`, while Sync remains intentionally undefined pending timing/calibration redesign.
 
 ## Shared vs automotive design system
 
@@ -246,7 +248,9 @@ ui/
 │     │     ├─ shell/
 │     │     │  ├─ PhoneAppShell.kt
 │     │     │  ├─ PhoneTopBar.kt
-│     │     │  ├─ PlaybackControlsBar.kt
+│     │     │  ├─ PlaybackSurface.kt
+│     │     │  ├─ PlaybackBar.kt
+│     │     │  ├─ ExpandedPlayer.kt
 │     │     │  └─ PhoneNavigationBar.kt
 │     │     ├─ navigation/
 │     │     │  └─ PhoneDestination.kt
@@ -262,7 +266,8 @@ ui/
 │     │     ├─ details/
 │     │     │  └─ DetailsScreen.kt
 │     │     ├─ settings/
-│     │     │  └─ SettingsScreen.kt
+│     │     │  ├─ SettingsScreen.kt
+│     │     │  └─ SettingsUiState.kt
 │     │     └─ state/
 │     │        └─ PhoneShellUiState.kt
 │     └─ debug/
