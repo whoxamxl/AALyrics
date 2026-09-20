@@ -197,7 +197,9 @@ PhoneAppShell
 │  ├─ Sync
 │  ├─ Details
 │  └─ Settings
-├─ PlaybackControlsBar
+├─ PlaybackSurface
+│  ├─ PlaybackBar
+│  └─ ExpandedPlayer
 └─ PhoneNavigationBar
 ```
 
