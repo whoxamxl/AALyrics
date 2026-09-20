@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.toggleable
@@ -315,7 +314,7 @@ internal fun SettingInfoTooltip(
     Box {
         IconButton(
             onClick = { expanded = true },
-            modifier = Modifier.size(AALyricsSpacing.Space40),
+            modifier = Modifier.size(AALyricsSpacing.Space48),
         ) {
             Icon(
                 imageVector = AALyricsIcons.Info,
@@ -370,57 +369,22 @@ internal fun TargetLanguagePicker(
                     .verticalScroll(rememberScrollState()),
             ) {
                 options.forEach { option ->
-                    val selected = option.id == selectedId
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .heightIn(min = AALyricsSpacing.Space48)
-                            .clickable {
-                                onSelected(option.id)
-                                onDismissRequest()
-                            }
-                            .padding(
-                                start = AALyricsSpacing.Space8,
-                                end = AALyricsSpacing.Space4,
-                                top = AALyricsSpacing.Space8,
-                                bottom = AALyricsSpacing.Space8,
-                            ),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Text(
-                            text = option.displayName,
-                            style = AALyricsTypography.AppTitle,
-                            color = if (selected) {
-                                AALyricsColors.AccentCyan
-                            } else {
-                                AALyricsColors.TextPrimary
-                            },
-                            maxLines = 1,
-                        )
-
-                        Spacer(Modifier.width(AALyricsSpacing.Space8))
-
-                        TranslationModelStatusAction(
-                            option = option,
-                            downloadContentDescription = downloadContentDescription,
-                            downloadingContentDescription = downloadingContentDescription,
-                            readyContentDescription = readyContentDescription,
-                            builtInContentDescription = builtInContentDescription,
-                            retryContentDescription = retryContentDescription,
-                            onDownloadRequested = onDownloadRequested,
-                        )
-
-                        Spacer(Modifier.weight(1f))
-
-                        if (selected) {
-                            Icon(
-                                imageVector = AALyricsIcons.Check,
-                                contentDescription = null,
-                                tint = AALyricsColors.AccentCyan,
-                                modifier = Modifier.size(AALyricsSpacing.Space24),
-                            )
-                        }
-                    }
+                    TargetLanguageRow(
+                        option = option,
+                        selected = option.id == selectedId,
+                        downloadContentDescription = downloadContentDescription,
+                        downloadingContentDescription = downloadingContentDescription,
+                        readyContentDescription = readyContentDescription,
+                        builtInContentDescription = builtInContentDescription,
+                        retryContentDescription = retryContentDescription,
+                        onSelected = {
+                            onSelected(option.id)
+                            onDismissRequest()
+                        },
+                        onDownloadRequested = {
+                            onDownloadRequested(option.id)
+                        },
+                    )
                 }
             }
         },
@@ -430,6 +394,64 @@ internal fun TargetLanguagePicker(
         textContentColor = AALyricsColors.TextPrimary,
         shape = RoundedCornerShape(AALyricsRadius.Radius16),
     )
+}
+
+@Composable
+private fun TargetLanguageRow(
+    option: SettingsLanguageOptionUiState,
+    selected: Boolean,
+    downloadContentDescription: String,
+    downloadingContentDescription: String,
+    readyContentDescription: String,
+    builtInContentDescription: String,
+    retryContentDescription: String,
+    onSelected: () -> Unit,
+    onDownloadRequested: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = AALyricsSpacing.Space48)
+            .clickable(onClick = onSelected)
+            .padding(start = AALyricsSpacing.Space8),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = option.displayName,
+            style = AALyricsTypography.AppTitle,
+            color = if (selected) {
+                AALyricsColors.AccentCyan
+            } else {
+                AALyricsColors.TextPrimary
+            },
+            maxLines = 1,
+            modifier = Modifier.weight(1f),
+        )
+
+        TranslationModelStatusAction(
+            option = option,
+            downloadContentDescription = downloadContentDescription,
+            downloadingContentDescription = downloadingContentDescription,
+            readyContentDescription = readyContentDescription,
+            builtInContentDescription = builtInContentDescription,
+            retryContentDescription = retryContentDescription,
+            onDownloadRequested = { onDownloadRequested() },
+        )
+
+        Box(
+            modifier = Modifier.size(AALyricsSpacing.Space48),
+            contentAlignment = Alignment.Center,
+        ) {
+            if (selected) {
+                Icon(
+                    imageVector = AALyricsIcons.Check,
+                    contentDescription = null,
+                    tint = AALyricsColors.AccentCyan,
+                    modifier = Modifier.size(AALyricsSpacing.Space24),
+                )
+            }
+        }
+    }
 }
 
 @Composable
@@ -445,7 +467,7 @@ private fun TranslationModelStatusAction(
     when (option.modelState) {
         TranslationModelUiState.BUILT_IN -> {
             Box(
-                modifier = Modifier.size(AALyricsSpacing.Space40),
+                modifier = Modifier.size(AALyricsSpacing.Space48),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
@@ -460,7 +482,7 @@ private fun TranslationModelStatusAction(
         TranslationModelUiState.NOT_DOWNLOADED -> {
             IconButton(
                 onClick = { onDownloadRequested(option.id) },
-                modifier = Modifier.size(AALyricsSpacing.Space40),
+                modifier = Modifier.size(AALyricsSpacing.Space48),
             ) {
                 Icon(
                     imageVector = AALyricsIcons.Download,
@@ -490,7 +512,7 @@ private fun TranslationModelStatusAction(
 
         TranslationModelUiState.READY -> {
             Box(
-                modifier = Modifier.size(AALyricsSpacing.Space40),
+                modifier = Modifier.size(AALyricsSpacing.Space48),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
@@ -505,7 +527,7 @@ private fun TranslationModelStatusAction(
         TranslationModelUiState.FAILED -> {
             IconButton(
                 onClick = { onDownloadRequested(option.id) },
-                modifier = Modifier.size(AALyricsSpacing.Space40),
+                modifier = Modifier.size(AALyricsSpacing.Space48),
             ) {
                 Icon(
                     imageVector = AALyricsIcons.DownloadFailed,
