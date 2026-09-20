@@ -15,9 +15,11 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
@@ -51,11 +53,11 @@ import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
@@ -741,6 +743,7 @@ private fun PlaybackQueueSheet(
             canOpenPlaybackApp = canOpenPlaybackApp,
             onOpenPlaybackApp = onOpenPlaybackApp,
             onQueueItemSelected = onQueueItemSelected,
+            modifier = Modifier.fillMaxHeight(QUEUE_SHEET_HEIGHT_FRACTION),
         )
     }
 }
@@ -753,17 +756,13 @@ internal fun PlaybackQueueSheetContent(
     onQueueItemSelected: (Long) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val maxListHeight = LocalConfiguration.current.screenHeightDp.dp * 0.62f
-
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .padding(
-                start = AALyricsSpacing.Space16,
-                end = AALyricsSpacing.Space16,
-                bottom = AALyricsSpacing.Space24,
-            ),
+            .padding(horizontal = AALyricsSpacing.Space16),
     ) {
+        PlaybackQueueDragHandle()
+
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -786,21 +785,65 @@ internal fun PlaybackQueueSheetContent(
             }
         }
 
-        LazyColumn(
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .heightIn(max = maxListHeight),
+                .weight(1f),
         ) {
-            items(
-                items = queue,
-                key = { it.id },
-            ) { item ->
-                QueueTrackRow(
-                    item = item,
-                    onClick = { onQueueItemSelected(item.id) },
-                )
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(
+                    bottom = AALyricsSpacing.Space56Compat,
+                ),
+            ) {
+                items(
+                    items = queue,
+                    key = { it.id },
+                ) { item ->
+                    QueueTrackRow(
+                        item = item,
+                        onClick = { onQueueItemSelected(item.id) },
+                    )
+                }
             }
+
+            Box(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .fillMaxHeight(QUEUE_BOTTOM_FADE_FRACTION)
+                    .background(
+                        Brush.verticalGradient(
+                            colors = listOf(
+                                Color.Transparent,
+                                AALyricsColors.BackgroundSurfaceStrong.copy(alpha = 0.92f),
+                                AALyricsColors.BackgroundSurfaceStrong,
+                            ),
+                        ),
+                    ),
+            )
         }
+    }
+}
+
+@Composable
+private fun PlaybackQueueDragHandle() {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(
+                top = AALyricsSpacing.Space8,
+                bottom = AALyricsSpacing.Space4,
+            ),
+        contentAlignment = Alignment.Center,
+    ) {
+        Box(
+            modifier = Modifier
+                .width(AALyricsSpacing.Space32)
+                .height(3.dp)
+                .clip(RoundedCornerShape(AALyricsRadius.Full))
+                .background(AALyricsColors.TextTertiary.copy(alpha = 0.48f)),
+        )
     }
 }
 
@@ -883,5 +926,8 @@ internal fun formatPlaybackTime(positionMs: Long): String {
         minutes.toString() + ":" + secondText
     }
 }
+
+private const val QUEUE_SHEET_HEIGHT_FRACTION = 0.72f
+private const val QUEUE_BOTTOM_FADE_FRACTION = 0.15f
 
 private val AALyricsSpacing.Space56Compat get() = 56.dp
