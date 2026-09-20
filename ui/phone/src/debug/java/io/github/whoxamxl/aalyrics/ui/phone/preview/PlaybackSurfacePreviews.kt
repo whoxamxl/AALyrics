@@ -2,7 +2,6 @@ package io.github.whoxamxl.aalyrics.ui.phone.preview
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -136,10 +135,13 @@ private fun ExpandedPlayerLargeFontPreview() {
 @Composable
 private fun PlaybackQueueScrollablePreview() {
     AALyricsTheme {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(AALyricsColors.BackgroundSurfaceStrong),
+        androidx.compose.material3.Surface(
+            modifier = Modifier.fillMaxSize(),
+            shape = androidx.compose.foundation.shape.RoundedCornerShape(
+                topStart = 24.dp,
+                topEnd = 24.dp,
+            ),
+            color = AALyricsColors.BackgroundSurfaceStrong,
         ) {
             PlaybackQueueSheetContent(
                 queue = PhonePreviewFixtures.playingSurface.queue,
