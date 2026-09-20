@@ -57,20 +57,22 @@ import io.github.whoxamxl.aalyrics.ui.phone.R
 
 @Composable
 internal fun SettingsSection(
-    title: String,
+    title: String?,
     modifier: Modifier = Modifier,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     Column(modifier = modifier.fillMaxWidth()) {
-        Text(
-            text = title,
-            style = AALyricsTypography.Label,
-            color = AALyricsColors.AccentCyan,
-            modifier = Modifier.padding(
-                start = AALyricsSpacing.Space4,
-                bottom = AALyricsSpacing.Space8,
-            ),
-        )
+        title?.let {
+            Text(
+                text = it,
+                style = AALyricsTypography.Label,
+                color = AALyricsColors.AccentCyan,
+                modifier = Modifier.padding(
+                    start = AALyricsSpacing.Space4,
+                    bottom = AALyricsSpacing.Space8,
+                ),
+            )
+        }
 
         Surface(
             modifier = Modifier.fillMaxWidth(),

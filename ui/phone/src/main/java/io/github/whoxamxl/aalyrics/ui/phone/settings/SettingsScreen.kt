@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -27,6 +28,7 @@ import io.github.whoxamxl.aalyrics.ui.phone.R
 fun SettingsScreen(
     state: SettingsScreenUiState,
     onPlainLyricsAutoScrollChanged: (Boolean) -> Unit,
+    onVerboseDetailsChanged: (Boolean) -> Unit,
     onTranslationEnabledChanged: (Boolean) -> Unit,
     onTranslationTargetSelected: (String) -> Unit,
     onTranslationModelDownloadRequested: (String) -> Unit,
@@ -42,33 +44,49 @@ fun SettingsScreen(
 ) {
     var targetLanguagePickerVisible by rememberSaveable { mutableStateOf(false) }
     var changelogVisible by rememberSaveable { mutableStateOf(false) }
+    var advancedVisible by rememberSaveable { mutableStateOf(false) }
+
+    BackHandler(enabled = advancedVisible) {
+        advancedVisible = false
+    }
 
     LaunchedEffect(Unit) {
         onSettingsEntered()
     }
 
-    SettingsScreenContent(
-        state = state,
-        targetLanguagePickerVisible = targetLanguagePickerVisible,
-        onTargetLanguagePickerVisibilityChanged = {
-            targetLanguagePickerVisible = it
-        },
-        onPlainLyricsAutoScrollChanged = onPlainLyricsAutoScrollChanged,
-        onTranslationEnabledChanged = onTranslationEnabledChanged,
-        onTranslationTargetSelected = onTranslationTargetSelected,
-        onTranslationModelDownloadRequested = onTranslationModelDownloadRequested,
-        onAndroidAutoCompatibilitySetup = onAndroidAutoCompatibilitySetup,
-        onCheckForUpdates = onCheckForUpdates,
-        onDownloadUpdate = onDownloadUpdate,
-        onChangelogRequested = {
-            changelogVisible = true
-            onChangelogRequested()
-        },
-        onLicenseRequested = onLicenseRequested,
-        onOpenGitHub = onOpenGitHub,
-        modifier = modifier,
-        bottomOverlayInset = bottomOverlayInset,
-    )
+    if (advancedVisible) {
+        AdvancedSettingsScreen(
+            verboseDetailsEnabled = state.verboseDetailsEnabled,
+            onVerboseDetailsChanged = onVerboseDetailsChanged,
+            onBack = { advancedVisible = false },
+            modifier = modifier,
+            bottomOverlayInset = bottomOverlayInset,
+        )
+    } else {
+        SettingsScreenContent(
+            state = state,
+            targetLanguagePickerVisible = targetLanguagePickerVisible,
+            onTargetLanguagePickerVisibilityChanged = {
+                targetLanguagePickerVisible = it
+            },
+            onPlainLyricsAutoScrollChanged = onPlainLyricsAutoScrollChanged,
+            onTranslationEnabledChanged = onTranslationEnabledChanged,
+            onTranslationTargetSelected = onTranslationTargetSelected,
+            onTranslationModelDownloadRequested = onTranslationModelDownloadRequested,
+            onAndroidAutoCompatibilitySetup = onAndroidAutoCompatibilitySetup,
+            onCheckForUpdates = onCheckForUpdates,
+            onDownloadUpdate = onDownloadUpdate,
+            onChangelogRequested = {
+                changelogVisible = true
+                onChangelogRequested()
+            },
+            onLicenseRequested = onLicenseRequested,
+            onAdvancedRequested = { advancedVisible = true },
+            onOpenGitHub = onOpenGitHub,
+            modifier = modifier,
+            bottomOverlayInset = bottomOverlayInset,
+        )
+    }
 
     if (changelogVisible) {
         ChangelogDialog(
@@ -99,6 +117,7 @@ internal fun SettingsScreenContent(
     onDownloadUpdate: () -> Unit,
     onChangelogRequested: () -> Unit,
     onLicenseRequested: () -> Unit,
+    onAdvancedRequested: () -> Unit,
     onOpenGitHub: () -> Unit,
     modifier: Modifier = Modifier,
     bottomOverlayInset: Dp = 0.dp,
@@ -216,6 +235,16 @@ internal fun SettingsScreenContent(
                 title = stringResource(R.string.settings_license),
                 value = null,
                 onClick = onLicenseRequested,
+            )
+        }
+
+        Spacer(Modifier.height(AALyricsSpacing.Space20))
+
+        SettingsSection(title = null) {
+            SettingsNavigationRow(
+                title = stringResource(R.string.settings_advanced),
+                value = null,
+                onClick = onAdvancedRequested,
             )
         }
 
