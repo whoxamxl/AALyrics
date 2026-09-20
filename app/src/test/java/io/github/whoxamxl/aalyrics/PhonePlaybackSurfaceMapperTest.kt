@@ -24,6 +24,7 @@ class PhonePlaybackSurfaceMapperTest {
                 canPause = true,
                 canSkipPrevious = true,
                 canSkipNext = true,
+                canSkipToQueueItem = true,
                 canSeek = true,
             ),
             queue = listOf(
@@ -44,9 +45,35 @@ class PhonePlaybackSurfaceMapperTest {
         assertEquals("Current Track", state.title)
         assertEquals("Artist One, Artist Two", state.artist)
         assertTrue(state.canSeek)
+        assertTrue(state.queueAvailable)
         assertEquals(listOf(7L), state.queue.map { it.id })
         assertTrue(state.canOpenPlaybackApp)
         assertFalse(state.translationEnabled)
+    }
+
+    @Test
+    fun `informational queue without skip-to-queue action is not actionable`() {
+        val state = assertNotNull(
+            mapPhonePlaybackSurfaceState(
+                playback = playback(),
+                controlState = PlaybackControlState(
+                    sourcePackageName = "com.example.player",
+                    capabilities = PlaybackControlCapabilities(
+                        canPlay = true,
+                        canPause = true,
+                        canSkipToQueueItem = false,
+                    ),
+                    queue = listOf(PlaybackQueueItem(8L, "Informational Only")),
+                    hasSessionActivity = true,
+                ),
+                translationEnabled = true,
+                canOpenPlaybackApp = true,
+            ),
+        )
+
+        assertEquals(listOf(8L), state.queue.map { it.id })
+        assertFalse(state.queueAvailable)
+        assertTrue(state.canOpenPlaybackApp)
     }
 
     @Test
