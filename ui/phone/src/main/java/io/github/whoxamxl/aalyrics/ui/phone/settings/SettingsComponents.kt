@@ -221,7 +221,8 @@ internal fun AppUpdateRow(
     downloadingLabel: String,
     downloadedLabel: String,
     retryLabel: String,
-    failedLabel: String,
+    checkFailedLabel: String,
+    downloadFailedLabel: String,
     failureInfoContentDescription: String,
     genericFailureReason: String,
     onCheckForUpdates: () -> Unit,
@@ -289,7 +290,7 @@ internal fun AppUpdateRow(
 
             AppUpdateUiPhase.CHECK_FAILED -> {
                 AppUpdateFailureRow(
-                    label = failedLabel,
+                    label = checkFailedLabel,
                     reason = state.failureReason ?: genericFailureReason,
                     failureInfoContentDescription = failureInfoContentDescription,
                     retryLabel = retryLabel,
@@ -321,7 +322,7 @@ internal fun AppUpdateRow(
 
             AppUpdateUiPhase.DOWNLOAD_FAILED -> {
                 AppUpdateFailureRow(
-                    label = failedLabel,
+                    label = downloadFailedLabel,
                     reason = state.failureReason ?: genericFailureReason,
                     failureInfoContentDescription = failureInfoContentDescription,
                     retryLabel = retryLabel,
