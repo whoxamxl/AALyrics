@@ -114,6 +114,7 @@ Do not promote them to `:ui:designsystem` until another screen demonstrates genu
 - [x] Combine current version and update controls into one stateful Settings row.
 - [x] Add check/loading/up-to-date/available/download/failure/retry presentation states.
 - [x] Add a dedicated update-download callback for the latest eligible signed GitHub Release APK.
+- [x] Reset completed/stale update results to IDLE on the next Settings entry while preserving active CHECKING/DOWNLOADING work.
 - [x] Add About/GitHub presentation to the Settings footer.
 - [x] Keep `:ui:phone` free of concrete persistence/application/Translation-engine dependencies.
 - [x] Reserve the shell playback-overlay inset in Settings scroll content.
