@@ -111,8 +111,6 @@ internal fun ExpandedPlayer(
                 bottom = AALyricsSpacing.Space12,
             ),
         ) {
-            PlaybackDragHandle()
-
             ExpandedPlayerHeader(
                 state = state,
                 onCollapse = onCollapse,
@@ -190,10 +188,9 @@ private fun ExpandedPlayerHeader(
     val collapseLabel = stringResource(R.string.playback_collapse)
     var downwardDragPx by remember { mutableFloatStateOf(0f) }
 
-    Row(
+    Column(
         modifier = Modifier
             .fillMaxWidth()
-            .heightIn(min = 56.dp)
             .pointerInput(onCollapse) {
                 detectVerticalDragGestures(
                     onDragStart = { downwardDragPx = 0f },
@@ -216,22 +213,30 @@ private fun ExpandedPlayerHeader(
                 onClickLabel = collapseLabel,
                 onClick = onCollapse,
             ),
-        verticalAlignment = Alignment.CenterVertically,
     ) {
-        PlaybackArtwork(
-            artwork = artwork,
-            modifier = Modifier.size(AALyricsSpacing.Space48),
-        )
+        PlaybackDragHandle()
 
-        Spacer(Modifier.width(AALyricsSpacing.Space12))
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(min = 56.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            PlaybackArtwork(
+                artwork = artwork,
+                modifier = Modifier.size(AALyricsSpacing.Space48),
+            )
 
-        TrackIdentityMarquee(
-            title = state.title,
-            artist = state.artist,
-            titleStyle = AALyricsTypography.AppTitle,
-            artistStyle = AALyricsTypography.TrackArtist,
-            modifier = Modifier.weight(1f),
-        )
+            Spacer(Modifier.width(AALyricsSpacing.Space12))
+
+            TrackIdentityMarquee(
+                title = state.title,
+                artist = state.artist,
+                titleStyle = AALyricsTypography.AppTitle,
+                artistStyle = AALyricsTypography.TrackArtist,
+                modifier = Modifier.weight(1f),
+            )
+        }
     }
 }
 
