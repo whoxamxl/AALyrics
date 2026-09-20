@@ -212,6 +212,51 @@ internal fun SettingsNavigationRow(
 }
 
 @Composable
+internal fun SettingsExternalLinkRow(
+    title: String,
+    value: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .heightIn(min = AALyricsSpacing.Space64)
+            .clickable(onClick = onClick)
+            .padding(
+                start = AALyricsSpacing.Space16,
+                end = AALyricsSpacing.Space12,
+                top = AALyricsSpacing.Space12,
+                bottom = AALyricsSpacing.Space12,
+            ),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = title,
+            style = AALyricsTypography.AppTitle,
+            color = AALyricsColors.TextPrimary,
+            modifier = Modifier.weight(1f),
+        )
+
+        Text(
+            text = value,
+            style = AALyricsTypography.TrackArtist,
+            color = AALyricsColors.TextSecondary,
+            maxLines = 1,
+        )
+
+        Spacer(Modifier.size(AALyricsSpacing.Space8))
+
+        Icon(
+            painter = painterResource(R.drawable.ic_external_link),
+            contentDescription = null,
+            tint = AALyricsColors.TextSecondary,
+            modifier = Modifier.size(AALyricsSpacing.Space20),
+        )
+    }
+}
+
+@Composable
 internal fun AppUpdateRow(
     versionLabel: String,
     currentVersionName: String,
