@@ -36,6 +36,7 @@ object AALyricsIcons {
     val Download: ImageVector = Icons.Rounded.Download
     val DownloadDone: ImageVector = Icons.Rounded.DownloadDone
     val DownloadFailed: ImageVector = Icons.Rounded.ErrorOutline
+    val Retry: ImageVector = Icons.Rounded.Refresh
 
     val PlaybackAbove: ImageVector = Icons.Rounded.ExpandLess
     val PlaybackBelow: ImageVector = Icons.Rounded.ExpandMore
