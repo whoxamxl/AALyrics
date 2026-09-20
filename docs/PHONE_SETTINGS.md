@@ -6,7 +6,7 @@ This document defines the first production presentation contract for the Phone `
 
 The production `SettingsScreen` and its Phone-local row components are implemented as a presentation-only destination: `:ui:phone` receives immutable state and emits callbacks. Application/capability layers continue to own persistence and runtime policy.
 
-Implementation branch: `feature/phone-settings-foundation`.
+Integrated into `main` via PR #44.
 
 ## Product intent
 
@@ -268,7 +268,7 @@ Requirements:
 
 Do not expose model-download internals or Translation Provider details in this picker.
 
-## App and About section
+## App section
 
 The final Settings section exposes app/distribution information without moving release-network behavior into `:ui:phone`.
 
