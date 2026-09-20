@@ -4,9 +4,7 @@
 
 This document defines the first approved presentation contract for the Phone `Details` destination.
 
-The current production source still contains a placeholder `DetailsScreen.kt`; this document does **not** authorize implementation by itself. Implementation should happen in a later, explicitly authorized slice.
-
-The Details destination is read-only. Its purpose is to make useful current track and lyrics metadata visible without crowding the Lyrics destination, while optionally exposing deeper framework-neutral diagnostics when the user enables `Settings > Advanced > Verbose details`.
+PR #49 implements this contract with a production `DetailsScreen`, Phone-local presentation state, application-owned runtime mapping, deterministic Previews, and focused mapper tests. The Details destination remains read-only. Its purpose is to make useful current track and lyrics metadata visible without crowding the Lyrics destination, while optionally exposing deeper framework-neutral diagnostics when the user enables `Settings > Advanced > Verbose details`.
 
 ## Product intent
 

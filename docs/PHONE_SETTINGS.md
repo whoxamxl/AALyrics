@@ -6,7 +6,7 @@ This document defines the production presentation contract for the Phone `Settin
 
 The production `SettingsScreen` and its Phone-local row components are implemented as a presentation-only destination: `:ui:phone` receives immutable state and emits callbacks. Application/capability layers continue to own persistence and runtime policy.
 
-The first Settings surface was integrated into `main` via PR #44 and polished in PR #45. The next approved Settings extension is a second-level `Advanced` surface containing one functional Debug preference (`Verbose details`) and one disabled future Experimental affordance (`Karaoke mode`). This document defines that extension without authorizing implementation.
+The first Settings surface was integrated into `main` via PR #44 and polished in PR #45. PR #49 implements the approved second-level `Advanced` surface containing one functional Debug preference (`Verbose details`) and one disabled future Experimental affordance (`Karaoke mode`).
 
 ## Product intent
 
@@ -560,7 +560,7 @@ Deterministic debug Previews should cover at least:
 
 ## Runtime wiring boundary
 
-The existing production Settings slice proves the core presentation contract and interactions. The Advanced additions in this document remain documentation-only until a separately authorized implementation slice.
+The production Settings slice now includes the Advanced presentation contract. PR #49 keeps Verbose Details persistence application-owned and leaves Karaoke mode intentionally disabled and unwired.
 
 A later application-composition slice may map:
 

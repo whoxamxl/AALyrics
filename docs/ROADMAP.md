@@ -153,7 +153,7 @@ Subsequent Phone presentation work has substantially advanced the production sur
 
 Presentation uses `:ui:designsystem` for shared tokens/components, `:ui:phone` for phone-specific composition, and `:ui:automotive` for automotive-specific composition. Production UI lives in `src/main`; deterministic Preview/development fixtures live in `src/debug` and render the production composables. Phone and automotive remain separate presentation surfaces rather than one universal UI model.
 
-The two remaining primary Phone destinations are intentionally staged: Details now has an approved documentation contract in `docs/PHONE_DETAILS.md` but remains a production placeholder, while Sync remains both a placeholder and interaction-model-deferred pending timing/calibration redesign.
+PR #49 implements the approved read-only Details destination plus the Settings-owned Advanced surface with a persisted presentation-only Verbose Details preference and an intentionally disabled/unwired Karaoke affordance. Sync remains the only primary Phone destination that is both a placeholder and interaction-model-deferred pending timing/calibration redesign.
 
 ### Phase 9 — Live MediaSession runtime ✅
 
