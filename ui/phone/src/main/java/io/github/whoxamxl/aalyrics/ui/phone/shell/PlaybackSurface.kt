@@ -83,7 +83,7 @@ fun PlaybackSurface(
         collapse()
     }
 
-    LaunchedEffect(state.title, state.artist, state.durationMs, state.seekEnabled) {
+    LaunchedEffect(state.playbackIdentityKey, state.durationMs, state.seekEnabled) {
         previewPositionMs = null
         pendingCommittedPositionMs = null
     }
