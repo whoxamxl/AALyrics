@@ -188,7 +188,8 @@ Rules:
 - each blob keeps a stable overall scale while its position and strength drift slowly during playback, avoiding any progressive "wave growth" effect;
 - the profile returns smoothly to the normal pill thickness at both the start and the thumb;
 - pausing freezes the current blob shape; disabling the seek capability renders the active segment flat;
-- use AALyrics Accent Cyan as a single monochrome fill rather than One UI's artwork-derived multicolor treatment;
+- use AALyrics Accent Cyan as the only hue rather than One UI's artwork-derived multicolor treatment;
+- distinguish the two-to-three broad blobs with opacity layers of the same cyan, keeping a translucent cyan base pill underneath;
 - keep the waveform restrained: approximately 8dp base thickness with up to about 7dp additional blob expansion;
 - retain a compact 18dp round thumb;
 - keep elapsed/duration labels below the track;
