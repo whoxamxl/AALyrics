@@ -30,6 +30,7 @@ class MediaSessionListenerService : NotificationListenerService() {
             refreshSessions = { observation.refresh() },
         )
         MediaSessionRuntimeHost.attachTransport(runtime)
+        MediaSessionRuntimeHost.attachSessionLauncher(runtime)
         observation = MediaSessionObservation(source, runtime)
     }
 
@@ -49,6 +50,7 @@ class MediaSessionListenerService : NotificationListenerService() {
 
     override fun onDestroy() {
         observation.disconnect()
+        MediaSessionRuntimeHost.detachSessionLauncher(runtime)
         MediaSessionRuntimeHost.detachTransport(runtime)
         super.onDestroy()
     }
