@@ -2,11 +2,11 @@
 
 ## Status
 
-This document defines the first production presentation contract for the Phone `Settings` destination.
+This document defines the production presentation contract for the Phone `Settings` destination.
 
 The production `SettingsScreen` and its Phone-local row components are implemented as a presentation-only destination: `:ui:phone` receives immutable state and emits callbacks. Application/capability layers continue to own persistence and runtime policy.
 
-Integrated into `main` via PR #44.
+The first Settings surface was integrated into `main` via PR #44 and polished in PR #45. The next approved Settings extension is a second-level `Advanced` surface containing one functional Debug preference (`Verbose details`) and one disabled future Experimental affordance (`Karaoke mode`). This document defines that extension without authorizing implementation.
 
 ## Product intent
 
@@ -25,13 +25,20 @@ Settings
 │  └─ Target language                <value>  >
 ├─ Android Auto
 │  └─ Compatibility setup            <status> >
-└─ App
-   ├─ Version / update
-   │  ├─ Version                    <version>
-   │  └─ <stateful update action>
-   ├─ Changelog                               >
-   ├─ Source code                 GitHub       ↗
-   └─ License                                 >
+├─ App
+│  ├─ Version / update
+│  │  ├─ Version                    <version>
+│  │  └─ <stateful update action>
+│  ├─ Changelog                               >
+│  ├─ Source code                 GitHub       ↗
+│  └─ License                                 >
+└─ Advanced                                  >
+
+Advanced
+├─ Debug
+│  └─ Verbose details                  [switch]
+└─ Experimental features
+   └─ Karaoke mode             [OFF, unavailable]
 
 [branding footer]
 AALyrics mark
@@ -40,7 +47,7 @@ Version: vX.X.X
 © <current year> Yuta Miura (whoxamxl)
 ```
 
-Provider preferences, appearance/theme selection, diagnostics, and other future taxonomy are not part of this first slice.
+Provider preferences, appearance/theme selection, log export, and other future taxonomy remain out of scope. The approved Advanced extension is intentionally narrow: Verbose Details controls read-only diagnostic presentation, while Karaoke mode remains visible but unavailable and unwired.
 
 ## Destination composition
 
@@ -51,8 +58,8 @@ It should:
 - fill the available destination area;
 - scroll vertically;
 - use compact destination-side padding;
-- reserve the shell-provided playback-controls overlay inset at the bottom of the scroll content;
-- not duplicate the persistent Top Bar, Playback Controls Bar, or Bottom Navigation.
+- reserve the shell-provided Playback Surface overlay inset at the bottom of the scroll content;
+- not duplicate the persistent Top Bar, Playback Surface, or Bottom Navigation.
 
 The bottom inset is required because the playback controls float over destination content when a controllable media session is present.
 
@@ -81,7 +88,8 @@ SettingsScreenUiState
 ├─ translationEnabled
 ├─ translationTarget
 ├─ translationTargetOptions
-└─ androidAutoCompatibilityStatus
+├─ androidAutoCompatibilityStatus
+└─ verboseDetailsEnabled
 ```
 
 The exact Kotlin names may follow implementation needs, but the ownership rule is stable.
@@ -424,6 +432,94 @@ https://github.com/whoxamxl/AALyrics
 
 The Phone UI must not own Android intent/browser launching.
 
+## Advanced
+
+The main Settings list exposes one internal navigation row:
+
+```text
+Advanced                                      >
+```
+
+Opening it presents a second-level Settings surface rather than adding another primary bottom-navigation destination.
+
+Initial structure:
+
+```text
+Advanced
+
+Debug
+Verbose details                         [OFF]
+
+Experimental features
+Karaoke mode                            [OFF]
+                                        Not available yet
+```
+
+### Debug — Verbose details
+
+`Verbose details` is a functional user preference.
+
+Its only approved effect is presentation density in the Phone Details destination:
+
+```text
+OFF -> normal user-facing Details only
+ON  -> normal Details + Developer / Diagnostics section
+```
+
+The detailed field contract is defined in `docs/PHONE_DETAILS.md`.
+
+The setting must not:
+
+- trigger provider lookup;
+- change provider ordering, scoring, or selected candidate;
+- change synchronization preference;
+- alter timing/calibration;
+- enable WORD-level rendering;
+- change Translation execution;
+- change MediaSession selection or playback behavior.
+
+The Composable must not own persistence. A future implementation should receive the resolved setting value and emit a setting-change callback through the application/presentation boundary.
+
+### Experimental features — Karaoke mode
+
+`Karaoke mode` is intentionally present only as a disabled future affordance in this stage.
+
+Required initial presentation:
+
+- label: `Karaoke mode`;
+- value: OFF;
+- control: disabled / non-interactive;
+- concise unavailable/experimental explanation where needed.
+
+This row has **no runtime wiring** in the current stage:
+
+- no persisted Karaoke setting;
+- no callback that changes application state;
+- no change to `preferredSyncType`;
+- no provider-selection effect;
+- no change to existing LINE-oriented Phone rendering;
+- no WORD-level highlighting activation;
+- no timing or Karaoke projection activation.
+
+The current runtime may already acquire WORD-capable lyrics through existing provider/selection behavior. The disabled row must not reinterpret or modify that behavior.
+
+Karaoke becomes functional only through a separately authorized implementation slice following `docs/KARAOKE_ARCHITECTURE.md`.
+
+### Advanced navigation ownership
+
+The Advanced surface remains Settings-owned UI. It does not become a fifth primary destination.
+
+A suitable presentation interaction is conceptually:
+
+```text
+SettingsScreen
+    -> onAdvancedRequested()
+application/navigation owner
+    -> AdvancedSettingsScreen
+```
+
+Exact navigation/back-stack implementation remains deferred to the implementation slice.
+
 ## Accessibility and responsive behavior
 
 Validate at least:
@@ -457,7 +553,10 @@ Deterministic debug Previews should cover at least:
 - app update failure/retry state;
 - changelog ready/failure states;
 - branding footer;
-- full Settings destination hosted inside `PhoneAppShell` with Playback Controls visible.
+- Advanced navigation row;
+- Advanced screen with Verbose details OFF and ON;
+- disabled Karaoke mode row;
+- full Settings destination hosted inside `PhoneAppShell` with Playback Surface visible.
 
 ## Runtime wiring boundary
 
@@ -469,7 +568,8 @@ A later application-composition slice may map:
 - Translation callbacks -> `setEnabled` / `setTargetLanguage`;
 - Android Auto acknowledgement -> presentation status;
 - compatibility-row callback -> existing compatibility setup flow;
-- a durable Plain auto-scroll preference -> LyricsViewport presentation state.
+- a durable Plain auto-scroll preference -> LyricsViewport presentation state;
+- application-owned Verbose Details preference -> Settings and Details presentation state.
 
 That wiring must preserve the existing capability ownership documented in the relevant architecture files.
 
@@ -479,10 +579,11 @@ The first Settings slice does not define or implement:
 
 - provider ordering/preferences;
 - theme/appearance selection;
-- diagnostics/log export;
+- diagnostics log viewer/export beyond the approved Verbose Details fields;
 - notification-access management;
 - Translation Provider selection UI;
 - Android Auto runtime/projection settings;
 - Sync/calibration settings;
 - cache controls;
-- experimental/developer settings.
+- functional Karaoke mode or any Karaoke runtime wiring;
+- additional developer/experimental controls beyond the two approved Advanced rows.
