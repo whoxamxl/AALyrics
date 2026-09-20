@@ -10,6 +10,8 @@ import io.github.whoxamxl.aalyrics.ui.phone.navigation.PhoneDestination
 import io.github.whoxamxl.aalyrics.ui.phone.settings.AndroidAutoCompatibilityUiStatus
 import io.github.whoxamxl.aalyrics.ui.phone.settings.AppUpdateUiPhase
 import io.github.whoxamxl.aalyrics.ui.phone.settings.AppUpdateUiState
+import io.github.whoxamxl.aalyrics.ui.phone.settings.ChangelogUiPhase
+import io.github.whoxamxl.aalyrics.ui.phone.settings.ChangelogUiState
 import io.github.whoxamxl.aalyrics.ui.phone.settings.SettingsLanguageOptionUiState
 import io.github.whoxamxl.aalyrics.ui.phone.settings.SettingsScreenUiState
 import io.github.whoxamxl.aalyrics.ui.phone.settings.TranslationModelUiState
@@ -204,6 +206,7 @@ internal object PhonePreviewFixtures {
         translationTargets = settingsLanguages,
         androidAutoCompatibilityStatus = AndroidAutoCompatibilityUiStatus.ENABLED,
         appVersionName = "0.1.0-dev",
+        currentYear = 2026,
     )
     val settingsCheckingUpdate = settingsTypical.copy(
         appUpdate = AppUpdateUiState(phase = AppUpdateUiPhase.CHECKING),
@@ -233,6 +236,19 @@ internal object PhonePreviewFixtures {
         appUpdate = AppUpdateUiState(
             phase = AppUpdateUiPhase.DOWNLOADED,
             availableVersionName = "0.1.2",
+        ),
+    )
+    val settingsChangelogReady = settingsTypical.copy(
+        changelog = ChangelogUiState(
+            phase = ChangelogUiPhase.READY,
+            releaseVersionName = "0.1.0-alpha.1",
+            body = "Highlights\n\n• Added the Phone Settings foundation.\n• Added Translation model management.\n• Added Android Auto compatibility onboarding.",
+        ),
+    )
+    val settingsChangelogFailed = settingsTypical.copy(
+        changelog = ChangelogUiState(
+            phase = ChangelogUiPhase.FAILED,
+            failureReason = "GitHub Releases could not be reached.",
         ),
     )
     val settingsTranslationOff = settingsTypical.copy(translationEnabled = false)
