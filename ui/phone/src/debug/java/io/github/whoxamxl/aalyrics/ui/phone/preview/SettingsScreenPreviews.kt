@@ -281,6 +281,7 @@ internal fun SettingsScreenPreview(
                     }
                 },
                 onLicenseRequested = {},
+                onAdvancedRequested = {},
                 onOpenGitHub = {},
                 modifier = Modifier.fillMaxSize(),
             )

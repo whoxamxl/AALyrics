@@ -21,6 +21,8 @@ import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsColors
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsSpacing
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsTheme
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsTypography
+import io.github.whoxamxl.aalyrics.ui.phone.details.DetailsScreen
+import io.github.whoxamxl.aalyrics.ui.phone.details.DetailsScreenUiState
 import io.github.whoxamxl.aalyrics.ui.phone.lyrics.LyricsScreen
 import io.github.whoxamxl.aalyrics.ui.phone.lyrics.LyricsScreenUiState
 import io.github.whoxamxl.aalyrics.ui.phone.navigation.PhoneDestination
@@ -72,6 +74,21 @@ private fun PhoneAppShellBrowseOverlayPreview() {
 }
 
 @Preview(
+    name = "Details selected",
+    group = "PhoneAppShell",
+    widthDp = 412,
+    heightDp = 892,
+    showBackground = true,
+)
+@Composable
+private fun PhoneAppShellDetailsPreview() {
+    PhoneAppShellPreview(
+        state = PhonePreviewFixtures.detailsShell,
+        detailsState = PhonePreviewFixtures.detailsVerbose,
+    )
+}
+
+@Preview(
     name = "Settings selected",
     group = "PhoneAppShell",
     widthDp = 412,
@@ -102,6 +119,7 @@ private fun PhoneAppShellSyncPreview() {
 private fun PhoneAppShellPreview(
     state: PhoneShellUiState,
     lyricsState: LyricsScreenUiState = PhonePreviewFixtures.lyricsScreenLine,
+    detailsState: DetailsScreenUiState = PhonePreviewFixtures.detailsTypical,
     settingsState: SettingsScreenUiState = PhonePreviewFixtures.settingsTypical,
 ) {
     AALyricsTheme {
@@ -120,6 +138,13 @@ private fun PhoneAppShellPreview(
                 PhoneDestination.Lyrics -> {
                     PreviewLyricsDestination(
                         initialState = lyricsState,
+                        bottomOverlayInset = bottomOverlayInset,
+                    )
+                }
+                PhoneDestination.Details -> {
+                    DetailsScreen(
+                        state = detailsState,
+                        modifier = Modifier.fillMaxSize(),
                         bottomOverlayInset = bottomOverlayInset,
                     )
                 }
@@ -167,6 +192,9 @@ internal fun PreviewSettingsDestination(
         state = state,
         onPlainLyricsAutoScrollChanged = {
             state = state.copy(plainLyricsAutoScrollEnabled = it)
+        },
+        onVerboseDetailsChanged = {
+            state = state.copy(verboseDetailsEnabled = it)
         },
         onTranslationEnabledChanged = {
             state = state.copy(translationEnabled = it)
