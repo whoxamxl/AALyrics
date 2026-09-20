@@ -214,7 +214,7 @@ Draft tooltip copy:
 
 The future reusable Compose component should support Settings-wide use rather than being specific to this one preference. A working name is `SettingInfoTooltip`.
 
-The Settings UI and persistence are intentionally outside the current LyricsViewport implementation slice unless separately authorized.
+The foreground row contract is now defined in `docs/PHONE_SETTINGS.md`. Durable preference ownership and runtime wiring remain outside `LyricsViewport`; the viewport continues to consume only the resolved `plainAutoScrollEnabled` presentation value.
 
 ## Preview matrix
 
