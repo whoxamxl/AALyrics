@@ -8,6 +8,8 @@ import io.github.whoxamxl.aalyrics.ui.phone.lyrics.LyricsViewportUiState
 import io.github.whoxamxl.aalyrics.ui.phone.lyrics.TrackCardUiState
 import io.github.whoxamxl.aalyrics.ui.phone.navigation.PhoneDestination
 import io.github.whoxamxl.aalyrics.ui.phone.settings.AndroidAutoCompatibilityUiStatus
+import io.github.whoxamxl.aalyrics.ui.phone.settings.AppUpdateUiPhase
+import io.github.whoxamxl.aalyrics.ui.phone.settings.AppUpdateUiState
 import io.github.whoxamxl.aalyrics.ui.phone.settings.SettingsLanguageOptionUiState
 import io.github.whoxamxl.aalyrics.ui.phone.settings.SettingsScreenUiState
 import io.github.whoxamxl.aalyrics.ui.phone.settings.TranslationModelUiState
@@ -202,6 +204,36 @@ internal object PhonePreviewFixtures {
         translationTargets = settingsLanguages,
         androidAutoCompatibilityStatus = AndroidAutoCompatibilityUiStatus.ENABLED,
         appVersionName = "0.1.0-dev",
+    )
+    val settingsCheckingUpdate = settingsTypical.copy(
+        appUpdate = AppUpdateUiState(phase = AppUpdateUiPhase.CHECKING),
+    )
+    val settingsUpToDate = settingsTypical.copy(
+        appUpdate = AppUpdateUiState(phase = AppUpdateUiPhase.UP_TO_DATE),
+    )
+    val settingsUpdateAvailable = settingsTypical.copy(
+        appUpdate = AppUpdateUiState(
+            phase = AppUpdateUiPhase.UPDATE_AVAILABLE,
+            availableVersionName = "0.1.2",
+        ),
+    )
+    val settingsUpdateFailed = settingsTypical.copy(
+        appUpdate = AppUpdateUiState(
+            phase = AppUpdateUiPhase.CHECK_FAILED,
+            failureReason = "GitHub Releases could not be reached.",
+        ),
+    )
+    val settingsDownloadingUpdate = settingsTypical.copy(
+        appUpdate = AppUpdateUiState(
+            phase = AppUpdateUiPhase.DOWNLOADING,
+            availableVersionName = "0.1.2",
+        ),
+    )
+    val settingsDownloadedUpdate = settingsTypical.copy(
+        appUpdate = AppUpdateUiState(
+            phase = AppUpdateUiPhase.DOWNLOADED,
+            availableVersionName = "0.1.2",
+        ),
     )
     val settingsTranslationOff = settingsTypical.copy(translationEnabled = false)
     val settingsAndroidAutoSkipped = settingsTypical.copy(
