@@ -34,6 +34,7 @@ fun SettingsScreen(
     onCheckForUpdates: () -> Unit,
     onDownloadUpdate: () -> Unit,
     onChangelogRequested: () -> Unit,
+    onLicenseRequested: () -> Unit,
     onSettingsEntered: () -> Unit,
     onOpenGitHub: () -> Unit,
     modifier: Modifier = Modifier,
@@ -63,6 +64,7 @@ fun SettingsScreen(
             changelogVisible = true
             onChangelogRequested()
         },
+        onLicenseRequested = onLicenseRequested,
         onOpenGitHub = onOpenGitHub,
         modifier = modifier,
         bottomOverlayInset = bottomOverlayInset,
@@ -96,6 +98,7 @@ internal fun SettingsScreenContent(
     onCheckForUpdates: () -> Unit,
     onDownloadUpdate: () -> Unit,
     onChangelogRequested: () -> Unit,
+    onLicenseRequested: () -> Unit,
     onOpenGitHub: () -> Unit,
     modifier: Modifier = Modifier,
     bottomOverlayInset: Dp = 0.dp,
@@ -197,6 +200,22 @@ internal fun SettingsScreenContent(
                 title = stringResource(R.string.settings_changelog),
                 value = null,
                 onClick = onChangelogRequested,
+            )
+
+            SettingsDivider()
+
+            SettingsExternalLinkRow(
+                title = stringResource(R.string.settings_source_code),
+                value = stringResource(R.string.settings_github),
+                onClick = onOpenGitHub,
+            )
+
+            SettingsDivider()
+
+            SettingsNavigationRow(
+                title = stringResource(R.string.settings_license),
+                value = null,
+                onClick = onLicenseRequested,
             )
         }
 
