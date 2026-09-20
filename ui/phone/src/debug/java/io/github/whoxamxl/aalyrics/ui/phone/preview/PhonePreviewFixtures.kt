@@ -7,6 +7,9 @@ import io.github.whoxamxl.aalyrics.ui.phone.lyrics.LyricsViewportLineUiState
 import io.github.whoxamxl.aalyrics.ui.phone.lyrics.LyricsViewportUiState
 import io.github.whoxamxl.aalyrics.ui.phone.lyrics.TrackCardUiState
 import io.github.whoxamxl.aalyrics.ui.phone.navigation.PhoneDestination
+import io.github.whoxamxl.aalyrics.ui.phone.settings.AndroidAutoCompatibilityUiStatus
+import io.github.whoxamxl.aalyrics.ui.phone.settings.SettingsLanguageOptionUiState
+import io.github.whoxamxl.aalyrics.ui.phone.settings.SettingsScreenUiState
 import io.github.whoxamxl.aalyrics.ui.phone.state.PhoneShellUiState
 import io.github.whoxamxl.aalyrics.ui.phone.state.PlaybackControlsUiState
 
@@ -157,6 +160,37 @@ internal object PhonePreviewFixtures {
         selectedDestination = PhoneDestination.Sync,
         mediaSourceLabel = "Poweramp",
         playbackControls = pausedControls,
+    )
+
+    val settingsLanguages = listOf(
+        SettingsLanguageOptionUiState("en", "English"),
+        SettingsLanguageOptionUiState("ja", "Japanese"),
+        SettingsLanguageOptionUiState("fr", "French"),
+        SettingsLanguageOptionUiState("de", "German"),
+        SettingsLanguageOptionUiState("es", "Spanish"),
+        SettingsLanguageOptionUiState("ko", "Korean"),
+        SettingsLanguageOptionUiState("zh", "Chinese"),
+        SettingsLanguageOptionUiState("it", "Italian"),
+        SettingsLanguageOptionUiState("pt", "Portuguese"),
+    )
+    val settingsTypical = SettingsScreenUiState(
+        plainLyricsAutoScrollEnabled = true,
+        translationEnabled = true,
+        translationTarget = settingsLanguages.first { it.id == "ja" },
+        translationTargets = settingsLanguages,
+        androidAutoCompatibilityStatus = AndroidAutoCompatibilityUiStatus.ENABLED,
+    )
+    val settingsTranslationOff = settingsTypical.copy(translationEnabled = false)
+    val settingsAndroidAutoSkipped = settingsTypical.copy(
+        androidAutoCompatibilityStatus = AndroidAutoCompatibilityUiStatus.SKIPPED,
+    )
+    val settingsAndroidAutoNotReviewed = settingsTypical.copy(
+        androidAutoCompatibilityStatus = AndroidAutoCompatibilityUiStatus.NOT_REVIEWED,
+    )
+    val settingsShell = PhoneShellUiState(
+        selectedDestination = PhoneDestination.Settings,
+        mediaSourceLabel = "Spotify",
+        playbackControls = playingControls,
     )
 
     val lyricsLines = listOf(
