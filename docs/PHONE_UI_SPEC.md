@@ -2,7 +2,7 @@
 
 ## Status
 
-The Phone information architecture and persistent Compose shell are established. The Lyrics destination has a production composition boundary built from `TrackCard` and `LyricsViewport`. The first Settings destination contract is now defined in `docs/PHONE_SETTINGS.md`; Sync, Details, runtime wiring, and final visual tuning remain deliberately deferred.
+The Phone information architecture and persistent Compose shell are established. The Lyrics destination has a production composition boundary built from `TrackCard` and `LyricsViewport`. The first production Settings destination is implemented from the contract in `docs/PHONE_SETTINGS.md`; Sync, Details, runtime wiring, and final visual tuning remain deliberately deferred.
 
 ## Product intent
 
