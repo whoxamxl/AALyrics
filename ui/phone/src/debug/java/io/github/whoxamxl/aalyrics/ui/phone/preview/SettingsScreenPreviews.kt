@@ -280,6 +280,7 @@ internal fun SettingsScreenPreview(
                         )
                     }
                 },
+                onLicenseRequested = {},
                 onOpenGitHub = {},
                 modifier = Modifier.fillMaxSize(),
             )
