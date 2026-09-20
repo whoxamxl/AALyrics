@@ -43,10 +43,13 @@ This slice should establish a durable Settings composition and reusable Phone-lo
 
 ### App
 
-- `Check for updates` action row.
-- `Current version` value row supplied by presentation state.
+- One combined Version/update row.
+- Show the installed version supplied by presentation state.
+- Update lifecycle: idle, checking, up to date, update available, check failure, downloading, downloaded, download failure.
+- Check/Retry/Download are explicit buttons; checking/downloading use progress indication.
+- Download emits a dedicated callback for the latest eligible signed GitHub Release APK.
 - `About` dialog with app description, current version, and GitHub action.
-- Runtime GitHub release checking and browser/intent launching remain outside `:ui:phone`.
+- Runtime GitHub release checking, APK download/checksum verification, and browser/intent launching remain outside `:ui:phone`.
 
 ## Presentation boundary
 
@@ -108,7 +111,10 @@ Do not promote them to `:ui:designsystem` until another screen demonstrates genu
 - [x] Add presentation states and callbacks for manual Translation model download/retry, including built-in English, loading, ready, and failure states.
 - [x] Use one aligned trailing action slot: unavailable -> download, downloading -> spinner, ready -> selectable/empty, selected -> check, failed -> retry.
 - [x] Show a failure-reason tooltip only beside the failed/retry state.
-- [x] Add Check for updates, current version, and About/GitHub presentation to the Settings footer.
+- [x] Combine current version and update controls into one stateful Settings row.
+- [x] Add check/loading/up-to-date/available/download/failure/retry presentation states.
+- [x] Add a dedicated update-download callback for the latest eligible signed GitHub Release APK.
+- [x] Add About/GitHub presentation to the Settings footer.
 - [x] Keep `:ui:phone` free of concrete persistence/application/Translation-engine dependencies.
 - [x] Reserve the shell playback-overlay inset in Settings scroll content.
 - [x] Add deterministic Previews for typical, narrow, enlarged-font, Translation-off, and Android Auto status variants.
