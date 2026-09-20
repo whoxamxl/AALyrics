@@ -28,7 +28,8 @@ import kotlinx.coroutines.isActive
  *
  * The active segment keeps one AALyrics cyan hue. A translucent cyan base pill is overlaid with
  * three broad cyan blobs that differ by opacity, reproducing the separation of One UI's multicolor
- * waveform without introducing artwork-derived colors.
+ * waveform without introducing artwork-derived colors. Direct dragging can reduce only the blob
+ * expansion while the underlying pill thickness remains stable for precise seeking.
  */
 @Composable
 internal fun OneUiWaveSeekTrack(
@@ -39,6 +40,7 @@ internal fun OneUiWaveSeekTrack(
     activeColor: Color,
     inactiveColor: Color,
     disabledColor: Color,
+    blobScale: Float = 1f,
 ) {
     var phase by remember { mutableFloatStateOf(0f) }
 
@@ -116,7 +118,7 @@ internal fun OneUiWaveSeekTrack(
                         blob = blob,
                         phase = phase,
                         sampleStepPx = 1.5.dp.toPx().coerceAtLeast(1f),
-                        expansionScalePx = 1.dp.toPx(),
+                        expansionScalePx = blobScale.coerceIn(0f, 1f) * 1.dp.toPx(),
                     )
                     drawPath(
                         path = path,
