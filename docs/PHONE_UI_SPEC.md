@@ -2,7 +2,7 @@
 
 ## Status
 
-The Phone information architecture and persistent Compose shell are established. The Lyrics destination now has a production composition boundary built from `TrackCard` and `LyricsViewport`; navigation runtime, transport wiring, runtime state mapping, the remaining destinations, and final visual tuning remain deliberately deferred.
+The Phone information architecture and persistent Compose shell are established. The Lyrics destination has a production composition boundary built from `TrackCard` and `LyricsViewport`. The first Settings destination contract is now defined in `docs/PHONE_SETTINGS.md`; Sync, Details, runtime wiring, and final visual tuning remain deliberately deferred.
 
 ## Product intent
 
@@ -66,7 +66,16 @@ Reserved for current track/lyrics metadata and diagnostics that are useful to a 
 
 ### Settings
 
-Owns application configuration. Provider preferences, appearance, behavior, Android Auto preferences, and About/diagnostics may live here as later product requirements are approved.
+Owns user-facing application configuration while persistence and capability policy remain outside `:ui:phone`.
+
+The first production Settings contract is defined in `docs/PHONE_SETTINGS.md` and intentionally includes only already-established product settings:
+
+- Plain lyrics auto-scroll;
+- Translation enabled/disabled;
+- Translation target language;
+- Android Auto compatibility acknowledgement/status and setup re-entry.
+
+Provider preferences, appearance, About/diagnostics, and other future taxonomy remain deferred until separately approved.
 
 ## Persistent top status bar
 
@@ -245,12 +254,13 @@ ui/phone/src/main/java/io/github/whoxamxl/aalyrics/ui/phone/
 ├─ details/
 │  └─ DetailsScreen.kt
 ├─ settings/
-│  └─ SettingsScreen.kt
+│  ├─ SettingsScreen.kt
+│  └─ SettingsUiState.kt
 └─ state/
    └─ PhoneShellUiState.kt
 ```
 
-The persistent shell, navigation identity, and shell-level state files contain production Compose behavior. `LyricsScreen` is now the production Lyrics destination composition. Sync, Details, and Settings may remain placeholders until their own approved implementation slices; do not invent destination behavior merely to complete the tree.
+The persistent shell, navigation identity, and shell-level state files contain production Compose behavior. `LyricsScreen` is the production Lyrics destination composition. The Settings destination follows the separately approved `docs/PHONE_SETTINGS.md` contract. Sync and Details may remain placeholders until their own approved implementation slices; do not invent destination behavior merely to complete the tree.
 
 ## Preview and validation direction
 
@@ -284,5 +294,6 @@ The persistent shell implementation intentionally still does not decide or imple
 - provider behavior
 - final Sync interaction model
 - final Details fields
-- final Settings taxonomy
-- Sync, Details, and Settings destination implementation or their destination-specific Compose APIs
+- Settings features outside the approved first-slice taxonomy
+- Settings application/runtime wiring
+- Sync and Details destination implementation or their destination-specific Compose APIs
