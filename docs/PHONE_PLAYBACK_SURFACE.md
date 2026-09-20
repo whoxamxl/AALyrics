@@ -540,9 +540,9 @@ This slice does not redesign:
 - full-screen now-playing presentation;
 - volume controls.
 
-## Implementation sequence
+## Historical implementation sequence
 
-After documentation approval, implementation on this branch should proceed in bounded layers:
+PR #46 implemented this contract in the following bounded layers:
 
 1. extend framework-neutral media capability/transport contracts only where required;
 2. add application/Phone presentation mapping for playback-surface state;
