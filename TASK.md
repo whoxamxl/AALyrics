@@ -202,3 +202,21 @@ The temporary Phone-local regex Markdown parser has been replaced with the Compo
 - License uses this wrapper now;
 - future Changelog / Release-note Markdown should reuse the same wrapper;
 - the wrapper applies the adopted compact Phone Markdown theme (H1 24sp/30sp, H2 20sp/26sp, body 14sp/20sp, code 13sp/18sp, compact spacing, cyan underlined links).
+
+
+## Playback Surface transformation follow-up
+
+Physical-device validation confirmed that the Playback Surface should behave as one spatially continuous surface transformation rather than as separate click-highlighted controls.
+
+Accepted refinement:
+
+- [ ] remove press/ripple indication only from transformation affordances: collapsed-player body tap, expanded-player header tap, and backdrop tap;
+- [ ] keep normal control indication for Play/Pause, Previous, Next, Queue/Open app, Quick controls, Translation, and other ordinary controls;
+- [ ] add upward drag from the collapsed player to expand;
+- [ ] make both upward expand drag and downward collapse drag finger-following instead of threshold-only triggers;
+- [ ] settle to Expanded/Collapsed from the release position, with fling velocity allowed to choose the destination;
+- [ ] route tap expand, header/backdrop collapse, and Android Back through the same settle animation used after drag release;
+- [ ] preserve the existing playback/seek/queue behavior and MediaSession capability boundaries;
+- [ ] preserve the existing backdrop/surface colors and alpha values; do not add brightness/flash compensation or redesign the existing cross-fade merely to address the observed backdrop press indication.
+
+The physical device remains authoritative for motion tuning after CI passes.

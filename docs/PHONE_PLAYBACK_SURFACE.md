@@ -73,6 +73,7 @@ Requirements:
 - show title and artist in the identity area;
 - keep Play/Pause as the only direct transport action in the collapsed state;
 - tapping the identity/artwork/background portion expands the player;
+- dragging upward from that same non-Play/Pause portion expands the player with finger-following motion;
 - tapping Play/Pause must not also expand the player;
 - Previous and Next are removed from the collapsed state;
 - preserve accessible touch targets even though the visual treatment is compact.
@@ -97,6 +98,8 @@ The first implementation should reuse the same timing/velocity semantics as `Tra
 ## Expanding the player
 
 Tapping any non-Play/Pause portion of the collapsed Playback Bar expands the same shell-owned surface upward.
+
+The same region also supports an upward drag. During that drag the transformation follows the finger continuously rather than waiting for a release threshold. Releasing settles toward Expanded or Collapsed according to the current transformation position, with a sufficiently directional fling allowed to choose the corresponding destination.
 
 Expansion must not:
 
@@ -149,7 +152,7 @@ Collapse when:
 
 - the user taps the destination/backdrop area outside the expanded surface;
 - Android Back / system back gesture is invoked while expanded;
-- the user performs the supported downward collapse gesture on the expanded surface;
+- the user performs the supported downward finger-following collapse drag on the expanded header surface;
 - the player identity/header area is tapped as the inverse of tapping the collapsed bar;
 - the selected MediaSession disappears and there is no eligible replacement session.
 
@@ -176,6 +179,25 @@ Expanded Player + Back
 Collapsed Player + Back
     -> normal destination/activity back behavior
 ```
+
+## Surface transformation interaction
+
+Collapsed and Expanded are two states of the same Playback Surface.
+
+Transformation affordances:
+
+- collapsed identity/artwork/background tap -> animate toward Expanded;
+- collapsed identity/artwork/background upward drag -> follow the finger toward Expanded;
+- expanded identity/header tap -> animate toward Collapsed;
+- expanded identity/header downward drag -> follow the finger toward Collapsed;
+- backdrop tap -> animate toward Collapsed;
+- Android Back while expanded -> animate toward Collapsed.
+
+Both drag directions use the same continuous transformation position. A drag updates that position directly while the pointer moves; release then settles to an anchor based on position and, for a directional fling, release velocity. An incomplete slow drag may return to the state it started from.
+
+These transformation affordances do not use a press/ripple indication. The spatial surface motion itself is the feedback. Ordinary playback controls remain ordinary controls and retain their normal press indication.
+
+This interaction refinement does **not** change the existing backdrop darkness, Expanded/Collapsed surface colors, or their alpha values as a flash/brightness workaround. Those visual values stay as designed unless a separate visual change is explicitly approved.
 
 ## Expanded seek visual language
 
