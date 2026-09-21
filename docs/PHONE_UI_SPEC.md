@@ -203,6 +203,10 @@ The navigation bar performs destination switching only. Each destination uses a 
 
 Its background uses the same `BackgroundChrome` tone as the top bar, but intentionally remains a flat surface with no mirrored tonal fade. This keeps the lower hierarchy quiet beside the Playback Surface and selected-tab cyan indicator.
 
+The current production tab row is 54dp tall. Each destination keeps 4dp horizontal padding, 4dp top padding, and 2dp bottom padding around the 24dp icon / label / 2dp selected indicator stack. `navigationBarsPadding()` preserves the platform navigation/gesture inset outside the app-owned tab-row height, so the effective bottom chrome on a physical device includes the system inset without making the app-owned row itself oversized.
+
+`PhoneNavigationBar` is the final child of the shell `Column`, while the destination/Playback Surface region above it owns the remaining height through `weight(1f)`. Therefore reducing the Navigation Bar height automatically gives that space back to the destination region: the collapsed Playback Surface remains bottom-aligned inside that region, and `LyricsViewport` receives the larger available height without any compensating playback offset or bottom-overlay-inset change.
+
 ## Phone shell ownership
 
 The intended ownership model is:
@@ -342,13 +346,13 @@ Preview coverage should eventually exercise at least:
 - narrow and typical phone widths
 - the shell-owned top-chrome tonal transition and Track Card boundary/spacing
 
-Implementation should validate that the persistent top bar, playback controls, and bottom navigation still leave adequate room for the lyrics viewport. Standalone `PhoneTopBar` Preview intentionally shows only the flat component; `PhoneAppShell` Preview is authoritative for the top-chrome fade because the transition is shell-owned.
+Implementation should validate that the persistent top bar, playback controls, and bottom navigation still leave adequate room for the lyrics viewport. Standalone `PhoneTopBar` Preview intentionally shows only the flat component; `PhoneAppShell` Preview is authoritative for the top-chrome fade because the transition is shell-owned. `PhoneNavigationBarPreviews` uses the production Navigation Bar directly and also includes a simple gesture-navigation-context mock for visual proportion only; physical-device rendering remains authoritative for the actual system navigation inset.
 
 ## Explicitly deferred
 
 The persistent shell implementation intentionally still does not decide or implement:
 
-- exact dp heights or typography sizes for shell elements
+- exact dp heights or typography sizes for shell elements not explicitly locked by the tuned production values above
 - final icons or animation
 - a general navigation framework beyond host-local primary destination selection
 - speculative ViewModel layers; the approved runtime-host slice may add minimal application-owned presentation mappers
