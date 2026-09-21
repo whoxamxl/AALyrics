@@ -6,6 +6,7 @@ import io.github.whoxamxl.aalyrics.ui.phone.details.DetailsLyricsUiState
 import io.github.whoxamxl.aalyrics.ui.phone.details.DetailsLyricsUiStatus
 import io.github.whoxamxl.aalyrics.ui.phone.details.DetailsScreenUiState
 import io.github.whoxamxl.aalyrics.ui.phone.details.DetailsTrackUiState
+import io.github.whoxamxl.aalyrics.ui.phone.details.DetailsVerboseProgressUiState
 import io.github.whoxamxl.aalyrics.ui.phone.lyrics.LyricsScreenUiState
 import io.github.whoxamxl.aalyrics.ui.phone.lyrics.LyricsViewportInteractionMode
 import io.github.whoxamxl.aalyrics.ui.phone.lyrics.LyricsViewportLineUiState
@@ -356,6 +357,10 @@ internal object PhonePreviewFixtures {
         lyricsStatus = DetailsLyricsUiStatus.LOADING,
     )
     val detailsVerbose = detailsTypical.copy(
+        verboseProgress = DetailsVerboseProgressUiState(
+            playbackPositionLabel = "1:32",
+            currentLineNumber = 28,
+        ),
         diagnostics = DetailsDiagnosticsUiState(
             appPackageName = "com.spotify.music",
             providerId = "musixmatch",
