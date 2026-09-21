@@ -120,6 +120,11 @@ class MlKitTranslationModelManager(
         val normalized = TranslationLanguages.normalizeLanguageTag(languageTag)
             ?: return false
 
+        if (normalized in pendingModelDeletions) {
+            Log.d(TAG, "model availability suppressed by cleanup: $normalized")
+            return false
+        }
+
         if (normalized == MlKitModelPlanner.BUILT_IN_LANGUAGE) {
             publish(normalized, TranslationModelPhase.READY)
             return true
