@@ -60,6 +60,27 @@ private fun AdvancedClearModelsDialogPreview() {
 }
 
 @Preview(
+    name = "Clear models failure",
+    group = "AdvancedSettings",
+    widthDp = 412,
+    heightDp = 760,
+)
+@Composable
+private fun AdvancedClearModelsFailureDialogPreview() {
+    AALyricsTheme {
+        SettingsConfirmationDialog(
+            title = "Could not clear translation models",
+            text = "Some downloaded translation models could not be removed. Try again when the model download or system operation has finished.",
+            confirmLabel = "Retry",
+            dismissLabel = "Close",
+            confirmColor = AALyricsColors.Error,
+            onConfirm = {},
+            onDismissRequest = {},
+        )
+    }
+}
+
+@Preview(
     name = "Reset confirmation",
     group = "AdvancedSettings",
     widthDp = 412,
