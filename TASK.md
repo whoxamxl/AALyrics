@@ -190,3 +190,14 @@ Settings > License now uses the same second-level Settings navigation pattern as
 - `:ui:phone` renders it in `LicenseSettingsScreen` using the standard `SettingsSubscreenHeader`;
 - the license body is scrollable/selectable and works offline;
 - no full license text is hard-coded into Kotlin or Android string resources.
+
+
+## Markdown renderer adoption
+
+The temporary Phone-local regex Markdown parser has been replaced with the Compose-native `mikepenz/multiplatform-markdown-renderer` Material 3 renderer.
+
+- pinned version: `0.38.1`;
+- chosen to stay below the library's Java 21 transition while AALyrics remains on Java 17 / compileSdk 36;
+- `PhoneMarkdownText` is now a thin wrapper rather than a Markdown grammar implementation;
+- License uses this wrapper now;
+- future Changelog / Release-note Markdown should reuse the same wrapper.

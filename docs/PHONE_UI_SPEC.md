@@ -272,7 +272,7 @@ Two current Phone patterns are now normative within `:ui:phone`:
 
 - **Anchored popup / tooltip surface** — use `PhonePopupMenu`. Its current Quick Controls-derived visual treatment is the standard: Radius16, `BackgroundSurfaceStrong`, `BorderSoft`, zero tonal elevation, and the shared shadow elevation. Do not introduce a default-styled `DropdownMenu` for an equivalent compact popup.
 - **Second-level Settings header** — use `SettingsSubscreenHeader`. Its standard back affordance is a Material rounded chevron-left at 32dp inside a 48dp touch target, paired with the subscreen title. This mirrors the chevron-right navigation affordance used when entering a Settings subscreen.
-- **Bundled Markdown documents** — use the Phone-local `PhoneMarkdownText` renderer for app-bundled Markdown such as the repository `LICENSE`, rather than exposing raw Markdown syntax in a plain `Text` composable. Keep the original document as the source of truth; rendering is presentation-only.
+- **Markdown documents** — use the Phone-local `PhoneMarkdownText` wrapper for bundled or presentation-provided Markdown such as the repository `LICENSE` and future GitHub Release changelogs. The wrapper delegates Markdown parsing/rendering to `mikepenz/multiplatform-markdown-renderer` Material 3 rather than implementing Markdown syntax in AALyrics. Keep the original document as the source of truth; rendering is presentation-only.
 
 These are Phone-local standards. They should remain in `:ui:phone` until reuse outside the Phone surface justifies promotion to `:ui:designsystem`.
 
