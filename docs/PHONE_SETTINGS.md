@@ -413,6 +413,8 @@ A `License >` internal navigation row sits directly below Source code.
 
 Opening it presents an in-app second-level Settings surface using the standard `SettingsSubscreenHeader`, matching the navigation model used by `Advanced`. The license text is vertically scrollable and selectable.
 
+The bundled `LICENSE` remains Markdown source. `LicenseSettingsScreen` renders it through the shared Phone-local `PhoneMarkdownText` renderer rather than showing raw Markdown punctuation. The renderer currently supports the syntax used by the repository license: H1/H2 headings, paragraphs, block quotes, bold/italic emphasis, inline code, Markdown links, and angle-bracket URLs. The source file itself is not rewritten or pre-rendered at build time.
+
 The repository-root `LICENSE` file is the single source of truth. Its full contents must **not** be duplicated as Kotlin/string-resource literals. The app build automatically copies the current repository `LICENSE` into generated app assets as `aalyrics_license.txt`; the application reads that bundled asset and supplies the text as presentation state.
 
 Therefore:
