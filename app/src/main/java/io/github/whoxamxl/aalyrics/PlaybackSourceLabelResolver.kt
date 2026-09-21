@@ -13,14 +13,12 @@ internal class PlaybackSourceLabelResolver(
 
     fun labelFor(packageName: String?): String? {
         packageName ?: return null
-        labels[packageName]?.let { return it }
-
-        val resolved = resolve(packageName) ?: return null
-        labels[packageName] = resolved
-        return resolved
+        return labels.getOrPut(packageName) {
+            resolve(packageName)
+        }
     }
 
-    private fun resolve(packageName: String): String? =
+    private fun resolve(packageName: String): String =
         try {
             packageManager
                 .getApplicationInfo(packageName, 0)
@@ -28,7 +26,8 @@ internal class PlaybackSourceLabelResolver(
                 .toString()
                 .trim()
                 .takeIf(String::isNotEmpty)
+                ?: packageName
         } catch (_: PackageManager.NameNotFoundException) {
-            null
+            packageName
         }
 }
