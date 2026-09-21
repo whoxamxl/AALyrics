@@ -46,16 +46,19 @@ val configuredVersionName = providers.environmentVariable("AALYRICS_VERSION_NAME
     ?.takeIf { it.isNotBlank() }
     ?: "0.1.0-dev"
 
-val generatedLicenseAssetsDir =
-    layout.buildDirectory.dir("generated/licenseAssets").get().asFile
-val syncLicenseAsset = tasks.register<Copy>("syncLicenseAsset") {
+val generatedBundledDocumentsAssetsDir =
+    layout.buildDirectory.dir("generated/bundledDocumentsAssets").get().asFile
+val syncBundledDocumentsAssets = tasks.register<Copy>("syncBundledDocumentsAssets") {
     from(rootProject.file("LICENSE")) {
         rename { "aalyrics_license.txt" }
     }
     from(rootProject.file("NOTICE")) {
         rename { "aalyrics_notice.txt" }
     }
-    into(generatedLicenseAssetsDir)
+    from(rootProject.file("CHANGELOG.md")) {
+        rename { "aalyrics_changelog.md" }
+    }
+    into(generatedBundledDocumentsAssetsDir)
 }
 
 android {
@@ -66,7 +69,7 @@ android {
     namespace = "io.github.whoxamxl.aalyrics"
     compileSdk = 36
 
-    sourceSets.getByName("main").assets.srcDir(generatedLicenseAssetsDir)
+    sourceSets.getByName("main").assets.srcDir(generatedBundledDocumentsAssetsDir)
 
     defaultConfig {
         applicationId = "io.github.whoxamxl.aalyrics"
@@ -139,5 +142,5 @@ dependencies {
 }
 
 tasks.named("preBuild").configure {
-    dependsOn(syncLicenseAsset)
+    dependsOn(syncBundledDocumentsAssets)
 }
