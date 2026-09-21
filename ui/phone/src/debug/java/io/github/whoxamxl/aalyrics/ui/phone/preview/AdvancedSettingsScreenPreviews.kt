@@ -68,17 +68,10 @@ private fun AdvancedClearModelsDialogPreview() {
 )
 @Composable
 private fun AdvancedClearModelsFailureDialogPreview() {
-    AALyricsTheme {
-        SettingsConfirmationDialog(
-            title = "Could not clear translation models",
-            text = "Some downloaded translation models could not be removed. Try again when the model download or system operation has finished.",
-            confirmLabel = "Retry",
-            dismissLabel = "Close",
-            confirmColor = AALyricsColors.Error,
-            onConfirm = {},
-            onDismissRequest = {},
-        )
-    }
+    AdvancedSettingsPreview(
+        initialVerboseDetailsEnabled = false,
+        cleanupState = TranslationModelCleanupUiState.FAILED,
+    )
 }
 
 @Preview(
@@ -103,7 +96,10 @@ private fun AdvancedResetDialogPreview() {
 }
 
 @Composable
-private fun AdvancedSettingsPreview(initialVerboseDetailsEnabled: Boolean) {
+private fun AdvancedSettingsPreview(
+    initialVerboseDetailsEnabled: Boolean,
+    cleanupState: TranslationModelCleanupUiState = TranslationModelCleanupUiState.IDLE,
+) {
     AALyricsTheme {
         var verboseDetailsEnabled by remember(initialVerboseDetailsEnabled) {
             mutableStateOf(initialVerboseDetailsEnabled)
@@ -116,7 +112,7 @@ private fun AdvancedSettingsPreview(initialVerboseDetailsEnabled: Boolean) {
         ) {
             AdvancedSettingsScreen(
                 verboseDetailsEnabled = verboseDetailsEnabled,
-                cleanupState = TranslationModelCleanupUiState.IDLE,
+                cleanupState = cleanupState,
                 onVerboseDetailsChanged = { verboseDetailsEnabled = it },
                 onClearTranslationModels = {},
                 onDismissTranslationModelCleanupFailure = {},
