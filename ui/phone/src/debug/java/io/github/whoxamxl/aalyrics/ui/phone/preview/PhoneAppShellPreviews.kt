@@ -221,7 +221,7 @@ internal fun PreviewSettingsDestination(
                 }
         },
         onTranslationModelDownloadRequested = {},
-        onClearTranslationModels = {},
+        onClearTranslationModels = { true },
         onResetAALyrics = {},
         onAndroidAutoCompatibilitySetup = {},
         onCheckForUpdates = {},
