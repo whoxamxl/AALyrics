@@ -46,6 +46,7 @@ class MlKitTranslationModelManager(
     private val activeModelDownloads = ConcurrentHashMap<String, Task<Void>>()
     private val activeModelMonitors = ConcurrentHashMap<String, Deferred<Boolean>>()
     private val pendingModelDeletions = ConcurrentHashMap.newKeySet<String>()
+    private val claimedModelDeletions = ConcurrentHashMap.newKeySet<String>()
 
     private val _states = MutableStateFlow(
         TranslationLanguages.supportedTargets.associateWith { languageTag ->
@@ -188,20 +189,21 @@ class MlKitTranslationModelManager(
         downloadedModels
             .filter { model -> model.language != MlKitModelPlanner.BUILT_IN_LANGUAGE }
             .forEach { model ->
-                val claimedByThisCleanup =
-                    model.language !in activeLanguages ||
-                        pendingModelDeletions.remove(model.language)
-                if (!claimedByThisCleanup) return@forEach
-
-                try {
-                    deleteDownloadedModel(model)
-                    _states.update { current -> current - model.language }
-                } catch (e: CancellationException) {
-                    throw e
-                } catch (e: Exception) {
-                    allDeleted = false
-                    pendingModelDeletions.add(model.language)
-                    publishFailure(model.language, e)
+                if (model.language in activeLanguages) {
+                    if (!claimPendingModelDeletion(model.language)) return@forEach
+                    if (!deleteClaimedPendingModel(model)) {
+                        allDeleted = false
+                    }
+                } else {
+                    try {
+                        deleteDownloadedModel(model)
+                        _states.update { current -> current - model.language }
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (e: Exception) {
+                        allDeleted = false
+                        publishFailure(model.language, e)
+                    }
                 }
             }
 
@@ -287,6 +289,11 @@ class MlKitTranslationModelManager(
         var previousThermalRestriction: Boolean? = null
 
         while (activeTimeoutElapsedMs < MODEL_DOWNLOAD_TIMEOUT_MS) {
+            if (languageTag in pendingModelDeletions) {
+                Log.d(TAG, "model readiness suppressed by cleanup: $languageTag")
+                return false
+            }
+
             val loopStartedAt = SystemClock.elapsedRealtime()
             val thermalStatus = currentThermalStatus()
             val thermallyRestricted = isThermallyRestricted(thermalStatus)
@@ -338,6 +345,10 @@ class MlKitTranslationModelManager(
             }
         }
 
+        if (languageTag in pendingModelDeletions) {
+            return false
+        }
+
         val finalDownloaded = withTimeoutOrNull(MODEL_CHECK_TIMEOUT_MS) {
             isModelDownloaded(model)
         } == true
@@ -375,17 +386,10 @@ class MlKitTranslationModelManager(
 
         task.addOnSuccessListener {
             activeModelDownloads.remove(languageTag, task)
-            if (pendingModelDeletions.remove(languageTag)) {
+            if (claimPendingModelDeletion(languageTag)) {
                 applicationScope.launch {
-                    try {
-                        deleteDownloadedModel(model)
-                        _states.update { current -> current - languageTag }
+                    if (deleteClaimedPendingModel(model)) {
                         Log.d(TAG, "deleted model completed during cleanup: $languageTag")
-                    } catch (e: CancellationException) {
-                        throw e
-                    } catch (e: Exception) {
-                        pendingModelDeletions.add(languageTag)
-                        publishFailure(languageTag, e)
                     }
                 }
             }
@@ -393,14 +397,42 @@ class MlKitTranslationModelManager(
         task.addOnFailureListener { error ->
             Log.e(TAG, "model download task failed: $languageTag", error)
             pendingModelDeletions.remove(languageTag)
+            claimedModelDeletions.remove(languageTag)
             activeModelDownloads.remove(languageTag, task)
         }
         task.addOnCanceledListener {
             Log.w(TAG, "model download task cancelled: $languageTag")
             pendingModelDeletions.remove(languageTag)
+            claimedModelDeletions.remove(languageTag)
             activeModelDownloads.remove(languageTag, task)
         }
         task
+    }
+
+    private fun claimPendingModelDeletion(languageTag: String): Boolean =
+        languageTag in pendingModelDeletions &&
+            claimedModelDeletions.add(languageTag)
+
+    private suspend fun deleteClaimedPendingModel(
+        model: TranslateRemoteModel,
+    ): Boolean {
+        val languageTag = model.language
+        return try {
+            deleteDownloadedModel(model)
+            activeModelMonitors[languageTag]
+                ?.takeIf { !it.isCompleted }
+                ?.await()
+            _states.update { current -> current - languageTag }
+            pendingModelDeletions.remove(languageTag)
+            true
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            publishFailure(languageTag, e)
+            false
+        } finally {
+            claimedModelDeletions.remove(languageTag)
+        }
     }
 
     private suspend fun downloadedModels(): Set<TranslateRemoteModel> =
