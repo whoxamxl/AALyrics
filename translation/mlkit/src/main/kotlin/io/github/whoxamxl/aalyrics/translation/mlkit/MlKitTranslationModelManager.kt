@@ -43,11 +43,9 @@ class MlKitTranslationModelManager(
         RemoteModelManager.getInstance()
     }
 
-    private val modelLifecycleLock = Any()
-    private var cleanupGeneration = 0L
+    private val cleanupBarrier = ModelCleanupBarrier()
     private val activeModelDownloads = ConcurrentHashMap<String, Task<Void>>()
     private val activeModelMonitors = ConcurrentHashMap<String, Deferred<Boolean>>()
-    private val pendingModelDeletions = ConcurrentHashMap.newKeySet<String>()
     private val claimedModelDeletions = ConcurrentHashMap.newKeySet<String>()
 
     private val _states = MutableStateFlow(
@@ -127,13 +125,11 @@ class MlKitTranslationModelManager(
             return true
         }
 
-        val preparationGeneration = synchronized(modelLifecycleLock) {
-            if (normalized in pendingModelDeletions) {
+        val preparationGeneration = cleanupBarrier.capturePreparation(normalized)
+            ?: run {
                 Log.d(TAG, "model availability suppressed by cleanup: $normalized")
                 return false
             }
-            cleanupGeneration
-        }
 
         if (isRetryBlocked(normalized)) {
             Log.d(TAG, "automatic model retry suppressed until explicit retry: $normalized")
@@ -153,15 +149,16 @@ class MlKitTranslationModelManager(
         activeMonitor(normalized)?.let { return it.await() }
 
         val model = TranslateRemoteModel.Builder(mlLanguage).build()
-        synchronized(modelLifecycleLock) {
-            if (
-                cleanupGeneration != preparationGeneration ||
-                normalized in pendingModelDeletions
-            ) {
-                Log.d(TAG, "model check superseded by cleanup: $normalized")
-                return false
-            }
+        val checkPublished = cleanupBarrier.runIfCurrentPreparation(
+            languageTag = normalized,
+            preparationGeneration = preparationGeneration,
+        ) {
             publish(normalized, TranslationModelPhase.CHECKING)
+            true
+        } ?: false
+        if (!checkPublished) {
+            Log.d(TAG, "model check superseded by cleanup: $normalized")
+            return false
         }
 
         val downloaded = try {
@@ -174,30 +171,29 @@ class MlKitTranslationModelManager(
         }
 
         if (downloaded) {
-            synchronized(modelLifecycleLock) {
-                if (
-                    cleanupGeneration != preparationGeneration ||
-                    normalized in pendingModelDeletions
-                ) {
-                    Log.d(TAG, "model readiness superseded by cleanup: $normalized")
-                    return false
-                }
+            val readinessPublished = cleanupBarrier.runIfCurrentPreparation(
+                languageTag = normalized,
+                preparationGeneration = preparationGeneration,
+            ) {
                 publish(normalized, TranslationModelPhase.READY)
+                true
+            } ?: false
+            if (!readinessPublished) {
+                Log.d(TAG, "model readiness superseded by cleanup: $normalized")
+                return false
             }
             return true
         }
 
-        val monitor = synchronized(modelLifecycleLock) {
-            if (
-                cleanupGeneration != preparationGeneration ||
-                normalized in pendingModelDeletions
-            ) {
-                Log.d(TAG, "model preparation superseded by cleanup: $normalized")
-                null
-            } else {
-                getOrStartMonitor(normalized, model)
-            }
-        } ?: return false
+        val monitor = cleanupBarrier.runIfCurrentPreparation(
+            languageTag = normalized,
+            preparationGeneration = preparationGeneration,
+        ) {
+            getOrStartMonitor(normalized, model)
+        } ?: run {
+            Log.d(TAG, "model preparation superseded by cleanup: $normalized")
+            return false
+        }
 
         return monitor.await()
     }
@@ -210,14 +206,11 @@ class MlKitTranslationModelManager(
     }
 
     override suspend fun clearDownloadedModels(): Boolean {
-        val activeLanguages = synchronized(modelLifecycleLock) {
-            cleanupGeneration += 1
-            (
-                activeModelDownloads.keys +
-                    activeModelMonitors.keys
-                ).toSet()
-                .also(pendingModelDeletions::addAll)
-        }
+        val activeLanguages = (
+            activeModelDownloads.keys +
+                activeModelMonitors.keys
+            ).toSet()
+        cleanupBarrier.beginCleanup(activeLanguages)
 
         val downloadedModels = try {
             downloadedModels()
@@ -240,7 +233,7 @@ class MlKitTranslationModelManager(
                 } else {
                     try {
                         deleteDownloadedModel(model)
-                        pendingModelDeletions.remove(model.language)
+                        cleanupBarrier.removePendingDeletion(model.language)
                         claimedModelDeletions.remove(model.language)
                         _states.update { current -> current - model.language }
                     } catch (e: CancellationException) {
@@ -334,7 +327,7 @@ class MlKitTranslationModelManager(
         var previousThermalRestriction: Boolean? = null
 
         while (activeTimeoutElapsedMs < MODEL_DOWNLOAD_TIMEOUT_MS) {
-            if (languageTag in pendingModelDeletions) {
+            if (cleanupBarrier.isPendingDeletion(languageTag)) {
                 Log.d(TAG, "model readiness suppressed by cleanup: $languageTag")
                 return false
             }
@@ -370,7 +363,7 @@ class MlKitTranslationModelManager(
             }
             if (downloaded == true) {
                 activeModelDownloads.remove(languageTag, task)
-                if (languageTag in pendingModelDeletions) {
+                if (cleanupBarrier.isPendingDeletion(languageTag)) {
                     return false
                 }
                 publish(languageTag, TranslationModelPhase.READY)
@@ -393,7 +386,7 @@ class MlKitTranslationModelManager(
             }
         }
 
-        if (languageTag in pendingModelDeletions) {
+        if (cleanupBarrier.isPendingDeletion(languageTag)) {
             return false
         }
 
@@ -402,7 +395,7 @@ class MlKitTranslationModelManager(
         } == true
         if (finalDownloaded) {
             activeModelDownloads.remove(languageTag, task)
-            if (languageTag in pendingModelDeletions) {
+            if (cleanupBarrier.isPendingDeletion(languageTag)) {
                 return false
             }
             publish(languageTag, TranslationModelPhase.READY)
@@ -447,13 +440,13 @@ class MlKitTranslationModelManager(
         }
         task.addOnFailureListener { error ->
             Log.e(TAG, "model download task failed: $languageTag", error)
-            pendingModelDeletions.remove(languageTag)
+            cleanupBarrier.removePendingDeletion(languageTag)
             claimedModelDeletions.remove(languageTag)
             activeModelDownloads.remove(languageTag, task)
         }
         task.addOnCanceledListener {
             Log.w(TAG, "model download task cancelled: $languageTag")
-            pendingModelDeletions.remove(languageTag)
+            cleanupBarrier.removePendingDeletion(languageTag)
             claimedModelDeletions.remove(languageTag)
             activeModelDownloads.remove(languageTag, task)
         }
@@ -461,7 +454,7 @@ class MlKitTranslationModelManager(
     }
 
     private fun claimPendingModelDeletion(languageTag: String): Boolean =
-        languageTag in pendingModelDeletions &&
+        cleanupBarrier.isPendingDeletion(languageTag) &&
             claimedModelDeletions.add(languageTag)
 
     private suspend fun deleteClaimedPendingModel(
@@ -478,7 +471,7 @@ class MlKitTranslationModelManager(
                         ?.takeIf { !it.isCompleted }
                         ?.await()
                     _states.update { current -> current - languageTag }
-                    pendingModelDeletions.remove(languageTag)
+                    cleanupBarrier.removePendingDeletion(languageTag)
                     return true
                 } catch (e: CancellationException) {
                     throw e
