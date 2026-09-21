@@ -15,8 +15,12 @@ The current production branch state now has:
 - `AppEntryState.READY` hosting `AALyricsTheme -> PhoneAppShell`;
 - live app-owned playback, lyrics, Details, Translation, model, and Verbose Details state collected lifecycle-aware;
 - Playback Surface commands routed through the existing application/platform media boundary;
-- selected MediaSession album artwork forwarded through an app-owned Android boundary and rendered in both Track Card and Playback Surface;
+- selected MediaSession album artwork forwarded through an app-owned Android boundary and rendered in both Track Card and Playback Surface, with the AALyrics mark as the no-artwork fallback;
+- playback source packages resolved to human-readable app labels where possible, with the package identifier retained as the final normal-UI fallback and always exposed separately in Verbose Details;
+- Translation persisted default disabled on an unconfigured install while English remains the built-in/default target;
 - production Lyrics and Settings presentation mapping;
+- in-app License navigation backed by a build-synchronized copy of the repository-root `LICENSE`, rendered through the shared Phone Markdown wrapper;
+- adopted Phone-local popup and second-level Settings-header primitives;
 - an explicit non-functional Sync placeholder;
 - unsupported Update/Changelog controls presented unavailable rather than wired to no-ops.
 
@@ -227,7 +231,7 @@ Existing application/runtime seams should be wired where they already exist or c
 - app/build version facts;
 - other already-implemented application-owned Settings state.
 
-The runtime-host slice may add the minimal application-owned mapping required to assemble `SettingsScreenUiState`.
+The runtime-host slice may add the minimal application-owned mapping required to assemble `SettingsScreenUiState`. This includes read-only build/repository document content such as `licenseText`: `:app` owns Android asset access and passes presentation-ready text into `:ui:phone`; the UI does not read assets or fetch GitHub directly.
 
 ### Unsupported Settings actions
 
@@ -244,7 +248,7 @@ Do not expand this slice into implementation of those capabilities merely becaus
 The following may remain UI/host-local because they do not represent durable application policy:
 
 - currently selected Phone primary destination;
-- Settings sub-screen visibility;
+- Settings sub-screen selection/visibility (currently Main / Advanced / License);
 - modal/picker visibility;
 - Lyrics viewport follow/browse interaction mode;
 - expanded/collapsed Playback Surface presentation state where already component-owned.

@@ -89,7 +89,7 @@ The initial diagnostic surface should prefer already-available framework-neutral
 
 Suitable first fields include:
 
-- playback application package / `PlaybackSource.id`, such as `com.spotify.music`; Verbose Details always exposes this raw identifier, while normal `Playback source` prefers the human-readable app label and may fall back to the package name only when label resolution fails;
+- playback application package / `PlaybackSource.id`, such as `com.spotify.music`; Verbose Details always exposes this raw identifier, while normal `Playback source` prefers the human-readable app label and uses the package name as the final fallback when label resolution fails;
 - provider key / `LyricsAttribution.providerId`;
 - provider source identifier / `LyricsAttribution.sourceId`, when available;
 - normalized track references such as `namespace:value`, when available.

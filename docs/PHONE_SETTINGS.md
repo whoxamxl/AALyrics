@@ -6,13 +6,13 @@ This document defines the production presentation contract for the Phone `Settin
 
 The production `SettingsScreen` and its Phone-local row components are implemented as a presentation-only destination: `:ui:phone` receives immutable state and emits callbacks. Application/capability layers continue to own persistence and runtime policy.
 
-The first Settings surface was integrated into `main` via PR #44 and polished in PR #45. PR #49 implements the approved second-level `Advanced` surface containing one functional Debug preference (`Verbose details`) and one disabled future Experimental affordance (`Karaoke mode`).
+The first Settings surface was integrated into `main` via PR #44 and polished in PR #45. PR #49 implements the approved second-level `Advanced` surface containing one functional Debug preference (`Verbose details`) and one disabled future Experimental affordance (`Karaoke mode`). PR #50 hosts Settings in the production READY runtime and adds the in-app `License` second-level surface, build-synchronized repository license content, the shared Phone Markdown renderer, and the adopted Phone popup/subscreen-header standards.
 
 ## Product intent
 
 Settings should expose stable user configuration without turning the Phone UI into an owner of application state.
 
-The production Settings surface remains intentionally focused. The Advanced extension adds only one functional presentation preference and one explicitly unavailable future affordance; it does not open a general developer-settings surface.
+The production Settings surface remains intentionally focused. The Advanced extension adds only one functional presentation preference and one explicitly unavailable future affordance; it does not open a general developer-settings surface. License is a read-only second-level document surface and does not create new runtime policy or networking ownership.
 
 Second-level Settings surfaces use the shared `SettingsSubscreenHeader` rather than implementing their own header. The standard back affordance is the Material rounded chevron-left used by the current Advanced screen: 32dp icon inside a 48dp touch target, followed by the screen title. This intentionally mirrors the chevron-right affordance used to enter `Advanced`. Text-only `Back` actions and alternate arrow shapes are not used for normal second-level Settings navigation. System Back remains behaviorally equivalent.
 
@@ -35,6 +35,9 @@ Settings
 │  ├─ Source code                 GitHub       ↗
 │  └─ License                                 >
 └─ Advanced                                  >
+
+License
+└─ repository LICENSE rendered as compact Markdown
 
 Advanced
 ├─ Debug
@@ -265,7 +268,7 @@ The first demonstrated use is Plain lyrics auto-scroll.
 
 ## Target-language picker
 
-The first implementation uses a compact Material 3 modal picker because the supported target set is short and finite.
+The first implementation uses a compact Material 3 modal picker because the supported target set is short and finite. This picker is not an anchored tooltip/popup and therefore is not required to use `PhonePopupMenu`.
 
 Requirements:
 

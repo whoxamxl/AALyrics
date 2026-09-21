@@ -6,7 +6,7 @@ The Phone information architecture and persistent Compose shell are established.
 
 PR #49 implements the approved Details contract from `docs/PHONE_DETAILS.md` together with the narrow `Settings > Advanced` extension from `docs/PHONE_SETTINGS.md`. Details remains read-only, Verbose Details is presentation-only, and Karaoke mode remains disabled/unwired. Sync remains intentionally deferred while its timing/calibration interaction model is reconsidered.
 
-PR #50 implements the application-composition slice defined in `docs/PHONE_RUNTIME_HOST.md`. `MainActivity` preserves the existing entry gates and now hosts the production `PhoneAppShell` for READY. Live app-owned state drives Lyrics, Playback Surface, Details, and Settings; Sync remains an explicit non-functional placeholder. The generated debug APK is therefore suitable for physical-device Phone UI smoke testing, with actual device interaction still requiring manual validation.
+PR #50 implements the application-composition slice defined in `docs/PHONE_RUNTIME_HOST.md`. `MainActivity` preserves the existing entry gates and now hosts the production `PhoneAppShell` for READY. Live app-owned state drives Lyrics, Playback Surface, Details, and Settings; Sync remains an explicit non-functional placeholder. Physical-device iteration on this branch also established selected-session artwork with branded fallback, Translation opt-in defaults, human-readable playback-source labeling with package fallback, in-app License presentation, and shared Phone popup/subscreen/Markdown primitives. The generated debug APK is suitable for continued physical-device Phone UI validation.
 
 ## Product intent
 
@@ -84,9 +84,10 @@ The production Settings contract is defined in `docs/PHONE_SETTINGS.md`. Its imp
 - Translation enabled/disabled;
 - Translation target language;
 - Android Auto compatibility acknowledgement/status and setup re-entry;
-- app update entry and installed version;
-- GitHub Release changelog;
-- source-code and license entries;
+- installed version plus explicit unavailable Update presentation until release-network runtime exists;
+- explicit unavailable Changelog presentation until release-note runtime exists;
+- external Source code entry;
+- in-app License entry backed by the repository-root `LICENSE`;
 - permanent AALyrics branding/GitHub footer;
 - an `Advanced` entry containing:
   - functional `Verbose details` presentation preference;
@@ -105,7 +106,9 @@ Purpose:
 
 Examples include `Spotify`, `YouTube Music`, or `Poweramp`. The top bar does not show lyrics format, provider/sync status, track metadata, or playback state; those belong to destination content, the Lyrics Track Card, or playback controls.
 
-The UI receives the media-source label as presentation data only; media-session discovery and source selection remain outside `:ui:phone`. The persistent visual treatment uses the shared AALyrics brand mark on the left and a compact outlined source pill with a cyan dot on the right.
+The application/runtime boundary resolves the selected playback package to a human-readable application label where possible. If label resolution fails, the package identifier (for example `com.spotify.music`) is the final presentation fallback rather than hiding the source. The raw package remains explicitly available in Verbose Details regardless of label resolution.
+
+The UI receives the resolved media-source label as presentation data only; media-session discovery, package-label resolution, and source selection remain outside `:ui:phone`. The persistent visual treatment uses the shared AALyrics brand mark on the left and a compact outlined source pill with a cyan dot on the right.
 
 ## Lyrics Track Card
 
@@ -268,7 +271,7 @@ This follows the project rule: screen needs demonstrate reusable design-system A
 
 ### Adopted Phone UI primitives
 
-Two current Phone patterns are now normative within `:ui:phone`:
+Three current Phone patterns are now normative within `:ui:phone`:
 
 - **Anchored popup / tooltip surface** — use `PhonePopupMenu`. Its current Quick Controls-derived visual treatment is the standard: Radius16, `BackgroundSurfaceStrong`, `BorderSoft`, zero tonal elevation, and the shared shadow elevation. Do not introduce a default-styled `DropdownMenu` for an equivalent compact popup.
 - **Second-level Settings header** — use `SettingsSubscreenHeader`. Its standard back affordance is a Material rounded chevron-left at 32dp inside a 48dp touch target, paired with the subscreen title. This mirrors the chevron-right navigation affordance used when entering a Settings subscreen.
