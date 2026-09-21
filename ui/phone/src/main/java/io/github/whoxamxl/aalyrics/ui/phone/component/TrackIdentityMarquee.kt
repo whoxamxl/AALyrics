@@ -374,6 +374,6 @@ private fun TextMeasurer.singleLineWidthPx(
 ).size.width
 
 private const val TrackMarqueePauseMillis = 4_000
-private const val TrackMarqueeManualResumeDelayMillis = 1_500L
+private const val TrackMarqueeManualResumeDelayMillis = 400L
 private const val TrackMarqueePositionEpsilonPx = 0.5f
 private val TrackMarqueeVelocity = 30.dp
