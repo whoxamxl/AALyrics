@@ -56,6 +56,38 @@ import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsTypography
 import io.github.whoxamxl.aalyrics.ui.phone.R
 
 @Composable
+internal fun SettingsSubscreenHeader(
+    title: String,
+    backContentDescription: String,
+    onBack: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        IconButton(
+            onClick = onBack,
+            modifier = Modifier.size(AALyricsSpacing.Space48),
+        ) {
+            Icon(
+                imageVector = AALyricsIcons.Back,
+                contentDescription = backContentDescription,
+                tint = AALyricsColors.TextPrimary,
+                modifier = Modifier.size(32.dp),
+            )
+        }
+
+        Text(
+            text = title,
+            style = AALyricsTypography.LyricsSupporting,
+            color = AALyricsColors.TextPrimary,
+            modifier = Modifier.padding(start = AALyricsSpacing.Space4),
+        )
+    }
+}
+
+@Composable
 internal fun SettingsSection(
     title: String?,
     modifier: Modifier = Modifier,
