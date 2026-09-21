@@ -571,6 +571,8 @@ The row is an action row, not navigation: it uses a trailing `Clear` text action
 
 The application boundary first restores Translation settings to their safe defaults, then asks the Translation model manager to delete engine-managed downloaded models. The Phone UI does not call ML Kit directly.
 
+Cleanup must also account for model downloads already in flight when the action is confirmed. A model that finishes downloading after cleanup starts must be deleted rather than silently surviving the storage action. Immediate enumeration/deletion failures are returned to the Phone presentation boundary; the UI shows an explicit cleanup-failure dialog with Retry/Close instead of silently reporting success.
+
 ### Reset — Reset AALyrics
 
 `Reset AALyrics` is the final Advanced section and uses a trailing `Reset` text action rather than a navigation chevron. The row title stays in the normal primary text color; the trailing `Reset` action and the confirmation action use the destructive color while the normal section/card treatment remains consistent with the rest of Settings.
@@ -593,6 +595,19 @@ Reset does **not**:
 - modify any other application's state.
 
 After the reset, the entry-state owner immediately re-evaluates onboarding. Existing Android permissions are respected, while the Android Auto compatibility acknowledgement is presented again because that AALyrics-owned acknowledgement has returned to `Not reviewed`.
+
+#### Reset maintenance rule
+
+`Reset AALyrics` is a maintained product contract, not a one-time list of keys. Any PR that introduces or changes app-owned persisted state, onboarding acknowledgement, durable preference, or long-lived Phone setting must explicitly re-evaluate the reset contract in the same change.
+
+For every new state item, the implementing PR must do one of the following:
+
+- add it to the explicit AALyrics reset path and cover the default/reset behavior with a test; or
+- document why the state intentionally survives `Reset AALyrics`.
+
+Do not use a blanket SharedPreferences/DataStore clear as a shortcut. External/system-owned state remains outside the reset boundary. Newly introduced caches, downloaded assets, or model files must also make an explicit keep/delete decision; the default is to preserve them unless a dedicated storage action or an explicit product decision says otherwise.
+
+When the reset scope changes, update this document, the reset tooltip/dialog copy when user-visible semantics changed, relevant Preview fixtures, and reset tests in the same PR.
 
 Both Storage and Reset explanations use the shared `SettingInfoTooltip`; explanatory subtitle text is not permanently rendered in the rows.
 
@@ -634,7 +649,7 @@ Deterministic debug Previews should cover at least:
 - typical Settings screen;
 - Translation enabled;
 - Translation disabled;
-- target-language picker open;
+- target-language picker open with bounded scroll viewport / overflow edge fade;
 - Android Auto `Enabled`;
 - Android Auto `Skipped`;
 - Android Auto `Not reviewed`;
@@ -651,6 +666,7 @@ Deterministic debug Previews should cover at least:
 - disabled Karaoke mode row;
 - Advanced Storage and Reset rows;
 - Clear translation models confirmation;
+- Clear translation models failure/retry;
 - Reset AALyrics confirmation;
 - full Settings destination hosted inside `PhoneAppShell` with Playback Surface visible.
 
