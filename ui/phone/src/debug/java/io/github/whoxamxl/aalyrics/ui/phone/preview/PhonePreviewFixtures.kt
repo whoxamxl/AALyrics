@@ -16,8 +16,6 @@ import io.github.whoxamxl.aalyrics.ui.phone.navigation.PhoneDestination
 import io.github.whoxamxl.aalyrics.ui.phone.settings.AndroidAutoCompatibilityUiStatus
 import io.github.whoxamxl.aalyrics.ui.phone.settings.AppUpdateUiPhase
 import io.github.whoxamxl.aalyrics.ui.phone.settings.AppUpdateUiState
-import io.github.whoxamxl.aalyrics.ui.phone.settings.ChangelogUiPhase
-import io.github.whoxamxl.aalyrics.ui.phone.settings.ChangelogUiState
 import io.github.whoxamxl.aalyrics.ui.phone.settings.SettingsLanguageOptionUiState
 import io.github.whoxamxl.aalyrics.ui.phone.settings.SettingsScreenUiState
 import io.github.whoxamxl.aalyrics.ui.phone.settings.TranslationModelUiState
@@ -262,6 +260,27 @@ internal object PhonePreviewFixtures {
         - Second list item
     """.trimIndent()
 
+    val changelogMarkdownSample = """
+        # Changelog
+
+        ## [0.2.0-alpha.1] - 2026-09-21
+
+        ### Added
+
+        - Production Phone UI and Settings surfaces.
+        - Persistent Playback Surface and Translation integration.
+
+        ### Known limitations
+
+        - Sync calibration and Karaoke mode remain in development.
+
+        ## [0.1.0-alpha.1] - 2026-09-19
+
+        ### Added
+
+        - Initial AALyrics foundation and signed release distribution.
+    """.trimIndent()
+
     val settingsTypical = SettingsScreenUiState(
         plainLyricsAutoScrollEnabled = true,
         translationEnabled = false,
@@ -271,6 +290,7 @@ internal object PhonePreviewFixtures {
         appVersionName = "0.1.0-dev",
         currentYear = 2026,
         licenseText = licenseMarkdownSample,
+        changelogText = changelogMarkdownSample,
     )
     val settingsCheckingUpdate = settingsTypical.copy(
         appUpdate = AppUpdateUiState(phase = AppUpdateUiPhase.CHECKING),
@@ -300,19 +320,6 @@ internal object PhonePreviewFixtures {
         appUpdate = AppUpdateUiState(
             phase = AppUpdateUiPhase.DOWNLOADED,
             availableVersionName = "0.1.2",
-        ),
-    )
-    val settingsChangelogReady = settingsTypical.copy(
-        changelog = ChangelogUiState(
-            phase = ChangelogUiPhase.READY,
-            releaseVersionName = "0.1.0-alpha.1",
-            body = "Highlights\n\n• Added the Phone Settings foundation.\n• Added Translation model management.\n• Added Android Auto compatibility onboarding.",
-        ),
-    )
-    val settingsChangelogFailed = settingsTypical.copy(
-        changelog = ChangelogUiState(
-            phase = ChangelogUiPhase.FAILED,
-            failureReason = "GitHub Releases could not be reached.",
         ),
     )
     val settingsTranslationOn = settingsTypical.copy(translationEnabled = true)
