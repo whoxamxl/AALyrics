@@ -18,11 +18,11 @@ internal class ModelCleanupBarrier {
         if (languageTag in pendingDeletions) null else generation
     }
 
-    fun beginCleanup(activeLanguages: Set<String>) {
-        synchronized(lock) {
-            generation += 1
-            pendingDeletions.addAll(activeLanguages)
-        }
+    fun beginCleanup(
+        captureActiveLanguages: () -> Set<String>,
+    ): Set<String> = synchronized(lock) {
+        generation += 1
+        captureActiveLanguages().also(pendingDeletions::addAll)
     }
 
     fun isCurrentPreparation(
