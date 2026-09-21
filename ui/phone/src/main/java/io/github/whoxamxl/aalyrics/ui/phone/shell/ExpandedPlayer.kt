@@ -7,7 +7,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.interaction.DragInteraction
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.PressInteraction
@@ -43,7 +42,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -58,7 +56,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -95,6 +92,7 @@ internal fun ExpandedPlayer(
     onQueueItemSelected: (Long) -> Unit,
     onOpenPlaybackApp: () -> Unit,
     onTranslationEnabledChanged: (Boolean) -> Unit,
+    transformationDragModifier: Modifier = Modifier,
     modifier: Modifier = Modifier,
     artwork: (@Composable BoxScope.() -> Unit)? = null,
 ) {
@@ -133,6 +131,7 @@ internal fun ExpandedPlayer(
             ExpandedPlayerHeader(
                 state = state,
                 onCollapse = onCollapse,
+                transformationDragModifier = transformationDragModifier,
                 artwork = artwork,
             )
 
@@ -203,33 +202,19 @@ private fun PlaybackDragHandle() {
 private fun ExpandedPlayerHeader(
     state: PlaybackSurfaceUiState,
     onCollapse: () -> Unit,
+    transformationDragModifier: Modifier,
     artwork: (@Composable BoxScope.() -> Unit)?,
 ) {
-    val density = LocalDensity.current
     val collapseLabel = stringResource(R.string.playback_collapse)
-    var downwardDragPx by remember { mutableFloatStateOf(0f) }
+    val collapseInteractionSource = remember { MutableInteractionSource() }
 
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .pointerInput(onCollapse) {
-                detectVerticalDragGestures(
-                    onDragStart = { downwardDragPx = 0f },
-                    onVerticalDrag = { change, dragAmount ->
-                        if (dragAmount > 0f) {
-                            downwardDragPx += dragAmount
-                            change.consume()
-                        }
-                    },
-                    onDragCancel = { downwardDragPx = 0f },
-                    onDragEnd = {
-                        val threshold = with(density) { 48.dp.toPx() }
-                        if (downwardDragPx >= threshold) onCollapse()
-                        downwardDragPx = 0f
-                    },
-                )
-            }
-            .combinedClickable(
+            .then(transformationDragModifier)
+            .clickable(
+                interactionSource = collapseInteractionSource,
+                indication = null,
                 role = Role.Button,
                 onClickLabel = collapseLabel,
                 onClick = onCollapse,

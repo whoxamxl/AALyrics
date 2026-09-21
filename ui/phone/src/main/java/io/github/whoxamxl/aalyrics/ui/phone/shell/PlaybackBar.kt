@@ -3,6 +3,7 @@ package io.github.whoxamxl.aalyrics.ui.phone.shell
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Row
@@ -19,6 +20,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -44,10 +46,12 @@ internal fun PlaybackBar(
     progressFraction: Float?,
     onExpand: () -> Unit,
     onPlayPause: () -> Unit,
+    transformationDragModifier: Modifier = Modifier,
     modifier: Modifier = Modifier,
     artwork: (@Composable BoxScope.() -> Unit)? = null,
 ) {
     val expandLabel = stringResource(R.string.playback_expand)
+    val expandInteractionSource = remember { MutableInteractionSource() }
 
     Box(
         modifier = modifier
@@ -77,7 +81,10 @@ internal fun PlaybackBar(
                         modifier = Modifier
                             .weight(1f)
                             .heightIn(min = 56.dp)
+                            .then(transformationDragModifier)
                             .clickable(
+                                interactionSource = expandInteractionSource,
+                                indication = null,
                                 role = Role.Button,
                                 onClickLabel = expandLabel,
                                 onClick = onExpand,
