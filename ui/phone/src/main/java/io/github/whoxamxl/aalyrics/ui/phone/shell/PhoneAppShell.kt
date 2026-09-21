@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -54,6 +55,7 @@ fun PhoneAppShell(
                 Box(
                     modifier = Modifier
                         .align(Alignment.TopCenter)
+                        .offset(y = (-5).dp)
                         .fillMaxWidth()
                         .height(24.dp)
                         .background(
