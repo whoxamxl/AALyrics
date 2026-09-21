@@ -1,5 +1,6 @@
 package io.github.whoxamxl.aalyrics.ui.phone.shell
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
@@ -35,6 +36,12 @@ fun PhoneAppShell(
     playbackArtwork: (@Composable BoxScope.() -> Unit)? = null,
     destinationContent: @Composable (PhoneDestination, Dp) -> Unit,
 ) {
+    BackHandler(
+        enabled = shouldReturnToHomeOnSystemBack(state.selectedDestination),
+    ) {
+        onDestinationSelected(PhoneDestination.Home)
+    }
+
     Surface(
         modifier = modifier.fillMaxSize(),
         color = AALyricsColors.BackgroundBase,
@@ -96,3 +103,7 @@ fun PhoneAppShell(
         }
     }
 }
+
+internal fun shouldReturnToHomeOnSystemBack(
+    selectedDestination: PhoneDestination,
+): Boolean = selectedDestination != PhoneDestination.Home
