@@ -35,6 +35,14 @@ interface TranslationModelManager {
      */
     suspend fun retry(languageTag: String): Boolean
 
+    /**
+     * Deletes downloaded engine-managed translation models.
+     *
+     * Built-in capabilities such as English are not downloadable models and
+     * therefore remain available.
+     */
+    suspend fun clearDownloadedModels(): Boolean
+
     suspend fun ensureRouteAvailable(
         sourceLanguage: String,
         targetLanguage: String,

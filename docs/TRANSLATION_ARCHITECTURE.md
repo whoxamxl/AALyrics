@@ -349,11 +349,14 @@ The background scaffold implements ML Kit model lifecycle:
 
 - target-language model planning;
 - model availability checks;
+- startup reconciliation against ML Kit's persisted downloaded-model inventory;
 - model download;
 - active-download reuse;
 - failure/timeout state that remains latched until an explicit retry;
 - thermal waiting;
 - timeout based on active rather than thermally blocked download time.
+
+The concrete ML Kit manager's in-memory lifecycle map is process-local, while ML Kit language packs can survive a normal app process restart or an Android Studio update install. On manager startup, supported non-English targets therefore begin in CHECKING state while `RemoteModelManager.getDownloadedModels(...)` restores which packs are actually present. Downloaded packs become READY; absent packs fall back to NOT_DOWNLOADED presentation. A missing process-local state entry must not by itself be treated as evidence that a previously downloaded ML Kit pack was removed.
 
 The execution slice adds actual text/block translation and LanguageProfiler integration while reusing this model lifecycle unchanged.
 
@@ -376,9 +379,11 @@ Foreground Settings must consume/update the existing Translation settings bounda
 
 The Settings presentation may show model readiness and emit explicit manual preparation/retry requests. Application/runtime wiring maps those presentation requests onto `TranslationModelManager.ensureAvailable` / `retry` and maps lifecycle phases back into presentation state. When a model is `FAILED` or `TIMED_OUT`, the manager's diagnostic `error` may be adapted into presentation-ready failure text for an on-demand Settings tooltip; raw engine exceptions remain outside `:ui:phone`. The UI must not invoke the concrete ML Kit manager directly.
 
-English is the built-in model language in the current ML Kit adapter. It requires no remote language-pack download and should present as ready without network preparation. Built-in readiness is capability availability only; it must not be interpreted as Translation being enabled.
+English is the built-in model language in the current ML Kit adapter. It requires no remote language-pack download and should present as ready without network preparation. ML Kit explicitly treats English as built in rather than a downloadable/deletable remote model. Built-in readiness is capability availability only; it must not be interpreted as Translation being enabled.
 
-Changing Translation settings must not refetch lyrics providers merely because Translation configuration changed.
+Advanced Settings may explicitly clear downloaded Translation models through the abstract `TranslationModelManager` boundary. The concrete ML Kit adapter enumerates engine-managed downloaded `TranslateRemoteModel` instances and deletes them through `RemoteModelManager`; `:ui:phone` does not depend on ML Kit. Before cleanup, application-owned Translation settings return to their safe defaults: Translation OFF and Target language English. The built-in English capability remains available. Cleanup also clears stale non-English model lifecycle presentation after successful deletion.
+
+Changing or resetting Translation settings must not refetch lyrics providers merely because Translation configuration changed.
 
 ## Background target-model preparation
 

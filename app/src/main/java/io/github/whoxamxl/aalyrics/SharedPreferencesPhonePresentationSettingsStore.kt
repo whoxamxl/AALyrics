@@ -42,6 +42,15 @@ internal class SharedPreferencesPhonePresentationSettingsStore(
             .apply()
     }
 
+    fun resetToDefaults() {
+        preferences.edit()
+            .putBoolean(
+                VERBOSE_DETAILS_ENABLED_KEY,
+                DEFAULT_VERBOSE_DETAILS_ENABLED,
+            )
+            .apply()
+    }
+
     override fun close() {
         preferences.unregisterOnSharedPreferenceChangeListener(listener)
     }

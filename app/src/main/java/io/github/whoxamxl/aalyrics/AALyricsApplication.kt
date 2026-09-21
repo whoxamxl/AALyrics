@@ -138,6 +138,18 @@ class AALyricsApplication : Application() {
         phonePresentationSettingsStore.setVerboseDetailsEnabled(enabled)
     }
 
+    fun clearDownloadedTranslationModels() {
+        translationSettingsStore.resetToDefaults()
+        applicationScope.launch {
+            translationModelManager.clearDownloadedModels()
+        }
+    }
+
+    fun resetAppOwnedSettings() {
+        translationSettingsStore.resetToDefaults()
+        phonePresentationSettingsStore.resetToDefaults()
+    }
+
     fun openSelectedPlaybackApp(): Boolean =
         playbackAppLauncher.open(graph.playbackControlState.value)
 

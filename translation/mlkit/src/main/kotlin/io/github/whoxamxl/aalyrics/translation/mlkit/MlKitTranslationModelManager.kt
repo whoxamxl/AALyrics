@@ -23,6 +23,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withTimeoutOrNull
 import java.util.concurrent.ConcurrentHashMap
@@ -45,8 +46,73 @@ class MlKitTranslationModelManager(
     private val activeModelDownloads = ConcurrentHashMap<String, Task<Void>>()
     private val activeModelMonitors = ConcurrentHashMap<String, Deferred<Boolean>>()
 
-    private val _states = MutableStateFlow<Map<String, TranslationModelState>>(emptyMap())
+    private val _states = MutableStateFlow(
+        TranslationLanguages.supportedTargets.associateWith { languageTag ->
+            TranslationModelState(
+                languageTag = languageTag,
+                phase = if (languageTag == MlKitModelPlanner.BUILT_IN_LANGUAGE) {
+                    TranslationModelPhase.READY
+                } else {
+                    TranslationModelPhase.CHECKING
+                },
+            )
+        },
+    )
     override val states: StateFlow<Map<String, TranslationModelState>> = _states.asStateFlow()
+
+    init {
+        applicationScope.launch {
+            refreshDownloadedModelStates()
+        }
+    }
+
+    private suspend fun refreshDownloadedModelStates() {
+        val downloadedLanguages = try {
+            downloadedModels()
+                .map { model -> model.language }
+                .toSet()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Log.e(TAG, "failed to restore downloaded translation model state", e)
+            _states.update { current ->
+                current.mapValues { (languageTag, state) ->
+                    if (
+                        languageTag != MlKitModelPlanner.BUILT_IN_LANGUAGE &&
+                        state.phase == TranslationModelPhase.CHECKING
+                    ) {
+                        state.copy(
+                            phase = TranslationModelPhase.FAILED,
+                            error = e.localizedMessage ?: e.javaClass.simpleName,
+                        )
+                    } else {
+                        state
+                    }
+                }
+            }
+            return
+        }
+
+        _states.update { current ->
+            current.toMutableMap().apply {
+                TranslationLanguages.supportedTargets
+                    .filter { it != MlKitModelPlanner.BUILT_IN_LANGUAGE }
+                    .forEach { languageTag ->
+                        val currentState = this[languageTag]
+                        if (currentState?.phase == TranslationModelPhase.CHECKING) {
+                            if (languageTag in downloadedLanguages) {
+                                this[languageTag] = TranslationModelState(
+                                    languageTag = languageTag,
+                                    phase = TranslationModelPhase.READY,
+                                )
+                            } else {
+                                remove(languageTag)
+                            }
+                        }
+                    }
+            }
+        }
+    }
 
     override suspend fun ensureAvailable(languageTag: String): Boolean {
         val normalized = TranslationLanguages.normalizeLanguageTag(languageTag)
@@ -99,6 +165,42 @@ class MlKitTranslationModelManager(
             ?: return false
         _states.update { current -> current - normalized }
         return ensureAvailable(normalized)
+    }
+
+    override suspend fun clearDownloadedModels(): Boolean {
+        val downloadedModels = try {
+            downloadedModels()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Log.e(TAG, "failed to enumerate downloaded translation models", e)
+            return false
+        }
+
+        var allDeleted = true
+        downloadedModels
+            .filter { model -> model.language != MlKitModelPlanner.BUILT_IN_LANGUAGE }
+            .forEach { model ->
+                try {
+                    deleteDownloadedModel(model)
+                    _states.update { current -> current - model.language }
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    allDeleted = false
+                    publishFailure(model.language, e)
+                }
+            }
+
+        if (allDeleted) {
+            _states.update { current ->
+                current.filterKeys { languageTag ->
+                    languageTag == MlKitModelPlanner.BUILT_IN_LANGUAGE
+                }
+            }
+        }
+
+        return allDeleted
     }
 
     override suspend fun ensureRouteAvailable(
@@ -270,6 +372,35 @@ class MlKitTranslationModelManager(
             activeModelDownloads.remove(languageTag, task)
         }
         task
+    }
+
+    private suspend fun downloadedModels(): Set<TranslateRemoteModel> =
+        suspendCancellableCoroutine { continuation ->
+            remoteModelManager.getDownloadedModels(TranslateRemoteModel::class.java)
+                .addOnSuccessListener { models ->
+                    if (continuation.isActive) continuation.resume(models)
+                }
+                .addOnFailureListener { error ->
+                    if (continuation.isActive) continuation.resumeWithException(error)
+                }
+                .addOnCanceledListener {
+                    continuation.cancel()
+                }
+        }
+
+    private suspend fun deleteDownloadedModel(
+        model: TranslateRemoteModel,
+    ): Unit = suspendCancellableCoroutine { continuation ->
+        remoteModelManager.deleteDownloadedModel(model)
+            .addOnSuccessListener {
+                if (continuation.isActive) continuation.resume(Unit)
+            }
+            .addOnFailureListener { error ->
+                if (continuation.isActive) continuation.resumeWithException(error)
+            }
+            .addOnCanceledListener {
+                continuation.cancel()
+            }
     }
 
     private suspend fun isModelDownloaded(

@@ -13,7 +13,7 @@ internal enum class AndroidAutoCompatibilitySetupStatus {
  */
 internal class AndroidAutoCompatibilityOnboarding(
     private val readValue: () -> String?,
-    private val writeValue: (String) -> Unit,
+    private val writeValue: (String?) -> Unit,
 ) {
     fun status(): AndroidAutoCompatibilitySetupStatus =
         when (readValue()) {
@@ -28,6 +28,10 @@ internal class AndroidAutoCompatibilityOnboarding(
 
     fun skip() {
         writeValue(VALUE_SKIPPED)
+    }
+
+    fun reset() {
+        writeValue(null)
     }
 
     private companion object {

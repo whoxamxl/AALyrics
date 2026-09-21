@@ -29,6 +29,7 @@ internal fun PhoneRuntimeHost(
     application: AALyricsApplication,
     androidAutoStatus: AndroidAutoCompatibilityUiStatus,
     onAndroidAutoCompatibilitySetup: () -> Unit,
+    onResetAALyrics: () -> Unit,
     onOpenSourceCode: () -> Unit,
 ) {
     val playback by application.playbackState.collectAsStateWithLifecycle()
@@ -46,6 +47,9 @@ internal fun PhoneRuntimeHost(
     }
     var plainLyricsAutoScrollEnabled by rememberSaveable {
         mutableStateOf(true)
+    }
+    var destinationRootResetKey by rememberSaveable {
+        mutableStateOf(0)
     }
     var lyricsInteractionMode by rememberSaveable(playback.trackIdentity) {
         mutableStateOf(LyricsViewportInteractionMode.FOLLOW)
@@ -101,6 +105,12 @@ internal fun PhoneRuntimeHost(
             playbackSurface = playbackSurface,
         ),
         onDestinationSelected = { selectedDestination = it },
+        onDestinationReselected = { destination ->
+            destinationRootResetKey += 1
+            if (destination == PhoneDestination.Lyrics) {
+                lyricsInteractionMode = LyricsViewportInteractionMode.FOLLOW
+            }
+        },
         onPrevious = application::skipToPrevious,
         onPlayPause = {
             if (playback.isPlaying) application.pause() else application.play()
@@ -140,16 +150,24 @@ internal fun PhoneRuntimeHost(
                 } else {
                     detailsState
                 },
+                rootResetKey = destinationRootResetKey,
                 bottomOverlayInset = bottomOverlayInset,
             )
 
             PhoneDestination.Settings -> SettingsScreen(
                 state = settingsState,
+                rootResetKey = destinationRootResetKey,
                 onPlainLyricsAutoScrollChanged = { plainLyricsAutoScrollEnabled = it },
                 onVerboseDetailsChanged = application::setVerboseDetailsEnabled,
                 onTranslationEnabledChanged = application::setTranslationEnabled,
                 onTranslationTargetSelected = application::setTranslationTargetLanguage,
                 onTranslationModelDownloadRequested = application::requestTranslationModel,
+                onClearTranslationModels = application::clearDownloadedTranslationModels,
+                onResetAALyrics = {
+                    plainLyricsAutoScrollEnabled = true
+                    application.resetAppOwnedSettings()
+                    onResetAALyrics()
+                },
                 onAndroidAutoCompatibilitySetup = onAndroidAutoCompatibilitySetup,
                 onCheckForUpdates = {},
                 onDownloadUpdate = {},

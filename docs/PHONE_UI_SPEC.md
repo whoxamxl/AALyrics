@@ -104,7 +104,9 @@ The production Settings contract is defined in `docs/PHONE_SETTINGS.md`. Its imp
 - permanent AALyrics branding/GitHub footer;
 - an `Advanced` entry containing:
   - functional `Verbose details` presentation preference;
-  - disabled/unwired `Karaoke mode` future affordance.
+  - disabled/unwired `Karaoke mode` future affordance;
+  - `Storage > Clear translation models`, which keeps built-in English, turns Translation off, and restores English as the target;
+  - `Reset > Reset AALyrics`, which resets AALyrics-owned settings/onboarding without deleting translation models or changing Android/system settings.
 
 Provider preferences, appearance/theme selection, log export, functional Karaoke wiring, and other future taxonomy remain deferred until separately approved.
 
@@ -212,7 +214,16 @@ Destinations:
 Lyrics   Sync   Details   Settings
 ```
 
-The navigation bar performs destination switching only. Each destination uses a stable semantic icon plus label, with cyan emphasis for the selected destination. Playback actions belong to the Playback Bar and current-track information belongs to destination content.
+The navigation bar distinguishes first selection from reselection. Tapping a different primary tab switches destinations. Tapping the already-selected tab emits a destination-reselection event whose contract is to return that destination to its root presentation rather than creating history or performing a no-op. Each destination uses a stable semantic icon plus label, with cyan emphasis for the selected destination. Playback actions belong to the Playback Bar and current-track information belongs to destination content.
+
+Current reselection behavior:
+
+- Lyrics: return the lyrics viewport from manual browse to FOLLOW;
+- Sync: no visible change while the destination remains a root-only placeholder;
+- Details: return the read-only Details surface to its top scroll position;
+- Settings: dismiss modal/draft UI, discard uncommitted Target-language selection, leave Advanced/License, return to Settings home, and restore the main Settings scroll position to the top.
+
+Future child surfaces under any primary destination must use the same root-reset contract instead of defining ad hoc tab-reselection behavior.
 
 Its background uses the same `BackgroundChrome` tone as the top bar, but intentionally remains a flat surface with no mirrored tonal fade. This keeps the lower hierarchy quiet beside the Playback Surface and selected-tab cyan indicator.
 

@@ -33,7 +33,10 @@ internal fun mapPhoneSettingsState(
             modelState = when {
                 languageTag == "en" -> TranslationModelUiState.BUILT_IN
                 modelState == null -> TranslationModelUiState.NOT_DOWNLOADED
-                modelState.phase == TranslationModelPhase.READY -> TranslationModelUiState.READY
+                modelState.phase == TranslationModelPhase.CHECKING ->
+                    TranslationModelUiState.CHECKING
+                modelState.phase == TranslationModelPhase.READY ->
+                    TranslationModelUiState.READY
                 modelState.phase == TranslationModelPhase.FAILED ||
                     modelState.phase == TranslationModelPhase.TIMED_OUT ->
                     TranslationModelUiState.FAILED

@@ -5,6 +5,7 @@ import androidx.compose.runtime.Immutable
 /** Presentation state for one Translation language model in the Settings picker. */
 enum class TranslationModelUiState {
     BUILT_IN,
+    CHECKING,
     NOT_DOWNLOADED,
     DOWNLOADING,
     READY,

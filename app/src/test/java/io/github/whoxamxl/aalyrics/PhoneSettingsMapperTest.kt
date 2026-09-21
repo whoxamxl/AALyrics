@@ -33,6 +33,35 @@ class PhoneSettingsMapperTest {
     }
 
     @Test
+    fun `model inventory check does not appear as a download action`() {
+        val state = mapPhoneSettingsState(
+            translationSettings = TranslationSettings(
+                enabled = false,
+                targetLanguage = "ja",
+            ),
+            translationModelStates = mapOf(
+                "ja" to TranslationModelState(
+                    languageTag = "ja",
+                    phase = TranslationModelPhase.CHECKING,
+                ),
+            ),
+            verboseDetailsEnabled = false,
+            plainLyricsAutoScrollEnabled = true,
+            androidAutoStatus = AndroidAutoCompatibilityUiStatus.ENABLED,
+            appVersionName = "0.1.0-dev",
+            currentYear = 2026,
+            licenseText = "demo license",
+            displayLocale = Locale.ENGLISH,
+        )
+
+        assertEquals("ja", state.translationTarget.id)
+        assertEquals(
+            TranslationModelUiState.CHECKING,
+            state.translationTarget.modelState,
+        )
+    }
+
+    @Test
     fun `runtime Settings exposes supported translation state and unavailable release actions`() {
         val state = mapPhoneSettingsState(
             translationSettings = TranslationSettings(

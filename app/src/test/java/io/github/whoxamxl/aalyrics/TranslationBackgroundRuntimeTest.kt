@@ -91,6 +91,8 @@ class TranslationBackgroundRuntimeTest {
         override suspend fun retry(languageTag: String): Boolean =
             ensureAvailable(languageTag)
 
+        override suspend fun clearDownloadedModels(): Boolean = true
+
         override suspend fun ensureRouteAvailable(
             sourceLanguage: String,
             targetLanguage: String,

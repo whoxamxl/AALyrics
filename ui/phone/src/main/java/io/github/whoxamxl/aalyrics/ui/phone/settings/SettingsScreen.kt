@@ -27,11 +27,14 @@ import io.github.whoxamxl.aalyrics.ui.phone.R
 @Composable
 fun SettingsScreen(
     state: SettingsScreenUiState,
+    rootResetKey: Int = 0,
     onPlainLyricsAutoScrollChanged: (Boolean) -> Unit,
     onVerboseDetailsChanged: (Boolean) -> Unit,
     onTranslationEnabledChanged: (Boolean) -> Unit,
     onTranslationTargetSelected: (String) -> Unit,
     onTranslationModelDownloadRequested: (String) -> Unit,
+    onClearTranslationModels: () -> Unit,
+    onResetAALyrics: () -> Unit,
     onAndroidAutoCompatibilitySetup: () -> Unit,
     onCheckForUpdates: () -> Unit,
     onDownloadUpdate: () -> Unit,
@@ -51,6 +54,12 @@ fun SettingsScreen(
         activeSubscreen = SettingsSubscreen.MAIN
     }
 
+    LaunchedEffect(rootResetKey) {
+        targetLanguagePickerVisible = false
+        changelogVisible = false
+        activeSubscreen = SettingsSubscreen.MAIN
+    }
+
     LaunchedEffect(Unit) {
         onSettingsEntered()
     }
@@ -59,6 +68,8 @@ fun SettingsScreen(
         SettingsSubscreen.ADVANCED -> AdvancedSettingsScreen(
             verboseDetailsEnabled = state.verboseDetailsEnabled,
             onVerboseDetailsChanged = onVerboseDetailsChanged,
+            onClearTranslationModels = onClearTranslationModels,
+            onResetAALyrics = onResetAALyrics,
             onBack = { activeSubscreen = SettingsSubscreen.MAIN },
             modifier = modifier,
             bottomOverlayInset = bottomOverlayInset,
@@ -73,6 +84,7 @@ fun SettingsScreen(
 
         SettingsSubscreen.MAIN -> SettingsScreenContent(
             state = state,
+            rootResetKey = rootResetKey,
             targetLanguagePickerVisible = targetLanguagePickerVisible,
             onTargetLanguagePickerVisibilityChanged = {
                 targetLanguagePickerVisible = it
@@ -114,6 +126,7 @@ fun SettingsScreen(
 @Composable
 internal fun SettingsScreenContent(
     state: SettingsScreenUiState,
+    rootResetKey: Int = 0,
     targetLanguagePickerVisible: Boolean,
     onTargetLanguagePickerVisibilityChanged: (Boolean) -> Unit,
     onPlainLyricsAutoScrollChanged: (Boolean) -> Unit,
@@ -130,10 +143,22 @@ internal fun SettingsScreenContent(
     modifier: Modifier = Modifier,
     bottomOverlayInset: Dp = 0.dp,
 ) {
+    var draftTargetLanguageId by rememberSaveable(
+        state.translationTarget.id,
+        targetLanguagePickerVisible,
+    ) {
+        mutableStateOf(state.translationTarget.id)
+    }
+    val scrollState = rememberScrollState()
+
+    LaunchedEffect(rootResetKey) {
+        scrollState.scrollTo(0)
+    }
+
     Column(
         modifier = modifier
             .fillMaxSize()
-            .verticalScroll(rememberScrollState())
+            .verticalScroll(scrollState)
             .padding(
                 start = AALyricsSpacing.Space16,
                 top = AALyricsSpacing.Space16,
@@ -276,10 +301,12 @@ internal fun SettingsScreenContent(
     if (targetLanguagePickerVisible) {
         TargetLanguagePicker(
             options = state.translationTargets,
-            selectedId = state.translationTarget.id,
+            selectedId = draftTargetLanguageId,
             title = stringResource(R.string.settings_translation_target),
             downloadContentDescription =
                 stringResource(R.string.settings_translation_model_download),
+            checkingContentDescription =
+                stringResource(R.string.settings_translation_model_checking),
             downloadingContentDescription =
                 stringResource(R.string.settings_translation_model_downloading),
             retryContentDescription =
@@ -288,8 +315,14 @@ internal fun SettingsScreenContent(
                 stringResource(R.string.settings_translation_model_failure_info),
             genericFailureReason =
                 stringResource(R.string.settings_translation_model_failure_generic),
-            onSelected = onTranslationTargetSelected,
+            confirmLabel = stringResource(R.string.settings_done),
+            dismissLabel = stringResource(R.string.settings_cancel),
+            onSelected = { draftTargetLanguageId = it },
             onDownloadRequested = onTranslationModelDownloadRequested,
+            onConfirm = {
+                onTranslationTargetSelected(draftTargetLanguageId)
+                onTargetLanguagePickerVisibilityChanged(false)
+            },
             onDismissRequest = {
                 onTargetLanguagePickerVisibilityChanged(false)
             },

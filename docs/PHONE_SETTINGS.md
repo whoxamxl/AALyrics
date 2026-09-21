@@ -6,13 +6,13 @@ This document defines the production presentation contract for the Phone `Settin
 
 The production `SettingsScreen` and its Phone-local row components are implemented as a presentation-only destination: `:ui:phone` receives immutable state and emits callbacks. Application/capability layers continue to own persistence and runtime policy.
 
-The first Settings surface was integrated into `main` via PR #44 and polished in PR #45. PR #49 implements the approved second-level `Advanced` surface containing one functional Debug preference (`Verbose details`) and one disabled future Experimental affordance (`Karaoke mode`). PR #50 hosts Settings in the production READY runtime and adds the in-app `License` second-level surface, build-synchronized repository license content, the shared Phone Markdown renderer, and the adopted Phone popup/subscreen-header standards.
+The first Settings surface was integrated into `main` via PR #44 and polished in PR #45. PR #49 established the second-level `Advanced` surface with the functional `Verbose details` preference and disabled future `Karaoke mode` affordance. The current Advanced contract also includes explicit Translation model storage cleanup and AALyrics-owned reset actions. PR #50 hosts Settings in the production READY runtime and adds the in-app `License` second-level surface, build-synchronized repository license content, the shared Phone Markdown renderer, and the adopted Phone popup/subscreen-header standards.
 
 ## Product intent
 
 Settings should expose stable user configuration without turning the Phone UI into an owner of application state.
 
-The production Settings surface remains intentionally focused. The Advanced extension adds only one functional presentation preference and one explicitly unavailable future affordance; it does not open a general developer-settings surface. License is a read-only second-level document surface and does not create new runtime policy or networking ownership.
+The production Settings surface remains intentionally focused. Advanced contains one debug presentation preference, one explicitly unavailable experimental affordance, one Translation storage-management action, and one app-owned reset action. It does not become a general developer-settings surface. License is a read-only second-level document surface and does not create new runtime policy or networking ownership.
 
 Second-level Settings surfaces use the shared `SettingsSubscreenHeader` rather than implementing their own header. The standard back affordance is the Material rounded chevron-left used by the current Advanced screen: 32dp icon inside a 48dp touch target, followed by the screen title. This intentionally mirrors the chevron-right affordance used to enter `Advanced`. Text-only `Back` actions and alternate arrow shapes are not used for normal second-level Settings navigation. System Back remains behaviorally equivalent.
 
@@ -42,8 +42,12 @@ License
 Advanced
 ├─ Debug
 │  └─ Verbose details                  [switch]
-└─ Experimental features
-   └─ Karaoke mode             [OFF, unavailable]
+├─ Experimental features
+│  └─ Karaoke mode             [OFF, unavailable]
+├─ Storage
+│  └─ Clear translation models        ⓘ  Clear
+└─ Reset
+   └─ Reset AALyrics                  ⓘ  Reset
 
 [branding footer]
 AALyrics mark
@@ -52,7 +56,7 @@ Version: vX.X.X
 © <current year> Yuta Miura (whoxamxl)
 ```
 
-Provider preferences, appearance/theme selection, log export, and other future taxonomy remain out of scope. The approved Advanced extension is intentionally narrow: Verbose Details controls read-only diagnostic presentation, while Karaoke mode remains visible but unavailable and unwired.
+Provider preferences, appearance/theme selection, log export, and other future taxonomy remain out of scope. The approved Advanced surface remains narrow: Verbose Details controls read-only diagnostic presentation, Karaoke mode remains visible but unavailable and unwired, Storage owns explicit Translation-model cleanup, and Reset restores only AALyrics-owned state.
 
 ## Destination composition
 
@@ -185,6 +189,8 @@ Each language row also exposes Translation-model readiness through one stable tr
 
 A successful manual download therefore transitions the row from disabled + download/loading UI to an ordinary selectable row. Downloading a model must not implicitly change the selected target.
 
+Model readiness is reconciled from ML Kit on every application-process start. A debug/update install may preserve both SharedPreferences and ML Kit-downloaded language packs while recreating AALyrics' in-memory lifecycle state, so the picker must not assume that a missing in-memory entry means the model is absent. Non-English targets begin in a short CHECKING presentation state while the ML Kit downloaded-model inventory is restored; downloaded packs then become READY and genuinely absent packs become NOT_DOWNLOADED.
+
 The primary trailing action uses one fixed token-sized slot on every row:
 
 ```text
@@ -195,7 +201,11 @@ The primary action is exactly one of download, loading, retry, selected check, o
 
 Only a failed row adds a failure-info icon immediately before the primary retry slot. Pressing that info icon opens a tooltip containing the presentation-ready failure reason. If no specific reason is available, the UI may show a generic download-failure explanation. Non-failed rows do not show or reserve a visible failure-info action.
 
-The picker should clearly mark the selected language, remain open when a model download/retry action or failure tooltip is used, dismiss after selecting an available target, and remain usable at narrow widths and enlarged font scales.
+The picker should clearly mark the draft selection and remain open when an available target is tapped. Tapping a language changes only the dialog-local draft selection; it does not immediately update the persisted Target language. The picker also remains open when a model download/retry action or failure tooltip is used, and remains usable at narrow widths and enlarged font scales.
+
+The language list is a bounded internal viewport rather than an unbounded dialog body. Its maximum height is 312dp (six and a half 48dp language rows), intentionally revealing part of the next row when overflow exists. Additional languages scroll inside that viewport while the dialog title and `Cancel` / `Done` actions remain fixed and visible. If fewer rows exist, the viewport shrinks to content instead of reserving empty space.
+
+Scrollable overflow is signaled with 24dp animated edge fades inside the language viewport. At the top only the lower fade is visible; during mid-list scrolling both fades may be visible; at the bottom the lower fade disappears. The fades follow `LazyListState.canScrollBackward` / `canScrollForward` and animate in/out over 180ms. They never cover the dialog title or action row.
 
 ## Android Auto section
 
@@ -250,6 +260,18 @@ Supports:
 
 Long values should truncate gracefully rather than forcing the row to uncontrolled height.
 
+### SettingsActionRow
+
+Represents an operation performed from the current Settings surface rather than navigation to another surface.
+
+Presentation:
+
+```text
+action title (flex) | optional info | text action
+```
+
+It must not show the navigation chevron. The trailing text action occupies the same 52dp control slot used by a Material 3 Switch so action labels and toggles share the same horizontal center axis. This is the default alignment rule for trailing Settings action buttons; exceptions require an explicit layout reason. The full row may open the same confirmation flow as the trailing action, while the info affordance remains independently actionable.
+
 ### SettingInfoTooltip
 
 A reusable Phone-local on-demand explanatory surface.
@@ -273,14 +295,16 @@ The first implementation uses a compact Material 3 modal picker because the supp
 Requirements:
 
 - list only the presentation-provided options;
-- identify the current selection;
+- initialize the dialog-local draft selection from the currently persisted Target language;
+- visibly move the selected/check state immediately when another built-in/ready language is tapped;
+- do not persist that draft selection until the user presses `Done`;
 - show presentation-provided model readiness for every language;
-- allow selection only for built-in/ready languages;
+- allow draft selection only for built-in/ready languages;
 - expose a failure-reason tooltip only for failed models;
-- emit one selected language identifier;
-- emit a separate manual model-download/retry request;
-- dismiss after a valid target selection;
-- remain open for download actions;
+- emit a separate manual model-download/retry request without changing the draft selection;
+- provide explicit `Cancel` and `Done` text actions;
+- treat `Cancel`, system Back, and outside-dialog dismissal identically: discard the draft and keep the persisted Target language unchanged;
+- `Done` commits the draft Target language and then closes the picker;
 - remain presentation-only.
 
 Do not expose model-download internals or Translation Provider details in this picker.
@@ -532,9 +556,51 @@ The current runtime may already acquire WORD-capable lyrics through existing pro
 
 Karaoke becomes functional only through a separately authorized implementation slice following `docs/KARAOKE_ARCHITECTURE.md`.
 
+### Storage — Clear translation models
+
+`Clear translation models` is an explicit storage-management action. Its row remains compact and uses the shared info tooltip rather than permanent subtitle text.
+
+The tooltip explains that the action:
+
+- removes downloaded ML Kit translation models;
+- keeps English available because English is the built-in/default capability and is not a downloadable model;
+- turns Translation OFF;
+- restores Target language to English.
+
+The row is an action row, not navigation: it uses a trailing `Clear` text action instead of a chevron. The row title and trailing action use the normal Settings colors; only the confirmation dialog's `Clear` action is destructive. The full row opens the same confirmation surface, and the action always requires a confirmation dialog before execution.
+
+The application boundary first restores Translation settings to their safe defaults, then asks the Translation model manager to delete engine-managed downloaded models. The Phone UI does not call ML Kit directly.
+
+### Reset — Reset AALyrics
+
+`Reset AALyrics` is the final Advanced section and uses a trailing `Reset` text action rather than a navigation chevron. The row title stays in the normal primary text color; the trailing `Reset` action and the confirmation action use the destructive color while the normal section/card treatment remains consistent with the rest of Settings.
+
+The info tooltip explains that reset restores AALyrics-owned settings and onboarding state while leaving external/system-owned state untouched.
+
+After confirmation, reset restores:
+
+- Translation -> OFF;
+- Target language -> English;
+- Verbose details -> OFF;
+- Plain lyrics auto-scroll -> its Phone default;
+- Android Auto compatibility acknowledgement -> Not reviewed.
+
+Reset does **not**:
+
+- delete downloaded translation models;
+- revoke Notification Access or other Android permissions;
+- change Android Auto Developer Mode / Unknown sources;
+- modify any other application's state.
+
+After the reset, the entry-state owner immediately re-evaluates onboarding. Existing Android permissions are respected, while the Android Auto compatibility acknowledgement is presented again because that AALyrics-owned acknowledgement has returned to `Not reviewed`.
+
+Both Storage and Reset explanations use the shared `SettingInfoTooltip`; explanatory subtitle text is not permanently rendered in the rows.
+
 ### Advanced navigation ownership
 
 The Advanced surface remains Settings-owned UI. It does not become a fifth primary destination.
+
+Reselecting the already-selected Settings bottom-navigation tab is a Settings-root reset. It dismisses any active Settings modal, discards uncommitted dialog-local draft state such as a Target-language selection, leaves Advanced or License, returns to the main Settings surface, and scrolls the Settings home content back to the top. This is the Settings implementation of the shared Phone primary-tab reselection contract; it is not a Settings-specific navigation exception.
 
 A suitable presentation interaction is conceptually:
 
@@ -583,6 +649,9 @@ Deterministic debug Previews should cover at least:
 - Advanced navigation row;
 - Advanced screen with Verbose details OFF and ON;
 - disabled Karaoke mode row;
+- Advanced Storage and Reset rows;
+- Clear translation models confirmation;
+- Reset AALyrics confirmation;
 - full Settings destination hosted inside `PhoneAppShell` with Playback Surface visible.
 
 ## Runtime wiring boundary
@@ -615,6 +684,5 @@ The first Settings slice does not define or implement:
 - Translation Provider selection UI;
 - Android Auto runtime/projection settings;
 - Sync/calibration settings;
-- cache controls;
 - functional Karaoke mode or any Karaoke runtime wiring;
-- additional developer/experimental controls beyond the two approved Advanced rows.
+- additional developer/experimental controls beyond the approved Advanced contract.

@@ -40,6 +40,16 @@ internal class SharedPreferencesTranslationSettingsStore(
         preferences.edit().putString(TARGET_LANGUAGE_KEY, normalized).apply()
     }
 
+    fun resetToDefaults() {
+        preferences.edit()
+            .putBoolean(ENABLED_KEY, DEFAULT_ENABLED)
+            .putString(
+                TARGET_LANGUAGE_KEY,
+                TranslationLanguages.DEFAULT_TARGET_LANGUAGE,
+            )
+            .apply()
+    }
+
     override fun close() {
         preferences.unregisterOnSharedPreferenceChangeListener(listener)
     }

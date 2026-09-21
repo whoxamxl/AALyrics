@@ -16,6 +16,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -33,13 +34,20 @@ import io.github.whoxamxl.aalyrics.ui.phone.R
 @Composable
 fun DetailsScreen(
     state: DetailsScreenUiState,
+    rootResetKey: Int = 0,
     modifier: Modifier = Modifier,
     bottomOverlayInset: Dp = 0.dp,
 ) {
+    val scrollState = rememberScrollState()
+
+    LaunchedEffect(rootResetKey) {
+        scrollState.scrollTo(0)
+    }
+
     Column(
         modifier = modifier
             .fillMaxSize()
-            .verticalScroll(rememberScrollState())
+            .verticalScroll(scrollState)
             .padding(
                 start = AALyricsSpacing.Space16,
                 top = AALyricsSpacing.Space16,
@@ -298,7 +306,6 @@ private fun syncTypeLabel(syncType: LyricsSyncType): String = when (syncType) {
     LyricsSyncType.LINE -> stringResource(R.string.details_sync_line)
     LyricsSyncType.WORD -> stringResource(R.string.details_sync_word)
 }
-
 
 @Composable
 private fun detailsVerboseLabel(

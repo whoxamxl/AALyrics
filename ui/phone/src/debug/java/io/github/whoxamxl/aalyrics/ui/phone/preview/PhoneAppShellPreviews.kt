@@ -139,6 +139,7 @@ private fun PhoneAppShellPreview(
         PhoneAppShell(
             state = state,
             onDestinationSelected = {},
+            onDestinationReselected = {},
             onPrevious = {},
             onPlayPause = {},
             onNext = {},
@@ -220,6 +221,8 @@ internal fun PreviewSettingsDestination(
                 }
         },
         onTranslationModelDownloadRequested = {},
+        onClearTranslationModels = {},
+        onResetAALyrics = {},
         onAndroidAutoCompatibilitySetup = {},
         onCheckForUpdates = {},
         onDownloadUpdate = {},

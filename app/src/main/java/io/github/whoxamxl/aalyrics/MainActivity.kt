@@ -29,9 +29,13 @@ class MainActivity : ComponentActivity() {
                 preferences.getString(ANDROID_AUTO_COMPATIBILITY_KEY, null)
             },
             writeValue = { value ->
-                preferences.edit()
-                    .putString(ANDROID_AUTO_COMPATIBILITY_KEY, value)
-                    .apply()
+                preferences.edit().apply {
+                    if (value == null) {
+                        remove(ANDROID_AUTO_COMPATIBILITY_KEY)
+                    } else {
+                        putString(ANDROID_AUTO_COMPATIBILITY_KEY, value)
+                    }
+                }.apply()
             },
         )
 
@@ -88,6 +92,12 @@ class MainActivity : ComponentActivity() {
                                 .toUiStatus(),
                             onAndroidAutoCompatibilitySetup = {
                                 compatibilitySetupRequested = true
+                                renderedEntryState = null
+                                renderEntryState()
+                            },
+                            onResetAALyrics = {
+                                androidAutoCompatibilityOnboarding.reset()
+                                compatibilitySetupRequested = false
                                 renderedEntryState = null
                                 renderEntryState()
                             },
