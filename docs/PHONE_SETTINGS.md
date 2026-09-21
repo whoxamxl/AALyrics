@@ -14,7 +14,7 @@ Settings should expose stable user configuration without turning the Phone UI in
 
 The production Settings surface remains intentionally focused. The Advanced extension adds only one functional presentation preference and one explicitly unavailable future affordance; it does not open a general developer-settings surface.
 
-Second-level Settings surfaces use a leading Material chevron-left icon with a standard touch target rather than a text-only `Back` action. This mirrors the chevron-right affordance used to enter `Advanced`. System Back remains behaviorally equivalent.
+Second-level Settings surfaces use the shared `SettingsSubscreenHeader` rather than implementing their own header. The standard back affordance is the Material rounded chevron-left used by the current Advanced screen: 32dp icon inside a 48dp touch target, followed by the screen title. This intentionally mirrors the chevron-right affordance used to enter `Advanced`. Text-only `Back` actions and alternate arrow shapes are not used for normal second-level Settings navigation. System Back remains behaviorally equivalent.
 
 Initial structure:
 
@@ -249,6 +249,8 @@ Long values should truncate gracefully rather than forcing the row to uncontroll
 ### SettingInfoTooltip
 
 A reusable Phone-local on-demand explanatory surface.
+
+The current `SettingInfoTooltip` + `PhonePopupMenu` implementation is the standard Phone tooltip treatment. New anchored informational tooltips should reuse it rather than styling a raw Material `DropdownMenu` independently.
 
 It should:
 

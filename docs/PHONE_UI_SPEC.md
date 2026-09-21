@@ -266,6 +266,15 @@ A component should move to `:ui:designsystem` only when it is genuinely reusable
 
 This follows the project rule: screen needs demonstrate reusable design-system APIs; the component library should not be grown speculatively.
 
+### Adopted Phone UI primitives
+
+Two current Phone patterns are now normative within `:ui:phone`:
+
+- **Anchored popup / tooltip surface** — use `PhonePopupMenu`. Its current Quick Controls-derived visual treatment is the standard: Radius16, `BackgroundSurfaceStrong`, `BorderSoft`, zero tonal elevation, and the shared shadow elevation. Do not introduce a default-styled `DropdownMenu` for an equivalent compact popup.
+- **Second-level Settings header** — use `SettingsSubscreenHeader`. Its standard back affordance is a Material rounded chevron-left at 32dp inside a 48dp touch target, paired with the subscreen title. This mirrors the chevron-right navigation affordance used when entering a Settings subscreen.
+
+These are Phone-local standards. They should remain in `:ui:phone` until reuse outside the Phone surface justifies promotion to `:ui:designsystem`.
+
 ## Intended source structure
 
 ```text
