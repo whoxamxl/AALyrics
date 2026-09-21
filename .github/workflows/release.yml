@@ -77,7 +77,15 @@ jobs:
       - name: Verify changelog release version
         shell: bash
         run: |
-          changelog_version="$(sed -n 's/^## \[\([^]]*\)\].*/\1/p' CHANGELOG.md | head -n 1)"
+          changelog_version="$(awk '
+            /^## \[/ {
+              version = $0
+              sub(/^## \[/, "", version)
+              sub(/\].*$/, "", version)
+              print version
+              exit
+            }
+          ' CHANGELOG.md)"
           if [[ -z "$changelog_version" ]]; then
             echo "CHANGELOG.md does not contain a release heading in the form: ## [VERSION] - YYYY-MM-DD"
             exit 1
