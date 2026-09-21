@@ -116,6 +116,7 @@ private fun PhoneNavigationNarrowPreview() {
         PhoneNavigationBar(
             selectedDestination = PhoneDestination.Details,
             onDestinationSelected = {},
+            onDestinationReselected = {},
         )
     }
 }
