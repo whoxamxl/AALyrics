@@ -1,5 +1,6 @@
 package io.github.whoxamxl.aalyrics.platform.media
 
+import android.graphics.Bitmap
 import io.github.whoxamxl.aalyrics.core.model.PlaybackSnapshot
 
 /** Narrow platform/application boundary for normalized playback updates. */
@@ -44,6 +45,16 @@ fun interface PlaybackControlStateSink {
     fun onPlaybackControlState(state: PlaybackControlState)
 }
 
+/**
+ * Android-owned artwork boundary for the selected session.
+ *
+ * Bitmap ownership deliberately stops at :app; presentation modules continue to receive
+ * renderable artwork content rather than Android media/framework objects.
+ */
+fun interface PlaybackArtworkSink {
+    fun onPlaybackArtwork(bitmap: Bitmap?)
+}
+
 /** Framework-neutral transport commands for the currently selected media session. */
 interface PlaybackTransport {
     fun play()
@@ -66,6 +77,9 @@ object MediaSessionRuntimeHost {
 
     @Volatile
     private var controlStateSink: PlaybackControlStateSink? = null
+
+    @Volatile
+    private var artworkSink: PlaybackArtworkSink? = null
 
     @Volatile
     private var transport: PlaybackTransport? = null
@@ -94,6 +108,16 @@ object MediaSessionRuntimeHost {
     }
 
     @Synchronized
+    fun attachArtwork(sink: PlaybackArtworkSink) {
+        artworkSink = sink
+    }
+
+    @Synchronized
+    fun detachArtwork(sink: PlaybackArtworkSink) {
+        if (artworkSink === sink) artworkSink = null
+    }
+
+    @Synchronized
     internal fun attachTransport(transport: PlaybackTransport) {
         this.transport = transport
     }
@@ -119,6 +143,10 @@ object MediaSessionRuntimeHost {
 
     internal fun forwardControlState(state: PlaybackControlState) {
         controlStateSink?.onPlaybackControlState(state)
+    }
+
+    internal fun forwardArtwork(bitmap: Bitmap?) {
+        artworkSink?.onPlaybackArtwork(bitmap)
     }
 
     fun play() {

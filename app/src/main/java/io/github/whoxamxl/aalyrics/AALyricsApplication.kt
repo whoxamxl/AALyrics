@@ -1,6 +1,7 @@
 package io.github.whoxamxl.aalyrics
 
 import android.app.Application
+import android.graphics.Bitmap
 import io.github.whoxamxl.aalyrics.core.lyrics.CandidateSelectionPreferences
 import io.github.whoxamxl.aalyrics.core.lyrics.CandidateSelector
 import io.github.whoxamxl.aalyrics.core.lyrics.LyricsCoordinator
@@ -17,6 +18,7 @@ import io.github.whoxamxl.aalyrics.provider.selection.CrossProviderCandidateSele
 import io.github.whoxamxl.aalyrics.provider.synclrc.SyncLrcProvider
 import io.github.whoxamxl.aalyrics.platform.media.MediaBrowserClientTrust
 import io.github.whoxamxl.aalyrics.platform.media.MediaSessionRuntimeHost
+import io.github.whoxamxl.aalyrics.platform.media.PlaybackArtworkSink
 import io.github.whoxamxl.aalyrics.platform.media.PlaybackControlState
 import io.github.whoxamxl.aalyrics.platform.media.PlaybackControlStateSink
 import io.github.whoxamxl.aalyrics.platform.media.PlaybackSnapshotSink
@@ -67,6 +69,10 @@ class AALyricsApplication : Application() {
     private lateinit var phonePlaybackSurfaceStateFlow: StateFlow<PlaybackSurfaceUiState?>
     private lateinit var phoneMediaSourceLabelStateFlow: StateFlow<String?>
     private lateinit var phoneDetailsStateFlow: StateFlow<DetailsScreenUiState>
+    private val mutablePlaybackArtworkState = MutableStateFlow<Bitmap?>(null)
+    private val playbackArtworkSink = PlaybackArtworkSink { bitmap ->
+        mutablePlaybackArtworkState.value = bitmap
+    }
 
     val playbackLyricsController: PlaybackLyricsController
         get() = graph.playbackLyricsController
@@ -94,6 +100,8 @@ class AALyricsApplication : Application() {
 
     val phoneDetailsState: StateFlow<DetailsScreenUiState>
         get() = phoneDetailsStateFlow
+
+    val playbackArtworkState: StateFlow<Bitmap?> = mutablePlaybackArtworkState.asStateFlow()
 
     val verboseDetailsEnabled: StateFlow<Boolean>
         get() = phonePresentationSettingsStore.verboseDetailsEnabled
@@ -207,6 +215,7 @@ class AALyricsApplication : Application() {
         ).also { it.start() }
         MediaSessionRuntimeHost.attach(graph.playbackSnapshotSink)
         MediaSessionRuntimeHost.attachControlState(graph.playbackControlStateSink)
+        MediaSessionRuntimeHost.attachArtwork(playbackArtworkSink)
         automotiveBinding = AutomotiveRuntimeBinding(
             playback = graph.playbackState,
             lyrics = graph.lyricsState,
@@ -237,6 +246,7 @@ class AALyricsApplication : Application() {
         translationSettingsStore.close()
         demandLifecycle.stop()
         AutomotiveRuntimeHost.detach(automotiveBinding)
+        MediaSessionRuntimeHost.detachArtwork(playbackArtworkSink)
         MediaSessionRuntimeHost.detachControlState(graph.playbackControlStateSink)
         MediaSessionRuntimeHost.detach(graph.playbackSnapshotSink)
         applicationScope.cancel()
