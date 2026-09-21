@@ -30,6 +30,22 @@ private fun PhoneNavigationSettingsPreview() {
     PhoneNavigationPreview(PhoneDestination.Settings)
 }
 
+
+
+@Preview(
+    name = "Lyrics selected · System navigation inset",
+    group = "PhoneNavigationBar",
+    widthDp = 412,
+    heightDp = 160,
+    showBackground = true,
+    showSystemUi = true,
+)
+@Composable
+private fun PhoneNavigationSystemInsetPreview() {
+    PhoneNavigationPreview(PhoneDestination.Lyrics)
+}
+
+
 @Composable
 private fun PhoneNavigationPreview(selectedDestination: PhoneDestination) {
     AALyricsTheme {
