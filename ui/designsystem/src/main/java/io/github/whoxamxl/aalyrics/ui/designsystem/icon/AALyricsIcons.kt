@@ -3,6 +3,7 @@ package io.github.whoxamxl.aalyrics.ui.designsystem.icon
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ExpandLess
 import androidx.compose.material.icons.rounded.ExpandMore
+import androidx.compose.material.icons.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.Download
@@ -32,6 +33,7 @@ object AALyricsIcons {
     val Details: ImageVector = Icons.Rounded.Info
     val Settings: ImageVector = Icons.Rounded.Settings
 
+    val Back: ImageVector = Icons.Rounded.ArrowBack
     val Info: ImageVector = Icons.Rounded.Info
     val NavigateNext: ImageVector = Icons.Rounded.ChevronRight
     val Check: ImageVector = Icons.Rounded.Check
