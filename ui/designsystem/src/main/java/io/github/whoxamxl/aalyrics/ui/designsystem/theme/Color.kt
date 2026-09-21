@@ -31,13 +31,15 @@ object AALyricsPalette {
 object AALyricsColors {
     val BackgroundBase = AALyricsPalette.Navy950
     val BackgroundSurface = Color(0xFF071524)
-    val BackgroundChrome = Color(0xFF040D19)
+    val BackgroundChrome = Color(0xFF05111F)
     val BackgroundSurfaceStrong = Color(0xFF0B2038)
     val TextPrimary = AALyricsPalette.Neutral50
     val TextSecondary = AALyricsPalette.Neutral300
     val TextTertiary = AALyricsPalette.Neutral500
     val AccentCyan = AALyricsPalette.Cyan200
     val AccentBlue = AALyricsPalette.Blue400
+    val ChromeEdge = AALyricsPalette.Cyan200.copy(alpha = 0.12f)
+    val ChromeGlow = AALyricsPalette.Blue400.copy(alpha = 0.05f)
     val BorderSoft = Color(0xFF17304D)
     val OverlaySoft = Color(0xFF0B1D31)
     val Success = AALyricsPalette.Success
