@@ -3,7 +3,7 @@ package io.github.whoxamxl.aalyrics.translation.api
 import kotlinx.coroutines.flow.StateFlow
 
 data class TranslationSettings(
-    val enabled: Boolean = false,
+    val enabled: Boolean = true,
     val targetLanguage: String = TranslationLanguages.DEFAULT_TARGET_LANGUAGE,
 ) {
     init {

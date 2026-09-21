@@ -15,7 +15,7 @@ class PhoneSettingsMapperTest {
     @Test
     fun `default Translation stays off while English remains built in`() {
         val state = mapPhoneSettingsState(
-            translationSettings = TranslationSettings(),
+            translationSettings = TranslationSettings(enabled = false),
             translationModelStates = emptyMap(),
             verboseDetailsEnabled = false,
             plainLyricsAutoScrollEnabled = true,
