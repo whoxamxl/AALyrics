@@ -242,6 +242,8 @@ internal object PhonePreviewFixtures {
         SettingsLanguageOptionUiState("it", "Italian"),
         SettingsLanguageOptionUiState("pt", "Portuguese"),
     )
+    val noticeSample = "Required Notice: © 2026 Yuta Miura"
+
     val licenseMarkdownSample = """
         # PolyForm Noncommercial License 1.0.0
 
@@ -289,6 +291,7 @@ internal object PhonePreviewFixtures {
         androidAutoCompatibilityStatus = AndroidAutoCompatibilityUiStatus.ENABLED,
         appVersionName = "0.1.0-dev",
         currentYear = 2026,
+        noticeText = noticeSample,
         licenseText = licenseMarkdownSample,
         changelogText = changelogMarkdownSample,
     )
