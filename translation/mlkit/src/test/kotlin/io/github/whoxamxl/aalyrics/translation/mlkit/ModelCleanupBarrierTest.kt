@@ -35,7 +35,7 @@ class ModelCleanupBarrierTest {
 
         // Cleanup starts while the availability check is suspended and before
         // the preparation has registered a monitor/download.
-        barrier.beginCleanup(activeLanguages = emptySet())
+        barrier.beginCleanup { emptySet() }
 
         resumeAvailabilityCheck.complete(Unit)
 
