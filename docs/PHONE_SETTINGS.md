@@ -417,6 +417,8 @@ The bundled `LICENSE` remains Markdown source. `LicenseSettingsScreen` renders i
 
 `PhoneMarkdownText` is also the preferred renderer for future presentation-provided Markdown such as GitHub Release changelogs, so License and Changelog do not evolve separate Markdown implementations.
 
+The wrapper applies a compact AALyrics Phone Markdown theme instead of the renderer's default Material display typography. Current baseline: H1 24sp/30sp, H2 20sp/26sp, body 14sp/20sp, inline/code text 13sp/18sp, compact block spacing, and AALyrics cyan underlined links. This keeps long technical documents readable on narrow phones without changing their Markdown source.
+
 The repository-root `LICENSE` file is the single source of truth. Its full contents must **not** be duplicated as Kotlin/string-resource literals. The app build automatically copies the current repository `LICENSE` into generated app assets as `aalyrics_license.txt`; the application reads that bundled asset and supplies the text as presentation state.
 
 Therefore:
