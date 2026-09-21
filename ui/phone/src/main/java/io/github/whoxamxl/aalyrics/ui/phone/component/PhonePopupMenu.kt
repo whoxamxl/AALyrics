@@ -1,12 +1,11 @@
 package io.github.whoxamxl.aalyrics.ui.phone.component
 
-import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsColors
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsRadius
@@ -29,15 +28,15 @@ internal fun PhonePopupMenu(
         expanded = expanded,
         onDismissRequest = onDismissRequest,
         modifier = modifier
-            .clip(shape),
+            .border(
+                width = 1.dp,
+                color = AALyricsColors.BorderSoft,
+                shape = shape,
+            ),
         shape = shape,
         containerColor = AALyricsColors.BackgroundSurfaceStrong,
         tonalElevation = 0.dp,
         shadowElevation = AALyricsSpacing.Space12,
-        border = BorderStroke(
-            width = 1.dp,
-            color = AALyricsColors.BorderSoft,
-        ),
         content = content,
     )
 }
