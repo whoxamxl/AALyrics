@@ -197,6 +197,8 @@ class MlKitTranslationModelManager(
                 } else {
                     try {
                         deleteDownloadedModel(model)
+                        pendingModelDeletions.remove(model.language)
+                        claimedModelDeletions.remove(model.language)
                         _states.update { current -> current - model.language }
                     } catch (e: CancellationException) {
                         throw e
@@ -325,6 +327,9 @@ class MlKitTranslationModelManager(
             }
             if (downloaded == true) {
                 activeModelDownloads.remove(languageTag, task)
+                if (languageTag in pendingModelDeletions) {
+                    return false
+                }
                 publish(languageTag, TranslationModelPhase.READY)
                 return true
             }
@@ -354,6 +359,9 @@ class MlKitTranslationModelManager(
         } == true
         if (finalDownloaded) {
             activeModelDownloads.remove(languageTag, task)
+            if (languageTag in pendingModelDeletions) {
+                return false
+            }
             publish(languageTag, TranslationModelPhase.READY)
             return true
         }
