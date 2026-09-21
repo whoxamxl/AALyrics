@@ -89,7 +89,7 @@ The initial diagnostic surface should prefer already-available framework-neutral
 
 Suitable first fields include:
 
-- playback application package / `PlaybackSource.id`, such as `com.spotify.music`;
+- playback application package / `PlaybackSource.id`, such as `com.spotify.music`; this raw package identifier is Verbose-only and must never replace the human-readable normal `Playback source` label;
 - provider key / `LyricsAttribution.providerId`;
 - provider source identifier / `LyricsAttribution.sourceId`, when available;
 - normalized track references such as `namespace:value`, when available.
