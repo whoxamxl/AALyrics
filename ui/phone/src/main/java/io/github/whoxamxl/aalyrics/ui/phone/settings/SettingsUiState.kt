@@ -82,7 +82,7 @@ enum class AndroidAutoCompatibilityUiStatus {
 data class SettingsScreenUiState(
     val plainLyricsAutoScrollEnabled: Boolean = true,
     val verboseDetailsEnabled: Boolean = false,
-    val translationEnabled: Boolean = true,
+    val translationEnabled: Boolean = false,
     val translationTarget: SettingsLanguageOptionUiState,
     val translationTargets: List<SettingsLanguageOptionUiState>,
     val androidAutoCompatibilityStatus: AndroidAutoCompatibilityUiStatus =
