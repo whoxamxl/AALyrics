@@ -39,7 +39,13 @@ interface TranslationModelManager {
      * Deletes downloaded engine-managed translation models.
      *
      * Built-in capabilities such as English are not downloadable models and
-     * therefore remain available.
+     * therefore remain available. Implementations must also prevent models that
+     * were already downloading when cleanup began from surviving after they
+     * complete.
+     *
+     * Returns true when the current inventory/delete pass succeeded and any
+     * in-flight models have been handed off to the same cleanup request. A
+     * false result means the caller should surface a retryable cleanup failure.
      */
     suspend fun clearDownloadedModels(): Boolean
 
