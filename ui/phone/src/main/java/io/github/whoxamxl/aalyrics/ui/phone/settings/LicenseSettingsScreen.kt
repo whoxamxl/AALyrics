@@ -17,7 +17,7 @@ import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsSpacing
 import io.github.whoxamxl.aalyrics.ui.phone.component.PhoneMarkdownText
 import io.github.whoxamxl.aalyrics.ui.phone.R
 
-/** Second-level Settings surface showing the exact LICENSE bundled with this build. */
+/** Second-level Settings surface showing the bundled AALyrics notice and license. */
 @Composable
 internal fun LicenseSettingsScreen(
     licenseText: String,

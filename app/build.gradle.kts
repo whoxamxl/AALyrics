@@ -49,9 +49,13 @@ val configuredVersionName = providers.environmentVariable("AALYRICS_VERSION_NAME
 val generatedLicenseAssetsDir =
     layout.buildDirectory.dir("generated/licenseAssets").get().asFile
 val syncLicenseAsset = tasks.register<Copy>("syncLicenseAsset") {
-    from(rootProject.file("LICENSE"))
+    from(rootProject.file("LICENSE")) {
+        rename { "aalyrics_license.txt" }
+    }
+    from(rootProject.file("NOTICE")) {
+        rename { "aalyrics_notice.txt" }
+    }
     into(generatedLicenseAssetsDir)
-    rename { "aalyrics_license.txt" }
 }
 
 android {
