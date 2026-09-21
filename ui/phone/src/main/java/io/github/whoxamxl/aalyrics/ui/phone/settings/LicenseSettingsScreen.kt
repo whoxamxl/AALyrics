@@ -8,15 +8,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsColors
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsSpacing
-import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsTypography
+import io.github.whoxamxl.aalyrics.ui.phone.component.PhoneMarkdownText
 import io.github.whoxamxl.aalyrics.ui.phone.R
 
 /** Second-level Settings surface showing the exact LICENSE bundled with this build. */
@@ -48,10 +46,8 @@ internal fun LicenseSettingsScreen(
 
         SettingsSection(title = null) {
             SelectionContainer {
-                Text(
-                    text = licenseText,
-                    style = AALyricsTypography.TrackArtist,
-                    color = AALyricsColors.TextPrimary,
+                PhoneMarkdownText(
+                    markdown = licenseText,
                     modifier = Modifier.padding(AALyricsSpacing.Space16),
                 )
             }
