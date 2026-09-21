@@ -137,7 +137,7 @@ The card is informational. Playback transport actions stay in the persistent Pla
 
 The production Track Card keeps album artwork caller-owned in a compact 64dp slot. The READY runtime host forwards artwork from the selected Android MediaSession without moving Android media objects into `:ui:phone`. When artwork is unavailable, the shared AALyrics foreground mark derived from `branding/android/AALyrics_foreground_android.svg` is shown over the existing artwork background instead of leaving the slot visually empty.
 
-Long title/artist text uses a synchronized horizontal marquee only when the combined identity block overflows. Title and artist move together, pause for 4 seconds at the leading position, scroll at a constant speed, keep a small repeat gap, then return to the leading position and repeat. Short text remains static. Provider/sync metadata stays fixed and truncates rather than joining the marquee.
+Long title/artist text uses row-aware overflow marquee behavior. If only the title overflows, only the title moves and the artist remains fixed; if only the artist overflows, only the artist moves and the title remains fixed. When both title and artist overflow, they retain the synchronized block marquee so their leading edges stay aligned and both lines move at the same speed. Marquee motion pauses for 4 seconds at the leading position, scrolls at a constant speed, keeps a small repeat gap, then returns to the leading position and repeats. Non-overflowing text remains static. Provider/sync metadata stays fixed and truncates rather than joining the marquee.
 
 ## Lyrics viewport
 
