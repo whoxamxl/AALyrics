@@ -57,7 +57,6 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -109,13 +108,13 @@ internal fun ExpandedPlayer(
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = AALyricsSpacing.Space8)
+            // Keep this surface in the pointer hit-test chain so taps on empty panel
+            // chrome do not fall through to the backdrop. Do not consume here:
+            // child Slider/buttons own gesture consumption and cancellation semantics.
             .pointerInput(Unit) {
                 awaitPointerEventScope {
                     while (true) {
-                        val event = awaitPointerEvent(PointerEventPass.Final)
-                        event.changes
-                            .filterNot { it.isConsumed }
-                            .forEach { it.consume() }
+                        awaitPointerEvent()
                     }
                 }
             },
