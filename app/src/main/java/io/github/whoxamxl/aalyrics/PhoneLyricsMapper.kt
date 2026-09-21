@@ -30,7 +30,7 @@ internal fun mapPhoneLyricsState(
         is LyricsState.Degraded -> matchingLyricsState.lyrics
         else -> null
     }
-    val positionMs = projectedPosition(playback, currentMonotonicTimeMs)
+    val positionMs = projectedPlaybackPosition(playback, currentMonotonicTimeMs)
     val sourceSyncType = document?.syncType ?: LyricsSyncType.PLAIN
     val displaySyncType = if (sourceSyncType == LyricsSyncType.WORD) {
         LyricsSyncType.LINE
@@ -69,7 +69,7 @@ internal fun mapPhoneLyricsState(
     )
 }
 
-private fun projectedPosition(
+internal fun projectedPlaybackPosition(
     playback: PlaybackSnapshot,
     currentMonotonicTimeMs: Long,
 ): Long {
@@ -90,7 +90,7 @@ private fun projectedPosition(
         ?: projected.coerceAtLeast(0L)
 }
 
-private fun LyricsDocument.currentTimedLineIndex(positionMs: Long): Int? =
+internal fun LyricsDocument.currentTimedLineIndex(positionMs: Long): Int? =
     lines.indices
         .filter { index ->
             val line = lines[index]
