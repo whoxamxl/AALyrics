@@ -61,7 +61,10 @@ fun PhoneAppShell(
                         .background(
                             Brush.verticalGradient(
                                 0.00f to AALyricsColors.BackgroundChrome,
-                                0.38f to AALyricsColors.BackgroundChromeTransition,
+                                0.14f to AALyricsColors.BackgroundChromeFade1,
+                                0.30f to AALyricsColors.BackgroundChromeFade2,
+                                0.48f to AALyricsColors.BackgroundChromeTransition,
+                                0.72f to AALyricsColors.BackgroundChromeFade3,
                                 1.00f to AALyricsColors.BackgroundBase,
                             ),
                         ),
