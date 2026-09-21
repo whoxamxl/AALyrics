@@ -14,7 +14,7 @@ Settings should expose stable user configuration without turning the Phone UI in
 
 The production Settings surface remains intentionally focused. The Advanced extension adds only one functional presentation preference and one explicitly unavailable future affordance; it does not open a general developer-settings surface.
 
-Second-level Settings surfaces use a leading Material back icon with a standard touch target rather than a text-only `Back` action. System Back remains behaviorally equivalent.
+Second-level Settings surfaces use a leading Material chevron-left icon with a standard touch target rather than a text-only `Back` action. This mirrors the chevron-right affordance used to enter `Advanced`. System Back remains behaviorally equivalent.
 
 Initial structure:
 
