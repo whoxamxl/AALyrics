@@ -103,6 +103,12 @@ class AALyricsApplication : Application() {
 
     val playbackArtworkState: StateFlow<Bitmap?> = mutablePlaybackArtworkState.asStateFlow()
 
+    val licenseText: String by lazy(LazyThreadSafetyMode.NONE) {
+        assets.open(LICENSE_ASSET_NAME)
+            .bufferedReader()
+            .use { it.readText() }
+    }
+
     val verboseDetailsEnabled: StateFlow<Boolean>
         get() = phonePresentationSettingsStore.verboseDetailsEnabled
 
@@ -251,6 +257,10 @@ class AALyricsApplication : Application() {
         MediaSessionRuntimeHost.detach(graph.playbackSnapshotSink)
         applicationScope.cancel()
         super.onTerminate()
+    }
+
+    private companion object {
+        const val LICENSE_ASSET_NAME = "aalyrics_license.txt"
     }
 }
 

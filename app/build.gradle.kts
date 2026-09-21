@@ -46,6 +46,13 @@ val configuredVersionName = providers.environmentVariable("AALYRICS_VERSION_NAME
     ?.takeIf { it.isNotBlank() }
     ?: "0.1.0-dev"
 
+val generatedLicenseAssetsDir = layout.buildDirectory.dir("generated/licenseAssets")
+val syncLicenseAsset by tasks.registering(Copy::class) {
+    from(rootProject.file("LICENSE"))
+    into(generatedLicenseAssetsDir)
+    rename { "aalyrics_license.txt" }
+}
+
 android {
     buildFeatures {
         buildConfig = true
@@ -53,6 +60,8 @@ android {
     }
     namespace = "io.github.whoxamxl.aalyrics"
     compileSdk = 36
+
+    sourceSets.getByName("main").assets.srcDir(generatedLicenseAssetsDir)
 
     defaultConfig {
         applicationId = "io.github.whoxamxl.aalyrics"
@@ -122,4 +131,8 @@ dependencies {
     implementation("androidx.car.app:app:1.7.0")
     testImplementation(kotlin("test-junit"))
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.11.0")
+}
+
+tasks.named("preBuild").configure {
+    dependsOn(syncLicenseAsset)
 }
