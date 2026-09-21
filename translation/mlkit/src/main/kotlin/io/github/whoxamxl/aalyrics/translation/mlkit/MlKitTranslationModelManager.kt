@@ -430,19 +430,33 @@ class MlKitTranslationModelManager(
         model: TranslateRemoteModel,
     ): Boolean {
         val languageTag = model.language
-        return try {
-            deleteDownloadedModel(model)
-            activeModelMonitors[languageTag]
-                ?.takeIf { !it.isCompleted }
-                ?.await()
-            _states.update { current -> current - languageTag }
-            pendingModelDeletions.remove(languageTag)
-            true
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            publishFailure(languageTag, e)
-            false
+        var lastError: Exception? = null
+
+        try {
+            repeat(PENDING_DELETE_ATTEMPTS) { attempt ->
+                try {
+                    deleteDownloadedModel(model)
+                    activeModelMonitors[languageTag]
+                        ?.takeIf { !it.isCompleted }
+                        ?.await()
+                    _states.update { current -> current - languageTag }
+                    pendingModelDeletions.remove(languageTag)
+                    return true
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    lastError = e
+                    if (attempt < PENDING_DELETE_ATTEMPTS - 1) {
+                        delay(PENDING_DELETE_RETRY_DELAY_MS)
+                    }
+                }
+            }
+
+            publishFailure(
+                languageTag,
+                requireNotNull(lastError),
+            )
+            return false
         } finally {
             claimedModelDeletions.remove(languageTag)
         }
@@ -538,5 +552,7 @@ class MlKitTranslationModelManager(
         private const val MODEL_DOWNLOAD_TIMEOUT_MS = 5L * 60 * 1000
         private const val MODEL_POLL_INTERVAL_MS = 2_000L
         private const val MODEL_CHECK_TIMEOUT_MS = 10_000L
+        private const val PENDING_DELETE_ATTEMPTS = 3
+        private const val PENDING_DELETE_RETRY_DELAY_MS = 500L
     }
 }
