@@ -121,7 +121,7 @@ On Windows PowerShell, convert the keystore to the single-line Base64 value used
 
 ## Publishing
 
-After the intended commit is merged into `main`, create and push a version tag.
+After the intended commit is merged into `main`, ensure the release version is the newest entry in repository-root `CHANGELOG.md`, then create and push the version tag.
 
 For the first signed development release:
 
@@ -135,16 +135,38 @@ git push origin v0.1.0-alpha.1
 The Release workflow then:
 
 1. verifies that the tagged commit belongs to `main`;
-2. validates the version tag;
-3. verifies required secrets;
-4. restores the release keystore in the ephemeral GitHub Actions runner;
+2. verifies required secrets and restores the release keystore in the ephemeral GitHub Actions runner;
+3. validates the version tag and resolves `AALYRICS_VERSION_NAME`;
+4. verifies that the newest version heading in `CHANGELOG.md` exactly matches the tag version without the leading `v`;
 5. runs the architecture guard and unit tests;
-6. builds the signed release APK;
+6. builds the signed release APK, which bundles that same checked-in changelog;
 7. publishes `AALyrics-vX.Y.Z[-suffix].apk`;
 8. publishes a matching SHA-256 checksum;
 9. marks prerelease-suffixed tags as GitHub Pre-releases.
 
-A stable tag follows the same process but is published without the Pre-release flag.
+A stable tag follows the same process but is published without the Pre-release flag. A tag/changelog mismatch is a release-blocking error: the workflow must fail before building or publishing the APK.
+
+## Changelog policy
+
+Repository-root `CHANGELOG.md` is the canonical **user-facing in-app release history**. It is intentionally distinct from the GitHub Release body:
+
+- `CHANGELOG.md` is concise, curated, newest-first, and bundled into the APK for offline Settings display;
+- the GitHub Release body is the distribution-page summary plus the durable auto-generated PR-level ledger;
+- the two may summarize the same release at different levels of detail and are not expected to be byte-identical.
+
+Every published version uses a heading in this form:
+
+```md
+## [0.2.0-alpha.1] - 2026-09-21
+```
+
+Before creating a release tag, add that release entry to `CHANGELOG.md` and merge it into `main`. The release tag must point to that revision (or a later `main` revision whose newest changelog version is still the tag being created).
+
+The Release workflow removes the leading `v` from the tag and compares it with the first version heading in `CHANGELOG.md`. For example, `v0.2.0-alpha.1` requires the newest heading to identify `0.2.0-alpha.1`. This prevents publishing a signed APK whose bundled Changelog does not describe that release.
+
+The workflow does **not** generate or write `CHANGELOG.md` after a tag is pushed. Doing so would be too late for the tagged APK: release-history content is source-controlled release input, while bundling and consistency validation are automatic.
+
+At build time, the application Gradle configuration copies the checked-in file to generated assets as `aalyrics_changelog.md`. `:app` reads that bundled Markdown and passes it to the Phone Settings presentation layer. No GitHub API request is required to open Settings > Changelog.
 
 ## Release notes structure
 
@@ -210,7 +232,7 @@ When an update is available, the runtime should resolve the signed release asset
 
 The installed version shown in Settings should come from the app build metadata (`BuildConfig.VERSION_NAME`), not a duplicated UI constant.
 
-The Settings `Changelog` entry should load release-note content from GitHub Releases through application/runtime code and pass presentation-ready text to `:ui:phone`. The Compose layer does not own GitHub API access.
+The Settings `Changelog` entry is independent of the update-network path. It renders the repository `CHANGELOG.md` bundled into the installed APK; it does not fetch GitHub Release notes at runtime. GitHub Releases remain authoritative for signed update distribution, while `CHANGELOG.md` is authoritative for the in-app release history.
 
 ## Installation and updates
 
