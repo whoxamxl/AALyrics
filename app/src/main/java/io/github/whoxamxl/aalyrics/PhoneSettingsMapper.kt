@@ -22,6 +22,7 @@ internal fun mapPhoneSettingsState(
     androidAutoStatus: AndroidAutoCompatibilityUiStatus,
     appVersionName: String,
     currentYear: Int,
+    licenseText: String,
     displayLocale: Locale = Locale.getDefault(),
 ): SettingsScreenUiState {
     val targets = TranslationLanguages.supportedTargets.map { languageTag ->
@@ -52,6 +53,7 @@ internal fun mapPhoneSettingsState(
         androidAutoCompatibilityStatus = androidAutoStatus,
         appVersionName = appVersionName,
         currentYear = currentYear,
+        licenseText = licenseText,
         appUpdate = AppUpdateUiState(phase = AppUpdateUiPhase.UNAVAILABLE),
         changelog = ChangelogUiState(phase = ChangelogUiPhase.UNAVAILABLE),
     )

@@ -30,7 +30,6 @@ internal fun PhoneRuntimeHost(
     androidAutoStatus: AndroidAutoCompatibilityUiStatus,
     onAndroidAutoCompatibilitySetup: () -> Unit,
     onOpenSourceCode: () -> Unit,
-    onOpenLicense: () -> Unit,
 ) {
     val playback by application.playbackState.collectAsStateWithLifecycle()
     val lyricsState by application.lyricsState.collectAsStateWithLifecycle()
@@ -86,6 +85,7 @@ internal fun PhoneRuntimeHost(
         androidAutoStatus = androidAutoStatus,
         appVersionName = BuildConfig.VERSION_NAME,
         currentYear = Year.now().value,
+        licenseText = application.licenseText,
     )
 
     PhoneAppShell(
@@ -138,7 +138,6 @@ internal fun PhoneRuntimeHost(
                 onCheckForUpdates = {},
                 onDownloadUpdate = {},
                 onChangelogRequested = {},
-                onLicenseRequested = onOpenLicense,
                 onSettingsEntered = {},
                 onOpenGitHub = onOpenSourceCode,
                 bottomOverlayInset = bottomOverlayInset,

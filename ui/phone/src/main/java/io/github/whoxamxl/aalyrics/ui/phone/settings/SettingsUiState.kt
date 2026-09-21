@@ -88,6 +88,7 @@ data class SettingsScreenUiState(
         AndroidAutoCompatibilityUiStatus.NOT_REVIEWED,
     val appVersionName: String,
     val currentYear: Int,
+    val licenseText: String = "",
     val appUpdate: AppUpdateUiState = AppUpdateUiState(),
     val changelog: ChangelogUiState = ChangelogUiState(),
 )

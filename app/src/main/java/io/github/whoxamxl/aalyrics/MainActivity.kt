@@ -94,9 +94,6 @@ class MainActivity : ComponentActivity() {
                             onOpenSourceCode = {
                                 openUrl(SOURCE_CODE_URL)
                             },
-                            onOpenLicense = {
-                                openUrl(LICENSE_URL)
-                            },
                         )
                     }
                 }
@@ -149,7 +146,5 @@ class MainActivity : ComponentActivity() {
         const val ENTRY_PREFERENCES_NAME = "app_entry_setup"
         const val ANDROID_AUTO_COMPATIBILITY_KEY = "android_auto_compatibility"
         const val SOURCE_CODE_URL = "https://github.com/whoxamxl/AALyrics"
-        const val LICENSE_URL =
-            "https://github.com/whoxamxl/AALyrics/blob/main/LICENSE"
     }
 }

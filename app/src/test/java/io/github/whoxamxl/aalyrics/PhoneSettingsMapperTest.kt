@@ -22,12 +22,14 @@ class PhoneSettingsMapperTest {
             androidAutoStatus = AndroidAutoCompatibilityUiStatus.ENABLED,
             appVersionName = "0.1.0-dev",
             currentYear = 2026,
+            licenseText = "demo license",
             displayLocale = Locale.ENGLISH,
         )
 
         assertEquals(false, state.translationEnabled)
         assertEquals("en", state.translationTarget.id)
         assertEquals(TranslationModelUiState.BUILT_IN, state.translationTarget.modelState)
+        assertEquals("demo license", state.licenseText)
     }
 
     @Test
@@ -53,6 +55,7 @@ class PhoneSettingsMapperTest {
             androidAutoStatus = AndroidAutoCompatibilityUiStatus.ENABLED,
             appVersionName = "0.1.0-dev",
             currentYear = 2026,
+            licenseText = "demo license",
             displayLocale = Locale.ENGLISH,
         )
 
