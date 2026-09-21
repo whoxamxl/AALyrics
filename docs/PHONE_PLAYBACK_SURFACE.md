@@ -109,7 +109,7 @@ Interaction contract:
 - manual drag is finger-following and bounded to one marquee cycle from the leading edge through `content width + repeat gap`;
 - dragging beyond either bound clamps at that bound rather than allowing free/infinite panning;
 - manual drag pauses automatic motion;
-- after release, hold the manual position briefly for 400ms, then resume automatic motion from that exact position;
+- after release, hold the manual position briefly for 250ms, then resume automatic motion from that exact position;
 - the repeated visual copy used for seamless cycling does not create duplicate accessibility semantics;
 - the Collapsed Playback Bar remains fixed ellipsis and does not expose this drag interaction.
 

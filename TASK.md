@@ -267,7 +267,7 @@ Accepted refinement:
 - [x] allow finger-following horizontal drag only for overflowing marquee content;
 - [x] clamp manual movement to exactly one marquee cycle: leading edge through content width + repeat gap;
 - [x] pause auto motion while dragging;
-- [x] hold the released manual position for 400ms, then resume auto motion from that position;
+- [x] hold the released manual position for 250ms, then resume auto motion from that position;
 - [x] title-only / artist-only overflow keeps manual movement isolated to the overflowing row;
 - [x] both-overflow keeps title and artist on one synchronized offset for auto and manual motion;
 - [x] keep Collapsed Playback Bar fixed ellipsis with no marquee drag;
