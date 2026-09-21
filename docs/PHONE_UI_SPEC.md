@@ -98,9 +98,9 @@ The production Settings contract is defined in `docs/PHONE_SETTINGS.md`. Its imp
 - Translation target language;
 - Android Auto compatibility acknowledgement/status and setup re-entry;
 - installed version plus explicit unavailable Update presentation until release-network runtime exists;
-- explicit unavailable Changelog presentation until release-note runtime exists;
+- in-app Changelog entry backed by the repository-root `CHANGELOG.md`;
 - external Source code entry;
-- in-app License entry backed by the repository-root `LICENSE`;
+- in-app License entry backed by repository-root `NOTICE` + `LICENSE`;
 - permanent AALyrics branding/GitHub footer;
 - an `Advanced` entry containing:
   - functional `Verbose details` presentation preference;
@@ -221,7 +221,7 @@ Current reselection behavior:
 - Lyrics: return the lyrics viewport from manual browse to FOLLOW;
 - Sync: no visible change while the destination remains a root-only placeholder;
 - Details: return the read-only Details surface to its top scroll position;
-- Settings: dismiss modal/draft UI, discard uncommitted Target-language selection, leave Advanced/License, return to Settings home, and restore the main Settings scroll position to the top.
+- Settings: dismiss modal/draft UI, discard uncommitted Target-language selection, leave Advanced/Changelog/License, return to Settings home, and restore the main Settings scroll position to the top.
 
 Future child surfaces under any primary destination must use the same root-reset contract instead of defining ad hoc tab-reselection behavior.
 
@@ -307,7 +307,7 @@ Three current Phone patterns are now normative within `:ui:phone`:
 
 - **Anchored popup / tooltip surface** — use `PhonePopupMenu`. Its current Quick Controls-derived visual treatment is the standard: Radius16, `BackgroundSurfaceStrong`, `BorderSoft`, zero tonal elevation, and the shared shadow elevation. Do not introduce a default-styled `DropdownMenu` for an equivalent compact popup.
 - **Second-level Settings header** — use `SettingsSubscreenHeader`. Its standard back affordance is a Material rounded chevron-left at 32dp inside a 48dp touch target, paired with the subscreen title. This mirrors the chevron-right navigation affordance used when entering a Settings subscreen.
-- **Markdown documents** — use the Phone-local `PhoneMarkdownText` wrapper for bundled or presentation-provided Markdown such as the repository `LICENSE` and future GitHub Release changelogs. The wrapper delegates Markdown parsing/rendering to `mikepenz/multiplatform-markdown-renderer` Material 3 rather than implementing Markdown syntax in AALyrics. Keep the original document as the source of truth; rendering is presentation-only.
+- **Markdown documents** — use the Phone-local `PhoneMarkdownText` wrapper for bundled or presentation-provided Markdown such as the bundled repository `NOTICE`/`LICENSE` legal text and `CHANGELOG.md`. The wrapper delegates Markdown parsing/rendering to `mikepenz/multiplatform-markdown-renderer` Material 3 rather than implementing Markdown syntax in AALyrics. Keep the original document as the source of truth; rendering is presentation-only.
 
 These are Phone-local standards. They should remain in `:ui:phone` until reuse outside the Phone surface justifies promotion to `:ui:designsystem`.
 
@@ -338,6 +338,7 @@ ui/phone/src/main/java/io/github/whoxamxl/aalyrics/ui/phone/
 │  └─ DetailsUiState.kt
 ├─ settings/
 │  ├─ AdvancedSettingsScreen.kt
+│  ├─ ChangelogSettingsScreen.kt
 │  ├─ LicenseSettingsScreen.kt
 │  ├─ SettingsScreen.kt
 │  └─ SettingsUiState.kt
@@ -367,7 +368,8 @@ Preview coverage should eventually exercise at least:
 - collapsed/expanded playback-surface states and capability combinations
 - Details normal and Verbose modes
 - Advanced Settings with Verbose details and disabled Karaoke mode
-- in-app License subscreen with long scrollable bundled license text
+- in-app Changelog subscreen with long scrollable bundled release history
+- in-app License subscreen with long scrollable bundled legal text
 - narrow and typical phone widths
 - the shell-owned top-chrome tonal transition and Track Card boundary/spacing
 
