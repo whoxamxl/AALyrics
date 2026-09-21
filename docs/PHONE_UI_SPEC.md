@@ -110,6 +110,8 @@ The application/runtime boundary resolves the selected playback package to a hum
 
 The UI receives the resolved media-source label as presentation data only; media-session discovery, package-label resolution, and source selection remain outside `:ui:phone`. The persistent visual treatment uses the shared AALyrics brand mark on the left and a compact outlined source pill with a cyan dot on the right.
 
+The shell chrome uses the dedicated `BackgroundChrome` tone. The visual transition from the top bar into destination content is owned by `PhoneAppShell`, not `PhoneTopBar`: a 24dp multi-stop navy tonal fade is shifted 5dp upward and drawn behind destination content. This preserves the Lyrics Track Card's existing 16dp top inset without covering its rounded top edge. `PhoneTopBar` therefore remains a flat chrome component in isolation; the full transition is validated in shell Preview/device rendering.
+
 ## Lyrics Track Card
 
 The richer current-track presentation belongs inside the Lyrics destination.
@@ -198,6 +200,8 @@ Lyrics   Sync   Details   Settings
 ```
 
 The navigation bar performs destination switching only. Each destination uses a stable semantic icon plus label, with cyan emphasis for the selected destination. Playback actions belong to the Playback Bar and current-track information belongs to destination content.
+
+Its background uses the same `BackgroundChrome` tone as the top bar, but intentionally remains a flat surface with no mirrored tonal fade. This keeps the lower hierarchy quiet beside the Playback Surface and selected-tab cyan indicator.
 
 ## Phone shell ownership
 
@@ -336,8 +340,9 @@ Preview coverage should eventually exercise at least:
 - Advanced Settings with Verbose details and disabled Karaoke mode
 - in-app License subscreen with long scrollable bundled license text
 - narrow and typical phone widths
+- the shell-owned top-chrome tonal transition and Track Card boundary/spacing
 
-Implementation should validate that the persistent top bar, playback controls, and bottom navigation still leave adequate room for the lyrics viewport.
+Implementation should validate that the persistent top bar, playback controls, and bottom navigation still leave adequate room for the lyrics viewport. Standalone `PhoneTopBar` Preview intentionally shows only the flat component; `PhoneAppShell` Preview is authoritative for the top-chrome fade because the transition is shell-owned.
 
 ## Explicitly deferred
 
