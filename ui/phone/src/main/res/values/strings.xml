@@ -75,6 +75,8 @@
     <string name="settings_clear_translation_models_dialog_title">Clear translation models?</string>
     <string name="settings_clear_translation_models_dialog_body">Additional downloaded translation models will be removed. Translation will be turned off and the target language will return to English. The default English model will remain available.</string>
     <string name="settings_clear">Clear</string>
+    <string name="settings_clear_translation_models_failed_title">Could not clear translation models</string>
+    <string name="settings_clear_translation_models_failed_body">Some downloaded translation models could not be removed. Try again when the model download or system operation has finished.</string>
     <string name="settings_section_reset">RESET</string>
     <string name="settings_reset_aalyrics">Reset AALyrics</string>
     <string name="settings_reset_aalyrics_info">Restores AALyrics settings and onboarding state to their defaults. Downloaded translation models, Android permissions, and Android Auto system settings are not changed.</string>
