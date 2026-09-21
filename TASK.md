@@ -73,7 +73,7 @@ This is an application-composition slice. It must connect already-approved Phone
 ### Validation
 - [x] Add focused state/host tests where durable.
 - [x] Run architecture checks, unit tests, and debug APK build.
-- [ ] Perform bounded Codex review.
+- [x] Perform bounded Codex review.
 - [ ] Stop before merge until explicit user approval.
 
 ## Expected implementation shape
@@ -135,4 +135,21 @@ Do not merge PR #50 until:
 2. the final CI head is green;
 3. the user explicitly authorizes merge.
 
-Physical-device smoke testing may be performed before merge using the generated debug APK and is the next practical validation step.
+Physical-device smoke testing is the only remaining validation that cannot be completed from the repository/CI environment. The generated debug APK is ready for that manual check. Code-side implementation, architecture checks, unit tests, debug APK build, artifact upload, and bounded Codex review are complete.
+
+
+## Final repository-side status
+
+Latest reviewed implementation head before this status-only commit: `de720f3d889c2b641d463a6d7b26e807e7830dbd`.
+
+Repository-side work is complete:
+
+- production Phone shell is hosted from READY;
+- architecture boundary check passes;
+- debug APK build passes;
+- unit tests pass;
+- sideloadable debug APK artifact is produced;
+- bounded Codex review found no major issues;
+- no unresolved review threads remain.
+
+The six Device-test readiness items intentionally remain unchecked because they require an actual physical Android device and live MediaSession. They must not be inferred from CI.
