@@ -84,6 +84,7 @@ fun SettingsScreen(
         )
 
         SettingsSubscreen.LICENSE -> LicenseSettingsScreen(
+            noticeText = state.noticeText,
             licenseText = state.licenseText,
             onBack = { activeSubscreen = SettingsSubscreen.MAIN },
             modifier = modifier,
