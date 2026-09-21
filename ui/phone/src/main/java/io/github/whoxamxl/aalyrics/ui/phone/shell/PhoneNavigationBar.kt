@@ -38,7 +38,7 @@ fun PhoneNavigationBar(
 ) {
     Surface(
         modifier = modifier.fillMaxWidth(),
-        color = AALyricsColors.BackgroundSurface,
+        color = AALyricsColors.BackgroundChrome,
     ) {
         Row(
             modifier = Modifier
