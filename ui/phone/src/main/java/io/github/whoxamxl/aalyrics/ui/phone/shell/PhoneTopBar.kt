@@ -23,7 +23,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.github.whoxamxl.aalyrics.ui.designsystem.icon.AALyricsBrandMark
@@ -106,13 +105,13 @@ fun PhoneTopBar(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth()
-                .height(10.dp)
+                .height(12.dp)
                 .background(
                     Brush.verticalGradient(
                         colors = listOf(
-                            Color.Transparent,
-                            AALyricsColors.ChromeGlow,
-                            AALyricsColors.ChromeEdge,
+                            AALyricsColors.BackgroundChrome,
+                            AALyricsColors.BackgroundChromeTransition,
+                            AALyricsColors.BackgroundBase,
                         ),
                     ),
                 ),
