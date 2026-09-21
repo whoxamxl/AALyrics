@@ -182,7 +182,7 @@ private fun PlaybackQuickControlsPreview() {
 }
 
 @Preview(
-    name = "Interactive · Full surface",
+    name = "Interactive · Transform + seek",
     group = "PlaybackSurface",
     widthDp = 412,
     heightDp = 360,
