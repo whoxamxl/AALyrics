@@ -97,6 +97,7 @@ internal fun PhoneRuntimeHost(
         androidAutoStatus = androidAutoStatus,
         appVersionName = BuildConfig.VERSION_NAME,
         currentYear = Year.now().value,
+        noticeText = application.noticeText,
         licenseText = application.licenseText,
         changelogText = application.changelogText,
         translationModelCleanupState = translationModelCleanupState,
