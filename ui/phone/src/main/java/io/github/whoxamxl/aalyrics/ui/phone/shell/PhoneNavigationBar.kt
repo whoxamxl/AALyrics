@@ -107,13 +107,13 @@ fun PhoneNavigationBar(
             modifier = Modifier
                 .align(Alignment.TopCenter)
                 .fillMaxWidth()
-                .height(10.dp)
+                .height(12.dp)
                 .background(
                     Brush.verticalGradient(
                         colors = listOf(
-                            AALyricsColors.ChromeEdge,
-                            AALyricsColors.ChromeGlow,
-                            Color.Transparent,
+                            AALyricsColors.BackgroundBase,
+                            AALyricsColors.BackgroundChromeTransition,
+                            AALyricsColors.BackgroundChrome,
                         ),
                     ),
                 ),
