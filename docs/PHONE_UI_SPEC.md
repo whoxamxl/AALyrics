@@ -302,6 +302,7 @@ ui/phone/src/main/java/io/github/whoxamxl/aalyrics/ui/phone/
 │  └─ DetailsUiState.kt
 ├─ settings/
 │  ├─ AdvancedSettingsScreen.kt
+│  ├─ LicenseSettingsScreen.kt
 │  ├─ SettingsScreen.kt
 │  └─ SettingsUiState.kt
 └─ state/
@@ -329,6 +330,7 @@ Preview coverage should eventually exercise at least:
 - collapsed/expanded playback-surface states and capability combinations
 - Details normal and Verbose modes
 - Advanced Settings with Verbose details and disabled Karaoke mode
+- in-app License subscreen with long scrollable bundled license text
 - narrow and typical phone widths
 
 Implementation should validate that the persistent top bar, playback controls, and bottom navigation still leave adequate room for the lyrics viewport.

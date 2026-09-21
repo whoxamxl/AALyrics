@@ -91,7 +91,8 @@ SettingsScreenUiState
 ├─ translationTarget
 ├─ translationTargetOptions
 ├─ androidAutoCompatibilityStatus
-└─ verboseDetailsEnabled
+├─ verboseDetailsEnabled
+└─ licenseText
 ```
 
 The exact Kotlin names may follow implementation needs, but the ownership rule is stable.
@@ -410,7 +411,19 @@ https://github.com/whoxamxl/AALyrics
 
 A `License >` internal navigation row sits directly below Source code.
 
-The repository license is **PolyForm Noncommercial License 1.0.0**. The Phone Settings surface emits `onLicenseRequested`; the detailed license presentation may be supplied by the application/navigation layer without duplicating license ownership in the Settings row itself.
+Opening it presents an in-app second-level Settings surface using the standard `SettingsSubscreenHeader`, matching the navigation model used by `Advanced`. The license text is vertically scrollable and selectable.
+
+The repository-root `LICENSE` file is the single source of truth. Its full contents must **not** be duplicated as Kotlin/string-resource literals. The app build automatically copies the current repository `LICENSE` into generated app assets as `aalyrics_license.txt`; the application reads that bundled asset and supplies the text as presentation state.
+
+Therefore:
+
+- debug and release builds display the exact license checked into the source revision they were built from;
+- changing `LICENSE` requires no Phone UI code update;
+- no network connection or GitHub fetch is required to read the license;
+- the Settings License row is internal navigation, not an external browser link;
+- `:ui:phone` does not read Android assets directly; asset ownership remains in `:app`.
+
+The current repository license is **PolyForm Noncommercial License 1.0.0**, but the UI must derive its displayed body from the bundled file rather than assuming that text remains unchanged.
 
 ### Branding footer
 

@@ -178,3 +178,15 @@ The next manual device pass should specifically verify real album-art rendering,
 ## Verbose Details playback-source follow-up
 
 Physical-device validation confirmed that the normal playback-source label should remain human-readable (for example, `Spotify`). Verbose Details now additionally exposes the underlying playback application package from `PlaybackSource.id` (for example, `com.spotify.music`) as `App package`. This is presentation-only and does not change MediaSession selection or package-label resolution.
+
+
+## In-app License follow-up
+
+Settings > License now uses the same second-level Settings navigation pattern as Advanced instead of opening GitHub.
+
+- repository-root `LICENSE` is the only license-content source of truth;
+- the app Gradle build copies it automatically into generated assets as `aalyrics_license.txt`;
+- `:app` reads the bundled file and supplies presentation-ready `licenseText`;
+- `:ui:phone` renders it in `LicenseSettingsScreen` using the standard `SettingsSubscreenHeader`;
+- the license body is scrollable/selectable and works offline;
+- no full license text is hard-coded into Kotlin or Android string resources.
