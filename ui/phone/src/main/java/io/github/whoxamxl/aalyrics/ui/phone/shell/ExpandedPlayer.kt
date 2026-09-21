@@ -31,7 +31,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -70,6 +69,7 @@ import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.github.whoxamxl.aalyrics.ui.designsystem.icon.AALyricsIcons
+import io.github.whoxamxl.aalyrics.ui.phone.component.PhonePopupMenu
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsColors
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsRadius
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsSpacing
@@ -503,20 +503,10 @@ private fun QuickControlsButton(
             onClick = { expanded = true },
         )
 
-        DropdownMenu(
+        PhonePopupMenu(
             expanded = expanded,
             onDismissRequest = { expanded = false },
-            modifier = Modifier
-                .width(208.dp)
-                .border(
-                    width = AALyricsStroke.Thin,
-                    color = AALyricsColors.BorderSoft,
-                    shape = RoundedCornerShape(AALyricsRadius.Radius16),
-                ),
-            shape = RoundedCornerShape(AALyricsRadius.Radius16),
-            containerColor = AALyricsColors.BackgroundSurfaceStrong,
-            tonalElevation = 0.dp,
-            shadowElevation = AALyricsSpacing.Space12,
+            modifier = Modifier.width(208.dp),
         ) {
             QuickControlTranslationRow(
                 enabled = translationEnabled,
