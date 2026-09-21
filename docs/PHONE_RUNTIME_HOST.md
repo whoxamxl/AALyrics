@@ -19,10 +19,10 @@ The current production branch state now has:
 - playback source packages resolved to human-readable app labels where possible, with the package identifier retained as the final normal-UI fallback and always exposed separately in Verbose Details;
 - Translation persisted default disabled on an unconfigured install while English remains the built-in/default target;
 - production Lyrics and Settings presentation mapping;
-- in-app License navigation backed by a build-synchronized copy of the repository-root `LICENSE`, rendered through the shared Phone Markdown wrapper;
+- in-app License navigation backed by build-synchronized repository `NOTICE` + `LICENSE`, rendered through the shared Phone Markdown wrapper;
 - adopted Phone-local popup and second-level Settings-header primitives;
 - an explicit non-functional Sync placeholder;
-- unsupported Update/Changelog controls presented unavailable rather than wired to no-ops.
+- unsupported Update controls presented unavailable rather than wired to no-ops, while Changelog is supplied offline from the bundled repository `CHANGELOG.md`.
 
 The debug APK now builds with the real Phone shell reachable after onboarding prerequisites are satisfied. Physical-device smoke testing remains the final empirical validation step; CI alone does not claim that device interaction has been observed.
 
@@ -239,7 +239,7 @@ Device-test enablement must not turn unfinished runtime capabilities into fake w
 
 If a Settings control has no backing runtime implementation yet, do **not** wire an active no-op callback. Instead, the runtime-host implementation should make the unavailable state explicit through the smallest presentation change necessary, or keep the action unavailable until its capability slice exists.
 
-This rule is especially important for functionality such as release update/download or changelog fetching if no production application runtime currently owns it.
+This rule is especially important for functionality such as release update/download or any future network-backed Settings surface if no production application runtime currently owns it.
 
 Do not expand this slice into implementation of those capabilities merely because the Settings UI already contains their presentation contract.
 
@@ -248,7 +248,7 @@ Do not expand this slice into implementation of those capabilities merely becaus
 The following may remain UI/host-local because they do not represent durable application policy:
 
 - currently selected Phone primary destination;
-- Settings sub-screen selection/visibility (currently Main / Advanced / License);
+- Settings sub-screen selection/visibility (currently Main / Advanced / Changelog / License);
 - modal/picker visibility;
 - Lyrics viewport follow/browse interaction mode;
 - expanded/collapsed Playback Surface presentation state where already component-owned.
@@ -299,7 +299,7 @@ This slice does not implement:
 - a general navigation framework solely for four local Phone destinations;
 - speculative ViewModel layers;
 - artwork/network loading infrastructure solely for the Phone host;
-- update/changelog networking when no existing application runtime owns it;
+- update networking when no existing application runtime owns it;
 - log export/viewer;
 - theme/appearance settings;
 - Android Auto screen redesign.
