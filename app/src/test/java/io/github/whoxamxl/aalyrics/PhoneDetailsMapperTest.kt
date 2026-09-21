@@ -7,6 +7,7 @@ import io.github.whoxamxl.aalyrics.core.model.LyricsAttribution
 import io.github.whoxamxl.aalyrics.core.model.LyricsDocument
 import io.github.whoxamxl.aalyrics.core.model.LyricsSyncType
 import io.github.whoxamxl.aalyrics.core.model.PlaybackSnapshot
+import io.github.whoxamxl.aalyrics.core.model.PlaybackStatus
 import io.github.whoxamxl.aalyrics.core.model.PlaybackSource
 import io.github.whoxamxl.aalyrics.core.model.PlaybackTrackIdentity
 import io.github.whoxamxl.aalyrics.core.model.TimedLyricLine
@@ -203,6 +204,31 @@ class PhoneDetailsMapperTest {
         assertEquals("com.spotify.music", state.diagnostics?.appPackageName)
         assertNull(state.diagnostics?.providerId)
         assertNull(state.diagnostics?.sourceId)
+    }
+
+    @Test
+    fun `Verbose Details progress projects playback time and current synced line`() {
+        val track = currentTrack()
+        val playback = PlaybackSnapshot(
+            track = track,
+            status = PlaybackStatus.PLAYING,
+            positionMs = 90_000L,
+            playbackRate = 1.0f,
+            source = PlaybackSource(id = "com.spotify.music"),
+            positionUpdatedAtMonotonicMs = 100_000L,
+        )
+
+        val progress = mapPhoneDetailsVerboseProgress(
+            playback = playback,
+            lyricsState = readyLyrics(
+                track,
+                requireNotNull(playback.trackIdentity),
+            ),
+            currentMonotonicTimeMs = 105_000L,
+        )
+
+        assertEquals("1:35", progress.playbackPositionLabel)
+        assertEquals(2, progress.currentLineNumber)
     }
 
     private fun currentTrack() = Track(
