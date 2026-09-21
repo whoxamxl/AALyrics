@@ -18,6 +18,5 @@ internal fun PhoneMarkdownText(
     Markdown(
         content = markdown,
         modifier = modifier,
-        retainState = true,
     )
 }
