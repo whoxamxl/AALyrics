@@ -45,6 +45,7 @@ class MlKitTranslationModelManager(
 
     private val activeModelDownloads = ConcurrentHashMap<String, Task<Void>>()
     private val activeModelMonitors = ConcurrentHashMap<String, Deferred<Boolean>>()
+    private val pendingModelDeletions = ConcurrentHashMap.newKeySet<String>()
 
     private val _states = MutableStateFlow(
         TranslationLanguages.supportedTargets.associateWith { languageTag ->
@@ -168,6 +169,9 @@ class MlKitTranslationModelManager(
     }
 
     override suspend fun clearDownloadedModels(): Boolean {
+        val activeLanguages = activeModelDownloads.keys.toSet()
+        pendingModelDeletions.addAll(activeLanguages)
+
         val downloadedModels = try {
             downloadedModels()
         } catch (e: CancellationException) {
@@ -181,6 +185,11 @@ class MlKitTranslationModelManager(
         downloadedModels
             .filter { model -> model.language != MlKitModelPlanner.BUILT_IN_LANGUAGE }
             .forEach { model ->
+                val claimedByThisCleanup =
+                    model.language !in activeLanguages ||
+                        pendingModelDeletions.remove(model.language)
+                if (!claimedByThisCleanup) return@forEach
+
                 try {
                     deleteDownloadedModel(model)
                     _states.update { current -> current - model.language }
@@ -188,6 +197,7 @@ class MlKitTranslationModelManager(
                     throw e
                 } catch (e: Exception) {
                     allDeleted = false
+                    pendingModelDeletions.add(model.language)
                     publishFailure(model.language, e)
                 }
             }
@@ -362,13 +372,29 @@ class MlKitTranslationModelManager(
 
         task.addOnSuccessListener {
             activeModelDownloads.remove(languageTag, task)
+            if (pendingModelDeletions.remove(languageTag)) {
+                applicationScope.launch {
+                    try {
+                        deleteDownloadedModel(model)
+                        _states.update { current -> current - languageTag }
+                        Log.d(TAG, "deleted model completed during cleanup: $languageTag")
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (e: Exception) {
+                        pendingModelDeletions.add(languageTag)
+                        publishFailure(languageTag, e)
+                    }
+                }
+            }
         }
         task.addOnFailureListener { error ->
             Log.e(TAG, "model download task failed: $languageTag", error)
+            pendingModelDeletions.remove(languageTag)
             activeModelDownloads.remove(languageTag, task)
         }
         task.addOnCanceledListener {
             Log.w(TAG, "model download task cancelled: $languageTag")
+            pendingModelDeletions.remove(languageTag)
             activeModelDownloads.remove(languageTag, task)
         }
         task
