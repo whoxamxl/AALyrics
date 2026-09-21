@@ -18,9 +18,11 @@ import io.github.whoxamxl.aalyrics.ui.phone.settings.AppUpdateUiState
 import io.github.whoxamxl.aalyrics.ui.phone.settings.ChangelogDialog
 import io.github.whoxamxl.aalyrics.ui.phone.settings.ChangelogUiPhase
 import io.github.whoxamxl.aalyrics.ui.phone.settings.ChangelogUiState
+import io.github.whoxamxl.aalyrics.ui.phone.settings.SettingsScreen
 import io.github.whoxamxl.aalyrics.ui.phone.settings.SettingsScreenContent
 import io.github.whoxamxl.aalyrics.ui.phone.settings.SettingsScreenUiState
 import io.github.whoxamxl.aalyrics.ui.phone.settings.TranslationModelUiState
+import io.github.whoxamxl.aalyrics.ui.phone.settings.normalizedForSettingsEntry
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -30,10 +32,10 @@ private fun SettingsScreenTypicalPreview() {
     SettingsScreenPreview(PhonePreviewFixtures.settingsTypical)
 }
 
-@Preview(name = "Translation off", group = "SettingsScreen", widthDp = 412, heightDp = 760)
+@Preview(name = "Translation enabled", group = "SettingsScreen", widthDp = 412, heightDp = 760)
 @Composable
-private fun SettingsScreenTranslationOffPreview() {
-    SettingsScreenPreview(PhonePreviewFixtures.settingsTranslationOff)
+private fun SettingsScreenTranslationOnPreview() {
+    SettingsScreenPreview(PhonePreviewFixtures.settingsTranslationOn)
 }
 
 @Preview(name = "Android Auto · skipped", group = "SettingsScreen", widthDp = 412, heightDp = 760)
@@ -51,7 +53,7 @@ private fun SettingsScreenNotReviewedPreview() {
 @Preview(name = "Target language picker", group = "SettingsScreen", widthDp = 412, heightDp = 760)
 @Composable
 private fun SettingsTargetLanguagePickerPreview() {
-    SettingsScreenPreview(
+    SettingsScreenContentPreview(
         initialState = PhonePreviewFixtures.settingsTypical,
         initialPickerVisible = true,
     )
@@ -163,14 +165,10 @@ private fun SettingsScreenLargeFontPreview() {
 @Composable
 internal fun SettingsScreenPreview(
     initialState: SettingsScreenUiState,
-    initialPickerVisible: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
     AALyricsTheme {
         var state by remember(initialState) { mutableStateOf(initialState) }
-        var pickerVisible by remember(initialPickerVisible) {
-            mutableStateOf(initialPickerVisible)
-        }
         val scope = rememberCoroutineScope()
 
         Box(
@@ -178,12 +176,13 @@ internal fun SettingsScreenPreview(
                 .fillMaxSize()
                 .background(AALyricsColors.BackgroundBase),
         ) {
-            SettingsScreenContent(
+            SettingsScreen(
                 state = state,
-                targetLanguagePickerVisible = pickerVisible,
-                onTargetLanguagePickerVisibilityChanged = { pickerVisible = it },
                 onPlainLyricsAutoScrollChanged = {
                     state = state.copy(plainLyricsAutoScrollEnabled = it)
+                },
+                onVerboseDetailsChanged = {
+                    state = state.copy(verboseDetailsEnabled = it)
                 },
                 onTranslationEnabledChanged = {
                     state = state.copy(translationEnabled = it)
@@ -196,48 +195,12 @@ internal fun SettingsScreenPreview(
                         }
                 },
                 onTranslationModelDownloadRequested = { id ->
-                    val index = state.translationTargets.indexOfFirst { it.id == id }
-                    if (index >= 0) {
-                        val downloading = state.translationTargets.toMutableList().apply {
-                            this[index] = this[index].copy(
-                                modelState = TranslationModelUiState.DOWNLOADING,
-                            )
-                        }
-                        state = state.copy(
-                            translationTargets = downloading,
-                            translationTarget = if (state.translationTarget.id == id) {
-                                downloading[index]
-                            } else {
-                                state.translationTarget
-                            },
-                        )
-                        scope.launch {
-                            delay(1200)
-                            val ready = state.translationTargets.toMutableList().apply {
-                                val currentIndex = indexOfFirst { it.id == id }
-                                if (currentIndex >= 0) {
-                                    this[currentIndex] = this[currentIndex].copy(
-                                        modelState = TranslationModelUiState.READY,
-                                    )
-                                }
-                            }
-                            state = state.copy(
-                                translationTargets = ready,
-                                translationTarget = if (state.translationTarget.id == id) {
-                                    ready.first { it.id == id }
-                                } else {
-                                    state.translationTarget
-                                },
-                            )
-                        }
-                    }
+                    state = state.withPreviewModelDownload(id)
                 },
                 onAndroidAutoCompatibilitySetup = {},
                 onCheckForUpdates = {
                     state = state.copy(
-                        appUpdate = AppUpdateUiState(
-                            phase = AppUpdateUiPhase.CHECKING,
-                        ),
+                        appUpdate = AppUpdateUiState(phase = AppUpdateUiPhase.CHECKING),
                     )
                     scope.launch {
                         delay(1200)
@@ -269,9 +232,7 @@ internal fun SettingsScreenPreview(
                 },
                 onChangelogRequested = {
                     state = state.copy(
-                        changelog = ChangelogUiState(
-                            phase = ChangelogUiPhase.LOADING,
-                        ),
+                        changelog = ChangelogUiState(phase = ChangelogUiPhase.LOADING),
                     )
                     scope.launch {
                         delay(900)
@@ -280,6 +241,58 @@ internal fun SettingsScreenPreview(
                         )
                     }
                 },
+                onSettingsEntered = {
+                    state = state.copy(
+                        appUpdate = state.appUpdate.normalizedForSettingsEntry(),
+                    )
+                },
+                onOpenGitHub = {},
+                modifier = Modifier.fillMaxSize(),
+            )
+        }
+    }
+}
+
+@Composable
+private fun SettingsScreenContentPreview(
+    initialState: SettingsScreenUiState,
+    initialPickerVisible: Boolean,
+) {
+    AALyricsTheme {
+        var state by remember(initialState) { mutableStateOf(initialState) }
+        var pickerVisible by remember(initialPickerVisible) {
+            mutableStateOf(initialPickerVisible)
+        }
+
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(AALyricsColors.BackgroundBase),
+        ) {
+            SettingsScreenContent(
+                state = state,
+                targetLanguagePickerVisible = pickerVisible,
+                onTargetLanguagePickerVisibilityChanged = { pickerVisible = it },
+                onPlainLyricsAutoScrollChanged = {
+                    state = state.copy(plainLyricsAutoScrollEnabled = it)
+                },
+                onTranslationEnabledChanged = {
+                    state = state.copy(translationEnabled = it)
+                },
+                onTranslationTargetSelected = { id ->
+                    state.translationTargets
+                        .firstOrNull { it.id == id }
+                        ?.let { target ->
+                            state = state.copy(translationTarget = target)
+                        }
+                },
+                onTranslationModelDownloadRequested = { id ->
+                    state = state.withPreviewModelDownload(id)
+                },
+                onAndroidAutoCompatibilitySetup = {},
+                onCheckForUpdates = {},
+                onDownloadUpdate = {},
+                onChangelogRequested = {},
                 onLicenseRequested = {},
                 onAdvancedRequested = {},
                 onOpenGitHub = {},
@@ -287,4 +300,26 @@ internal fun SettingsScreenPreview(
             )
         }
     }
+}
+
+private fun SettingsScreenUiState.withPreviewModelDownload(
+    id: String,
+): SettingsScreenUiState {
+    val index = translationTargets.indexOfFirst { it.id == id }
+    if (index < 0) return this
+
+    val downloading = translationTargets.toMutableList().apply {
+        this[index] = this[index].copy(
+            modelState = TranslationModelUiState.DOWNLOADING,
+        )
+    }
+
+    return copy(
+        translationTargets = downloading,
+        translationTarget = if (translationTarget.id == id) {
+            downloading[index]
+        } else {
+            translationTarget
+        },
+    )
 }
