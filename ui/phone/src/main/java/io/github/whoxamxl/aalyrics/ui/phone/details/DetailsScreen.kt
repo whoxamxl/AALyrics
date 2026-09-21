@@ -78,11 +78,18 @@ fun DetailsScreen(
                         value = it,
                     )
                 }
-                track.durationLabel?.let {
+                track.durationLabel?.let { durationLabel ->
                     DetailsDivider()
+                    val verboseProgress = state.verboseProgress
                     DetailsValueRow(
-                        label = stringResource(R.string.details_track_duration),
-                        value = it,
+                        label = detailsVerboseLabel(
+                            baseLabel = stringResource(R.string.details_track_duration),
+                            verbose = verboseProgress != null,
+                        ),
+                        value = verboseProgress
+                            ?.playbackPositionLabel
+                            ?.let { position -> "$position / $durationLabel" }
+                            ?: durationLabel,
                     )
                 }
                 track.playbackSourceLabel?.let {
@@ -121,9 +128,20 @@ fun DetailsScreen(
                     )
                 }
                 DetailsDivider()
+                val verboseProgress = state.verboseProgress
                 DetailsValueRow(
-                    label = stringResource(R.string.details_lyrics_lines),
-                    value = lyrics.lineCount.toString(),
+                    label = detailsVerboseLabel(
+                        baseLabel = stringResource(R.string.details_lyrics_lines),
+                        verbose = verboseProgress != null,
+                    ),
+                    value = if (verboseProgress != null) {
+                        val currentLine = verboseProgress.currentLineNumber
+                            ?.toString()
+                            ?: stringResource(R.string.details_verbose_unknown)
+                        "$currentLine / ${lyrics.lineCount}"
+                    } else {
+                        lyrics.lineCount.toString()
+                    },
                 )
             }
         }
@@ -279,4 +297,15 @@ private fun syncTypeLabel(syncType: LyricsSyncType): String = when (syncType) {
     LyricsSyncType.PLAIN -> stringResource(R.string.details_sync_plain)
     LyricsSyncType.LINE -> stringResource(R.string.details_sync_line)
     LyricsSyncType.WORD -> stringResource(R.string.details_sync_word)
+}
+
+
+@Composable
+private fun detailsVerboseLabel(
+    baseLabel: String,
+    verbose: Boolean,
+): String = if (verbose) {
+    stringResource(R.string.details_verbose_label, baseLabel)
+} else {
+    baseLabel
 }
