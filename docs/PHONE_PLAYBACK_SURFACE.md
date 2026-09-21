@@ -87,11 +87,12 @@ Title and artist are each constrained to one visible line.
 Long identity text should reuse the established Track Card marquee behavior rather than increase the bar height:
 
 - remain still at the leading position first;
-- scroll only when the identity block overflows;
-- use a constant-speed horizontal marquee;
+- if only the title overflows, marquee only the title while the artist stays fixed;
+- if only the artist overflows, marquee only the artist while the title stays fixed;
+- if both lines overflow, marquee title and artist together as one synchronized identity block so their leading edges remain aligned;
+- use the same constant-speed motion for all marquee modes;
 - preserve a clear repeat gap;
-- return to the leading position and pause again;
-- keep title and artist synchronized as one identity block.
+- return to the leading position and pause again.
 
 The first implementation should reuse the same timing/velocity semantics as `TrackCard` unless Preview/device tuning shows that the smaller playback surface requires a dedicated token.
 
