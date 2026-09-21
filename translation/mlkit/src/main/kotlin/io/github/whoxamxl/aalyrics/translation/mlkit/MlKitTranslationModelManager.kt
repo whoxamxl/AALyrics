@@ -43,6 +43,8 @@ class MlKitTranslationModelManager(
         RemoteModelManager.getInstance()
     }
 
+    private val modelLifecycleLock = Any()
+    private var cleanupGeneration = 0L
     private val activeModelDownloads = ConcurrentHashMap<String, Task<Void>>()
     private val activeModelMonitors = ConcurrentHashMap<String, Deferred<Boolean>>()
     private val pendingModelDeletions = ConcurrentHashMap.newKeySet<String>()
@@ -120,14 +122,17 @@ class MlKitTranslationModelManager(
         val normalized = TranslationLanguages.normalizeLanguageTag(languageTag)
             ?: return false
 
-        if (normalized in pendingModelDeletions) {
-            Log.d(TAG, "model availability suppressed by cleanup: $normalized")
-            return false
-        }
-
         if (normalized == MlKitModelPlanner.BUILT_IN_LANGUAGE) {
             publish(normalized, TranslationModelPhase.READY)
             return true
+        }
+
+        val preparationGeneration = synchronized(modelLifecycleLock) {
+            if (normalized in pendingModelDeletions) {
+                Log.d(TAG, "model availability suppressed by cleanup: $normalized")
+                return false
+            }
+            cleanupGeneration
         }
 
         if (isRetryBlocked(normalized)) {
@@ -160,11 +165,32 @@ class MlKitTranslationModelManager(
         }
 
         if (downloaded) {
-            publish(normalized, TranslationModelPhase.READY)
+            synchronized(modelLifecycleLock) {
+                if (
+                    cleanupGeneration != preparationGeneration ||
+                    normalized in pendingModelDeletions
+                ) {
+                    Log.d(TAG, "model readiness superseded by cleanup: $normalized")
+                    return false
+                }
+                publish(normalized, TranslationModelPhase.READY)
+            }
             return true
         }
 
-        return getOrStartMonitor(normalized, model).await()
+        val monitor = synchronized(modelLifecycleLock) {
+            if (
+                cleanupGeneration != preparationGeneration ||
+                normalized in pendingModelDeletions
+            ) {
+                Log.d(TAG, "model preparation superseded by cleanup: $normalized")
+                null
+            } else {
+                getOrStartMonitor(normalized, model)
+            }
+        } ?: return false
+
+        return monitor.await()
     }
 
     override suspend fun retry(languageTag: String): Boolean {
@@ -175,11 +201,14 @@ class MlKitTranslationModelManager(
     }
 
     override suspend fun clearDownloadedModels(): Boolean {
-        val activeLanguages = (
-            activeModelDownloads.keys +
-                activeModelMonitors.keys
-            ).toSet()
-        pendingModelDeletions.addAll(activeLanguages)
+        val activeLanguages = synchronized(modelLifecycleLock) {
+            cleanupGeneration += 1
+            (
+                activeModelDownloads.keys +
+                    activeModelMonitors.keys
+                ).toSet()
+                .also(pendingModelDeletions::addAll)
+        }
 
         val downloadedModels = try {
             downloadedModels()
