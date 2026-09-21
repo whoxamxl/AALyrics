@@ -21,6 +21,7 @@ internal fun mapPhoneSettingsState(
     androidAutoStatus: AndroidAutoCompatibilityUiStatus,
     appVersionName: String,
     currentYear: Int,
+    noticeText: String,
     licenseText: String,
     changelogText: String,
     translationModelCleanupState: TranslationModelCleanupState =
@@ -63,6 +64,7 @@ internal fun mapPhoneSettingsState(
         androidAutoCompatibilityStatus = androidAutoStatus,
         appVersionName = appVersionName,
         currentYear = currentYear,
+        noticeText = noticeText,
         licenseText = licenseText,
         changelogText = changelogText,
         appUpdate = AppUpdateUiState(phase = AppUpdateUiPhase.UNAVAILABLE),
