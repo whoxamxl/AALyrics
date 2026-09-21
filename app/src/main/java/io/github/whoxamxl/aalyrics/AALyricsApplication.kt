@@ -123,7 +123,7 @@ class AALyricsApplication : Application() {
     val translationModelStates: StateFlow<Map<String, TranslationModelState>>
         get() = translationModelManager.states
 
-    val translationModelCleanupState: StateFlow<TranslationModelCleanupState> =
+    internal val translationModelCleanupState: StateFlow<TranslationModelCleanupState> =
         mutableTranslationModelCleanupState.asStateFlow()
 
     fun setTranslationEnabled(enabled: Boolean) {
