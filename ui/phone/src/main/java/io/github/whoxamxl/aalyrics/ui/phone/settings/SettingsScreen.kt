@@ -33,7 +33,7 @@ fun SettingsScreen(
     onTranslationEnabledChanged: (Boolean) -> Unit,
     onTranslationTargetSelected: (String) -> Unit,
     onTranslationModelDownloadRequested: (String) -> Unit,
-    onClearTranslationModels: () -> Unit,
+    onClearTranslationModels: suspend () -> Boolean,
     onResetAALyrics: () -> Unit,
     onAndroidAutoCompatibilitySetup: () -> Unit,
     onCheckForUpdates: () -> Unit,
