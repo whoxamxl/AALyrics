@@ -4,10 +4,13 @@ import android.os.SystemClock
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import io.github.whoxamxl.aalyrics.ui.designsystem.component.AlbumArtwork
 import io.github.whoxamxl.aalyrics.ui.phone.details.DetailsScreen
 import io.github.whoxamxl.aalyrics.ui.phone.lyrics.LyricsScreen
 import io.github.whoxamxl.aalyrics.ui.phone.lyrics.LyricsViewportInteractionMode
@@ -34,6 +37,7 @@ internal fun PhoneRuntimeHost(
     val playbackSurface by application.phonePlaybackSurfaceState.collectAsStateWithLifecycle()
     val mediaSourceLabel by application.phoneMediaSourceLabel.collectAsStateWithLifecycle()
     val detailsState by application.phoneDetailsState.collectAsStateWithLifecycle()
+    val playbackArtwork by application.playbackArtworkState.collectAsStateWithLifecycle()
     val translationSettings by application.translationSettings.collectAsStateWithLifecycle()
     val translationModelStates by application.translationModelStates.collectAsStateWithLifecycle()
     val verboseDetailsEnabled by application.verboseDetailsEnabled.collectAsStateWithLifecycle()
@@ -70,6 +74,10 @@ internal fun PhoneRuntimeHost(
         interactionMode = lyricsInteractionMode,
         currentMonotonicTimeMs = monotonicTimeMs,
     )
+    val playbackArtworkImage = remember(playbackArtwork) {
+        playbackArtwork?.asImageBitmap()
+    }
+
     val settingsState = mapPhoneSettingsState(
         translationSettings = translationSettings,
         translationModelStates = translationModelStates,
@@ -96,11 +104,17 @@ internal fun PhoneRuntimeHost(
         onQueueItemSelected = application::skipToQueueItem,
         onOpenPlaybackApp = { application.openSelectedPlaybackApp() },
         onTranslationEnabledChanged = application::setTranslationEnabled,
+        playbackArtwork = {
+            AlbumArtwork(image = playbackArtworkImage)
+        },
     ) { destination, bottomOverlayInset ->
         when (destination) {
             PhoneDestination.Lyrics -> LyricsScreen(
                 state = lyricsUiState,
                 bottomOverlayInset = bottomOverlayInset,
+                artwork = {
+                    AlbumArtwork(image = playbackArtworkImage)
+                },
                 onViewportInteractionModeChange = { lyricsInteractionMode = it },
             )
 

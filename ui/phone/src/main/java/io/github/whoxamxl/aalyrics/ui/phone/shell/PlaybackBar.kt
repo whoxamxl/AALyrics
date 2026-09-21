@@ -26,6 +26,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
+import io.github.whoxamxl.aalyrics.ui.designsystem.component.AALyricsArtworkFallback
 import io.github.whoxamxl.aalyrics.ui.designsystem.icon.AALyricsIcons
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsColors
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsRadius
@@ -141,7 +142,11 @@ internal fun PlaybackArtwork(
             .background(AALyricsColors.OverlaySoft),
         contentAlignment = Alignment.Center,
     ) {
-        artwork?.invoke(this)
+        if (artwork != null) {
+            artwork.invoke(this)
+        } else {
+            AALyricsArtworkFallback()
+        }
     }
 }
 
