@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
@@ -22,7 +21,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.github.whoxamxl.aalyrics.ui.designsystem.icon.AALyricsBrandMark
@@ -38,83 +36,65 @@ fun PhoneTopBar(
     mediaSourceLabel: String?,
     modifier: Modifier = Modifier,
 ) {
-    Box(modifier = modifier.fillMaxWidth()) {
-        Surface(
-            modifier = Modifier.fillMaxWidth(),
-            color = AALyricsColors.BackgroundChrome,
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        color = AALyricsColors.BackgroundChrome,
+    ) {
+        Row(
+            modifier = Modifier
+                .windowInsetsPadding(WindowInsets.statusBars)
+                .padding(
+                    horizontal = AALyricsSpacing.Space16,
+                    vertical = AALyricsSpacing.Space8,
+                ),
+            horizontalArrangement = Arrangement.Start,
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Row(
-                modifier = Modifier
-                    .windowInsetsPadding(WindowInsets.statusBars)
-                    .padding(
-                        horizontal = AALyricsSpacing.Space16,
-                        vertical = AALyricsSpacing.Space8,
+            AALyricsBrandMark(contentDescription = "AALyrics")
+            Spacer(Modifier.width(AALyricsSpacing.Space8))
+            Text(
+                text = "AALyrics",
+                style = AALyricsTypography.AppTitle,
+                color = AALyricsColors.TextPrimary,
+                maxLines = 1,
+            )
+            Spacer(Modifier.weight(1f))
+            if (!mediaSourceLabel.isNullOrBlank()) {
+                Surface(
+                    modifier = Modifier.widthIn(max = 168.dp),
+                    shape = RoundedCornerShape(AALyricsRadius.Full),
+                    color = AALyricsColors.OverlaySoft,
+                    border = BorderStroke(
+                        width = AALyricsStroke.Thin,
+                        color = AALyricsColors.BorderSoft,
                     ),
-                horizontalArrangement = Arrangement.Start,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                AALyricsBrandMark(contentDescription = "AALyrics")
-                Spacer(Modifier.width(AALyricsSpacing.Space8))
-                Text(
-                    text = "AALyrics",
-                    style = AALyricsTypography.AppTitle,
-                    color = AALyricsColors.TextPrimary,
-                    maxLines = 1,
-                )
-                Spacer(Modifier.weight(1f))
-                if (!mediaSourceLabel.isNullOrBlank()) {
-                    Surface(
-                        modifier = Modifier.widthIn(max = 168.dp),
-                        shape = RoundedCornerShape(AALyricsRadius.Full),
-                        color = AALyricsColors.OverlaySoft,
-                        border = BorderStroke(
-                            width = AALyricsStroke.Thin,
-                            color = AALyricsColors.BorderSoft,
+                ) {
+                    Row(
+                        modifier = Modifier.padding(
+                            horizontal = AALyricsSpacing.Space8,
+                            vertical = AALyricsSpacing.Space4,
                         ),
+                        horizontalArrangement = Arrangement.spacedBy(AALyricsSpacing.Space4),
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Row(
-                            modifier = Modifier.padding(
-                                horizontal = AALyricsSpacing.Space8,
-                                vertical = AALyricsSpacing.Space4,
-                            ),
-                            horizontalArrangement = Arrangement.spacedBy(AALyricsSpacing.Space4),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(AALyricsSpacing.Space4)
-                                    .background(
-                                        color = AALyricsColors.AccentCyan,
-                                        shape = CircleShape,
-                                    ),
-                            )
-                            Text(
-                                text = mediaSourceLabel,
-                                style = AALyricsTypography.Label,
-                                color = AALyricsColors.AccentCyan,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                            )
-                        }
+                        Box(
+                            modifier = Modifier
+                                .size(AALyricsSpacing.Space4)
+                                .background(
+                                    color = AALyricsColors.AccentCyan,
+                                    shape = CircleShape,
+                                ),
+                        )
+                        Text(
+                            text = mediaSourceLabel,
+                            style = AALyricsTypography.Label,
+                            color = AALyricsColors.AccentCyan,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
                     }
                 }
             }
         }
-
-        Box(
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .fillMaxWidth()
-                .height(12.dp)
-                .background(
-                    Brush.verticalGradient(
-                        colors = listOf(
-                            AALyricsColors.BackgroundChrome,
-                            AALyricsColors.BackgroundChromeTransition,
-                            AALyricsColors.BackgroundBase,
-                        ),
-                    ),
-                ),
-        )
     }
 }

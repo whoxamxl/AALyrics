@@ -19,11 +19,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.unit.dp
 import io.github.whoxamxl.aalyrics.ui.designsystem.icon.AALyricsIcons
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsColors
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsSpacing
@@ -38,86 +36,68 @@ fun PhoneNavigationBar(
     onDestinationSelected: (PhoneDestination) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Box(modifier = modifier.fillMaxWidth()) {
-        Surface(
-            modifier = Modifier.fillMaxWidth(),
-            color = AALyricsColors.BackgroundChrome,
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        color = AALyricsColors.BackgroundChrome,
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .navigationBarsPadding()
+                .height(AALyricsSpacing.Space64)
+                .selectableGroup(),
+            horizontalArrangement = Arrangement.SpaceEvenly,
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .navigationBarsPadding()
-                    .height(AALyricsSpacing.Space64)
-                    .selectableGroup(),
-                horizontalArrangement = Arrangement.SpaceEvenly,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                PhoneDestination.entries.forEach { destination ->
-                    val selected = destination == selectedDestination
-                    Column(
+            PhoneDestination.entries.forEach { destination ->
+                val selected = destination == selectedDestination
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight()
+                        .selectable(
+                            selected = selected,
+                            onClick = { onDestinationSelected(destination) },
+                            role = Role.Tab,
+                        )
+                        .padding(
+                            horizontal = AALyricsSpacing.Space4,
+                            vertical = AALyricsSpacing.Space4,
+                        ),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    Icon(
+                        imageVector = destination.icon,
+                        contentDescription = null,
+                        tint = if (selected) {
+                            AALyricsColors.AccentCyan
+                        } else {
+                            AALyricsColors.TextTertiary
+                        },
+                        modifier = Modifier.size(AALyricsSpacing.Space24),
+                    )
+                    Text(
+                        text = destination.label,
+                        style = AALyricsTypography.Label,
+                        color = if (selected) {
+                            AALyricsColors.TextPrimary
+                        } else {
+                            AALyricsColors.TextSecondary
+                        },
+                        maxLines = 1,
+                    )
+                    Box(
                         modifier = Modifier
-                            .weight(1f)
-                            .fillMaxHeight()
-                            .selectable(
-                                selected = selected,
-                                onClick = { onDestinationSelected(destination) },
-                                role = Role.Tab,
-                            )
-                            .padding(
-                                horizontal = AALyricsSpacing.Space4,
-                                vertical = AALyricsSpacing.Space4,
+                            .fillMaxWidth()
+                            .height(AALyricsStroke.Strong)
+                            .background(
+                                if (selected) AALyricsColors.AccentCyan else Color.Transparent,
                             ),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.SpaceBetween,
-                    ) {
-                        Icon(
-                            imageVector = destination.icon,
-                            contentDescription = null,
-                            tint = if (selected) {
-                                AALyricsColors.AccentCyan
-                            } else {
-                                AALyricsColors.TextTertiary
-                            },
-                            modifier = Modifier.size(AALyricsSpacing.Space24),
-                        )
-                        Text(
-                            text = destination.label,
-                            style = AALyricsTypography.Label,
-                            color = if (selected) {
-                                AALyricsColors.TextPrimary
-                            } else {
-                                AALyricsColors.TextSecondary
-                            },
-                            maxLines = 1,
-                        )
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(AALyricsStroke.Strong)
-                                .background(
-                                    if (selected) AALyricsColors.AccentCyan else Color.Transparent,
-                                ),
-                        )
-                    }
+                    )
                 }
             }
         }
-
-        Box(
-            modifier = Modifier
-                .align(Alignment.TopCenter)
-                .fillMaxWidth()
-                .height(12.dp)
-                .background(
-                    Brush.verticalGradient(
-                        colors = listOf(
-                            AALyricsColors.BackgroundBase,
-                            AALyricsColors.BackgroundChromeTransition,
-                            AALyricsColors.BackgroundChrome,
-                        ),
-                    ),
-                ),
-        )
     }
 }
 
