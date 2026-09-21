@@ -78,7 +78,7 @@ private fun ExpandedPlayerPausedPreview() {
 
 
 @Preview(
-    name = "Expanded · Long title marquee",
+    name = "Expanded · Long title marquee + drag",
     group = "PlaybackSurface",
     widthDp = 412,
     heightDp = 240,
@@ -90,7 +90,7 @@ private fun ExpandedPlayerLongTitlePreview() {
 }
 
 @Preview(
-    name = "Expanded · Long artist marquee",
+    name = "Expanded · Long artist marquee + drag",
     group = "PlaybackSurface",
     widthDp = 412,
     heightDp = 240,
@@ -102,7 +102,7 @@ private fun ExpandedPlayerLongArtistPreview() {
 }
 
 @Preview(
-    name = "Expanded · Long title + artist marquee",
+    name = "Expanded · Long title + artist marquee + drag",
     group = "PlaybackSurface",
     widthDp = 412,
     heightDp = 240,

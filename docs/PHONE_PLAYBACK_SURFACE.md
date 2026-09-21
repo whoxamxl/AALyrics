@@ -95,6 +95,26 @@ Collapsed overflow behavior:
 
 The Track Card and Expanded Player retain the row-aware marquee behavior so full metadata remains discoverable in the richer surfaces.
 
+## Interactive marquee in richer identity surfaces
+
+The Lyrics Track Card and Expanded Player support both automatic marquee motion and direct horizontal inspection for overflowing title/artist text.
+
+Interaction contract:
+
+- automatic marquee retains the 4-second leading/repeat pause, 30dp/s motion, and 32dp repeat gap;
+- only overflowing rows participate;
+- title-only overflow -> only title auto-scrolls and only title accepts horizontal drag;
+- artist-only overflow -> only artist auto-scrolls and only artist accepts horizontal drag;
+- both-overflow -> title and artist share one offset for both auto motion and manual drag;
+- manual drag is finger-following and bounded to one marquee cycle from the leading edge through `content width + repeat gap`;
+- dragging beyond either bound clamps at that bound rather than allowing free/infinite panning;
+- manual drag pauses automatic motion;
+- after release, hold the manual position for 1.5 seconds, then resume automatic motion from that exact position;
+- the repeated visual copy used for seamless cycling does not create duplicate accessibility semantics;
+- the Collapsed Playback Bar remains fixed ellipsis and does not expose this drag interaction.
+
+In the Expanded Player, horizontal marquee drag is intentionally local to the title/artist identity. The existing vertical header drag remains the collapse gesture. Gesture-direction arbitration must allow a primarily horizontal gesture to inspect marquee text and a primarily vertical gesture to transform/collapse the player without making seek/transport controls participants in either gesture.
+
 ## Expanding the player
 
 Tapping any non-Play/Pause portion of the collapsed Playback Bar expands the same shell-owned surface upward.
@@ -491,7 +511,7 @@ Animations should communicate state, not delay control.
 Required direction:
 
 - collapsed ↔ expanded transition is short and spatially continuous from the same bottom surface;
-- metadata marquee retains the established initial pause before motion;
+- metadata marquee retains the established initial pause before motion and resumes from a manually dragged position after the shorter manual-release pause;
 - normal playback progress advances smoothly while playing;
 - long-press/direct-drag seek preview moves smoothly without emitting intermediate remote commands;
 - release commits immediately and then reconciles with the next MediaSession position callback.
@@ -521,6 +541,7 @@ Deterministic Previews should cover at least:
 - expanded title-only overflow marquee;
 - expanded artist-only overflow marquee;
 - expanded both-overflow synchronized marquee;
+- manual horizontal marquee drag in title-only, artist-only, and synchronized overflow modes;
 - collapsed without artwork;
 - expanded playing;
 - expanded paused;
@@ -556,6 +577,8 @@ Implementation should add deterministic coverage for presentation/state logic th
 - destination switching does not implicitly collapse;
 - session loss clears expanded state;
 - row-aware marquee mode selects static, title-only, artist-only, or synchronized behavior from per-line overflow;
+- manual marquee offset clamps to one cycle in both drag directions;
+- auto marquee travel duration preserves the configured constant velocity;
 - transformation progress maps deterministically between Collapsed and Expanded anchors;
 - slow release settles to the nearest anchor;
 - sufficiently directional upward/downward fling selects the corresponding Expanded/Collapsed anchor.

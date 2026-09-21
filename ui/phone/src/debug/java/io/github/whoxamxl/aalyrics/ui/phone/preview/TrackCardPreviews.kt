@@ -27,7 +27,7 @@ private fun TrackCardArtworkPlaceholderPreview() {
     TrackCardPreview(state = PhonePreviewFixtures.trackCardReady)
 }
 
-@Preview(name = "Long title marquee", group = "TrackCard", widthDp = 412, showBackground = true)
+@Preview(name = "Long title marquee + drag", group = "TrackCard", widthDp = 412, showBackground = true)
 @Composable
 private fun TrackCardLongTitlePreview() {
     TrackCardPreview(
@@ -36,7 +36,7 @@ private fun TrackCardLongTitlePreview() {
     )
 }
 
-@Preview(name = "Long artist marquee", group = "TrackCard", widthDp = 412, showBackground = true)
+@Preview(name = "Long artist marquee + drag", group = "TrackCard", widthDp = 412, showBackground = true)
 @Composable
 private fun TrackCardLongArtistPreview() {
     TrackCardPreview(
@@ -45,7 +45,7 @@ private fun TrackCardLongArtistPreview() {
     )
 }
 
-@Preview(name = "Long title + artist marquee", group = "TrackCard", widthDp = 412, showBackground = true)
+@Preview(name = "Long title + artist marquee + drag", group = "TrackCard", widthDp = 412, showBackground = true)
 @Composable
 private fun TrackCardLongTitleAndArtistPreview() {
     TrackCardPreview(

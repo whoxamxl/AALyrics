@@ -254,3 +254,25 @@ Accepted refinement:
 - [x] align collapsed long-metadata Previews and playback/UI documentation with the ellipsis behavior.
 
 Repository validation is pending on the final implementation head.
+
+
+## Manual marquee interaction refinement
+
+Track Card and Expanded Player marquee text should remain automatically animated while also allowing direct horizontal inspection.
+
+Accepted refinement:
+
+- [x] replace the non-interactive marquee implementation for richer identity surfaces with a shared offset controller;
+- [x] preserve 4-second auto pause, 30dp/s speed, and 32dp repeat gap;
+- [x] allow finger-following horizontal drag only for overflowing marquee content;
+- [x] clamp manual movement to exactly one marquee cycle: leading edge through content width + repeat gap;
+- [x] pause auto motion while dragging;
+- [x] hold the released manual position for 1.5 seconds, then resume auto motion from that position;
+- [x] title-only / artist-only overflow keeps manual movement isolated to the overflowing row;
+- [x] both-overflow keeps title and artist on one synchronized offset for auto and manual motion;
+- [x] keep Collapsed Playback Bar fixed ellipsis with no marquee drag;
+- [x] preserve Expanded Player vertical collapse drag through horizontal/vertical gesture-direction separation;
+- [x] suppress duplicate semantics from the repeated marquee copy;
+- [x] add deterministic tests for marquee mode, manual cycle bounds, and constant-speed duration.
+
+Repository validation for this refinement is pending on the final implementation head; physical-device validation remains authoritative for horizontal-vs-vertical gesture feel.
