@@ -210,13 +210,13 @@ Physical-device validation confirmed that the Playback Surface should behave as 
 
 Accepted refinement:
 
-- [ ] remove press/ripple indication only from transformation affordances: collapsed-player body tap, expanded-player header tap, and backdrop tap;
-- [ ] keep normal control indication for Play/Pause, Previous, Next, Queue/Open app, Quick controls, Translation, and other ordinary controls;
-- [ ] add upward drag from the collapsed player to expand;
-- [ ] make both upward expand drag and downward collapse drag finger-following instead of threshold-only triggers;
-- [ ] settle to Expanded/Collapsed from the release position, with fling velocity allowed to choose the destination;
-- [ ] route tap expand, header/backdrop collapse, and Android Back through the same settle animation used after drag release;
-- [ ] preserve the existing playback/seek/queue behavior and MediaSession capability boundaries;
-- [ ] preserve the existing backdrop/surface colors and alpha values; do not add brightness/flash compensation or redesign the existing cross-fade merely to address the observed backdrop press indication.
+- [x] remove press/ripple indication only from transformation affordances: collapsed-player body tap, expanded-player header tap, and backdrop tap;
+- [x] keep normal control indication for Play/Pause, Previous, Next, Queue/Open app, Quick controls, Translation, and other ordinary controls;
+- [x] add upward drag from the collapsed player to expand;
+- [x] make both upward expand drag and downward collapse drag finger-following instead of threshold-only triggers;
+- [x] settle to Expanded/Collapsed from the release position, with fling velocity allowed to choose the destination;
+- [x] route tap expand, header/backdrop collapse, and Android Back through the same settle animation used after drag release;
+- [x] preserve the existing playback/seek/queue behavior and MediaSession capability boundaries;
+- [x] preserve the existing backdrop/surface colors and alpha values; do not add brightness/flash compensation or redesign the existing cross-fade merely to address the observed backdrop press indication.
 
-The physical device remains authoritative for motion tuning after CI passes.
+The physical device remains authoritative for motion tuning after CI passes. Repository validation for this follow-up is pending on the final branch head.
