@@ -79,6 +79,7 @@ WORD is a valid source sync type even while the Phone experience remains line-or
 ```text
 DEVELOPER / DIAGNOSTICS
 
+App package           com.spotify.music
 Provider ID           musixmatch
 Source ID             <provider source id>
 Track references      <namespace:value ...>
@@ -88,6 +89,7 @@ The initial diagnostic surface should prefer already-available framework-neutral
 
 Suitable first fields include:
 
+- playback application package / `PlaybackSource.id`, such as `com.spotify.music`;
 - provider key / `LyricsAttribution.providerId`;
 - provider source identifier / `LyricsAttribution.sourceId`, when available;
 - normalized track references such as `namespace:value`, when available.

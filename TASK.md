@@ -173,3 +173,8 @@ Validation after these fixes:
 - sideloadable debug APK artifact upload passes.
 
 The next manual device pass should specifically verify real album-art rendering, branded fallback rendering, and Translation OFF on a fresh/unconfigured preference state.
+
+
+## Verbose Details playback-source follow-up
+
+Physical-device validation confirmed that the normal playback-source label should remain human-readable (for example, `Spotify`). Verbose Details now additionally exposes the underlying playback application package from `PlaybackSource.id` (for example, `com.spotify.music`) as `App package`. This is presentation-only and does not change MediaSession selection or package-label resolution.

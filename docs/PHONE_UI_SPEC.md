@@ -70,7 +70,7 @@ The approved first Details contract is defined in `docs/PHONE_DETAILS.md`.
 
 Normal Details is read-only and user-facing, covering current track metadata plus resolved lyrics metadata such as provider display name, sync type, language, and line count.
 
-When `Settings > Advanced > Verbose details` is enabled, Details additionally exposes a `Developer / Diagnostics` section for machine-facing framework-neutral facts such as provider ID, provider source ID, and normalized track references. Verbose Details changes presentation only; it must not trigger new lookups or alter provider selection, timing, Translation, playback, or rendering behavior.
+When `Settings > Advanced > Verbose details` is enabled, Details additionally exposes a `Developer / Diagnostics` section for machine-facing framework-neutral facts such as the playback app package name, provider ID, provider source ID, and normalized track references. Verbose Details changes presentation only; it must not trigger new lookups or alter provider selection, timing, Translation, playback, or rendering behavior.
 
 Candidate scores, raw provider payloads, log export, and deeper resolver diagnostics remain deferred until separately justified.
 
