@@ -146,6 +146,50 @@ The Release workflow then:
 
 A stable tag follows the same process but is published without the Pre-release flag.
 
+## Release notes structure
+
+GitHub's automatically generated release notes are useful as the durable change ledger, but they are not the primary product-facing summary for milestone releases.
+
+The standard AALyrics Release body should therefore use this order:
+
+1. **Curated milestone summary first** — explain what materially changed for users and testers, using product-level language rather than a commit-by-commit implementation log.
+2. **Highlights / major areas** — group the important behavior into a small number of readable sections such as Phone UI, Lyrics, Playback, Android Auto, Translation, or other release-specific areas.
+3. **Known limitations / still in development** — for alpha, beta, and RC releases, state intentionally incomplete or unavailable functionality clearly.
+4. **Auto-generated GitHub notes last** — preserve the generated `## What's Changed` section and `Full Changelog` link at the bottom of the Release body.
+
+The generated section should **not be deleted or replaced** when curating a Release. It remains the traceable PR-level record of what entered the version. Curated notes are added above it.
+
+Recommended shape:
+
+```md
+## <Milestone summary>
+
+<Short product-facing explanation of this release.>
+
+### Highlights
+
+- ...
+- ...
+
+### Still in development
+
+- ...
+- ...
+
+---
+
+## What's Changed
+<GitHub auto-generated entries remain here>
+
+**Full Changelog**: <GitHub-generated comparison link>
+```
+
+For milestone releases, the curated section should emphasize externally meaningful behavior and validation state. Avoid copying internal implementation details, temporary fix commits, or exhaustive PR history into the curated portion when the generated section already records them.
+
+Pre-releases should identify themselves clearly as alpha/beta/RC and should not imply feature completeness. Stable releases may omit a limitations section when there are no material caveats, but the curated-summary-first / generated-notes-last structure still applies.
+
+The current Release workflow intentionally continues to publish with `--generate-notes`. After the workflow has successfully created the signed GitHub Release, its body should be edited to add the curated summary **above** the generated notes while leaving the generated section at the bottom.
+
 ## Verifying a downloaded APK
 
 Download both the APK and its `.sha256` file from the same GitHub Release. On a system with `sha256sum`:
