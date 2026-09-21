@@ -39,14 +39,12 @@ fun SettingsScreen(
     onAndroidAutoCompatibilitySetup: () -> Unit,
     onCheckForUpdates: () -> Unit,
     onDownloadUpdate: () -> Unit,
-    onChangelogRequested: () -> Unit,
     onSettingsEntered: () -> Unit,
     onOpenGitHub: () -> Unit,
     modifier: Modifier = Modifier,
     bottomOverlayInset: Dp = 0.dp,
 ) {
     var targetLanguagePickerVisible by rememberSaveable { mutableStateOf(false) }
-    var changelogVisible by rememberSaveable { mutableStateOf(false) }
     var activeSubscreen by rememberSaveable {
         mutableStateOf(SettingsSubscreen.MAIN)
     }
@@ -57,7 +55,6 @@ fun SettingsScreen(
 
     LaunchedEffect(rootResetKey) {
         targetLanguagePickerVisible = false
-        changelogVisible = false
         activeSubscreen = SettingsSubscreen.MAIN
     }
 
@@ -74,6 +71,13 @@ fun SettingsScreen(
             onDismissTranslationModelCleanupFailure =
                 onDismissTranslationModelCleanupFailure,
             onResetAALyrics = onResetAALyrics,
+            onBack = { activeSubscreen = SettingsSubscreen.MAIN },
+            modifier = modifier,
+            bottomOverlayInset = bottomOverlayInset,
+        )
+
+        SettingsSubscreen.CHANGELOG -> ChangelogSettingsScreen(
+            changelogText = state.changelogText,
             onBack = { activeSubscreen = SettingsSubscreen.MAIN },
             modifier = modifier,
             bottomOverlayInset = bottomOverlayInset,
@@ -100,29 +104,12 @@ fun SettingsScreen(
             onAndroidAutoCompatibilitySetup = onAndroidAutoCompatibilitySetup,
             onCheckForUpdates = onCheckForUpdates,
             onDownloadUpdate = onDownloadUpdate,
-            onChangelogRequested = {
-                changelogVisible = true
-                onChangelogRequested()
-            },
+            onChangelogRequested = { activeSubscreen = SettingsSubscreen.CHANGELOG },
             onLicenseRequested = { activeSubscreen = SettingsSubscreen.LICENSE },
             onAdvancedRequested = { activeSubscreen = SettingsSubscreen.ADVANCED },
             onOpenGitHub = onOpenGitHub,
             modifier = modifier,
             bottomOverlayInset = bottomOverlayInset,
-        )
-    }
-
-    if (changelogVisible) {
-        ChangelogDialog(
-            state = state.changelog,
-            title = stringResource(R.string.settings_changelog),
-            loadingLabel = stringResource(R.string.settings_changelog_loading),
-            failureLabel = stringResource(R.string.settings_changelog_failed),
-            retryLabel = stringResource(R.string.settings_retry),
-            closeLabel = stringResource(R.string.settings_close),
-            genericFailureReason = stringResource(R.string.settings_changelog_failure_generic),
-            onRetry = onChangelogRequested,
-            onDismissRequest = { changelogVisible = false },
         )
     }
 }
@@ -255,12 +242,7 @@ internal fun SettingsScreenContent(
 
             SettingsNavigationRow(
                 title = stringResource(R.string.settings_changelog),
-                value = if (state.changelog.phase == ChangelogUiPhase.UNAVAILABLE) {
-                    stringResource(R.string.settings_not_available_yet)
-                } else {
-                    null
-                },
-                enabled = state.changelog.phase != ChangelogUiPhase.UNAVAILABLE,
+                value = null,
                 onClick = onChangelogRequested,
             )
 
@@ -358,5 +340,6 @@ private fun androidAutoStatusColor(
 private enum class SettingsSubscreen {
     MAIN,
     ADVANCED,
+    CHANGELOG,
     LICENSE,
 }
