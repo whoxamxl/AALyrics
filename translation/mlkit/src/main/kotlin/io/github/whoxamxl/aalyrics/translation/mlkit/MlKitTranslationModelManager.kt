@@ -206,11 +206,12 @@ class MlKitTranslationModelManager(
     }
 
     override suspend fun clearDownloadedModels(): Boolean {
-        val activeLanguages = (
-            activeModelDownloads.keys +
-                activeModelMonitors.keys
-            ).toSet()
-        cleanupBarrier.beginCleanup(activeLanguages)
+        val activeLanguages = cleanupBarrier.beginCleanup {
+            (
+                activeModelDownloads.keys +
+                    activeModelMonitors.keys
+                ).toSet()
+        }
 
         val downloadedModels = try {
             downloadedModels()
