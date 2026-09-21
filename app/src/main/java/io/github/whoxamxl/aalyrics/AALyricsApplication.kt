@@ -111,20 +111,16 @@ class AALyricsApplication : Application() {
 
     val playbackArtworkState: StateFlow<Bitmap?> = mutablePlaybackArtworkState.asStateFlow()
 
-    val licenseText: String by lazy(LazyThreadSafetyMode.NONE) {
-        val notice = assets.open(NOTICE_ASSET_NAME)
+    val noticeText: String by lazy(LazyThreadSafetyMode.NONE) {
+        assets.open(NOTICE_ASSET_NAME)
             .bufferedReader()
             .use { it.readText() }
-        val license = assets.open(LICENSE_ASSET_NAME)
-            .bufferedReader()
-            .use { it.readText() }
+    }
 
-        buildString {
-            append("# AALyrics\n\n")
-            append(notice.trimEnd())
-            append("\n\n")
-            append(license)
-        }
+    val licenseText: String by lazy(LazyThreadSafetyMode.NONE) {
+        assets.open(LICENSE_ASSET_NAME)
+            .bufferedReader()
+            .use { it.readText() }
     }
 
     val changelogText: String by lazy(LazyThreadSafetyMode.NONE) {
