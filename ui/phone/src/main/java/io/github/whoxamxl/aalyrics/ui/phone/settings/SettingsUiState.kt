@@ -12,6 +12,12 @@ enum class TranslationModelUiState {
     FAILED,
 }
 
+enum class TranslationModelCleanupUiState {
+    IDLE,
+    RUNNING,
+    FAILED,
+}
+
 /** One presentation-ready Translation target shown by the Phone Settings surface. */
 @Immutable
 data class SettingsLanguageOptionUiState(
@@ -85,6 +91,8 @@ data class SettingsScreenUiState(
     val translationEnabled: Boolean = false,
     val translationTarget: SettingsLanguageOptionUiState,
     val translationTargets: List<SettingsLanguageOptionUiState>,
+    val translationModelCleanup: TranslationModelCleanupUiState =
+        TranslationModelCleanupUiState.IDLE,
     val androidAutoCompatibilityStatus: AndroidAutoCompatibilityUiStatus =
         AndroidAutoCompatibilityUiStatus.NOT_REVIEWED,
     val appVersionName: String,
