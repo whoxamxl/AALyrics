@@ -33,7 +33,8 @@ fun SettingsScreen(
     onTranslationEnabledChanged: (Boolean) -> Unit,
     onTranslationTargetSelected: (String) -> Unit,
     onTranslationModelDownloadRequested: (String) -> Unit,
-    onClearTranslationModels: suspend () -> Boolean,
+    onClearTranslationModels: () -> Unit,
+    onDismissTranslationModelCleanupFailure: () -> Unit,
     onResetAALyrics: () -> Unit,
     onAndroidAutoCompatibilitySetup: () -> Unit,
     onCheckForUpdates: () -> Unit,
@@ -68,7 +69,10 @@ fun SettingsScreen(
         SettingsSubscreen.ADVANCED -> AdvancedSettingsScreen(
             verboseDetailsEnabled = state.verboseDetailsEnabled,
             onVerboseDetailsChanged = onVerboseDetailsChanged,
+            cleanupState = state.translationModelCleanup,
             onClearTranslationModels = onClearTranslationModels,
+            onDismissTranslationModelCleanupFailure =
+                onDismissTranslationModelCleanupFailure,
             onResetAALyrics = onResetAALyrics,
             onBack = { activeSubscreen = SettingsSubscreen.MAIN },
             modifier = modifier,
