@@ -19,20 +19,32 @@ import androidx.compose.ui.unit.dp
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsColors
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsSpacing
 import io.github.whoxamxl.aalyrics.ui.phone.R
+import kotlinx.coroutines.launch
 
 /** Second-level Settings surface for narrowly scoped debug, storage, and reset actions. */
 @Composable
 fun AdvancedSettingsScreen(
     verboseDetailsEnabled: Boolean,
     onVerboseDetailsChanged: (Boolean) -> Unit,
-    onClearTranslationModels: () -> Unit,
+    onClearTranslationModels: suspend () -> Boolean,
     onResetAALyrics: () -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
     bottomOverlayInset: Dp = 0.dp,
 ) {
+    val coroutineScope = rememberCoroutineScope()
     var clearModelsDialogVisible by rememberSaveable { mutableStateOf(false) }
+    var clearModelsFailureVisible by rememberSaveable { mutableStateOf(false) }
     var resetDialogVisible by rememberSaveable { mutableStateOf(false) }
+
+    fun clearTranslationModels() {
+        clearModelsFailureVisible = false
+        coroutineScope.launch {
+            if (!onClearTranslationModels()) {
+                clearModelsFailureVisible = true
+            }
+        }
+    }
 
     Column(
         modifier = modifier
@@ -120,9 +132,21 @@ fun AdvancedSettingsScreen(
             confirmColor = AALyricsColors.Error,
             onConfirm = {
                 clearModelsDialogVisible = false
-                onClearTranslationModels()
+                clearTranslationModels()
             },
             onDismissRequest = { clearModelsDialogVisible = false },
+        )
+    }
+
+    if (clearModelsFailureVisible) {
+        SettingsConfirmationDialog(
+            title = stringResource(R.string.settings_clear_translation_models_failed_title),
+            text = stringResource(R.string.settings_clear_translation_models_failed_body),
+            confirmLabel = stringResource(R.string.settings_retry),
+            dismissLabel = stringResource(R.string.settings_close),
+            confirmColor = AALyricsColors.Error,
+            onConfirm = { clearTranslationModels() },
+            onDismissRequest = { clearModelsFailureVisible = false },
         )
     }
 
