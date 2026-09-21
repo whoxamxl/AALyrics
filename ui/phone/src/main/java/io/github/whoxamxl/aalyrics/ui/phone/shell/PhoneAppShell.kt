@@ -56,14 +56,12 @@ fun PhoneAppShell(
                     modifier = Modifier
                         .align(Alignment.TopCenter)
                         .fillMaxWidth()
-                        .height(12.dp)
+                        .height(24.dp)
                         .background(
                             Brush.verticalGradient(
-                                colors = listOf(
-                                    AALyricsColors.BackgroundChrome,
-                                    AALyricsColors.BackgroundChromeTransition,
-                                    AALyricsColors.BackgroundBase,
-                                ),
+                                0.00f to AALyricsColors.BackgroundChrome,
+                                0.38f to AALyricsColors.BackgroundChromeTransition,
+                                1.00f to AALyricsColors.BackgroundBase,
                             ),
                         ),
                 )
