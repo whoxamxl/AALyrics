@@ -28,7 +28,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
@@ -213,11 +212,7 @@ fun PlaybackSurface(
         pendingCommittedPositionMs = null
     }
 
-    Box(
-        modifier = modifier
-            .fillMaxSize()
-            .clipToBounds(),
-    ) {
+    Box(modifier = modifier.fillMaxSize()) {
         if (expansionProgress > 0f || expanded) {
             Box(
                 modifier = Modifier
