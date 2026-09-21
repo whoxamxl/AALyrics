@@ -135,10 +135,10 @@ Translation configuration already belongs to the Translation capability/applicat
 Presentation:
 
 ```text
-Translation                         [ON]
+Translation                        [OFF]
 ```
 
-The row emits the requested enabled state. It does not start translation engines directly.
+Translation is opt-in. When no persisted user choice exists, the application-owned setting defaults to disabled. The row emits the requested enabled state; only an explicit user enable starts Translation work. The UI does not start translation engines directly.
 
 ### Target language
 
@@ -164,7 +164,7 @@ The current product target set is:
 - Italian;
 - Portuguese.
 
-The persisted default target is English.
+The persisted default target is English. English remains immediately selectable because ML Kit English support is treated as built in; keeping that model/capability ready does not imply that Translation itself is enabled.
 
 The target-language row remains available while Translation is disabled. Changing the target while disabled is valid configuration and can be applied when Translation is later enabled.
 

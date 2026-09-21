@@ -120,7 +120,9 @@ Implemented runtime behavior:
 - live Lyrics mapping with monotonic playback projection;
 - WORD-capable source lyrics remain line-oriented while Karaoke is unavailable;
 - Playback Surface commands route through the existing application/platform media boundary;
+- selected MediaSession artwork is forwarded to the Track Card and Playback Surface with an AALyrics branded fallback when unavailable;
 - Translation target/model actions use the existing Translation runtime;
+- Translation remains opt-in by default while English stays the built-in default target;
 - Update/Changelog remain explicitly unavailable rather than active no-ops;
 - Settings can re-enter the existing Android Auto compatibility setup;
 - Sync is an explicit non-functional placeholder.
@@ -154,3 +156,20 @@ Repository-side work is complete:
 - no unresolved review threads remain.
 
 The six Device-test readiness items intentionally remain unchecked because they require an actual physical Android device and live MediaSession. They must not be inferred from CI.
+
+
+## Physical-device feedback follow-up
+
+Initial device use exposed two presentation/runtime gaps, now addressed on this branch:
+
+- album artwork was not connected to the production Phone host; selected-session artwork now follows `METADATA_KEY_ALBUM_ART` -> `METADATA_KEY_ART` -> `MediaDescription.iconBitmap`, while missing artwork uses the AALyrics foreground mark derived from `branding/android/AALyrics_foreground_android.svg`;
+- Translation appeared enabled on an unconfigured install; the application persistence default is now OFF while English remains the built-in/default target and becomes active only after explicit user enablement.
+
+Validation after these fixes:
+
+- architecture boundary check passes;
+- debug APK build passes;
+- unit tests pass;
+- sideloadable debug APK artifact upload passes.
+
+The next manual device pass should specifically verify real album-art rendering, branded fallback rendering, and Translation OFF on a fresh/unconfigured preference state.

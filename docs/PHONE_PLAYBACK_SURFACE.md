@@ -442,9 +442,9 @@ The collapsed bottom progress indicator and expanded seek control should derive 
 
 Playback-surface artwork is current-track presentation data.
 
-Artwork loading/decoding remains outside the pure playback-surface composable. The UI accepts caller-provided/renderable artwork or a presentation-safe artwork handle and uses a neutral placeholder when unavailable.
+Artwork extraction remains outside the pure playback-surface composable. The selected-session Android boundary forwards `METADATA_KEY_ALBUM_ART`, then `METADATA_KEY_ART`, then `MediaDescription.iconBitmap` when available. The Phone UI still accepts caller-provided/renderable artwork rather than Android MediaSession objects.
 
-The AALyrics brand mark must not be substituted for missing track artwork.
+When no track artwork is available, the artwork slot uses the shared AALyrics foreground mark derived from `branding/android/AALyrics_foreground_android.svg` as the branded fallback.
 
 ## Accessibility and gesture safety
 

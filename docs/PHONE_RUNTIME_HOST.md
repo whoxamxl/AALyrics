@@ -15,6 +15,7 @@ The current production branch state now has:
 - `AppEntryState.READY` hosting `AALyricsTheme -> PhoneAppShell`;
 - live app-owned playback, lyrics, Details, Translation, model, and Verbose Details state collected lifecycle-aware;
 - Playback Surface commands routed through the existing application/platform media boundary;
+- selected MediaSession album artwork forwarded through an app-owned Android boundary and rendered in both Track Card and Playback Surface;
 - production Lyrics and Settings presentation mapping;
 - an explicit non-functional Sync placeholder;
 - unsupported Update/Changelog controls presented unavailable rather than wired to no-ops.
@@ -174,7 +175,7 @@ The mapper must preserve existing approved semantics:
 - Translation remains an additive derived capability;
 - provider DTOs and provider-specific logic do not enter `:ui:phone`.
 
-Artwork loading is not required for device-test enablement; the existing neutral artwork fallback is acceptable unless a separately approved runtime seam already exists.
+The runtime now forwards selected-session artwork from `METADATA_KEY_ALBUM_ART`, `METADATA_KEY_ART`, or `MediaDescription.iconBitmap` through `:app` into the existing renderable artwork slots. Android Bitmap/MediaSession ownership does not enter `:ui:phone`. Missing artwork uses the shared AALyrics foreground mark derived from `branding/android/AALyrics_foreground_android.svg`.
 
 ## Sync destination
 
