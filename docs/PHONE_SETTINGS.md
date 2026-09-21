@@ -6,13 +6,13 @@ This document defines the production presentation contract for the Phone `Settin
 
 The production `SettingsScreen` and its Phone-local row components are implemented as a presentation-only destination: `:ui:phone` receives immutable state and emits callbacks. Application/capability layers continue to own persistence and runtime policy.
 
-The first Settings surface was integrated into `main` via PR #44 and polished in PR #45. PR #49 established the second-level `Advanced` surface with the functional `Verbose details` preference and disabled future `Karaoke mode` affordance. The current Advanced contract also includes explicit Translation model storage cleanup and AALyrics-owned reset actions. PR #50 hosts Settings in the production READY runtime and adds the in-app `License` second-level surface, build-synchronized repository license content, the shared Phone Markdown renderer, and the adopted Phone popup/subscreen-header standards.
+The first Settings surface was integrated into `main` via PR #44 and polished in PR #45. PR #49 established the second-level `Advanced` surface with the functional `Verbose details` preference and disabled future `Karaoke mode` affordance. The current Advanced contract also includes explicit Translation model storage cleanup and AALyrics-owned reset actions. PR #50 hosts Settings in the production READY runtime and adds the in-app `License` second-level surface, the shared Phone Markdown renderer, and the adopted Phone popup/subscreen-header standards. PR #58 extends the bundled legal-document path so Settings > License presents the repository `NOTICE` together with the unchanged `LICENSE`. Changelog now follows the same application-owned bundled-document model.
 
 ## Product intent
 
 Settings should expose stable user configuration without turning the Phone UI into an owner of application state.
 
-The production Settings surface remains intentionally focused. Advanced contains one debug presentation preference, one explicitly unavailable experimental affordance, one Translation storage-management action, and one app-owned reset action. It does not become a general developer-settings surface. License is a read-only second-level document surface and does not create new runtime policy or networking ownership.
+The production Settings surface remains intentionally focused. Advanced contains one debug presentation preference, one explicitly unavailable experimental affordance, one Translation storage-management action, and one app-owned reset action. It does not become a general developer-settings surface. Changelog and License are read-only second-level document surfaces and do not create new runtime policy or networking ownership.
 
 Second-level Settings surfaces use the shared `SettingsSubscreenHeader` rather than implementing their own header. The standard back affordance is the Material rounded chevron-left used by the current Advanced screen: 32dp icon inside a 48dp touch target, followed by the screen title. This intentionally mirrors the chevron-right affordance used to enter `Advanced`. Text-only `Back` actions and alternate arrow shapes are not used for normal second-level Settings navigation. System Back remains behaviorally equivalent.
 
@@ -36,8 +36,11 @@ Settings
 │  └─ License                                 >
 └─ Advanced                                  >
 
+Changelog
+└─ repository CHANGELOG.md rendered as compact Markdown
+
 License
-└─ repository LICENSE rendered as compact Markdown
+└─ repository NOTICE + LICENSE rendered as compact Markdown
 
 Advanced
 ├─ Debug
@@ -397,24 +400,22 @@ The installed version shown in Settings should come from `BuildConfig.VERSION_NA
 
 ### Changelog
 
-A `Changelog >` navigation row sits directly below the Version/update block.
+A `Changelog >` internal navigation row sits directly below the Version/update block.
 
-Pressing it opens an on-demand changelog dialog. The Phone UI renders presentation state only:
+Opening it presents an in-app second-level Settings surface using the standard `SettingsSubscreenHeader`. The changelog is vertically scrollable and selectable and is rendered through the shared `PhoneMarkdownText` wrapper.
 
-```text
-IDLE
-LOADING
-READY
-FAILED
-```
+The repository-root `CHANGELOG.md` file is the single source of truth for the user-facing release history. The app build automatically copies that file into generated app assets as `aalyrics_changelog.md`; `:app` reads the bundled asset and supplies its exact Markdown text as `SettingsScreenUiState.changelogText`.
 
-Application/runtime wiring fetches release notes from the canonical GitHub Releases source and maps the result into:
+Therefore:
 
-- release version;
-- presentation-ready release-note body;
-- optional failure reason.
+- debug and release builds display the changelog checked into the exact source revision they were built from;
+- Changelog works offline and does not fetch GitHub Releases at runtime;
+- `:ui:phone` does not read Android assets directly;
+- there is no Changelog loading/failure/retry lifecycle or network callback;
+- changing `CHANGELOG.md` requires no Phone UI code update;
+- the Settings Changelog row is normal internal navigation, matching License and Advanced.
 
-The UI does not call GitHub directly. Retry emits the same changelog-load callback again.
+Release entries are maintained newest-first. Before a release tag is created, the tagged version must be added as the newest version heading in `CHANGELOG.md`. The release workflow verifies that relationship before building/publishing the signed APK. See `docs/RELEASES.md`.
 
 ### Source code
 
@@ -438,25 +439,25 @@ https://github.com/whoxamxl/AALyrics
 
 A `License >` internal navigation row sits directly below Source code.
 
-Opening it presents an in-app second-level Settings surface using the standard `SettingsSubscreenHeader`, matching the navigation model used by `Advanced`. The license text is vertically scrollable and selectable.
+Opening it presents an in-app second-level Settings surface using the standard `SettingsSubscreenHeader`, matching the navigation model used by `Advanced` and Changelog. The legal text is vertically scrollable and selectable.
 
-The bundled `LICENSE` remains Markdown source. `LicenseSettingsScreen` renders it through the shared Phone-local `PhoneMarkdownText` wrapper rather than showing raw Markdown punctuation. Markdown parsing/rendering is delegated to `mikepenz/multiplatform-markdown-renderer` (Material 3 integration), currently pinned to `0.38.1` for compatibility with the app's Java 17 / compileSdk 36 baseline. AALyrics does not maintain its own Markdown grammar. The source file itself is not rewritten or pre-rendered at build time.
+The repository-root `NOTICE` and `LICENSE` files remain the legal-content sources of truth. The app build copies them separately into generated assets as `aalyrics_notice.txt` and `aalyrics_license.txt`. `:app` reads both files and composes the presentation text as an AALyrics heading followed by the required notice and the unchanged license body. Neither source file is rewritten or duplicated into Kotlin/string-resource literals.
 
-`PhoneMarkdownText` is also the preferred renderer for future presentation-provided Markdown such as GitHub Release changelogs, so License and Changelog do not evolve separate Markdown implementations.
+`LicenseSettingsScreen` renders that presentation text through the shared Phone-local `PhoneMarkdownText` wrapper. Markdown parsing/rendering is delegated to `mikepenz/multiplatform-markdown-renderer` (Material 3 integration), currently pinned to `0.38.1` for compatibility with the app's Java 17 / compileSdk 36 baseline. AALyrics does not maintain its own Markdown grammar.
 
-The wrapper applies a compact AALyrics Phone Markdown theme instead of the renderer's default Material display typography. Current baseline: H1 24sp/30sp, H2 20sp/26sp, body 14sp/20sp, inline/code text 13sp/18sp, compact block spacing, and AALyrics cyan underlined links. This keeps long technical documents readable on narrow phones without changing their Markdown source.
+`PhoneMarkdownText` is shared by License and Changelog so bundled documents do not evolve separate Markdown implementations.
 
-The repository-root `LICENSE` file is the single source of truth. Its full contents must **not** be duplicated as Kotlin/string-resource literals. The app build automatically copies the current repository `LICENSE` into generated app assets as `aalyrics_license.txt`; the application reads that bundled asset and supplies the text as presentation state.
+The wrapper applies a compact AALyrics Phone Markdown theme instead of the renderer's default Material display typography. Current baseline: H1 24sp/30sp, H2 20sp/26sp, body 14sp/20sp, inline/code text 13sp/18sp, compact block spacing, and AALyrics cyan underlined links. This keeps long technical documents readable on narrow phones without changing their Markdown sources.
 
 Therefore:
 
-- debug and release builds display the exact license checked into the source revision they were built from;
-- changing `LICENSE` requires no Phone UI code update;
-- no network connection or GitHub fetch is required to read the license;
+- debug and release builds display the legal sources checked into the source revision they were built from;
+- changing `NOTICE` or `LICENSE` requires no Phone UI code update;
+- no network connection or GitHub fetch is required to read the legal text;
 - the Settings License row is internal navigation, not an external browser link;
 - `:ui:phone` does not read Android assets directly; asset ownership remains in `:app`.
 
-The current repository license is **PolyForm Noncommercial License 1.0.0**, but the UI must derive its displayed body from the bundled file rather than assuming that text remains unchanged.
+The current repository license is **PolyForm Noncommercial License 1.0.0**, but the UI derives its displayed body from the bundled source files rather than assuming that text remains unchanged.
 
 ### Branding footer
 
@@ -617,7 +618,7 @@ Both Storage and Reset explanations use the shared `SettingInfoTooltip`; explana
 
 The Advanced surface remains Settings-owned UI. It does not become a fifth primary destination.
 
-Reselecting the already-selected Settings bottom-navigation tab is a Settings-root reset. It dismisses any active Settings modal, discards uncommitted dialog-local draft state such as a Target-language selection, leaves Advanced or License, returns to the main Settings surface, and scrolls the Settings home content back to the top. This is the Settings implementation of the shared Phone primary-tab reselection contract; it is not a Settings-specific navigation exception.
+Reselecting the already-selected Settings bottom-navigation tab is a Settings-root reset. It dismisses any active Settings modal, discards uncommitted dialog-local draft state such as a Target-language selection, leaves Advanced, Changelog, or License, returns to the main Settings surface, and scrolls the Settings home content back to the top. This is the Settings implementation of the shared Phone primary-tab reselection contract; it is not a Settings-specific navigation exception.
 
 A suitable presentation interaction is conceptually:
 
@@ -661,7 +662,7 @@ Deterministic debug Previews should cover at least:
 - app up-to-date state;
 - app update available state;
 - app update failure/retry state;
-- changelog ready/failure states;
+- Changelog screen at typical, narrow, and enlarged-font configurations;
 - branding footer;
 - Advanced navigation row;
 - Advanced screen with Verbose details OFF and ON;
@@ -687,7 +688,7 @@ PR #50 implements the Phone runtime-host application-composition boundary from `
 
 A durable Plain auto-scroll preference remains a separate ownership decision unless the runtime-host implementation has an already-approved backing seam.
 
-The host does not wire active no-op callbacks for unfinished Settings capabilities. Update and Changelog currently map to explicit `UNAVAILABLE` presentation states; their controls remain visibly unavailable rather than expanding PR #50 into release-network implementation.
+The host does not wire active no-op callbacks for unfinished Settings capabilities. Update remains an explicit `UNAVAILABLE` presentation state until its release-network runtime is implemented. Changelog is functional without release-network wiring: the application supplies the bundled repository `CHANGELOG.md` as presentation text.
 
 That wiring must preserve the existing capability ownership documented in the relevant architecture files.
 
