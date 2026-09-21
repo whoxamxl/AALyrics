@@ -153,7 +153,16 @@ class MlKitTranslationModelManager(
         activeMonitor(normalized)?.let { return it.await() }
 
         val model = TranslateRemoteModel.Builder(mlLanguage).build()
-        publish(normalized, TranslationModelPhase.CHECKING)
+        synchronized(modelLifecycleLock) {
+            if (
+                cleanupGeneration != preparationGeneration ||
+                normalized in pendingModelDeletions
+            ) {
+                Log.d(TAG, "model check superseded by cleanup: $normalized")
+                return false
+            }
+            publish(normalized, TranslationModelPhase.CHECKING)
+        }
 
         val downloaded = try {
             isModelDownloaded(model)
