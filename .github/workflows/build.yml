@@ -9,16 +9,26 @@ permissions:
   contents: read
 
 jobs:
-  branch-name:
-    name: Branch name
-    if: github.event_name == 'pull_request'
+  build:
     runs-on: ubuntu-latest
     env:
-      BRANCH_NAME: ${{ github.head_ref }}
+      # Unreviewed pull-request code must never receive provider credentials.
+      PETITLYRICS_USER_ID: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.PETITLYRICS_USER_ID || '' }}
+      PETITLYRICS_APP_NAME: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.PETITLYRICS_APP_NAME || '' }}
+      PETITLYRICS_PKG_NAME: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.PETITLYRICS_PKG_NAME || '' }}
+      PETITLYRICS_CLIENT_APP_ID: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.PETITLYRICS_CLIENT_APP_ID || '' }}
 
     steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
       - name: Validate branch name
+        if: github.event_name == 'pull_request'
         shell: bash
+        env:
+          BRANCH_NAME: ${{ github.head_ref }}
         run: |
           if [[ "$BRANCH_NAME" =~ ^(feature|fix|refactor|chore|docs|test|ci|build|release|hotfix)/[a-z0-9][a-z0-9._/-]*$ ]]; then
             echo "Valid branch name: $BRANCH_NAME"
@@ -28,23 +38,12 @@ jobs:
             exit 1
           fi
 
-  commit-message:
-    name: Commit message
-    if: github.event_name == 'pull_request'
-    runs-on: ubuntu-latest
-    env:
-      BASE_SHA: ${{ github.event.pull_request.base.sha }}
-      HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-
-    steps:
-      - name: Check out pull request history
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
-          fetch-depth: 0
-
       - name: Validate commit messages
+        if: github.event_name == 'pull_request'
         shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
           pattern='^(feat|fix|refactor|chore|docs|test|ci|build|perf|style|revert)(\([a-z0-9._/-]+\))?(!)?: .+'
           failed=0
@@ -65,19 +64,6 @@ jobs:
             echo "Optional scope and breaking-change marker are allowed, e.g. fix(playback): ... or feat!: ..."
             exit 1
           fi
-
-  build:
-    runs-on: ubuntu-latest
-    env:
-      # Unreviewed pull-request code must never receive provider credentials.
-      PETITLYRICS_USER_ID: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.PETITLYRICS_USER_ID || '' }}
-      PETITLYRICS_APP_NAME: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.PETITLYRICS_APP_NAME || '' }}
-      PETITLYRICS_PKG_NAME: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.PETITLYRICS_PKG_NAME || '' }}
-      PETITLYRICS_CLIENT_APP_ID: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.PETITLYRICS_CLIENT_APP_ID || '' }}
-
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@v4
 
       - name: Verify architecture boundaries
         run: bash scripts/verify-architecture.sh
