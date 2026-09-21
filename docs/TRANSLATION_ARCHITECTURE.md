@@ -383,6 +383,8 @@ English is the built-in model language in the current ML Kit adapter. It require
 
 Advanced Settings may explicitly clear downloaded Translation models through the abstract `TranslationModelManager` boundary. The concrete ML Kit adapter enumerates engine-managed downloaded `TranslateRemoteModel` instances and deletes them through `RemoteModelManager`; `:ui:phone` does not depend on ML Kit. Before cleanup, application-owned Translation settings return to their safe defaults: Translation OFF and Target language English. The built-in English capability remains available. Cleanup also clears stale non-English model lifecycle presentation after successful deletion.
 
+Model cleanup must be race-safe with process-level model preparation. Any language with an active download task or monitor when cleanup begins is marked for deletion; if that model finishes after the initial inventory pass, its download-success path deletes it instead of publishing a surviving READY model. Immediate inventory/deletion failures propagate back through the application boundary so Settings can show an explicit retryable failure rather than silently treating the cleanup as complete.
+
 Changing or resetting Translation settings must not refetch lyrics providers merely because Translation configuration changed.
 
 ## Background target-model preparation
