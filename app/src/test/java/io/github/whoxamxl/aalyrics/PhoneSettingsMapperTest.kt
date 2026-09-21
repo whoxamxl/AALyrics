@@ -13,6 +13,24 @@ import kotlin.test.assertEquals
 
 class PhoneSettingsMapperTest {
     @Test
+    fun `default Translation stays off while English remains built in`() {
+        val state = mapPhoneSettingsState(
+            translationSettings = TranslationSettings(),
+            translationModelStates = emptyMap(),
+            verboseDetailsEnabled = false,
+            plainLyricsAutoScrollEnabled = true,
+            androidAutoStatus = AndroidAutoCompatibilityUiStatus.ENABLED,
+            appVersionName = "0.1.0-dev",
+            currentYear = 2026,
+            displayLocale = Locale.ENGLISH,
+        )
+
+        assertEquals(false, state.translationEnabled)
+        assertEquals("en", state.translationTarget.id)
+        assertEquals(TranslationModelUiState.BUILT_IN, state.translationTarget.modelState)
+    }
+
+    @Test
     fun `runtime Settings exposes supported translation state and unavailable release actions`() {
         val state = mapPhoneSettingsState(
             translationSettings = TranslationSettings(
