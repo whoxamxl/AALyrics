@@ -1,5 +1,3 @@
-# Changelog
-
 ## [0.2.0-alpha.1] - 2026-09-21
 
 ### Added
