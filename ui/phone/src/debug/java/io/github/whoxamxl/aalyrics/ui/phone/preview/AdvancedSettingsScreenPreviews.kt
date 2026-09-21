@@ -14,6 +14,7 @@ import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsColors
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsTheme
 import io.github.whoxamxl.aalyrics.ui.phone.settings.AdvancedSettingsScreen
 import io.github.whoxamxl.aalyrics.ui.phone.settings.SettingsConfirmationDialog
+import io.github.whoxamxl.aalyrics.ui.phone.settings.TranslationModelCleanupUiState
 
 @Preview(name = "Verbose off", group = "AdvancedSettings", widthDp = 412, heightDp = 760)
 @Composable
@@ -115,8 +116,10 @@ private fun AdvancedSettingsPreview(initialVerboseDetailsEnabled: Boolean) {
         ) {
             AdvancedSettingsScreen(
                 verboseDetailsEnabled = verboseDetailsEnabled,
+                cleanupState = TranslationModelCleanupUiState.IDLE,
                 onVerboseDetailsChanged = { verboseDetailsEnabled = it },
-                onClearTranslationModels = { true },
+                onClearTranslationModels = {},
+                onDismissTranslationModelCleanupFailure = {},
                 onResetAALyrics = {},
                 onBack = {},
                 modifier = Modifier.fillMaxSize(),
