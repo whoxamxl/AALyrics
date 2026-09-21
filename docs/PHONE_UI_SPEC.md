@@ -40,6 +40,19 @@ Lyrics   Sync   Details   Settings
 
 `Lyrics` is the home destination.
 
+
+### System Back navigation
+
+The Phone shell treats `Lyrics` as the home/start destination for top-level Back behavior.
+
+System Back follows this priority:
+
+1. An active child surface that owns Back, such as the Expanded Player or a Settings subscreen, handles it first.
+2. From the top level of `Sync`, `Details`, or `Settings`, Back returns directly to `Lyrics`.
+3. From the top level of `Lyrics`, the Phone shell does not consume Back, so the Activity/system default may leave the app.
+
+Primary destinations do not form a historical Back stack. For example, navigating `Lyrics → Sync → Details → Settings` and then pressing Back returns to `Lyrics`, not to `Details`.
+
 ### Lyrics
 
 Primary now-playing lyrics experience.
