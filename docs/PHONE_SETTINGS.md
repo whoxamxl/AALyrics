@@ -441,11 +441,20 @@ A `License >` internal navigation row sits directly below Source code.
 
 Opening it presents an in-app second-level Settings surface using the standard `SettingsSubscreenHeader`, matching the navigation model used by `Advanced` and Changelog. The legal text is vertically scrollable and selectable.
 
-The repository-root `NOTICE` and `LICENSE` files remain the legal-content sources of truth. The app build copies them separately into generated assets as `aalyrics_notice.txt` and `aalyrics_license.txt`. `:app` reads both files and composes the presentation text as an AALyrics heading followed by the required notice and the unchanged license body. Neither source file is rewritten or duplicated into Kotlin/string-resource literals.
+The repository-root `NOTICE` and `LICENSE` files remain the legal-content sources of truth. The app build copies them separately into generated assets as `aalyrics_notice.txt` and `aalyrics_license.txt`. `:app` reads and exposes them separately as presentation data; it does not concatenate or rewrite either source.
 
-`LicenseSettingsScreen` renders that presentation text through the shared Phone-local `PhoneMarkdownText` wrapper. Markdown parsing/rendering is delegated to `mikepenz/multiplatform-markdown-renderer` (Material 3 integration), currently pinned to `0.38.1` for compatibility with the app's Java 17 / compileSdk 36 baseline. AALyrics does not maintain its own Markdown grammar.
+`LicenseSettingsScreen` presents the two sources deliberately:
 
-`PhoneMarkdownText` is shared by License and Changelog so bundled documents do not evolve separate Markdown implementations.
+- a compact `REQUIRED NOTICE` section shows `AALyrics` and a human-readable form of the required notice;
+- the display removes only the mechanical `Required Notice:` prefix while preserving the notice content itself;
+- the exact original `Required Notice:` line remains unchanged in the bundled `NOTICE` asset;
+- a separate `LICENSE TERMS` section renders the untouched repository `LICENSE` through the shared Phone-local `PhoneMarkdownText` wrapper.
+
+The current required notice is `Required Notice: © 2026 Yuta Miura`. The `©` symbol is part of the canonical repository notice rather than a UI-only substitution.
+
+Markdown parsing/rendering for the license terms is delegated to `mikepenz/multiplatform-markdown-renderer` (Material 3 integration), currently pinned to `0.38.1` for compatibility with the app's Java 17 / compileSdk 36 baseline. AALyrics does not maintain its own Markdown grammar.
+
+`PhoneMarkdownText` is shared by License terms and Changelog so bundled Markdown documents do not evolve separate Markdown implementations.
 
 The wrapper applies a compact AALyrics Phone Markdown theme instead of the renderer's default Material display typography. Current baseline: H1 24sp/30sp, H2 20sp/26sp, body 14sp/20sp, inline/code text 13sp/18sp, compact block spacing, and AALyrics cyan underlined links. This keeps long technical documents readable on narrow phones without changing their Markdown sources.
 
@@ -458,6 +467,8 @@ Therefore:
 - `:ui:phone` does not read Android assets directly; asset ownership remains in `:app`.
 
 The current repository license is **PolyForm Noncommercial License 1.0.0**, but the UI derives its displayed body from the bundled source files rather than assuming that text remains unchanged.
+
+The notice copyright year is intentionally **source-controlled**, not calculated from the device clock. It records the notice authored for the software rather than acting as a current-year label. If the project later adopts a year range, update the repository `NOTICE` explicitly. This is separate from the Settings branding footer below, whose display year is runtime-derived.
 
 ### Branding footer
 
