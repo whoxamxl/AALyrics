@@ -127,6 +127,12 @@ class AALyricsApplication : Application() {
         }
     }
 
+    val changelogText: String by lazy(LazyThreadSafetyMode.NONE) {
+        assets.open(CHANGELOG_ASSET_NAME)
+            .bufferedReader()
+            .use { it.readText() }
+    }
+
     val verboseDetailsEnabled: StateFlow<Boolean>
         get() = phonePresentationSettingsStore.verboseDetailsEnabled
 
@@ -311,6 +317,7 @@ class AALyricsApplication : Application() {
     private companion object {
         const val LICENSE_ASSET_NAME = "aalyrics_license.txt"
         const val NOTICE_ASSET_NAME = "aalyrics_notice.txt"
+        const val CHANGELOG_ASSET_NAME = "aalyrics_changelog.md"
     }
 }
 
