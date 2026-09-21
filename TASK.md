@@ -220,3 +220,18 @@ Accepted refinement:
 - [x] preserve the existing backdrop/surface colors and alpha values; do not add brightness/flash compensation or redesign the existing cross-fade merely to address the observed backdrop press indication.
 
 The physical device remains authoritative for motion feel and final tuning. Repository validation for this follow-up is complete: architecture checks, debug APK build, unit tests, and CodeQL checks pass on the implementation head.
+
+
+## Track identity marquee refinement
+
+Track Card and Playback Surface share the same title/artist marquee component. The overflow behavior is refined so motion is limited to the line that actually needs it while preserving the existing synchronized behavior when both lines overflow.
+
+Accepted refinement:
+
+- [ ] title-only overflow -> marquee title only; keep artist fixed;
+- [ ] artist-only overflow -> marquee artist only; keep title fixed;
+- [ ] both overflow -> preserve synchronized title/artist block marquee with aligned leading edges and shared speed;
+- [ ] neither overflow -> keep both lines static;
+- [ ] preserve the existing 4-second initial/repeat pause, constant marquee velocity, and repeat spacing;
+- [ ] apply the behavior through the shared component so Track Card, collapsed Playback Bar, and Expanded Player stay consistent;
+- [ ] keep deterministic Preview coverage for title-only, artist-only, and both-overflow cases.
