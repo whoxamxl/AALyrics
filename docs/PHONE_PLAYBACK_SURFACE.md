@@ -516,7 +516,9 @@ Deterministic Previews should cover at least:
 
 - collapsed playing;
 - collapsed paused;
-- collapsed long title/artist marquee case;
+- collapsed title-only overflow marquee;
+- collapsed artist-only overflow marquee;
+- collapsed both-overflow synchronized marquee;
 - collapsed without artwork;
 - expanded playing;
 - expanded paused;
@@ -551,6 +553,7 @@ Implementation should add deterministic coverage for presentation/state logic th
 - Back collapses Expanded Player before normal back behavior;
 - destination switching does not implicitly collapse;
 - session loss clears expanded state;
+- row-aware marquee mode selects static, title-only, artist-only, or synchronized behavior from per-line overflow;
 - transformation progress maps deterministically between Collapsed and Expanded anchors;
 - slow release settles to the nearest anchor;
 - sufficiently directional upward/downward fling selects the corresponding Expanded/Collapsed anchor.

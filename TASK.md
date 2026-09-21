@@ -237,4 +237,4 @@ Accepted refinement:
 - [x] keep deterministic Preview coverage for title-only, artist-only, and both-overflow cases.
 
 
-Repository validation for the track identity marquee refinement is pending on the final implementation head; physical-device rendering remains authoritative for motion feel.
+Repository validation for the track identity marquee refinement is complete on the implementation head: architecture checks, debug APK build, unit tests, and sideloadable APK artifact upload pass. Physical-device rendering remains authoritative for motion feel.

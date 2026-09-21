@@ -332,7 +332,7 @@ Production shell composables live in `src/main`, while deterministic shell Previ
 Preview coverage should eventually exercise at least:
 
 - active media / no media
-- long title and artist
+- title-only overflow / artist-only overflow / both-overflow synchronized marquee
 - no artwork
 - loading / ready / degraded / not found / failed lyrics states
 - line-synced / word-synced / unsynced lyrics
