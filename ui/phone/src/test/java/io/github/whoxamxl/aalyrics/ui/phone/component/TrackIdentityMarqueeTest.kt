@@ -13,7 +13,42 @@ class TrackIdentityMarqueeTest {
                 artistOverflows = false,
             ),
         )
-        @Test
+    }
+
+    @Test
+    fun `title only overflow animates title only`() {
+        assertEquals(
+            TrackIdentityMarqueeMode.TITLE_ONLY,
+            trackIdentityMarqueeMode(
+                titleOverflows = true,
+                artistOverflows = false,
+            ),
+        )
+    }
+
+    @Test
+    fun `artist only overflow animates artist only`() {
+        assertEquals(
+            TrackIdentityMarqueeMode.ARTIST_ONLY,
+            trackIdentityMarqueeMode(
+                titleOverflows = false,
+                artistOverflows = true,
+            ),
+        )
+    }
+
+    @Test
+    fun `both overflow keep synchronized marquee`() {
+        assertEquals(
+            TrackIdentityMarqueeMode.SYNCHRONIZED,
+            trackIdentityMarqueeMode(
+                titleOverflows = true,
+                artistOverflows = true,
+            ),
+        )
+    }
+
+    @Test
     fun `manual drag stays within one marquee cycle`() {
         assertEquals(
             180f,
@@ -48,40 +83,6 @@ class TrackIdentityMarqueeTest {
             marqueeTravelDurationMillis(
                 distancePx = 120f,
                 velocityPxPerSecond = 60f,
-            ),
-        )
-    }
-}
-
-    @Test
-    fun `title only overflow animates title only`() {
-        assertEquals(
-            TrackIdentityMarqueeMode.TITLE_ONLY,
-            trackIdentityMarqueeMode(
-                titleOverflows = true,
-                artistOverflows = false,
-            ),
-        )
-    }
-
-    @Test
-    fun `artist only overflow animates artist only`() {
-        assertEquals(
-            TrackIdentityMarqueeMode.ARTIST_ONLY,
-            trackIdentityMarqueeMode(
-                titleOverflows = false,
-                artistOverflows = true,
-            ),
-        )
-    }
-
-    @Test
-    fun `both overflow keep synchronized marquee`() {
-        assertEquals(
-            TrackIdentityMarqueeMode.SYNCHRONIZED,
-            trackIdentityMarqueeMode(
-                titleOverflows = true,
-                artistOverflows = true,
             ),
         )
     }
