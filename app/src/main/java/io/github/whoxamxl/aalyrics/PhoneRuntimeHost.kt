@@ -40,6 +40,8 @@ internal fun PhoneRuntimeHost(
     val playbackArtwork by application.playbackArtworkState.collectAsStateWithLifecycle()
     val translationSettings by application.translationSettings.collectAsStateWithLifecycle()
     val translationModelStates by application.translationModelStates.collectAsStateWithLifecycle()
+    val translationModelCleanupState by
+        application.translationModelCleanupState.collectAsStateWithLifecycle()
     val verboseDetailsEnabled by application.verboseDetailsEnabled.collectAsStateWithLifecycle()
 
     var selectedDestination by rememberSaveable {
@@ -96,6 +98,7 @@ internal fun PhoneRuntimeHost(
         appVersionName = BuildConfig.VERSION_NAME,
         currentYear = Year.now().value,
         licenseText = application.licenseText,
+        translationModelCleanupState = translationModelCleanupState,
     )
 
     PhoneAppShell(
@@ -163,6 +166,8 @@ internal fun PhoneRuntimeHost(
                 onTranslationTargetSelected = application::setTranslationTargetLanguage,
                 onTranslationModelDownloadRequested = application::requestTranslationModel,
                 onClearTranslationModels = application::clearDownloadedTranslationModels,
+                onDismissTranslationModelCleanupFailure =
+                    application::dismissTranslationModelCleanupFailure,
                 onResetAALyrics = {
                     plainLyricsAutoScrollEnabled = true
                     application.resetAppOwnedSettings()
