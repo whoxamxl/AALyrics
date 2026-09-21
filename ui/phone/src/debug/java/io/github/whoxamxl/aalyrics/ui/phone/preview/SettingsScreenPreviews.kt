@@ -216,6 +216,7 @@ internal fun SettingsScreenPreview(
                         translationTarget = clearedTargets.first { it.id == "en" },
                         translationTargets = clearedTargets,
                     )
+                    true
                 },
                 onResetAALyrics = {
                     val english = state.translationTargets.first { it.id == "en" }
