@@ -95,7 +95,7 @@ private fun AdvancedSettingsPreview(initialVerboseDetailsEnabled: Boolean) {
             AdvancedSettingsScreen(
                 verboseDetailsEnabled = verboseDetailsEnabled,
                 onVerboseDetailsChanged = { verboseDetailsEnabled = it },
-                onClearTranslationModels = {},
+                onClearTranslationModels = { true },
                 onResetAALyrics = {},
                 onBack = {},
                 modifier = Modifier.fillMaxSize(),
