@@ -6,7 +6,7 @@
 - Base: `main` at `105ef4a8511d2fc085cef215d5ecb1eb438a8d03` (PR #49 merged).
 - Classification: **PHONE RUNTIME HOST / DEVICE-TEST ENABLEMENT**.
 - Authoritative references: `AGENTS.md`, `docs/PHONE_RUNTIME_HOST.md`, `docs/PHONE_UI_SPEC.md`, `docs/UI_ARCHITECTURE.md`, plus the existing destination specifications.
-- Documentation alignment was completed first on this branch. Production implementation was then explicitly authorized and is now in progress through PR #50.
+- Documentation alignment was completed first on this branch. Production implementation was explicitly authorized and is now implemented in PR #50; the branch is in physical-device refinement/final-validation state.
 
 ## Goal
 
@@ -172,7 +172,7 @@ Validation after these fixes:
 - unit tests pass;
 - sideloadable debug APK artifact upload passes.
 
-The next manual device pass should specifically verify real album-art rendering, branded fallback rendering, and Translation OFF on a fresh/unconfigured preference state.
+Physical-device iteration has continued beyond the initial host bring-up. Remaining unchecked acceptance boxes still represent the formal end-to-end smoke checklist and should not be inferred solely from individual observed fixes.
 
 
 ## Verbose Details playback-source follow-up
@@ -200,4 +200,5 @@ The temporary Phone-local regex Markdown parser has been replaced with the Compo
 - chosen to stay below the library's Java 21 transition while AALyrics remains on Java 17 / compileSdk 36;
 - `PhoneMarkdownText` is now a thin wrapper rather than a Markdown grammar implementation;
 - License uses this wrapper now;
-- future Changelog / Release-note Markdown should reuse the same wrapper.
+- future Changelog / Release-note Markdown should reuse the same wrapper;
+- the wrapper applies the adopted compact Phone Markdown theme (H1 24sp/30sp, H2 20sp/26sp, body 14sp/20sp, code 13sp/18sp, compact spacing, cyan underlined links).
