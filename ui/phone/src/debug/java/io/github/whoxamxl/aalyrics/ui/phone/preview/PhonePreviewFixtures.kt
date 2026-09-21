@@ -183,6 +183,14 @@ internal object PhonePreviewFixtures {
         queue = emptyList(),
         canOpenPlaybackApp = false,
     )
+    val longTitleSurface = playingSurface.copy(
+        title = "A Track Title Long Enough to Demonstrate the Playback Bar Marquee",
+        artist = "The Northbound Lights",
+    )
+    val longArtistSurface = playingSurface.copy(
+        title = "Midnight Signals",
+        artist = "An Artist Name That Is Deliberately Longer Than the Available Player Width",
+    )
     val longMetadataSurface = playingSurface.copy(
         title = "A Track Title Long Enough to Demonstrate the Playback Bar Marquee",
         artist = "An Artist Name That Is Also Deliberately Longer Than the Available Player Width",
