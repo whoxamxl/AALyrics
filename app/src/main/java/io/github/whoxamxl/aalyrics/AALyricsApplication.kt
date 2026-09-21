@@ -175,7 +175,6 @@ class AALyricsApplication : Application() {
     fun resetAppOwnedSettings() {
         translationSettingsStore.resetToDefaults()
         phonePresentationSettingsStore.resetToDefaults()
-        mutableTranslationModelCleanupState.value = TranslationModelCleanupState.IDLE
     }
 
     fun openSelectedPlaybackApp(): Boolean =
