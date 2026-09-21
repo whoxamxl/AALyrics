@@ -219,4 +219,4 @@ Accepted refinement:
 - [x] preserve the existing playback/seek/queue behavior and MediaSession capability boundaries;
 - [x] preserve the existing backdrop/surface colors and alpha values; do not add brightness/flash compensation or redesign the existing cross-fade merely to address the observed backdrop press indication.
 
-The physical device remains authoritative for motion tuning after CI passes. Repository validation for this follow-up is pending on the final branch head.
+The physical device remains authoritative for motion feel and final tuning. Repository validation for this follow-up is complete: architecture checks, debug APK build, unit tests, and CodeQL checks pass on the implementation head.
