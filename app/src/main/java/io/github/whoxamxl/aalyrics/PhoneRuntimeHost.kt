@@ -44,7 +44,7 @@ internal fun PhoneRuntimeHost(
     var plainLyricsAutoScrollEnabled by rememberSaveable {
         mutableStateOf(true)
     }
-    var lyricsInteractionMode by rememberSaveable {
+    var lyricsInteractionMode by rememberSaveable(playback.trackIdentity) {
         mutableStateOf(LyricsViewportInteractionMode.FOLLOW)
     }
     var monotonicTimeMs by rememberSaveable(playback.trackIdentity) {
