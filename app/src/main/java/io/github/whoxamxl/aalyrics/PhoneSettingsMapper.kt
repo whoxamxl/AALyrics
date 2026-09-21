@@ -7,8 +7,6 @@ import io.github.whoxamxl.aalyrics.translation.api.TranslationSettings
 import io.github.whoxamxl.aalyrics.ui.phone.settings.AndroidAutoCompatibilityUiStatus
 import io.github.whoxamxl.aalyrics.ui.phone.settings.AppUpdateUiPhase
 import io.github.whoxamxl.aalyrics.ui.phone.settings.AppUpdateUiState
-import io.github.whoxamxl.aalyrics.ui.phone.settings.ChangelogUiPhase
-import io.github.whoxamxl.aalyrics.ui.phone.settings.ChangelogUiState
 import io.github.whoxamxl.aalyrics.ui.phone.settings.SettingsLanguageOptionUiState
 import io.github.whoxamxl.aalyrics.ui.phone.settings.SettingsScreenUiState
 import io.github.whoxamxl.aalyrics.ui.phone.settings.TranslationModelCleanupUiState
@@ -23,7 +21,9 @@ internal fun mapPhoneSettingsState(
     androidAutoStatus: AndroidAutoCompatibilityUiStatus,
     appVersionName: String,
     currentYear: Int,
+    noticeText: String,
     licenseText: String,
+    changelogText: String,
     translationModelCleanupState: TranslationModelCleanupState =
         TranslationModelCleanupState.IDLE,
     displayLocale: Locale = Locale.getDefault(),
@@ -64,8 +64,9 @@ internal fun mapPhoneSettingsState(
         androidAutoCompatibilityStatus = androidAutoStatus,
         appVersionName = appVersionName,
         currentYear = currentYear,
+        noticeText = noticeText,
         licenseText = licenseText,
+        changelogText = changelogText,
         appUpdate = AppUpdateUiState(phase = AppUpdateUiPhase.UNAVAILABLE),
-        changelog = ChangelogUiState(phase = ChangelogUiPhase.UNAVAILABLE),
     )
 }

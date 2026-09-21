@@ -59,6 +59,8 @@
     <string name="settings_source_code">Source code</string>
     <string name="settings_github">GitHub</string>
     <string name="settings_license">License</string>
+    <string name="settings_required_notice">REQUIRED NOTICE</string>
+    <string name="settings_license_terms">LICENSE TERMS</string>
     <string name="settings_not_available_yet">Not available yet</string>
     <string name="settings_advanced">Advanced</string>
     <string name="settings_back">Back</string>
@@ -86,9 +88,6 @@
     <string name="settings_reset">Reset</string>
     <string name="settings_cancel">Cancel</string>
     <string name="settings_done">Done</string>
-    <string name="settings_changelog_loading">Loading release notes…</string>
-    <string name="settings_changelog_failed">Could not load changelog</string>
-    <string name="settings_changelog_failure_generic">GitHub Release notes could not be loaded. Check the network connection and try again.</string>
     <string name="settings_close">Close</string>
 
     <string name="settings_brand_name">AALyrics</string>

@@ -97,7 +97,9 @@ internal fun PhoneRuntimeHost(
         androidAutoStatus = androidAutoStatus,
         appVersionName = BuildConfig.VERSION_NAME,
         currentYear = Year.now().value,
+        noticeText = application.noticeText,
         licenseText = application.licenseText,
+        changelogText = application.changelogText,
         translationModelCleanupState = translationModelCleanupState,
     )
 
@@ -176,7 +178,6 @@ internal fun PhoneRuntimeHost(
                 onAndroidAutoCompatibilitySetup = onAndroidAutoCompatibilitySetup,
                 onCheckForUpdates = {},
                 onDownloadUpdate = {},
-                onChangelogRequested = {},
                 onSettingsEntered = {},
                 onOpenGitHub = onOpenSourceCode,
                 bottomOverlayInset = bottomOverlayInset,

@@ -74,6 +74,28 @@ jobs:
           echo "AALYRICS_VERSION_NAME=$version_name" >> "$GITHUB_ENV"
           echo "AALYRICS_VERSION_CODE=$GITHUB_RUN_NUMBER" >> "$GITHUB_ENV"
 
+      - name: Verify changelog release version
+        shell: bash
+        run: |
+          changelog_version="$(awk '
+            /^## \[/ {
+              version = $0
+              sub(/^## \[/, "", version)
+              sub(/\].*$/, "", version)
+              print version
+              exit
+            }
+          ' CHANGELOG.md)"
+          if [[ -z "$changelog_version" ]]; then
+            echo "CHANGELOG.md does not contain a release heading in the form: ## [VERSION] - YYYY-MM-DD"
+            exit 1
+          fi
+          if [[ "$changelog_version" != "$AALYRICS_VERSION_NAME" ]]; then
+            echo "Release tag version '$AALYRICS_VERSION_NAME' does not match newest CHANGELOG.md version '$changelog_version'."
+            echo "Update CHANGELOG.md before creating the release tag."
+            exit 1
+          fi
+
       - name: Verify architecture boundaries
         run: bash scripts/verify-architecture.sh
 
