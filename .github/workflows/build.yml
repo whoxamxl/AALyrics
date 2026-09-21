@@ -28,6 +28,44 @@ jobs:
             exit 1
           fi
 
+  commit-message:
+    name: Commit message
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    env:
+      BASE_SHA: ${{ github.event.pull_request.base.sha }}
+      HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+
+    steps:
+      - name: Check out pull request history
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: Validate commit messages
+        shell: bash
+        run: |
+          pattern='^(feat|fix|refactor|chore|docs|test|ci|build|perf|style|revert)(\([a-z0-9._/-]+\))?(!)?: .+'
+          failed=0
+
+          while IFS=$'\t' read -r sha subject; do
+            if [[ "$subject" =~ $pattern ]]; then
+              echo "Valid: ${sha:0:7} $subject"
+            else
+              echo "Invalid: ${sha:0:7} $subject"
+              failed=1
+            fi
+          done < <(git log --format='%H%x09%s' "$BASE_SHA..$HEAD_SHA")
+
+          if (( failed )); then
+            echo
+            echo "Commit subjects must use one of:"
+            echo "feat:, fix:, refactor:, chore:, docs:, test:, ci:, build:, perf:, style:, revert:"
+            echo "Optional scope and breaking-change marker are allowed, e.g. fix(playback): ... or feat!: ..."
+            exit 1
+          fi
+
   build:
     runs-on: ubuntu-latest
     env:
