@@ -211,7 +211,6 @@ internal fun PreviewSettingsDestination(
         onCheckForUpdates = {},
         onDownloadUpdate = {},
         onChangelogRequested = {},
-        onLicenseRequested = {},
         onSettingsEntered = {
             state = state.copy(
                 appUpdate = state.appUpdate.normalizedForSettingsEntry(),
