@@ -224,7 +224,7 @@ The physical device remains authoritative for motion feel and final tuning. Repo
 
 ## Track identity marquee refinement
 
-Track Card and Playback Surface share the same title/artist marquee component. The overflow behavior is refined so motion is limited to the line that actually needs it while preserving the existing synchronized behavior when both lines overflow.
+The Lyrics Track Card and Expanded Player share the same title/artist marquee component. The overflow behavior is refined so motion is limited to the line that actually needs it while preserving the existing synchronized behavior when both lines overflow. The Collapsed Playback Bar was later intentionally separated from this behavior and now uses fixed ellipsis instead.
 
 Accepted refinement:
 
@@ -233,7 +233,7 @@ Accepted refinement:
 - [x] both overflow -> preserve synchronized title/artist block marquee with aligned leading edges and shared speed;
 - [x] neither overflow -> keep both lines static;
 - [x] preserve the existing 4-second initial/repeat pause, constant marquee velocity, and repeat spacing;
-- [x] apply the behavior through the shared component so Track Card, collapsed Playback Bar, and Expanded Player stay consistent;
+- [x] apply the behavior through the shared component to Track Card and Expanded Player;
 - [x] keep deterministic Preview coverage for title-only, artist-only, and both-overflow cases.
 
 
@@ -275,4 +275,4 @@ Accepted refinement:
 - [x] suppress duplicate semantics from the repeated marquee copy;
 - [x] add deterministic tests for marquee mode, manual cycle bounds, and constant-speed duration.
 
-Repository validation for this refinement is pending on the final implementation head; physical-device validation remains authoritative for horizontal-vs-vertical gesture feel.
+Repository validation for the manual marquee refinement is complete on the implementation head: architecture checks, debug APK build, unit tests, and sideloadable APK artifact upload pass. Physical-device validation remains authoritative for horizontal-vs-vertical gesture feel.

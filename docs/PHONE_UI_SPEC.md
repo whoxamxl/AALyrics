@@ -332,7 +332,7 @@ Production shell composables live in `src/main`, while deterministic shell Previ
 Preview coverage should eventually exercise at least:
 
 - active media / no media
-- Track Card / Expanded Player title-only overflow, artist-only overflow, and both-overflow synchronized marquee
+- Track Card / Expanded Player title-only overflow, artist-only overflow, and both-overflow synchronized auto marquee + manual horizontal drag
 - Collapsed Playback Bar title/artist ellipsis without marquee
 - no artwork
 - loading / ready / degraded / not found / failed lyrics states

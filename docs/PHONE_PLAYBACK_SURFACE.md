@@ -558,7 +558,7 @@ Deterministic Previews should cover at least:
 - enlarged font;
 - playback surface over Lyrics and over Settings.
 
-The debug-only interactive full-surface Preview uses the production `PlaybackSurface` composable directly. It is the authoritative Preview for interaction checks that cannot be represented meaningfully in a static frame, including tap expand/collapse, upward finger-following expand drag, downward finger-following collapse drag, release settling, direct seek, Queue, and Translation quick-control interaction.
+The debug-only interactive full-surface Preview uses the production `PlaybackSurface` composable directly. It is the authoritative Preview for interaction checks that cannot be represented meaningfully in a static frame, including tap expand/collapse, upward finger-following expand drag, downward finger-following collapse drag, release settling, direct seek, Queue, and Translation quick-control interaction. The long-metadata Track Card and Expanded Player Previews also use the production marquee component and are the focused Preview cases for title-only, artist-only, and synchronized auto marquee + manual horizontal drag.
 
 ## Tests
 
