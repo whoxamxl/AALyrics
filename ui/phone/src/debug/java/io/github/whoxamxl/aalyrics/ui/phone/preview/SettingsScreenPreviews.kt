@@ -21,6 +21,7 @@ import io.github.whoxamxl.aalyrics.ui.phone.settings.ChangelogUiState
 import io.github.whoxamxl.aalyrics.ui.phone.settings.SettingsScreen
 import io.github.whoxamxl.aalyrics.ui.phone.settings.SettingsScreenContent
 import io.github.whoxamxl.aalyrics.ui.phone.settings.SettingsScreenUiState
+import io.github.whoxamxl.aalyrics.ui.phone.settings.TranslationModelCleanupUiState
 import io.github.whoxamxl.aalyrics.ui.phone.settings.TranslationModelUiState
 import io.github.whoxamxl.aalyrics.ui.phone.settings.normalizedForSettingsEntry
 import kotlinx.coroutines.delay
@@ -196,6 +197,43 @@ internal fun SettingsScreenPreview(
                 },
                 onTranslationModelDownloadRequested = { id ->
                     state = state.withPreviewModelDownload(id)
+                },
+                onClearTranslationModels = {
+                    val clearedTargets = state.translationTargets.map { option ->
+                        if (option.id == "en") {
+                            option.copy(
+                                modelState = TranslationModelUiState.BUILT_IN,
+                                modelFailureReason = null,
+                            )
+                        } else {
+                            option.copy(
+                                modelState = TranslationModelUiState.NOT_DOWNLOADED,
+                                modelFailureReason = null,
+                            )
+                        }
+                    }
+                    state = state.copy(
+                        translationEnabled = false,
+                        translationTarget = clearedTargets.first { it.id == "en" },
+                        translationTargets = clearedTargets,
+                        translationModelCleanup = TranslationModelCleanupUiState.IDLE,
+                    )
+                },
+                onDismissTranslationModelCleanupFailure = {
+                    state = state.copy(
+                        translationModelCleanup = TranslationModelCleanupUiState.IDLE,
+                    )
+                },
+                onResetAALyrics = {
+                    val english = state.translationTargets.first { it.id == "en" }
+                    state = state.copy(
+                        plainLyricsAutoScrollEnabled = true,
+                        verboseDetailsEnabled = false,
+                        translationEnabled = false,
+                        translationTarget = english,
+                        androidAutoCompatibilityStatus =
+                            io.github.whoxamxl.aalyrics.ui.phone.settings.AndroidAutoCompatibilityUiStatus.NOT_REVIEWED,
+                    )
                 },
                 onAndroidAutoCompatibilitySetup = {},
                 onCheckForUpdates = {

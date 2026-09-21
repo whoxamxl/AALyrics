@@ -78,6 +78,8 @@ class MlKitTranslationProviderTest {
 
         override suspend fun retry(languageTag: String): Boolean = routeAvailable
 
+        override suspend fun clearDownloadedModels(): Boolean = true
+
         override suspend fun ensureRouteAvailable(
             sourceLanguage: String,
             targetLanguage: String,

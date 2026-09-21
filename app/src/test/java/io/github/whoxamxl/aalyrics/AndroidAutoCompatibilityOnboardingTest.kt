@@ -42,6 +42,24 @@ class AndroidAutoCompatibilityOnboardingTest {
     }
 
     @Test
+    fun `reset returns onboarding to not reviewed`() {
+        var storedValue: String? = null
+        val onboarding = AndroidAutoCompatibilityOnboarding(
+            readValue = { storedValue },
+            writeValue = { storedValue = it },
+        )
+
+        onboarding.markEnabled()
+        onboarding.reset()
+
+        assertEquals(
+            AndroidAutoCompatibilitySetupStatus.NOT_REVIEWED,
+            onboarding.status(),
+        )
+        assertEquals(null, storedValue)
+    }
+
+    @Test
     fun `unknown stored value is treated as not reviewed`() {
         val onboarding = AndroidAutoCompatibilityOnboarding(
             readValue = { "unexpected" },

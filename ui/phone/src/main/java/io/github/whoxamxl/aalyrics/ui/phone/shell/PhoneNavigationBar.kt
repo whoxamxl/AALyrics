@@ -35,6 +35,7 @@ import io.github.whoxamxl.aalyrics.ui.phone.navigation.PhoneDestination
 fun PhoneNavigationBar(
     selectedDestination: PhoneDestination,
     onDestinationSelected: (PhoneDestination) -> Unit,
+    onDestinationReselected: (PhoneDestination) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Surface(
@@ -58,7 +59,18 @@ fun PhoneNavigationBar(
                         .fillMaxHeight()
                         .selectable(
                             selected = selected,
-                            onClick = { onDestinationSelected(destination) },
+                            onClick = {
+                                if (
+                                    isPrimaryDestinationReselection(
+                                        selectedDestination = selectedDestination,
+                                        tappedDestination = destination,
+                                    )
+                                ) {
+                                    onDestinationReselected(destination)
+                                } else {
+                                    onDestinationSelected(destination)
+                                }
+                            },
                             role = Role.Tab,
                         )
                         .padding(
@@ -113,3 +125,9 @@ private val PhoneDestination.icon: ImageVector
         PhoneDestination.Details -> AALyricsIcons.Details
         PhoneDestination.Settings -> AALyricsIcons.Settings
     }
+
+
+internal fun isPrimaryDestinationReselection(
+    selectedDestination: PhoneDestination,
+    tappedDestination: PhoneDestination,
+): Boolean = selectedDestination == tappedDestination

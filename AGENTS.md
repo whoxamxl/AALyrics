@@ -30,6 +30,17 @@ Do not silently expand the scope because a reviewer can imagine additional harde
 
 If a useful improvement falls outside the current scope, record or propose it as follow-up work instead of growing the current PR indefinitely.
 
+## Reset contract maintenance
+
+`Reset AALyrics` is an explicit product contract and must stay aligned as application state evolves.
+
+- Any PR that adds or changes app-owned persisted state, onboarding acknowledgement, durable preference, or long-lived Phone setting must explicitly re-evaluate whether `Reset AALyrics` should restore it to default.
+- In the same PR, either add the state to the explicit reset path with appropriate coverage, or document why it intentionally survives reset.
+- Do not replace the explicit reset path with a blanket SharedPreferences/DataStore clear.
+- External/system-owned state such as Android permissions and Android Auto system settings stays outside the reset boundary.
+- New caches, downloaded assets, and model files require an explicit keep/delete decision; preserve them by default unless a dedicated storage action or explicit product decision says otherwise.
+- When reset semantics change, update `docs/PHONE_SETTINGS.md`, user-visible reset copy when necessary, relevant Previews, and tests together.
+
 ## Review severity policy
 
 Treat review findings as follows:

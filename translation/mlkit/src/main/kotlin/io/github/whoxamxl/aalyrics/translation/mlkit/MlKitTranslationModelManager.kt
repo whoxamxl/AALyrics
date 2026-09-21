@@ -23,6 +23,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withTimeoutOrNull
 import java.util.concurrent.ConcurrentHashMap
@@ -42,11 +43,78 @@ class MlKitTranslationModelManager(
         RemoteModelManager.getInstance()
     }
 
+    private val cleanupBarrier = ModelCleanupBarrier()
     private val activeModelDownloads = ConcurrentHashMap<String, Task<Void>>()
     private val activeModelMonitors = ConcurrentHashMap<String, Deferred<Boolean>>()
+    private val claimedModelDeletions = ConcurrentHashMap.newKeySet<String>()
 
-    private val _states = MutableStateFlow<Map<String, TranslationModelState>>(emptyMap())
+    private val _states = MutableStateFlow(
+        TranslationLanguages.supportedTargets.associateWith { languageTag ->
+            TranslationModelState(
+                languageTag = languageTag,
+                phase = if (languageTag == MlKitModelPlanner.BUILT_IN_LANGUAGE) {
+                    TranslationModelPhase.READY
+                } else {
+                    TranslationModelPhase.CHECKING
+                },
+            )
+        },
+    )
     override val states: StateFlow<Map<String, TranslationModelState>> = _states.asStateFlow()
+
+    init {
+        applicationScope.launch {
+            refreshDownloadedModelStates()
+        }
+    }
+
+    private suspend fun refreshDownloadedModelStates() {
+        val downloadedLanguages = try {
+            downloadedModels()
+                .map { model -> model.language }
+                .toSet()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Log.e(TAG, "failed to restore downloaded translation model state", e)
+            _states.update { current ->
+                current.mapValues { (languageTag, state) ->
+                    if (
+                        languageTag != MlKitModelPlanner.BUILT_IN_LANGUAGE &&
+                        state.phase == TranslationModelPhase.CHECKING
+                    ) {
+                        state.copy(
+                            phase = TranslationModelPhase.FAILED,
+                            error = e.localizedMessage ?: e.javaClass.simpleName,
+                        )
+                    } else {
+                        state
+                    }
+                }
+            }
+            return
+        }
+
+        _states.update { current ->
+            current.toMutableMap().apply {
+                TranslationLanguages.supportedTargets
+                    .filter { it != MlKitModelPlanner.BUILT_IN_LANGUAGE }
+                    .forEach { languageTag ->
+                        val currentState = this[languageTag]
+                        if (currentState?.phase == TranslationModelPhase.CHECKING) {
+                            if (languageTag in downloadedLanguages) {
+                                this[languageTag] = TranslationModelState(
+                                    languageTag = languageTag,
+                                    phase = TranslationModelPhase.READY,
+                                )
+                            } else {
+                                remove(languageTag)
+                            }
+                        }
+                    }
+            }
+        }
+    }
 
     override suspend fun ensureAvailable(languageTag: String): Boolean {
         val normalized = TranslationLanguages.normalizeLanguageTag(languageTag)
@@ -56,6 +124,12 @@ class MlKitTranslationModelManager(
             publish(normalized, TranslationModelPhase.READY)
             return true
         }
+
+        val preparationGeneration = cleanupBarrier.capturePreparation(normalized)
+            ?: run {
+                Log.d(TAG, "model availability suppressed by cleanup: $normalized")
+                return false
+            }
 
         if (isRetryBlocked(normalized)) {
             Log.d(TAG, "automatic model retry suppressed until explicit retry: $normalized")
@@ -75,7 +149,17 @@ class MlKitTranslationModelManager(
         activeMonitor(normalized)?.let { return it.await() }
 
         val model = TranslateRemoteModel.Builder(mlLanguage).build()
-        publish(normalized, TranslationModelPhase.CHECKING)
+        val checkPublished = cleanupBarrier.runIfCurrentPreparation(
+            languageTag = normalized,
+            preparationGeneration = preparationGeneration,
+        ) {
+            publish(normalized, TranslationModelPhase.CHECKING)
+            true
+        } ?: false
+        if (!checkPublished) {
+            Log.d(TAG, "model check superseded by cleanup: $normalized")
+            return false
+        }
 
         val downloaded = try {
             isModelDownloaded(model)
@@ -87,11 +171,31 @@ class MlKitTranslationModelManager(
         }
 
         if (downloaded) {
-            publish(normalized, TranslationModelPhase.READY)
+            val readinessPublished = cleanupBarrier.runIfCurrentPreparation(
+                languageTag = normalized,
+                preparationGeneration = preparationGeneration,
+            ) {
+                publish(normalized, TranslationModelPhase.READY)
+                true
+            } ?: false
+            if (!readinessPublished) {
+                Log.d(TAG, "model readiness superseded by cleanup: $normalized")
+                return false
+            }
             return true
         }
 
-        return getOrStartMonitor(normalized, model).await()
+        val monitor = cleanupBarrier.runIfCurrentPreparation(
+            languageTag = normalized,
+            preparationGeneration = preparationGeneration,
+        ) {
+            getOrStartMonitor(normalized, model)
+        } ?: run {
+            Log.d(TAG, "model preparation superseded by cleanup: $normalized")
+            return false
+        }
+
+        return monitor.await()
     }
 
     override suspend fun retry(languageTag: String): Boolean {
@@ -99,6 +203,58 @@ class MlKitTranslationModelManager(
             ?: return false
         _states.update { current -> current - normalized }
         return ensureAvailable(normalized)
+    }
+
+    override suspend fun clearDownloadedModels(): Boolean {
+        val activeLanguages = cleanupBarrier.beginCleanup {
+            (
+                activeModelDownloads.keys +
+                    activeModelMonitors.keys
+                ).toSet()
+        }
+
+        val downloadedModels = try {
+            downloadedModels()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Log.e(TAG, "failed to enumerate downloaded translation models", e)
+            return false
+        }
+
+        var allDeleted = true
+        downloadedModels
+            .filter { model -> model.language != MlKitModelPlanner.BUILT_IN_LANGUAGE }
+            .forEach { model ->
+                if (model.language in activeLanguages) {
+                    if (!claimPendingModelDeletion(model.language)) return@forEach
+                    if (!deleteClaimedPendingModel(model)) {
+                        allDeleted = false
+                    }
+                } else {
+                    try {
+                        deleteDownloadedModel(model)
+                        cleanupBarrier.removePendingDeletion(model.language)
+                        claimedModelDeletions.remove(model.language)
+                        _states.update { current -> current - model.language }
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (e: Exception) {
+                        allDeleted = false
+                        publishFailure(model.language, e)
+                    }
+                }
+            }
+
+        if (allDeleted) {
+            _states.update { current ->
+                current.filterKeys { languageTag ->
+                    languageTag == MlKitModelPlanner.BUILT_IN_LANGUAGE
+                }
+            }
+        }
+
+        return allDeleted
     }
 
     override suspend fun ensureRouteAvailable(
@@ -172,6 +328,11 @@ class MlKitTranslationModelManager(
         var previousThermalRestriction: Boolean? = null
 
         while (activeTimeoutElapsedMs < MODEL_DOWNLOAD_TIMEOUT_MS) {
+            if (cleanupBarrier.isPendingDeletion(languageTag)) {
+                Log.d(TAG, "model readiness suppressed by cleanup: $languageTag")
+                return false
+            }
+
             val loopStartedAt = SystemClock.elapsedRealtime()
             val thermalStatus = currentThermalStatus()
             val thermallyRestricted = isThermallyRestricted(thermalStatus)
@@ -203,6 +364,9 @@ class MlKitTranslationModelManager(
             }
             if (downloaded == true) {
                 activeModelDownloads.remove(languageTag, task)
+                if (cleanupBarrier.isPendingDeletion(languageTag)) {
+                    return false
+                }
                 publish(languageTag, TranslationModelPhase.READY)
                 return true
             }
@@ -223,11 +387,18 @@ class MlKitTranslationModelManager(
             }
         }
 
+        if (cleanupBarrier.isPendingDeletion(languageTag)) {
+            return false
+        }
+
         val finalDownloaded = withTimeoutOrNull(MODEL_CHECK_TIMEOUT_MS) {
             isModelDownloaded(model)
         } == true
         if (finalDownloaded) {
             activeModelDownloads.remove(languageTag, task)
+            if (cleanupBarrier.isPendingDeletion(languageTag)) {
+                return false
+            }
             publish(languageTag, TranslationModelPhase.READY)
             return true
         }
@@ -260,16 +431,96 @@ class MlKitTranslationModelManager(
 
         task.addOnSuccessListener {
             activeModelDownloads.remove(languageTag, task)
+            if (claimPendingModelDeletion(languageTag)) {
+                applicationScope.launch {
+                    if (deleteClaimedPendingModel(model)) {
+                        Log.d(TAG, "deleted model completed during cleanup: $languageTag")
+                    }
+                }
+            }
         }
         task.addOnFailureListener { error ->
             Log.e(TAG, "model download task failed: $languageTag", error)
+            cleanupBarrier.removePendingDeletion(languageTag)
+            claimedModelDeletions.remove(languageTag)
             activeModelDownloads.remove(languageTag, task)
         }
         task.addOnCanceledListener {
             Log.w(TAG, "model download task cancelled: $languageTag")
+            cleanupBarrier.removePendingDeletion(languageTag)
+            claimedModelDeletions.remove(languageTag)
             activeModelDownloads.remove(languageTag, task)
         }
         task
+    }
+
+    private fun claimPendingModelDeletion(languageTag: String): Boolean =
+        cleanupBarrier.isPendingDeletion(languageTag) &&
+            claimedModelDeletions.add(languageTag)
+
+    private suspend fun deleteClaimedPendingModel(
+        model: TranslateRemoteModel,
+    ): Boolean {
+        val languageTag = model.language
+        var lastError: Exception? = null
+
+        try {
+            repeat(PENDING_DELETE_ATTEMPTS) { attempt ->
+                try {
+                    deleteDownloadedModel(model)
+                    activeModelMonitors[languageTag]
+                        ?.takeIf { !it.isCompleted }
+                        ?.await()
+                    _states.update { current -> current - languageTag }
+                    cleanupBarrier.removePendingDeletion(languageTag)
+                    return true
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    lastError = e
+                    if (attempt < PENDING_DELETE_ATTEMPTS - 1) {
+                        delay(PENDING_DELETE_RETRY_DELAY_MS)
+                    }
+                }
+            }
+
+            publishFailure(
+                languageTag,
+                requireNotNull(lastError),
+            )
+            return false
+        } finally {
+            claimedModelDeletions.remove(languageTag)
+        }
+    }
+
+    private suspend fun downloadedModels(): Set<TranslateRemoteModel> =
+        suspendCancellableCoroutine { continuation ->
+            remoteModelManager.getDownloadedModels(TranslateRemoteModel::class.java)
+                .addOnSuccessListener { models ->
+                    if (continuation.isActive) continuation.resume(models)
+                }
+                .addOnFailureListener { error ->
+                    if (continuation.isActive) continuation.resumeWithException(error)
+                }
+                .addOnCanceledListener {
+                    continuation.cancel()
+                }
+        }
+
+    private suspend fun deleteDownloadedModel(
+        model: TranslateRemoteModel,
+    ): Unit = suspendCancellableCoroutine { continuation ->
+        remoteModelManager.deleteDownloadedModel(model)
+            .addOnSuccessListener {
+                if (continuation.isActive) continuation.resume(Unit)
+            }
+            .addOnFailureListener { error ->
+                if (continuation.isActive) continuation.resumeWithException(error)
+            }
+            .addOnCanceledListener {
+                continuation.cancel()
+            }
     }
 
     private suspend fun isModelDownloaded(
@@ -333,5 +584,7 @@ class MlKitTranslationModelManager(
         private const val MODEL_DOWNLOAD_TIMEOUT_MS = 5L * 60 * 1000
         private const val MODEL_POLL_INTERVAL_MS = 2_000L
         private const val MODEL_CHECK_TIMEOUT_MS = 10_000L
+        private const val PENDING_DELETE_ATTEMPTS = 3
+        private const val PENDING_DELETE_RETRY_DELAY_MS = 500L
     }
 }

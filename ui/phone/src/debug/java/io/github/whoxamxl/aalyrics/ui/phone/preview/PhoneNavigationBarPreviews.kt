@@ -59,6 +59,7 @@ private fun PhoneNavigationGestureContextPreview() {
             PhoneNavigationBar(
                 selectedDestination = PhoneDestination.Lyrics,
                 onDestinationSelected = {},
+                onDestinationReselected = {},
             )
             Box(
                 modifier = Modifier
@@ -86,6 +87,7 @@ private fun PhoneNavigationPreview(selectedDestination: PhoneDestination) {
         PhoneNavigationBar(
             selectedDestination = selectedDestination,
             onDestinationSelected = {},
+            onDestinationReselected = {},
         )
     }
 }

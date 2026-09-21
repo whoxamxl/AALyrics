@@ -1,7 +1,10 @@
 package io.github.whoxamxl.aalyrics.ui.phone.settings
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
@@ -15,7 +18,11 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.toggleable
@@ -38,6 +45,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
@@ -244,6 +253,63 @@ internal fun SettingsNavigationRow(
             },
             modifier = Modifier.size(AALyricsSpacing.Space24),
         )
+    }
+}
+
+@Composable
+internal fun SettingsActionRow(
+    title: String,
+    actionLabel: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    titleColor: Color = AALyricsColors.TextPrimary,
+    actionColor: Color = AALyricsColors.AccentCyan,
+    infoText: String? = null,
+    infoContentDescription: String? = null,
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .heightIn(min = AALyricsSpacing.Space64)
+            .clickable(
+                role = Role.Button,
+                onClick = onClick,
+            )
+            .padding(
+                start = AALyricsSpacing.Space16,
+                end = AALyricsSpacing.Space12,
+                top = AALyricsSpacing.Space8,
+                bottom = AALyricsSpacing.Space8,
+            ),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = title,
+            style = AALyricsTypography.AppTitle,
+            color = titleColor,
+            modifier = Modifier.weight(1f),
+        )
+
+        if (infoText != null && infoContentDescription != null) {
+            SettingInfoTooltip(
+                text = infoText,
+                contentDescription = infoContentDescription,
+            )
+        }
+
+        Box(
+            modifier = Modifier
+                .width(52.dp)
+                .padding(start = AALyricsSpacing.Space4),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                text = actionLabel,
+                style = AALyricsTypography.TrackArtist,
+                color = actionColor,
+                maxLines = 1,
+            )
+        }
     }
 }
 
@@ -820,18 +886,14 @@ internal fun SettingInfoTooltip(
 }
 
 @Composable
-internal fun TargetLanguagePicker(
-    options: List<SettingsLanguageOptionUiState>,
-    selectedId: String,
+internal fun SettingsConfirmationDialog(
     title: String,
-    downloadContentDescription: String,
-    downloadingContentDescription: String,
-    retryContentDescription: String,
-    failureInfoContentDescription: String,
-    genericFailureReason: String,
-    onSelected: (String) -> Unit,
-    onDownloadRequested: (String) -> Unit,
+    text: String,
+    confirmLabel: String,
+    dismissLabel: String,
+    onConfirm: () -> Unit,
     onDismissRequest: () -> Unit,
+    confirmColor: Color = AALyricsColors.AccentCyan,
 ) {
     AlertDialog(
         onDismissRequest = onDismissRequest,
@@ -843,32 +905,154 @@ internal fun TargetLanguagePicker(
             )
         },
         text = {
-            Column(
-                modifier = Modifier
-                    .heightIn(max = 420.dp)
-                    .verticalScroll(rememberScrollState()),
-            ) {
-                options.forEach { option ->
-                    TargetLanguageRow(
-                        option = option,
-                        selected = option.id == selectedId,
-                        downloadContentDescription = downloadContentDescription,
-                        downloadingContentDescription = downloadingContentDescription,
-                        retryContentDescription = retryContentDescription,
-                        failureInfoContentDescription = failureInfoContentDescription,
-                        genericFailureReason = genericFailureReason,
-                        onSelected = {
-                            onSelected(option.id)
-                            onDismissRequest()
-                        },
-                        onDownloadRequested = {
-                            onDownloadRequested(option.id)
-                        },
-                    )
-                }
+            Text(
+                text = text,
+                style = AALyricsTypography.TrackArtist,
+                color = AALyricsColors.TextSecondary,
+            )
+        },
+        confirmButton = {
+            TextButton(onClick = onConfirm) {
+                Text(
+                    text = confirmLabel,
+                    color = confirmColor,
+                )
             }
         },
-        confirmButton = {},
+        dismissButton = {
+            TextButton(onClick = onDismissRequest) {
+                Text(
+                    text = dismissLabel,
+                    color = AALyricsColors.TextSecondary,
+                )
+            }
+        },
+        containerColor = AALyricsColors.BackgroundSurfaceStrong,
+        titleContentColor = AALyricsColors.TextPrimary,
+        textContentColor = AALyricsColors.TextPrimary,
+        shape = RoundedCornerShape(AALyricsRadius.Radius16),
+    )
+}
+
+@Composable
+internal fun TargetLanguagePicker(
+    options: List<SettingsLanguageOptionUiState>,
+    selectedId: String,
+    title: String,
+    downloadContentDescription: String,
+    checkingContentDescription: String,
+    downloadingContentDescription: String,
+    retryContentDescription: String,
+    failureInfoContentDescription: String,
+    genericFailureReason: String,
+    confirmLabel: String,
+    dismissLabel: String,
+    onSelected: (String) -> Unit,
+    onDownloadRequested: (String) -> Unit,
+    onConfirm: () -> Unit,
+    onDismissRequest: () -> Unit,
+) {
+    val listState = rememberLazyListState()
+    val topFadeAlpha by animateFloatAsState(
+        targetValue = if (listState.canScrollBackward) 1f else 0f,
+        animationSpec = tween(durationMillis = 180),
+        label = "targetLanguageTopFade",
+    )
+    val bottomFadeAlpha by animateFloatAsState(
+        targetValue = if (listState.canScrollForward) 1f else 0f,
+        animationSpec = tween(durationMillis = 180),
+        label = "targetLanguageBottomFade",
+    )
+
+    AlertDialog(
+        onDismissRequest = onDismissRequest,
+        title = {
+            Text(
+                text = title,
+                style = AALyricsTypography.TrackTitle,
+                color = AALyricsColors.TextPrimary,
+            )
+        },
+        text = {
+            Box(
+                modifier = Modifier.heightIn(max = 312.dp),
+            ) {
+                LazyColumn(
+                    state = listState,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    items(
+                        items = options,
+                        key = { option -> option.id },
+                    ) { option ->
+                        TargetLanguageRow(
+                            option = option,
+                            selected = option.id == selectedId,
+                            downloadContentDescription = downloadContentDescription,
+                            checkingContentDescription = checkingContentDescription,
+                            downloadingContentDescription = downloadingContentDescription,
+                            retryContentDescription = retryContentDescription,
+                            failureInfoContentDescription = failureInfoContentDescription,
+                            genericFailureReason = genericFailureReason,
+                            onSelected = {
+                                onSelected(option.id)
+                            },
+                            onDownloadRequested = {
+                                onDownloadRequested(option.id)
+                            },
+                        )
+                    }
+                }
+
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.TopCenter)
+                        .fillMaxWidth()
+                        .height(24.dp)
+                        .alpha(topFadeAlpha)
+                        .background(
+                            Brush.verticalGradient(
+                                colors = listOf(
+                                    AALyricsColors.BackgroundSurfaceStrong,
+                                    Color.Transparent,
+                                ),
+                            ),
+                        ),
+                )
+
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .fillMaxWidth()
+                        .height(24.dp)
+                        .alpha(bottomFadeAlpha)
+                        .background(
+                            Brush.verticalGradient(
+                                colors = listOf(
+                                    Color.Transparent,
+                                    AALyricsColors.BackgroundSurfaceStrong,
+                                ),
+                            ),
+                        ),
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onConfirm) {
+                Text(
+                    text = confirmLabel,
+                    color = AALyricsColors.AccentCyan,
+                )
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismissRequest) {
+                Text(
+                    text = dismissLabel,
+                    color = AALyricsColors.TextSecondary,
+                )
+            }
+        },
         containerColor = AALyricsColors.BackgroundSurfaceStrong,
         titleContentColor = AALyricsColors.TextPrimary,
         textContentColor = AALyricsColors.TextPrimary,
@@ -881,6 +1065,7 @@ private fun TargetLanguageRow(
     option: SettingsLanguageOptionUiState,
     selected: Boolean,
     downloadContentDescription: String,
+    checkingContentDescription: String,
     downloadingContentDescription: String,
     retryContentDescription: String,
     failureInfoContentDescription: String,
@@ -929,6 +1114,7 @@ private fun TargetLanguageRow(
             option = option,
             selected = selected,
             downloadContentDescription = downloadContentDescription,
+            checkingContentDescription = checkingContentDescription,
             downloadingContentDescription = downloadingContentDescription,
             retryContentDescription = retryContentDescription,
             onDownloadRequested = onDownloadRequested,
@@ -941,6 +1127,7 @@ private fun TargetLanguagePrimaryAction(
     option: SettingsLanguageOptionUiState,
     selected: Boolean,
     downloadContentDescription: String,
+    checkingContentDescription: String,
     downloadingContentDescription: String,
     retryContentDescription: String,
     onDownloadRequested: () -> Unit,
@@ -957,6 +1144,20 @@ private fun TargetLanguagePrimaryAction(
                         modifier = Modifier.size(AALyricsSpacing.Space24),
                     )
                 }
+            }
+        }
+
+        TranslationModelUiState.CHECKING -> {
+            TargetLanguageIconSlot(
+                modifier = Modifier.semantics {
+                    contentDescription = checkingContentDescription
+                },
+            ) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(AALyricsSpacing.Space20),
+                    color = AALyricsColors.TextSecondary,
+                    strokeWidth = AALyricsStroke.Strong,
+                )
             }
         }
 

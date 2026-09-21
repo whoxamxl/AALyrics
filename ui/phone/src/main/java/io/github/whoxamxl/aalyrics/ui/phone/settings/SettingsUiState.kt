@@ -5,9 +5,16 @@ import androidx.compose.runtime.Immutable
 /** Presentation state for one Translation language model in the Settings picker. */
 enum class TranslationModelUiState {
     BUILT_IN,
+    CHECKING,
     NOT_DOWNLOADED,
     DOWNLOADING,
     READY,
+    FAILED,
+}
+
+enum class TranslationModelCleanupUiState {
+    IDLE,
+    RUNNING,
     FAILED,
 }
 
@@ -81,9 +88,11 @@ enum class AndroidAutoCompatibilityUiStatus {
 data class SettingsScreenUiState(
     val plainLyricsAutoScrollEnabled: Boolean = true,
     val verboseDetailsEnabled: Boolean = false,
-    val translationEnabled: Boolean = true,
+    val translationEnabled: Boolean = false,
     val translationTarget: SettingsLanguageOptionUiState,
     val translationTargets: List<SettingsLanguageOptionUiState>,
+    val translationModelCleanup: TranslationModelCleanupUiState =
+        TranslationModelCleanupUiState.IDLE,
     val androidAutoCompatibilityStatus: AndroidAutoCompatibilityUiStatus =
         AndroidAutoCompatibilityUiStatus.NOT_REVIEWED,
     val appVersionName: String,

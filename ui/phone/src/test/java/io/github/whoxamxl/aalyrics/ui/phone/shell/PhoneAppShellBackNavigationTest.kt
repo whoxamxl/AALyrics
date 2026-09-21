@@ -14,6 +14,22 @@ class PhoneAppShellBackNavigationTest {
     }
 
     @Test
+    fun `selected primary tab is treated as a reselection`() {
+        assertTrue(
+            isPrimaryDestinationReselection(
+                selectedDestination = PhoneDestination.Settings,
+                tappedDestination = PhoneDestination.Settings,
+            ),
+        )
+        assertFalse(
+            isPrimaryDestinationReselection(
+                selectedDestination = PhoneDestination.Settings,
+                tappedDestination = PhoneDestination.Lyrics,
+            ),
+        )
+    }
+
+    @Test
     fun `top level destinations return to lyrics home on system back`() {
         assertTrue(
             shouldReturnToHomeOnSystemBack(PhoneDestination.Sync),

@@ -51,6 +51,12 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 
+internal enum class TranslationModelCleanupState {
+    IDLE,
+    RUNNING,
+    FAILED,
+}
+
 /** Process-level owner of the first production lyrics object graph. */
 class AALyricsApplication : Application() {
     private val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
@@ -70,6 +76,8 @@ class AALyricsApplication : Application() {
     private lateinit var phoneMediaSourceLabelStateFlow: StateFlow<String?>
     private lateinit var phoneDetailsStateFlow: StateFlow<DetailsScreenUiState>
     private val mutablePlaybackArtworkState = MutableStateFlow<Bitmap?>(null)
+    private val mutableTranslationModelCleanupState =
+        MutableStateFlow(TranslationModelCleanupState.IDLE)
     private val playbackArtworkSink = PlaybackArtworkSink { bitmap ->
         mutablePlaybackArtworkState.value = bitmap
     }
@@ -115,6 +123,9 @@ class AALyricsApplication : Application() {
     val translationModelStates: StateFlow<Map<String, TranslationModelState>>
         get() = translationModelManager.states
 
+    internal val translationModelCleanupState: StateFlow<TranslationModelCleanupState> =
+        mutableTranslationModelCleanupState.asStateFlow()
+
     fun setTranslationEnabled(enabled: Boolean) {
         translationSettingsStore.setEnabled(enabled)
     }
@@ -136,6 +147,34 @@ class AALyricsApplication : Application() {
 
     fun setVerboseDetailsEnabled(enabled: Boolean) {
         phonePresentationSettingsStore.setVerboseDetailsEnabled(enabled)
+    }
+
+    fun clearDownloadedTranslationModels() {
+        if (mutableTranslationModelCleanupState.value == TranslationModelCleanupState.RUNNING) {
+            return
+        }
+
+        translationSettingsStore.resetToDefaults()
+        mutableTranslationModelCleanupState.value = TranslationModelCleanupState.RUNNING
+        applicationScope.launch {
+            mutableTranslationModelCleanupState.value =
+                if (translationModelManager.clearDownloadedModels()) {
+                    TranslationModelCleanupState.IDLE
+                } else {
+                    TranslationModelCleanupState.FAILED
+                }
+        }
+    }
+
+    fun dismissTranslationModelCleanupFailure() {
+        if (mutableTranslationModelCleanupState.value == TranslationModelCleanupState.FAILED) {
+            mutableTranslationModelCleanupState.value = TranslationModelCleanupState.IDLE
+        }
+    }
+
+    fun resetAppOwnedSettings() {
+        translationSettingsStore.resetToDefaults()
+        phonePresentationSettingsStore.resetToDefaults()
     }
 
     fun openSelectedPlaybackApp(): Boolean =

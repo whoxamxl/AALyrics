@@ -25,6 +25,7 @@ import io.github.whoxamxl.aalyrics.ui.phone.state.PhoneShellUiState
 fun PhoneAppShell(
     state: PhoneShellUiState,
     onDestinationSelected: (PhoneDestination) -> Unit,
+    onDestinationReselected: (PhoneDestination) -> Unit,
     onPrevious: () -> Unit,
     onPlayPause: () -> Unit,
     onNext: () -> Unit,
@@ -99,6 +100,7 @@ fun PhoneAppShell(
             PhoneNavigationBar(
                 selectedDestination = state.selectedDestination,
                 onDestinationSelected = onDestinationSelected,
+                onDestinationReselected = onDestinationReselected,
             )
         }
     }

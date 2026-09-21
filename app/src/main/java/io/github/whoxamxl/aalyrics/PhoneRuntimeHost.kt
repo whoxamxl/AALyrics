@@ -29,6 +29,7 @@ internal fun PhoneRuntimeHost(
     application: AALyricsApplication,
     androidAutoStatus: AndroidAutoCompatibilityUiStatus,
     onAndroidAutoCompatibilitySetup: () -> Unit,
+    onResetAALyrics: () -> Unit,
     onOpenSourceCode: () -> Unit,
 ) {
     val playback by application.playbackState.collectAsStateWithLifecycle()
@@ -39,6 +40,8 @@ internal fun PhoneRuntimeHost(
     val playbackArtwork by application.playbackArtworkState.collectAsStateWithLifecycle()
     val translationSettings by application.translationSettings.collectAsStateWithLifecycle()
     val translationModelStates by application.translationModelStates.collectAsStateWithLifecycle()
+    val translationModelCleanupState by
+        application.translationModelCleanupState.collectAsStateWithLifecycle()
     val verboseDetailsEnabled by application.verboseDetailsEnabled.collectAsStateWithLifecycle()
 
     var selectedDestination by rememberSaveable {
@@ -46,6 +49,9 @@ internal fun PhoneRuntimeHost(
     }
     var plainLyricsAutoScrollEnabled by rememberSaveable {
         mutableStateOf(true)
+    }
+    var destinationRootResetKey by rememberSaveable {
+        mutableStateOf(0)
     }
     var lyricsInteractionMode by rememberSaveable(playback.trackIdentity) {
         mutableStateOf(LyricsViewportInteractionMode.FOLLOW)
@@ -92,6 +98,7 @@ internal fun PhoneRuntimeHost(
         appVersionName = BuildConfig.VERSION_NAME,
         currentYear = Year.now().value,
         licenseText = application.licenseText,
+        translationModelCleanupState = translationModelCleanupState,
     )
 
     PhoneAppShell(
@@ -101,6 +108,12 @@ internal fun PhoneRuntimeHost(
             playbackSurface = playbackSurface,
         ),
         onDestinationSelected = { selectedDestination = it },
+        onDestinationReselected = { destination ->
+            destinationRootResetKey += 1
+            if (destination == PhoneDestination.Lyrics) {
+                lyricsInteractionMode = LyricsViewportInteractionMode.FOLLOW
+            }
+        },
         onPrevious = application::skipToPrevious,
         onPlayPause = {
             if (playback.isPlaying) application.pause() else application.play()
@@ -140,16 +153,26 @@ internal fun PhoneRuntimeHost(
                 } else {
                     detailsState
                 },
+                rootResetKey = destinationRootResetKey,
                 bottomOverlayInset = bottomOverlayInset,
             )
 
             PhoneDestination.Settings -> SettingsScreen(
                 state = settingsState,
+                rootResetKey = destinationRootResetKey,
                 onPlainLyricsAutoScrollChanged = { plainLyricsAutoScrollEnabled = it },
                 onVerboseDetailsChanged = application::setVerboseDetailsEnabled,
                 onTranslationEnabledChanged = application::setTranslationEnabled,
                 onTranslationTargetSelected = application::setTranslationTargetLanguage,
                 onTranslationModelDownloadRequested = application::requestTranslationModel,
+                onClearTranslationModels = application::clearDownloadedTranslationModels,
+                onDismissTranslationModelCleanupFailure =
+                    application::dismissTranslationModelCleanupFailure,
+                onResetAALyrics = {
+                    plainLyricsAutoScrollEnabled = true
+                    application.resetAppOwnedSettings()
+                    onResetAALyrics()
+                },
                 onAndroidAutoCompatibilitySetup = onAndroidAutoCompatibilitySetup,
                 onCheckForUpdates = {},
                 onDownloadUpdate = {},

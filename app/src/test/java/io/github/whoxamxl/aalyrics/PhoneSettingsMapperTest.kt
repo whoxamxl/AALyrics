@@ -6,6 +6,7 @@ import io.github.whoxamxl.aalyrics.translation.api.TranslationSettings
 import io.github.whoxamxl.aalyrics.ui.phone.settings.AndroidAutoCompatibilityUiStatus
 import io.github.whoxamxl.aalyrics.ui.phone.settings.AppUpdateUiPhase
 import io.github.whoxamxl.aalyrics.ui.phone.settings.ChangelogUiPhase
+import io.github.whoxamxl.aalyrics.ui.phone.settings.TranslationModelCleanupUiState
 import io.github.whoxamxl.aalyrics.ui.phone.settings.TranslationModelUiState
 import java.util.Locale
 import kotlin.test.Test
@@ -30,6 +31,56 @@ class PhoneSettingsMapperTest {
         assertEquals("en", state.translationTarget.id)
         assertEquals(TranslationModelUiState.BUILT_IN, state.translationTarget.modelState)
         assertEquals("demo license", state.licenseText)
+    }
+
+    @Test
+    fun `model inventory check does not appear as a download action`() {
+        val state = mapPhoneSettingsState(
+            translationSettings = TranslationSettings(
+                enabled = false,
+                targetLanguage = "ja",
+            ),
+            translationModelStates = mapOf(
+                "ja" to TranslationModelState(
+                    languageTag = "ja",
+                    phase = TranslationModelPhase.CHECKING,
+                ),
+            ),
+            verboseDetailsEnabled = false,
+            plainLyricsAutoScrollEnabled = true,
+            androidAutoStatus = AndroidAutoCompatibilityUiStatus.ENABLED,
+            appVersionName = "0.1.0-dev",
+            currentYear = 2026,
+            licenseText = "demo license",
+            displayLocale = Locale.ENGLISH,
+        )
+
+        assertEquals("ja", state.translationTarget.id)
+        assertEquals(
+            TranslationModelUiState.CHECKING,
+            state.translationTarget.modelState,
+        )
+    }
+
+    @Test
+    fun `cleanup failure is exposed to Settings presentation`() {
+        val state = mapPhoneSettingsState(
+            translationSettings = TranslationSettings(enabled = false),
+            translationModelStates = emptyMap(),
+            verboseDetailsEnabled = false,
+            plainLyricsAutoScrollEnabled = true,
+            androidAutoStatus = AndroidAutoCompatibilityUiStatus.ENABLED,
+            appVersionName = "0.1.0-dev",
+            currentYear = 2026,
+            licenseText = "demo license",
+            translationModelCleanupState = TranslationModelCleanupState.FAILED,
+            displayLocale = Locale.ENGLISH,
+        )
+
+        assertEquals(
+            TranslationModelCleanupUiState.FAILED,
+            state.translationModelCleanup,
+        )
     }
 
     @Test

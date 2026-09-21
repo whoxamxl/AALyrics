@@ -116,6 +116,7 @@ private fun PhoneNavigationNarrowPreview() {
         PhoneNavigationBar(
             selectedDestination = PhoneDestination.Details,
             onDestinationSelected = {},
+            onDestinationReselected = {},
         )
     }
 }
@@ -133,6 +134,7 @@ private fun PhoneAppShellNarrowPreview() {
         PhoneAppShell(
             state = PhonePreviewFixtures.narrowLyricsShell,
             onDestinationSelected = {},
+            onDestinationReselected = {},
             onPrevious = {},
             onPlayPause = {},
             onNext = {},
