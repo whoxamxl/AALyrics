@@ -43,6 +43,7 @@ private fun LicenseSettingsPreview() {
                 .background(AALyricsColors.BackgroundBase),
         ) {
             LicenseSettingsScreen(
+                noticeText = PhonePreviewFixtures.noticeSample,
                 licenseText = PhonePreviewFixtures.licenseMarkdownSample,
                 onBack = {},
                 modifier = Modifier.fillMaxSize(),
