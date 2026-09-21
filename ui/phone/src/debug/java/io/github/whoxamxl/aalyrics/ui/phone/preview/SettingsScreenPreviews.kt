@@ -21,6 +21,7 @@ import io.github.whoxamxl.aalyrics.ui.phone.settings.ChangelogUiState
 import io.github.whoxamxl.aalyrics.ui.phone.settings.SettingsScreen
 import io.github.whoxamxl.aalyrics.ui.phone.settings.SettingsScreenContent
 import io.github.whoxamxl.aalyrics.ui.phone.settings.SettingsScreenUiState
+import io.github.whoxamxl.aalyrics.ui.phone.settings.TranslationModelCleanupUiState
 import io.github.whoxamxl.aalyrics.ui.phone.settings.TranslationModelUiState
 import io.github.whoxamxl.aalyrics.ui.phone.settings.normalizedForSettingsEntry
 import kotlinx.coroutines.delay
@@ -215,8 +216,13 @@ internal fun SettingsScreenPreview(
                         translationEnabled = false,
                         translationTarget = clearedTargets.first { it.id == "en" },
                         translationTargets = clearedTargets,
+                        translationModelCleanup = TranslationModelCleanupUiState.IDLE,
                     )
-                    true
+                },
+                onDismissTranslationModelCleanupFailure = {
+                    state = state.copy(
+                        translationModelCleanup = TranslationModelCleanupUiState.IDLE,
+                    )
                 },
                 onResetAALyrics = {
                     val english = state.translationTargets.first { it.id == "en" }
