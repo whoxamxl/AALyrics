@@ -104,7 +104,7 @@ fun PhoneNavigationBar(
     }
 }
 
-private val PhoneNavigationBarHeight = 56.dp
+private val PhoneNavigationBarHeight = 54.dp
 
 private val PhoneDestination.icon: ImageVector
     get() = when (this) {
