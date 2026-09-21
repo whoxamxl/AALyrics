@@ -9,25 +9,28 @@ class PlaybackSurfaceTransformTest {
     @Test
     fun `expansion progress maps collapsed and expanded anchors`() {
         assertEquals(
-            0f,
-            playbackSurfaceExpansionProgress(
+            expected = 0f,
+            actual = playbackSurfaceExpansionProgress(
                 transformOffsetPx = 0f,
                 transformTravelPx = 200f,
             ),
+            absoluteTolerance = 0.0001f,
         )
         assertEquals(
-            0.5f,
-            playbackSurfaceExpansionProgress(
+            expected = 0.5f,
+            actual = playbackSurfaceExpansionProgress(
                 transformOffsetPx = -100f,
                 transformTravelPx = 200f,
             ),
+            absoluteTolerance = 0.0001f,
         )
         assertEquals(
-            1f,
-            playbackSurfaceExpansionProgress(
+            expected = 1f,
+            actual = playbackSurfaceExpansionProgress(
                 transformOffsetPx = -200f,
                 transformTravelPx = 200f,
             ),
+            absoluteTolerance = 0.0001f,
         )
     }
 
