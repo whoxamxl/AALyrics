@@ -6,6 +6,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -19,6 +20,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -27,6 +29,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.github.whoxamxl.aalyrics.ui.designsystem.component.AALyricsArtworkFallback
 import io.github.whoxamxl.aalyrics.ui.designsystem.icon.AALyricsIcons
@@ -36,7 +39,6 @@ import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsSpacing
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsStroke
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsTypography
 import io.github.whoxamxl.aalyrics.ui.phone.R
-import io.github.whoxamxl.aalyrics.ui.phone.component.TrackIdentityMarquee
 import io.github.whoxamxl.aalyrics.ui.phone.state.PlaybackSurfaceUiState
 
 /** Compact persistent playback surface shown above Phone bottom navigation. */
@@ -104,11 +106,9 @@ internal fun PlaybackBar(
 
                         Spacer(Modifier.width(AALyricsSpacing.Space8))
 
-                        TrackIdentityMarquee(
+                        CollapsedPlaybackIdentity(
                             title = state.title,
                             artist = state.artist,
-                            titleStyle = AALyricsTypography.AppTitle,
-                            artistStyle = AALyricsTypography.Label,
                             modifier = Modifier.weight(1f),
                         )
                     }
@@ -134,6 +134,33 @@ internal fun PlaybackBar(
                     )
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun CollapsedPlaybackIdentity(
+    title: String,
+    artist: String?,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier = modifier) {
+        Text(
+            text = title,
+            style = AALyricsTypography.AppTitle,
+            color = AALyricsColors.TextPrimary,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+
+        artist?.takeIf { it.isNotBlank() }?.let { artistText ->
+            Text(
+                text = artistText,
+                style = AALyricsTypography.Label,
+                color = AALyricsColors.TextSecondary,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
         }
     }
 }

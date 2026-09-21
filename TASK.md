@@ -238,3 +238,19 @@ Accepted refinement:
 
 
 Repository validation for the track identity marquee refinement is complete on the implementation head: architecture checks, debug APK build, unit tests, and sideloadable APK artifact upload pass. Physical-device rendering remains authoritative for motion feel.
+
+
+## Collapsed playback identity overflow refinement
+
+The persistent Collapsed Playback Bar should not duplicate the same marquee motion that may already be visible in the Lyrics Track Card.
+
+Accepted refinement:
+
+- [x] keep the Lyrics Track Card row-aware marquee behavior;
+- [x] keep the Expanded Player row-aware marquee behavior;
+- [x] remove marquee motion from the Collapsed Playback Bar;
+- [x] render collapsed title and artist as independent one-line fixed text with ellipsis overflow;
+- [x] keep existing collapsed typography, colors, layout, expand gesture, and Play/Pause behavior unchanged;
+- [x] align collapsed long-metadata Previews and playback/UI documentation with the ellipsis behavior.
+
+Repository validation is pending on the final implementation head.

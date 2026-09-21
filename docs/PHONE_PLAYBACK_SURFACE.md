@@ -84,17 +84,16 @@ The bar should remain visually compact enough that Lyrics, Sync, Details, and Se
 
 Title and artist are each constrained to one visible line.
 
-Long identity text should reuse the established Track Card marquee behavior rather than increase the bar height:
+The collapsed Playback Bar intentionally does **not** marquee long identity text. It is persistent shell chrome and may be visible at the same time as the richer Lyrics Track Card, so duplicating the same horizontal motion adds visual noise without adding information.
 
-- remain still at the leading position first;
-- if only the title overflows, marquee only the title while the artist stays fixed;
-- if only the artist overflows, marquee only the artist while the title stays fixed;
-- if both lines overflow, marquee title and artist together as one synchronized identity block so their leading edges remain aligned;
-- use the same constant-speed motion for all marquee modes;
-- preserve a clear repeat gap;
-- return to the leading position and pause again.
+Collapsed overflow behavior:
 
-The first implementation should reuse the same timing/velocity semantics as `TrackCard` unless Preview/device tuning shows that the smaller playback surface requires a dedicated token.
+- title stays fixed on one line and truncates with an ellipsis when needed;
+- artist stays fixed on one line and truncates with an ellipsis when needed;
+- title and artist overflow independently;
+- no overflow measurement or marquee animation is required in the collapsed state.
+
+The Track Card and Expanded Player retain the row-aware marquee behavior so full metadata remains discoverable in the richer surfaces.
 
 ## Expanding the player
 
@@ -516,9 +515,12 @@ Deterministic Previews should cover at least:
 
 - collapsed playing;
 - collapsed paused;
-- collapsed title-only overflow marquee;
-- collapsed artist-only overflow marquee;
-- collapsed both-overflow synchronized marquee;
+- collapsed title-only ellipsis;
+- collapsed artist-only ellipsis;
+- collapsed both-overflow ellipsis;
+- expanded title-only overflow marquee;
+- expanded artist-only overflow marquee;
+- expanded both-overflow synchronized marquee;
 - collapsed without artwork;
 - expanded playing;
 - expanded paused;

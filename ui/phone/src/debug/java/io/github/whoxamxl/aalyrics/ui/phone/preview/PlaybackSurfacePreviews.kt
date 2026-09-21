@@ -34,19 +34,19 @@ private fun PlaybackBarPausedPreview() {
     PlaybackBarPreview(PhonePreviewFixtures.pausedSurface)
 }
 
-@Preview(name = "Collapsed · Long title marquee", group = "PlaybackSurface", widthDp = 412, showBackground = true)
+@Preview(name = "Collapsed · Long title ellipsis", group = "PlaybackSurface", widthDp = 412, showBackground = true)
 @Composable
 private fun PlaybackBarLongTitlePreview() {
     PlaybackBarPreview(PhonePreviewFixtures.longTitleSurface)
 }
 
-@Preview(name = "Collapsed · Long artist marquee", group = "PlaybackSurface", widthDp = 412, showBackground = true)
+@Preview(name = "Collapsed · Long artist ellipsis", group = "PlaybackSurface", widthDp = 412, showBackground = true)
 @Composable
 private fun PlaybackBarLongArtistPreview() {
     PlaybackBarPreview(PhonePreviewFixtures.longArtistSurface)
 }
 
-@Preview(name = "Collapsed · Long title + artist marquee", group = "PlaybackSurface", widthDp = 412, showBackground = true)
+@Preview(name = "Collapsed · Long title + artist ellipsis", group = "PlaybackSurface", widthDp = 412, showBackground = true)
 @Composable
 private fun PlaybackBarLongMetadataPreview() {
     PlaybackBarPreview(PhonePreviewFixtures.longMetadataSurface)
