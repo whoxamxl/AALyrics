@@ -73,6 +73,7 @@ Requirements:
 - show title and artist in the identity area;
 - keep Play/Pause as the only direct transport action in the collapsed state;
 - tapping the identity/artwork/background portion expands the player;
+- dragging upward from that same non-Play/Pause portion expands the player with finger-following motion;
 - tapping Play/Pause must not also expand the player;
 - Previous and Next are removed from the collapsed state;
 - preserve accessible touch targets even though the visual treatment is compact.
@@ -83,20 +84,42 @@ The bar should remain visually compact enough that Lyrics, Sync, Details, and Se
 
 Title and artist are each constrained to one visible line.
 
-Long identity text should reuse the established Track Card marquee behavior rather than increase the bar height:
+The collapsed Playback Bar intentionally does **not** marquee long identity text. It is persistent shell chrome and may be visible at the same time as the richer Lyrics Track Card, so duplicating the same horizontal motion adds visual noise without adding information.
 
-- remain still at the leading position first;
-- scroll only when the identity block overflows;
-- use a constant-speed horizontal marquee;
-- preserve a clear repeat gap;
-- return to the leading position and pause again;
-- keep title and artist synchronized as one identity block.
+Collapsed overflow behavior:
 
-The first implementation should reuse the same timing/velocity semantics as `TrackCard` unless Preview/device tuning shows that the smaller playback surface requires a dedicated token.
+- title stays fixed on one line and truncates with an ellipsis when needed;
+- artist stays fixed on one line and truncates with an ellipsis when needed;
+- title and artist overflow independently;
+- no overflow measurement or marquee animation is required in the collapsed state.
+
+The Track Card and Expanded Player retain the row-aware marquee behavior so full metadata remains discoverable in the richer surfaces.
+
+## Interactive marquee in richer identity surfaces
+
+The Lyrics Track Card and Expanded Player support both automatic marquee motion and direct horizontal inspection for overflowing title/artist text.
+
+Interaction contract:
+
+- automatic marquee retains the 4-second leading/repeat pause, 30dp/s motion, and 32dp repeat gap;
+- only overflowing rows participate;
+- title-only overflow -> only title auto-scrolls and only title accepts horizontal drag;
+- artist-only overflow -> only artist auto-scrolls and only artist accepts horizontal drag;
+- both-overflow -> title and artist share one offset for both auto motion and manual drag;
+- manual drag is finger-following and bounded to one marquee cycle from the leading edge through `content width + repeat gap`;
+- dragging beyond either bound clamps at that bound rather than allowing free/infinite panning;
+- manual drag pauses automatic motion;
+- after release, hold the manual position briefly for 250ms, then resume automatic motion from that exact position;
+- the repeated visual copy used for seamless cycling does not create duplicate accessibility semantics;
+- the Collapsed Playback Bar remains fixed ellipsis and does not expose this drag interaction.
+
+In the Expanded Player, horizontal marquee drag is intentionally local to the title/artist identity. The existing vertical header drag remains the collapse gesture. Gesture-direction arbitration must allow a primarily horizontal gesture to inspect marquee text and a primarily vertical gesture to transform/collapse the player without making seek/transport controls participants in either gesture.
 
 ## Expanding the player
 
 Tapping any non-Play/Pause portion of the collapsed Playback Bar expands the same shell-owned surface upward.
+
+The same region also supports an upward drag. During that drag the transformation follows the finger continuously rather than waiting for a release threshold. Releasing settles toward Expanded or Collapsed according to the current transformation position, with a sufficiently directional fling allowed to choose the corresponding destination.
 
 Expansion must not:
 
@@ -139,6 +162,8 @@ The title and artist remain one line each and use the same overflow marquee cont
 
 The expanded player should remain compact. It is not intended to become a full-screen now-playing destination.
 
+Quick Controls defines the shared compact Phone popup visual language. Anchored explanatory tooltips elsewhere in the Phone UI reuse the same popup surface tokens rather than falling back to the default Material `DropdownMenu` appearance.
+
 ## Collapse triggers
 
 Expanded Player collapse is explicit and predictable.
@@ -147,7 +172,7 @@ Collapse when:
 
 - the user taps the destination/backdrop area outside the expanded surface;
 - Android Back / system back gesture is invoked while expanded;
-- the user performs the supported downward collapse gesture on the expanded surface;
+- the user performs the supported downward finger-following collapse drag on the expanded header surface;
 - the player identity/header area is tapped as the inverse of tapping the collapsed bar;
 - the selected MediaSession disappears and there is no eligible replacement session.
 
@@ -174,6 +199,25 @@ Expanded Player + Back
 Collapsed Player + Back
     -> normal destination/activity back behavior
 ```
+
+## Surface transformation interaction
+
+Collapsed and Expanded are two states of the same Playback Surface.
+
+Transformation affordances:
+
+- collapsed identity/artwork/background tap -> animate toward Expanded;
+- collapsed identity/artwork/background upward drag -> follow the finger toward Expanded;
+- expanded identity/header tap -> animate toward Collapsed;
+- expanded identity/header downward drag -> follow the finger toward Collapsed;
+- backdrop tap -> animate toward Collapsed;
+- Android Back while expanded -> animate toward Collapsed.
+
+Both drag directions use the same continuous transformation position. A drag updates that position directly while the pointer moves; release then settles to an anchor based on position and, for a directional fling, release velocity. An incomplete slow drag may return to the state it started from.
+
+These transformation affordances do not use a press/ripple indication. The spatial surface motion itself is the feedback. Ordinary playback controls remain ordinary controls and retain their normal press indication.
+
+This interaction refinement does **not** change the existing backdrop darkness, Expanded/Collapsed surface colors, or their alpha values as a flash/brightness workaround. Those visual values stay as designed unless a separate visual change is explicitly approved.
 
 ## Expanded seek visual language
 
@@ -442,9 +486,9 @@ The collapsed bottom progress indicator and expanded seek control should derive 
 
 Playback-surface artwork is current-track presentation data.
 
-Artwork loading/decoding remains outside the pure playback-surface composable. The UI accepts caller-provided/renderable artwork or a presentation-safe artwork handle and uses a neutral placeholder when unavailable.
+Artwork extraction remains outside the pure playback-surface composable. The selected-session Android boundary forwards `METADATA_KEY_ALBUM_ART`, then `METADATA_KEY_ART`, then `MediaDescription.iconBitmap` when available. The Phone UI still accepts caller-provided/renderable artwork rather than Android MediaSession objects.
 
-The AALyrics brand mark must not be substituted for missing track artwork.
+When no track artwork is available, the artwork slot uses the shared AALyrics foreground mark derived from `branding/android/AALyrics_foreground_android.svg` as the branded fallback.
 
 ## Accessibility and gesture safety
 
@@ -467,7 +511,7 @@ Animations should communicate state, not delay control.
 Required direction:
 
 - collapsed ↔ expanded transition is short and spatially continuous from the same bottom surface;
-- metadata marquee retains the established initial pause before motion;
+- metadata marquee retains the established initial pause before motion and resumes from a manually dragged position after the shorter manual-release pause;
 - normal playback progress advances smoothly while playing;
 - long-press/direct-drag seek preview moves smoothly without emitting intermediate remote commands;
 - release commits immediately and then reconciles with the next MediaSession position callback.
@@ -491,7 +535,13 @@ Deterministic Previews should cover at least:
 
 - collapsed playing;
 - collapsed paused;
-- collapsed long title/artist marquee case;
+- collapsed title-only ellipsis;
+- collapsed artist-only ellipsis;
+- collapsed both-overflow ellipsis;
+- expanded title-only overflow marquee;
+- expanded artist-only overflow marquee;
+- expanded both-overflow synchronized marquee;
+- manual horizontal marquee drag in title-only, artist-only, and synchronized overflow modes;
 - collapsed without artwork;
 - expanded playing;
 - expanded paused;
@@ -508,6 +558,8 @@ Deterministic Previews should cover at least:
 - enlarged font;
 - playback surface over Lyrics and over Settings.
 
+The debug-only interactive full-surface Preview uses the production `PlaybackSurface` composable directly. It is the authoritative Preview for interaction checks that cannot be represented meaningfully in a static frame, including tap expand/collapse, upward finger-following expand drag, downward finger-following collapse drag, release settling, direct seek, Queue, and Translation quick-control interaction. The long-metadata Track Card and Expanded Player Previews also use the production marquee component and are the focused Preview cases for title-only, artist-only, and synchronized auto marquee + manual horizontal drag.
+
 ## Tests
 
 Implementation should add deterministic coverage for presentation/state logic that can be tested outside gesture rendering, including:
@@ -523,7 +575,13 @@ Implementation should add deterministic coverage for presentation/state logic th
 - Translation quick control emits the same application setting callback;
 - Back collapses Expanded Player before normal back behavior;
 - destination switching does not implicitly collapse;
-- session loss clears expanded state.
+- session loss clears expanded state;
+- row-aware marquee mode selects static, title-only, artist-only, or synchronized behavior from per-line overflow;
+- manual marquee offset clamps to one cycle in both drag directions;
+- auto marquee travel duration preserves the configured constant velocity;
+- transformation progress maps deterministically between Collapsed and Expanded anchors;
+- slow release settles to the nearest anchor;
+- sufficiently directional upward/downward fling selects the corresponding Expanded/Collapsed anchor.
 
 ## Explicitly out of scope
 

@@ -31,6 +31,14 @@ object AALyricsPalette {
 object AALyricsColors {
     val BackgroundBase = AALyricsPalette.Navy950
     val BackgroundSurface = Color(0xFF071524)
+    val BackgroundChrome = Color(0xFF05111F)
+    val BackgroundChromeFade1 = Color(0xFF05101E)
+    val BackgroundChromeFade2 = Color(0xFF05101D)
+    val BackgroundChromeFade3 = Color(0xFF040F1C)
+    val BackgroundChromeFade4 = Color(0xFF040E1B)
+    val BackgroundChromeTransition = Color(0xFF040D19)
+    val BackgroundChromeFade5 = Color(0xFF030C18)
+    val BackgroundChromeFade6 = Color(0xFF030A15)
     val BackgroundSurfaceStrong = Color(0xFF0B2038)
     val TextPrimary = AALyricsPalette.Neutral50
     val TextSecondary = AALyricsPalette.Neutral300

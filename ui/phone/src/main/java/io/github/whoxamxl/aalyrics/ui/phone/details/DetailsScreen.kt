@@ -136,7 +136,16 @@ fun DetailsScreen(
             ) {
                 var hasValue = false
 
+                diagnostics.appPackageName?.let {
+                    hasValue = true
+                    DetailsValueRow(
+                        label = stringResource(R.string.details_app_package),
+                        value = it,
+                    )
+                }
+
                 diagnostics.providerId?.let {
+                    if (hasValue) DetailsDivider()
                     hasValue = true
                     DetailsValueRow(
                         label = stringResource(R.string.details_provider_id),

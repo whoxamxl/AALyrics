@@ -183,6 +183,14 @@ internal object PhonePreviewFixtures {
         queue = emptyList(),
         canOpenPlaybackApp = false,
     )
+    val longTitleSurface = playingSurface.copy(
+        title = "A Track Title Long Enough to Demonstrate the Playback Bar Marquee",
+        artist = "The Northbound Lights",
+    )
+    val longArtistSurface = playingSurface.copy(
+        title = "Midnight Signals",
+        artist = "An Artist Name That Is Deliberately Longer Than the Available Player Width",
+    )
     val longMetadataSurface = playingSurface.copy(
         title = "A Track Title Long Enough to Demonstrate the Playback Bar Marquee",
         artist = "An Artist Name That Is Also Deliberately Longer Than the Available Player Width",
@@ -235,14 +243,33 @@ internal object PhonePreviewFixtures {
         SettingsLanguageOptionUiState("it", "Italian"),
         SettingsLanguageOptionUiState("pt", "Portuguese"),
     )
+    val licenseMarkdownSample = """
+        # PolyForm Noncommercial License 1.0.0
+
+        <https://polyformproject.org/licenses/noncommercial/1.0.0>
+
+        ## Acceptance
+
+        This Preview fixture exercises **bold text**, *emphasis*, `inline code`, links, headings,
+        paragraphs, and compact document spacing without duplicating the production LICENSE source.
+
+        ## Notices
+
+        > Required notices remain readable on narrow Phone surfaces.
+
+        - First list item
+        - Second list item
+    """.trimIndent()
+
     val settingsTypical = SettingsScreenUiState(
         plainLyricsAutoScrollEnabled = true,
-        translationEnabled = true,
+        translationEnabled = false,
         translationTarget = settingsLanguages.first { it.id == "en" },
         translationTargets = settingsLanguages,
         androidAutoCompatibilityStatus = AndroidAutoCompatibilityUiStatus.ENABLED,
         appVersionName = "0.1.0-dev",
         currentYear = 2026,
+        licenseText = licenseMarkdownSample,
     )
     val settingsCheckingUpdate = settingsTypical.copy(
         appUpdate = AppUpdateUiState(phase = AppUpdateUiPhase.CHECKING),
@@ -287,7 +314,7 @@ internal object PhonePreviewFixtures {
             failureReason = "GitHub Releases could not be reached.",
         ),
     )
-    val settingsTranslationOff = settingsTypical.copy(translationEnabled = false)
+    val settingsTranslationOn = settingsTypical.copy(translationEnabled = true)
     val settingsAndroidAutoSkipped = settingsTypical.copy(
         androidAutoCompatibilityStatus = AndroidAutoCompatibilityUiStatus.SKIPPED,
     )
@@ -330,6 +357,7 @@ internal object PhonePreviewFixtures {
     )
     val detailsVerbose = detailsTypical.copy(
         diagnostics = DetailsDiagnosticsUiState(
+            appPackageName = "com.spotify.music",
             providerId = "musixmatch",
             sourceId = "mxm:track:9384756",
             trackReferences = listOf(

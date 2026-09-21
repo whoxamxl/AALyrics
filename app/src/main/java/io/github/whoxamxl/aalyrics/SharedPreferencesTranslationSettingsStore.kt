@@ -60,6 +60,6 @@ internal class SharedPreferencesTranslationSettingsStore(
         // Preserve the mature fork's stable key semantics without preserving its View ownership.
         private const val ENABLED_KEY = "translation_enabled"
         private const val TARGET_LANGUAGE_KEY = "translation_target_language"
-        private const val DEFAULT_ENABLED = true
+        private const val DEFAULT_ENABLED = false
     }
 }

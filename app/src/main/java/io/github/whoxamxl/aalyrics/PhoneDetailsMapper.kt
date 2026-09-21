@@ -47,6 +47,7 @@ internal fun mapPhoneDetailsState(
         lyricsStatus = resolvedLyrics.status,
         diagnostics = if (verboseDetailsEnabled) {
             DetailsDiagnosticsUiState(
+                appPackageName = playback.source?.id,
                 providerId = lyricsDocument?.attribution?.providerId,
                 sourceId = lyricsDocument?.attribution?.sourceId,
                 trackReferences = track

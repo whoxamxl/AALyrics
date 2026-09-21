@@ -30,6 +30,7 @@ data class DetailsLyricsUiState(
 
 @Immutable
 data class DetailsDiagnosticsUiState(
+    val appPackageName: String? = null,
     val providerId: String? = null,
     val sourceId: String? = null,
     val trackReferences: List<String> = emptyList(),

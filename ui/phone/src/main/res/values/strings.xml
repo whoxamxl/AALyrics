@@ -58,6 +58,7 @@
     <string name="settings_source_code">Source code</string>
     <string name="settings_github">GitHub</string>
     <string name="settings_license">License</string>
+    <string name="settings_not_available_yet">Not available yet</string>
     <string name="settings_advanced">Advanced</string>
     <string name="settings_back">Back</string>
     <string name="settings_section_debug">DEBUG</string>
@@ -74,6 +75,9 @@
     <string name="settings_brand_name">AALyrics</string>
     <string name="settings_brand_copyright_owner">Yuta Miura (whoxamxl)</string>
     <string name="settings_brand_logo_description">AALyrics logo</string>
+
+    <string name="sync_title">Sync</string>
+    <string name="sync_unavailable">Not available yet. Timing and calibration controls are still being redesigned.</string>
 
     <string name="details_title">Details</string>
     <string name="details_section_track">TRACK</string>
@@ -96,6 +100,7 @@
     <string name="details_sync_line">Line synced</string>
     <string name="details_sync_word">Word synced</string>
     <string name="details_section_diagnostics">DEVELOPER / DIAGNOSTICS</string>
+    <string name="details_app_package">App package</string>
     <string name="details_provider_id">Provider ID</string>
     <string name="details_source_id">Source ID</string>
     <string name="details_track_references">Track references</string>

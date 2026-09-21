@@ -19,6 +19,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.style.TextOverflow
+import io.github.whoxamxl.aalyrics.ui.designsystem.component.AALyricsArtworkFallback
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsColors
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsRadius
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsSpacing
@@ -72,7 +73,11 @@ private fun TrackArtwork(
             .background(AALyricsColors.OverlaySoft),
         contentAlignment = Alignment.Center,
     ) {
-        artwork?.invoke(this)
+        if (artwork != null) {
+            artwork.invoke(this)
+        } else {
+            AALyricsArtworkFallback()
+        }
     }
 }
 

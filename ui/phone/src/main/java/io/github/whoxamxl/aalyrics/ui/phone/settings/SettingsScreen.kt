@@ -36,7 +36,6 @@ fun SettingsScreen(
     onCheckForUpdates: () -> Unit,
     onDownloadUpdate: () -> Unit,
     onChangelogRequested: () -> Unit,
-    onLicenseRequested: () -> Unit,
     onSettingsEntered: () -> Unit,
     onOpenGitHub: () -> Unit,
     modifier: Modifier = Modifier,
@@ -44,26 +43,35 @@ fun SettingsScreen(
 ) {
     var targetLanguagePickerVisible by rememberSaveable { mutableStateOf(false) }
     var changelogVisible by rememberSaveable { mutableStateOf(false) }
-    var advancedVisible by rememberSaveable { mutableStateOf(false) }
+    var activeSubscreen by rememberSaveable {
+        mutableStateOf(SettingsSubscreen.MAIN)
+    }
 
-    BackHandler(enabled = advancedVisible) {
-        advancedVisible = false
+    BackHandler(enabled = activeSubscreen != SettingsSubscreen.MAIN) {
+        activeSubscreen = SettingsSubscreen.MAIN
     }
 
     LaunchedEffect(Unit) {
         onSettingsEntered()
     }
 
-    if (advancedVisible) {
-        AdvancedSettingsScreen(
+    when (activeSubscreen) {
+        SettingsSubscreen.ADVANCED -> AdvancedSettingsScreen(
             verboseDetailsEnabled = state.verboseDetailsEnabled,
             onVerboseDetailsChanged = onVerboseDetailsChanged,
-            onBack = { advancedVisible = false },
+            onBack = { activeSubscreen = SettingsSubscreen.MAIN },
             modifier = modifier,
             bottomOverlayInset = bottomOverlayInset,
         )
-    } else {
-        SettingsScreenContent(
+
+        SettingsSubscreen.LICENSE -> LicenseSettingsScreen(
+            licenseText = state.licenseText,
+            onBack = { activeSubscreen = SettingsSubscreen.MAIN },
+            modifier = modifier,
+            bottomOverlayInset = bottomOverlayInset,
+        )
+
+        SettingsSubscreen.MAIN -> SettingsScreenContent(
             state = state,
             targetLanguagePickerVisible = targetLanguagePickerVisible,
             onTargetLanguagePickerVisibilityChanged = {
@@ -80,8 +88,8 @@ fun SettingsScreen(
                 changelogVisible = true
                 onChangelogRequested()
             },
-            onLicenseRequested = onLicenseRequested,
-            onAdvancedRequested = { advancedVisible = true },
+            onLicenseRequested = { activeSubscreen = SettingsSubscreen.LICENSE },
+            onAdvancedRequested = { activeSubscreen = SettingsSubscreen.ADVANCED },
             onOpenGitHub = onOpenGitHub,
             modifier = modifier,
             bottomOverlayInset = bottomOverlayInset,
@@ -209,6 +217,7 @@ internal fun SettingsScreenContent(
                     stringResource(R.string.settings_update_failure_info),
                 genericFailureReason =
                     stringResource(R.string.settings_update_failure_generic),
+                unavailableLabel = stringResource(R.string.settings_not_available_yet),
                 onCheckForUpdates = onCheckForUpdates,
                 onDownloadUpdate = onDownloadUpdate,
             )
@@ -217,7 +226,12 @@ internal fun SettingsScreenContent(
 
             SettingsNavigationRow(
                 title = stringResource(R.string.settings_changelog),
-                value = null,
+                value = if (state.changelog.phase == ChangelogUiPhase.UNAVAILABLE) {
+                    stringResource(R.string.settings_not_available_yet)
+                } else {
+                    null
+                },
+                enabled = state.changelog.phase != ChangelogUiPhase.UNAVAILABLE,
                 onClick = onChangelogRequested,
             )
 
@@ -301,4 +315,11 @@ private fun androidAutoStatusColor(
     AndroidAutoCompatibilityUiStatus.ENABLED -> AALyricsColors.Success
     AndroidAutoCompatibilityUiStatus.SKIPPED -> AALyricsColors.Warning
     AndroidAutoCompatibilityUiStatus.NOT_REVIEWED -> AALyricsColors.TextSecondary
+}
+
+
+private enum class SettingsSubscreen {
+    MAIN,
+    ADVANCED,
+    LICENSE,
 }

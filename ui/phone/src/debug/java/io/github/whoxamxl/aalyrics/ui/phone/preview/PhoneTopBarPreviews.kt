@@ -28,6 +28,17 @@ private fun PhoneTopBarSpotifyPreview() {
 }
 
 @Preview(
+    name = "Package fallback",
+    group = "PhoneTopBar",
+    widthDp = 412,
+    showBackground = true,
+)
+@Composable
+private fun PhoneTopBarPackageFallbackPreview() {
+    PhoneTopBarPreview(mediaSourceLabel = "com.spotify.music")
+}
+
+@Preview(
     name = "YouTube Music",
     group = "PhoneTopBar",
     widthDp = 412,

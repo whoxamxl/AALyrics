@@ -1,5 +1,6 @@
 package io.github.whoxamxl.aalyrics.platform.media
 
+import android.graphics.Bitmap
 import io.github.whoxamxl.aalyrics.core.model.PlaybackSnapshot
 
 internal interface RuntimeMediaController<Token> {
@@ -8,6 +9,7 @@ internal interface RuntimeMediaController<Token> {
     val isPlaying: Boolean
 
     fun snapshot(): PlaybackSnapshot
+    fun artwork(): Bitmap? = null
     fun controlState(): PlaybackControlState
     fun attach(callback: RuntimeMediaControllerCallback)
     fun detach(callback: RuntimeMediaControllerCallback)
@@ -63,6 +65,7 @@ internal class SelectedMediaSessionRuntime<Token>(
     private val selfPackageName: String,
     private val sink: PlaybackSnapshotSink,
     private val controlStateSink: PlaybackControlStateSink,
+    private val artworkSink: PlaybackArtworkSink = PlaybackArtworkSink {},
     private val scheduler: MetadataTaskScheduler,
     private val refreshSessions: () -> Unit,
     private val metadataStabilizationMs: Long = DEFAULT_METADATA_STABILIZATION_MS,
@@ -141,6 +144,7 @@ internal class SelectedMediaSessionRuntime<Token>(
         if (next == null) {
             sink.onPlaybackSnapshot(PlaybackSnapshot())
             controlStateSink.onPlaybackControlState(PlaybackControlState())
+            artworkSink.onPlaybackArtwork(null)
             return
         }
 
@@ -153,6 +157,7 @@ internal class SelectedMediaSessionRuntime<Token>(
             stableSnapshot = snapshot
             sink.onPlaybackSnapshot(snapshot)
             controlStateSink.onPlaybackControlState(next.controlState())
+            artworkSink.onPlaybackArtwork(next.artwork())
         } catch (failure: RuntimeException) {
             try {
                 next.detach(callback)
@@ -164,6 +169,7 @@ internal class SelectedMediaSessionRuntime<Token>(
             stableSnapshot = null
             sink.onPlaybackSnapshot(PlaybackSnapshot())
             controlStateSink.onPlaybackControlState(PlaybackControlState())
+            artworkSink.onPlaybackArtwork(null)
             throw failure
         }
     }
@@ -176,6 +182,7 @@ internal class SelectedMediaSessionRuntime<Token>(
                 if (latest.trackIdentity == stableSnapshot?.trackIdentity) {
                     stableSnapshot = latest
                     sink.onPlaybackSnapshot(latest)
+                    artworkSink.onPlaybackArtwork(selectedController?.artwork())
                 } else {
                     scheduleMetadata(token)
                 }
@@ -225,6 +232,7 @@ internal class SelectedMediaSessionRuntime<Token>(
             val snapshot = current.snapshot()
             stableSnapshot = snapshot
             sink.onPlaybackSnapshot(snapshot)
+            artworkSink.onPlaybackArtwork(current.artwork())
         }
     }
 

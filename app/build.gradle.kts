@@ -2,6 +2,7 @@ import java.util.Properties
 
 plugins {
     id("com.android.application")
+    id("org.jetbrains.kotlin.plugin.compose")
 }
 
 // Values stay in environment/ignored local files and generated build output only.
@@ -45,10 +46,23 @@ val configuredVersionName = providers.environmentVariable("AALYRICS_VERSION_NAME
     ?.takeIf { it.isNotBlank() }
     ?: "0.1.0-dev"
 
+val generatedLicenseAssetsDir =
+    layout.buildDirectory.dir("generated/licenseAssets").get().asFile
+val syncLicenseAsset = tasks.register<Copy>("syncLicenseAsset") {
+    from(rootProject.file("LICENSE"))
+    into(generatedLicenseAssetsDir)
+    rename { "aalyrics_license.txt" }
+}
+
 android {
-    buildFeatures { buildConfig = true }
+    buildFeatures {
+        buildConfig = true
+        compose = true
+    }
     namespace = "io.github.whoxamxl.aalyrics"
     compileSdk = 36
+
+    sourceSets.getByName("main").assets.srcDir(generatedLicenseAssetsDir)
 
     defaultConfig {
         applicationId = "io.github.whoxamxl.aalyrics"
@@ -102,12 +116,24 @@ dependencies {
     implementation(project(":provider:musixmatch"))
     implementation(project(":provider:synclrc"))
     implementation(project(":ui:phone"))
+    implementation(project(":ui:designsystem"))
     implementation(project(":ui:automotive"))
     implementation(project(":translation:api"))
     implementation(project(":translation:core"))
     implementation(project(":translation:mlkit"))
+    val composeBom = platform("androidx.compose:compose-bom:2026.06.00")
+    implementation(composeBom)
+    implementation("androidx.compose.ui:ui")
+    implementation("androidx.compose.foundation:foundation-layout")
+    implementation("androidx.compose.runtime:runtime")
+    implementation("androidx.activity:activity-compose:1.11.0")
+    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.7.0")
     implementation("androidx.lifecycle:lifecycle-process:2.7.0")
     implementation("androidx.car.app:app:1.7.0")
     testImplementation(kotlin("test-junit"))
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.11.0")
+}
+
+tasks.named("preBuild").configure {
+    dependsOn(syncLicenseAsset)
 }

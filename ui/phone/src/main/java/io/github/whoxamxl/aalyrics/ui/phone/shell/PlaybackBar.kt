@@ -3,8 +3,10 @@ package io.github.whoxamxl.aalyrics.ui.phone.shell
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -18,14 +20,18 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import io.github.whoxamxl.aalyrics.ui.designsystem.component.AALyricsArtworkFallback
 import io.github.whoxamxl.aalyrics.ui.designsystem.icon.AALyricsIcons
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsColors
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsRadius
@@ -33,7 +39,6 @@ import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsSpacing
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsStroke
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsTypography
 import io.github.whoxamxl.aalyrics.ui.phone.R
-import io.github.whoxamxl.aalyrics.ui.phone.component.TrackIdentityMarquee
 import io.github.whoxamxl.aalyrics.ui.phone.state.PlaybackSurfaceUiState
 
 /** Compact persistent playback surface shown above Phone bottom navigation. */
@@ -43,10 +48,12 @@ internal fun PlaybackBar(
     progressFraction: Float?,
     onExpand: () -> Unit,
     onPlayPause: () -> Unit,
+    transformationDragModifier: Modifier = Modifier,
     modifier: Modifier = Modifier,
     artwork: (@Composable BoxScope.() -> Unit)? = null,
 ) {
     val expandLabel = stringResource(R.string.playback_expand)
+    val expandInteractionSource = remember { MutableInteractionSource() }
 
     Box(
         modifier = modifier
@@ -76,7 +83,10 @@ internal fun PlaybackBar(
                         modifier = Modifier
                             .weight(1f)
                             .heightIn(min = 56.dp)
+                            .then(transformationDragModifier)
                             .clickable(
+                                interactionSource = expandInteractionSource,
+                                indication = null,
                                 role = Role.Button,
                                 onClickLabel = expandLabel,
                                 onClick = onExpand,
@@ -96,11 +106,9 @@ internal fun PlaybackBar(
 
                         Spacer(Modifier.width(AALyricsSpacing.Space8))
 
-                        TrackIdentityMarquee(
+                        CollapsedPlaybackIdentity(
                             title = state.title,
                             artist = state.artist,
-                            titleStyle = AALyricsTypography.AppTitle,
-                            artistStyle = AALyricsTypography.Label,
                             modifier = Modifier.weight(1f),
                         )
                     }
@@ -131,6 +139,33 @@ internal fun PlaybackBar(
 }
 
 @Composable
+private fun CollapsedPlaybackIdentity(
+    title: String,
+    artist: String?,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier = modifier) {
+        Text(
+            text = title,
+            style = AALyricsTypography.AppTitle,
+            color = AALyricsColors.TextPrimary,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+
+        artist?.takeIf { it.isNotBlank() }?.let { artistText ->
+            Text(
+                text = artistText,
+                style = AALyricsTypography.Label,
+                color = AALyricsColors.TextSecondary,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+    }
+}
+
+@Composable
 internal fun PlaybackArtwork(
     artwork: (@Composable BoxScope.() -> Unit)?,
     modifier: Modifier = Modifier,
@@ -141,7 +176,11 @@ internal fun PlaybackArtwork(
             .background(AALyricsColors.OverlaySoft),
         contentAlignment = Alignment.Center,
     ) {
-        artwork?.invoke(this)
+        if (artwork != null) {
+            artwork.invoke(this)
+        } else {
+            AALyricsArtworkFallback()
+        }
     }
 }
 

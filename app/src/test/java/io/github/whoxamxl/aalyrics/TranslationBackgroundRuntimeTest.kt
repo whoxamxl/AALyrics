@@ -17,7 +17,9 @@ import kotlin.test.assertEquals
 class TranslationBackgroundRuntimeTest {
     @Test
     fun enabledSettingsPrepareCurrentAndChangedTargets() = runTest {
-        val settingsStore = FakeSettingsStore()
+        val settingsStore = FakeSettingsStore(
+            initial = TranslationSettings(enabled = true),
+        )
         val modelManager = FakeModelManager()
         val runtime = TranslationBackgroundRuntime(
             settingsStore = settingsStore,
@@ -37,7 +39,9 @@ class TranslationBackgroundRuntimeTest {
 
     @Test
     fun disabledSettingsDoNotPrepareNewTarget() = runTest {
-        val settingsStore = FakeSettingsStore()
+        val settingsStore = FakeSettingsStore(
+            initial = TranslationSettings(enabled = true),
+        )
         val modelManager = FakeModelManager()
         val runtime = TranslationBackgroundRuntime(
             settingsStore = settingsStore,
@@ -56,8 +60,10 @@ class TranslationBackgroundRuntimeTest {
         runtime.stop()
     }
 
-    private class FakeSettingsStore : TranslationSettingsStore {
-        private val mutableSettings = MutableStateFlow(TranslationSettings())
+    private class FakeSettingsStore(
+        initial: TranslationSettings = TranslationSettings(),
+    ) : TranslationSettingsStore {
+        private val mutableSettings = MutableStateFlow(initial)
         override val settings: StateFlow<TranslationSettings> = mutableSettings
 
         override fun setEnabled(enabled: Boolean) {

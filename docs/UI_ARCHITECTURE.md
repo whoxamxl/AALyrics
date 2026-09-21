@@ -119,6 +119,10 @@ The richer current-track card remains Lyrics-destination content. The shell-leve
 
 PR #33 established the persistent shell boundary in production Compose. Subsequent Phone slices added Track Card, LyricsViewport/LyricsScreen, production Settings, and the capability-aware two-state Playback Surface. PR #46 completed the current shell playback contract with collapsed/expanded presentation, seek, Queue/Open-app fallback, and Translation quick controls. PR #49 implements the approved Details destination and the Settings-owned Advanced sub-surface while preserving the existing shell/application boundaries. Sync remains intentionally undefined pending timing/calibration redesign.
 
+PR #50 realizes the application-composition boundary documented in `docs/PHONE_RUNTIME_HOST.md`: `MainActivity` keeps the existing onboarding/permission entry gates, while READY is the lifecycle-aware Compose host for `PhoneAppShell`. Host-local destination selection and Lyrics browse/Plain auto-scroll interaction remain presentation state; durable settings and media/runtime ownership stay outside `:ui:phone`.
+
+The current Phone-local primitive standards are defined in `docs/PHONE_UI_SPEC.md`: `PhonePopupMenu` for anchored compact popup/tooltip surfaces, `SettingsSubscreenHeader` for second-level Settings navigation, and `PhoneMarkdownText` for Markdown documents such as License and future Changelog content. These remain in `:ui:phone` until cross-surface reuse justifies promotion to `:ui:designsystem`.
+
 ## Shared vs automotive design system
 
 AALyrics has one shared semantic design language, but it is rendered through different UI technologies.
@@ -393,9 +397,13 @@ Presentation modules may map domain/application state into surface-specific stat
 ```text
 Application/domain state
         ↓
-Phone presentation mapping
+AALyricsApplication / app-owned presentation mapping
+        ↓
+MainActivity READY host
         ├─> PhoneShellUiState ------> PhoneAppShell
-        └─> LyricsUiState ----------> LyricsScreen
+        ├─> LyricsUiState ----------> LyricsScreen
+        ├─> DetailsScreenUiState ---> DetailsScreen
+        └─> SettingsScreenUiState --> SettingsScreen
 
 LyricsState
         ↓

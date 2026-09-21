@@ -22,6 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.unit.dp
 import io.github.whoxamxl.aalyrics.ui.designsystem.icon.AALyricsIcons
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsColors
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsSpacing
@@ -38,13 +39,13 @@ fun PhoneNavigationBar(
 ) {
     Surface(
         modifier = modifier.fillMaxWidth(),
-        color = AALyricsColors.BackgroundSurface,
+        color = AALyricsColors.BackgroundChrome,
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .navigationBarsPadding()
-                .height(AALyricsSpacing.Space64)
+                .height(PhoneNavigationBarHeight)
                 .selectableGroup(),
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically,
@@ -61,8 +62,10 @@ fun PhoneNavigationBar(
                             role = Role.Tab,
                         )
                         .padding(
-                            horizontal = AALyricsSpacing.Space4,
-                            vertical = AALyricsSpacing.Space4,
+                            start = AALyricsSpacing.Space4,
+                            top = AALyricsSpacing.Space4,
+                            end = AALyricsSpacing.Space4,
+                            bottom = 2.dp,
                         ),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.SpaceBetween,
@@ -100,6 +103,8 @@ fun PhoneNavigationBar(
         }
     }
 }
+
+private val PhoneNavigationBarHeight = 54.dp
 
 private val PhoneDestination.icon: ImageVector
     get() = when (this) {

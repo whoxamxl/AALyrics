@@ -23,7 +23,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -48,12 +47,45 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.github.whoxamxl.aalyrics.ui.designsystem.icon.AALyricsIcons
+import io.github.whoxamxl.aalyrics.ui.phone.component.PhonePopupMenu
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsColors
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsRadius
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsSpacing
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsStroke
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsTypography
 import io.github.whoxamxl.aalyrics.ui.phone.R
+
+@Composable
+internal fun SettingsSubscreenHeader(
+    title: String,
+    backContentDescription: String,
+    onBack: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        IconButton(
+            onClick = onBack,
+            modifier = Modifier.size(AALyricsSpacing.Space48),
+        ) {
+            Icon(
+                imageVector = AALyricsIcons.Back,
+                contentDescription = backContentDescription,
+                tint = AALyricsColors.TextPrimary,
+                modifier = Modifier.size(32.dp),
+            )
+        }
+
+        Text(
+            text = title,
+            style = AALyricsTypography.LyricsSupporting,
+            color = AALyricsColors.TextPrimary,
+            modifier = Modifier.padding(start = AALyricsSpacing.Space4),
+        )
+    }
+}
 
 @Composable
 internal fun SettingsSection(
@@ -287,6 +319,7 @@ internal fun AppUpdateRow(
     downloadFailedLabel: String,
     failureInfoContentDescription: String,
     genericFailureReason: String,
+    unavailableLabel: String,
     onCheckForUpdates: () -> Unit,
     onDownloadUpdate: () -> Unit,
     modifier: Modifier = Modifier,
@@ -321,6 +354,10 @@ internal fun AppUpdateRow(
         Spacer(Modifier.height(AALyricsSpacing.Space12))
 
         when (state.phase) {
+            AppUpdateUiPhase.UNAVAILABLE -> {
+                AppUpdateStatusTextRow(label = unavailableLabel)
+            }
+
             AppUpdateUiPhase.IDLE -> {
                 AppUpdateActionRow(
                     actionLabel = checkLabel,
@@ -490,6 +527,25 @@ private fun AppUpdateProgressRow(
 }
 
 @Composable
+private fun AppUpdateStatusTextRow(
+    label: String,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = AALyricsSpacing.Space48),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Spacer(Modifier.weight(1f))
+        Text(
+            text = label,
+            style = AALyricsTypography.TrackArtist,
+            color = AALyricsColors.TextTertiary,
+        )
+    }
+}
+
+@Composable
 private fun AppUpdateStatusRow(
     label: String,
     icon: ImageVector,
@@ -584,6 +640,14 @@ internal fun ChangelogDialog(
         },
         text = {
             when (state.phase) {
+                ChangelogUiPhase.UNAVAILABLE -> {
+                    Text(
+                        text = genericFailureReason,
+                        style = AALyricsTypography.TrackArtist,
+                        color = AALyricsColors.TextSecondary,
+                    )
+                }
+
                 ChangelogUiPhase.IDLE,
                 ChangelogUiPhase.LOADING -> {
                     Row(
@@ -740,7 +804,7 @@ internal fun SettingInfoTooltip(
             )
         }
 
-        DropdownMenu(
+        PhonePopupMenu(
             expanded = expanded,
             onDismissRequest = { expanded = false },
             modifier = Modifier.widthIn(max = 280.dp),

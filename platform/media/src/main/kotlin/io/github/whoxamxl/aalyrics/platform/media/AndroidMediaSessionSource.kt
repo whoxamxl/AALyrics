@@ -60,6 +60,11 @@ internal class AndroidRuntimeMediaController(
 
     override fun snapshot() = MediaControllerSnapshotAdapter.snapshot(controller)
 
+    override fun artwork() =
+        controller.metadata?.getBitmap(MediaMetadata.METADATA_KEY_ALBUM_ART)
+            ?: controller.metadata?.getBitmap(MediaMetadata.METADATA_KEY_ART)
+            ?: controller.metadata?.description?.iconBitmap
+
     override fun controlState(): PlaybackControlState {
         val actions = controller.playbackState?.actions ?: 0L
         return PlaybackControlState(

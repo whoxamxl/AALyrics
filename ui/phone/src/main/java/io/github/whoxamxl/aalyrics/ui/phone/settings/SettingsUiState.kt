@@ -22,6 +22,7 @@ data class SettingsLanguageOptionUiState(
 
 /** Presentation lifecycle for checking/downloading an AALyrics GitHub Release update. */
 enum class AppUpdateUiPhase {
+    UNAVAILABLE,
     IDLE,
     CHECKING,
     UP_TO_DATE,
@@ -46,12 +47,14 @@ data class AppUpdateUiState(
  */
 fun AppUpdateUiState.normalizedForSettingsEntry(): AppUpdateUiState =
     when (phase) {
+        AppUpdateUiPhase.UNAVAILABLE,
         AppUpdateUiPhase.CHECKING,
         AppUpdateUiPhase.DOWNLOADING -> this
         else -> AppUpdateUiState()
     }
 
 enum class ChangelogUiPhase {
+    UNAVAILABLE,
     IDLE,
     LOADING,
     READY,
@@ -85,6 +88,7 @@ data class SettingsScreenUiState(
         AndroidAutoCompatibilityUiStatus.NOT_REVIEWED,
     val appVersionName: String,
     val currentYear: Int,
+    val licenseText: String = "",
     val appUpdate: AppUpdateUiState = AppUpdateUiState(),
     val changelog: ChangelogUiState = ChangelogUiState(),
 )

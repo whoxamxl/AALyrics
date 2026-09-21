@@ -33,7 +33,7 @@ PlaybackLyricsController
 LyricsState
 ```
 
-No UI currently consumes that state.
+At the time of PR #25, no UI consumed that state. Later runtime/presentation slices now consume application-owned state through presentation mapping; PR #50 hosts the production Phone shell from READY without changing the original composition ownership boundaries.
 
 ## Composition behavior
 
@@ -86,7 +86,7 @@ Application composition does **not** own:
 - provider scoring/selection policy;
 - provider transport/search behavior.
 
-The next planned independent slice is documented in `docs/MEDIA_SESSION_RUNTIME.md`.
+The next independent slice after PR #25 was the live-media runtime documented in `docs/MEDIA_SESSION_RUNTIME.md`. Subsequent Phone presentation/runtime composition is documented in `docs/PHONE_RUNTIME_HOST.md`; this document remains the historical contract for the provider/core application graph itself.
 
 ## Validation record
 

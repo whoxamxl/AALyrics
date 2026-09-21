@@ -34,7 +34,19 @@ private fun PlaybackBarPausedPreview() {
     PlaybackBarPreview(PhonePreviewFixtures.pausedSurface)
 }
 
-@Preview(name = "Collapsed · Long metadata", group = "PlaybackSurface", widthDp = 412, showBackground = true)
+@Preview(name = "Collapsed · Long title ellipsis", group = "PlaybackSurface", widthDp = 412, showBackground = true)
+@Composable
+private fun PlaybackBarLongTitlePreview() {
+    PlaybackBarPreview(PhonePreviewFixtures.longTitleSurface)
+}
+
+@Preview(name = "Collapsed · Long artist ellipsis", group = "PlaybackSurface", widthDp = 412, showBackground = true)
+@Composable
+private fun PlaybackBarLongArtistPreview() {
+    PlaybackBarPreview(PhonePreviewFixtures.longArtistSurface)
+}
+
+@Preview(name = "Collapsed · Long title + artist ellipsis", group = "PlaybackSurface", widthDp = 412, showBackground = true)
 @Composable
 private fun PlaybackBarLongMetadataPreview() {
     PlaybackBarPreview(PhonePreviewFixtures.longMetadataSurface)
@@ -62,6 +74,43 @@ private fun ExpandedPlayerQueuePreview() {
 @Composable
 private fun ExpandedPlayerPausedPreview() {
     ExpandedPlayerPreview(PhonePreviewFixtures.pausedSurface)
+}
+
+
+@Preview(
+    name = "Expanded · Long title marquee + drag",
+    group = "PlaybackSurface",
+    widthDp = 412,
+    heightDp = 240,
+    showBackground = true,
+)
+@Composable
+private fun ExpandedPlayerLongTitlePreview() {
+    ExpandedPlayerPreview(PhonePreviewFixtures.longTitleSurface)
+}
+
+@Preview(
+    name = "Expanded · Long artist marquee + drag",
+    group = "PlaybackSurface",
+    widthDp = 412,
+    heightDp = 240,
+    showBackground = true,
+)
+@Composable
+private fun ExpandedPlayerLongArtistPreview() {
+    ExpandedPlayerPreview(PhonePreviewFixtures.longArtistSurface)
+}
+
+@Preview(
+    name = "Expanded · Long title + artist marquee + drag",
+    group = "PlaybackSurface",
+    widthDp = 412,
+    heightDp = 240,
+    showBackground = true,
+)
+@Composable
+private fun ExpandedPlayerLongMetadataPreview() {
+    ExpandedPlayerPreview(PhonePreviewFixtures.longMetadataSurface)
 }
 
 @Preview(
@@ -182,7 +231,7 @@ private fun PlaybackQuickControlsPreview() {
 }
 
 @Preview(
-    name = "Interactive · Full surface",
+    name = "Interactive · Transform + seek",
     group = "PlaybackSurface",
     widthDp = 412,
     heightDp = 360,

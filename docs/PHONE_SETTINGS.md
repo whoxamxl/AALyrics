@@ -6,13 +6,15 @@ This document defines the production presentation contract for the Phone `Settin
 
 The production `SettingsScreen` and its Phone-local row components are implemented as a presentation-only destination: `:ui:phone` receives immutable state and emits callbacks. Application/capability layers continue to own persistence and runtime policy.
 
-The first Settings surface was integrated into `main` via PR #44 and polished in PR #45. PR #49 implements the approved second-level `Advanced` surface containing one functional Debug preference (`Verbose details`) and one disabled future Experimental affordance (`Karaoke mode`).
+The first Settings surface was integrated into `main` via PR #44 and polished in PR #45. PR #49 implements the approved second-level `Advanced` surface containing one functional Debug preference (`Verbose details`) and one disabled future Experimental affordance (`Karaoke mode`). PR #50 hosts Settings in the production READY runtime and adds the in-app `License` second-level surface, build-synchronized repository license content, the shared Phone Markdown renderer, and the adopted Phone popup/subscreen-header standards.
 
 ## Product intent
 
 Settings should expose stable user configuration without turning the Phone UI into an owner of application state.
 
-The production Settings surface remains intentionally focused. The Advanced extension adds only one functional presentation preference and one explicitly unavailable future affordance; it does not open a general developer-settings surface.
+The production Settings surface remains intentionally focused. The Advanced extension adds only one functional presentation preference and one explicitly unavailable future affordance; it does not open a general developer-settings surface. License is a read-only second-level document surface and does not create new runtime policy or networking ownership.
+
+Second-level Settings surfaces use the shared `SettingsSubscreenHeader` rather than implementing their own header. The standard back affordance is the Material rounded chevron-left used by the current Advanced screen: 32dp icon inside a 48dp touch target, followed by the screen title. This intentionally mirrors the chevron-right affordance used to enter `Advanced`. Text-only `Back` actions and alternate arrow shapes are not used for normal second-level Settings navigation. System Back remains behaviorally equivalent.
 
 Initial structure:
 
@@ -33,6 +35,9 @@ Settings
 │  ├─ Source code                 GitHub       ↗
 │  └─ License                                 >
 └─ Advanced                                  >
+
+License
+└─ repository LICENSE rendered as compact Markdown
 
 Advanced
 ├─ Debug
@@ -89,7 +94,8 @@ SettingsScreenUiState
 ├─ translationTarget
 ├─ translationTargetOptions
 ├─ androidAutoCompatibilityStatus
-└─ verboseDetailsEnabled
+├─ verboseDetailsEnabled
+└─ licenseText
 ```
 
 The exact Kotlin names may follow implementation needs, but the ownership rule is stable.
@@ -135,10 +141,10 @@ Translation configuration already belongs to the Translation capability/applicat
 Presentation:
 
 ```text
-Translation                         [ON]
+Translation                        [OFF]
 ```
 
-The row emits the requested enabled state. It does not start translation engines directly.
+Translation is opt-in. When no persisted user choice exists, the application-owned setting defaults to disabled. The row emits the requested enabled state; only an explicit user enable starts Translation work. The UI does not start translation engines directly.
 
 ### Target language
 
@@ -164,7 +170,7 @@ The current product target set is:
 - Italian;
 - Portuguese.
 
-The persisted default target is English.
+The persisted default target is English. English remains immediately selectable because ML Kit English support is treated as built in; keeping that model/capability ready does not imply that Translation itself is enabled.
 
 The target-language row remains available while Translation is disabled. Changing the target while disabled is valid configuration and can be applied when Translation is later enabled.
 
@@ -248,18 +254,21 @@ Long values should truncate gracefully rather than forcing the row to uncontroll
 
 A reusable Phone-local on-demand explanatory surface.
 
+The current `SettingInfoTooltip` + `PhonePopupMenu` implementation is the standard Phone tooltip treatment. New anchored informational tooltips should reuse it rather than styling a raw Material `DropdownMenu` independently.
+
 It should:
 
 - be anchored to an explicit info affordance;
 - remain short;
 - dismiss normally;
-- avoid permanently consuming vertical space.
+- avoid permanently consuming vertical space;
+- use the same Phone popup surface as Playback Quick Controls: Radius16, `BackgroundSurfaceStrong`, `BorderSoft`, zero tonal elevation, and the same shadow treatment.
 
 The first demonstrated use is Plain lyrics auto-scroll.
 
 ## Target-language picker
 
-The first implementation uses a compact Material 3 modal picker because the supported target set is short and finite.
+The first implementation uses a compact Material 3 modal picker because the supported target set is short and finite. This picker is not an anchored tooltip/popup and therefore is not required to use `PhonePopupMenu`.
 
 Requirements:
 
@@ -405,7 +414,25 @@ https://github.com/whoxamxl/AALyrics
 
 A `License >` internal navigation row sits directly below Source code.
 
-The repository license is **PolyForm Noncommercial License 1.0.0**. The Phone Settings surface emits `onLicenseRequested`; the detailed license presentation may be supplied by the application/navigation layer without duplicating license ownership in the Settings row itself.
+Opening it presents an in-app second-level Settings surface using the standard `SettingsSubscreenHeader`, matching the navigation model used by `Advanced`. The license text is vertically scrollable and selectable.
+
+The bundled `LICENSE` remains Markdown source. `LicenseSettingsScreen` renders it through the shared Phone-local `PhoneMarkdownText` wrapper rather than showing raw Markdown punctuation. Markdown parsing/rendering is delegated to `mikepenz/multiplatform-markdown-renderer` (Material 3 integration), currently pinned to `0.38.1` for compatibility with the app's Java 17 / compileSdk 36 baseline. AALyrics does not maintain its own Markdown grammar. The source file itself is not rewritten or pre-rendered at build time.
+
+`PhoneMarkdownText` is also the preferred renderer for future presentation-provided Markdown such as GitHub Release changelogs, so License and Changelog do not evolve separate Markdown implementations.
+
+The wrapper applies a compact AALyrics Phone Markdown theme instead of the renderer's default Material display typography. Current baseline: H1 24sp/30sp, H2 20sp/26sp, body 14sp/20sp, inline/code text 13sp/18sp, compact block spacing, and AALyrics cyan underlined links. This keeps long technical documents readable on narrow phones without changing their Markdown source.
+
+The repository-root `LICENSE` file is the single source of truth. Its full contents must **not** be duplicated as Kotlin/string-resource literals. The app build automatically copies the current repository `LICENSE` into generated app assets as `aalyrics_license.txt`; the application reads that bundled asset and supplies the text as presentation state.
+
+Therefore:
+
+- debug and release builds display the exact license checked into the source revision they were built from;
+- changing `LICENSE` requires no Phone UI code update;
+- no network connection or GitHub fetch is required to read the license;
+- the Settings License row is internal navigation, not an external browser link;
+- `:ui:phone` does not read Android assets directly; asset ownership remains in `:app`.
+
+The current repository license is **PolyForm Noncommercial License 1.0.0**, but the UI must derive its displayed body from the bundled file rather than assuming that text remains unchanged.
 
 ### Branding footer
 
@@ -562,14 +589,18 @@ Deterministic debug Previews should cover at least:
 
 The production Settings slice now includes the Advanced presentation contract. PR #49 keeps Verbose Details persistence application-owned and leaves Karaoke mode intentionally disabled and unwired.
 
-A later application-composition slice may map:
+PR #50 implements the Phone runtime-host application-composition boundary from `docs/PHONE_RUNTIME_HOST.md`, making Settings reachable on-device. It maps existing application/capability state into `SettingsScreenUiState` and exposes existing application-owned actions through callbacks, including:
 
 - `TranslationSettingsStore.settings` -> Translation rows;
-- Translation callbacks -> `setEnabled` / `setTargetLanguage`;
+- existing Translation callbacks/capability seams where already implemented;
 - Android Auto acknowledgement -> presentation status;
 - compatibility-row callback -> existing compatibility setup flow;
-- a durable Plain auto-scroll preference -> LyricsViewport presentation state;
-- application-owned Verbose Details preference -> Settings and Details presentation state.
+- application-owned Verbose Details preference -> Settings and Details presentation state;
+- build/version facts and other already-owned application presentation data.
+
+A durable Plain auto-scroll preference remains a separate ownership decision unless the runtime-host implementation has an already-approved backing seam.
+
+The host does not wire active no-op callbacks for unfinished Settings capabilities. Update and Changelog currently map to explicit `UNAVAILABLE` presentation states; their controls remain visibly unavailable rather than expanding PR #50 into release-network implementation.
 
 That wiring must preserve the existing capability ownership documented in the relevant architecture files.
 

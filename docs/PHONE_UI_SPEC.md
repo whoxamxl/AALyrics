@@ -6,6 +6,8 @@ The Phone information architecture and persistent Compose shell are established.
 
 PR #49 implements the approved Details contract from `docs/PHONE_DETAILS.md` together with the narrow `Settings > Advanced` extension from `docs/PHONE_SETTINGS.md`. Details remains read-only, Verbose Details is presentation-only, and Karaoke mode remains disabled/unwired. Sync remains intentionally deferred while its timing/calibration interaction model is reconsidered.
 
+PR #50 implements the application-composition slice defined in `docs/PHONE_RUNTIME_HOST.md`. `MainActivity` preserves the existing entry gates and now hosts the production `PhoneAppShell` for READY. Live app-owned state drives Lyrics, Playback Surface, Details, and Settings; Sync remains an explicit non-functional placeholder. Physical-device iteration on this branch also established selected-session artwork with branded fallback, Translation opt-in defaults, human-readable playback-source labeling with package fallback, in-app License presentation, and shared Phone popup/subscreen/Markdown primitives. The generated debug APK is suitable for continued physical-device Phone UI validation.
+
 ## Product intent
 
 The Phone surface should keep lyrics as the primary content while making app state, playback controls, and destination switching consistently reachable with one hand.
@@ -68,7 +70,7 @@ The approved first Details contract is defined in `docs/PHONE_DETAILS.md`.
 
 Normal Details is read-only and user-facing, covering current track metadata plus resolved lyrics metadata such as provider display name, sync type, language, and line count.
 
-When `Settings > Advanced > Verbose details` is enabled, Details additionally exposes a `Developer / Diagnostics` section for machine-facing framework-neutral facts such as provider ID, provider source ID, and normalized track references. Verbose Details changes presentation only; it must not trigger new lookups or alter provider selection, timing, Translation, playback, or rendering behavior.
+When `Settings > Advanced > Verbose details` is enabled, Details additionally exposes a `Developer / Diagnostics` section for machine-facing framework-neutral facts such as the playback app package name, provider ID, provider source ID, and normalized track references. Verbose Details changes presentation only; it must not trigger new lookups or alter provider selection, timing, Translation, playback, or rendering behavior.
 
 Candidate scores, raw provider payloads, log export, and deeper resolver diagnostics remain deferred until separately justified.
 
@@ -82,9 +84,10 @@ The production Settings contract is defined in `docs/PHONE_SETTINGS.md`. Its imp
 - Translation enabled/disabled;
 - Translation target language;
 - Android Auto compatibility acknowledgement/status and setup re-entry;
-- app update entry and installed version;
-- GitHub Release changelog;
-- source-code and license entries;
+- installed version plus explicit unavailable Update presentation until release-network runtime exists;
+- explicit unavailable Changelog presentation until release-note runtime exists;
+- external Source code entry;
+- in-app License entry backed by the repository-root `LICENSE`;
 - permanent AALyrics branding/GitHub footer;
 - an `Advanced` entry containing:
   - functional `Verbose details` presentation preference;
@@ -103,7 +106,11 @@ Purpose:
 
 Examples include `Spotify`, `YouTube Music`, or `Poweramp`. The top bar does not show lyrics format, provider/sync status, track metadata, or playback state; those belong to destination content, the Lyrics Track Card, or playback controls.
 
-The UI receives the media-source label as presentation data only; media-session discovery and source selection remain outside `:ui:phone`. The persistent visual treatment uses the shared AALyrics brand mark on the left and a compact outlined source pill with a cyan dot on the right.
+The application/runtime boundary resolves the selected playback package to a human-readable application label where possible. If label resolution fails, the package identifier (for example `com.spotify.music`) is the final presentation fallback rather than hiding the source. The raw package remains explicitly available in Verbose Details regardless of label resolution.
+
+The UI receives the resolved media-source label as presentation data only; media-session discovery, package-label resolution, and source selection remain outside `:ui:phone`. The persistent visual treatment uses the shared AALyrics brand mark on the left and a compact outlined source pill with a cyan dot on the right.
+
+The shell chrome uses the dedicated `BackgroundChrome` tone. The visual transition from the top bar into destination content is owned by `PhoneAppShell`, not `PhoneTopBar`: a 24dp multi-stop navy tonal fade is shifted 5dp upward and drawn behind destination content. This preserves the Lyrics Track Card's existing 16dp top inset without covering its rounded top edge. `PhoneTopBar` therefore remains a flat chrome component in isolation; the full transition is validated in shell Preview/device rendering.
 
 ## Lyrics Track Card
 
@@ -128,9 +135,9 @@ Conceptually:
 
 The card is informational. Playback transport actions stay in the persistent Playback Bar so information and actions have separate, predictable locations.
 
-The production Track Card keeps album artwork caller-owned in a compact 64dp slot. When artwork is unavailable, the card shows a neutral placeholder rather than substituting the AALyrics brand mark. Artwork loading/decoding policy remains outside the component.
+The production Track Card keeps album artwork caller-owned in a compact 64dp slot. The READY runtime host forwards artwork from the selected Android MediaSession without moving Android media objects into `:ui:phone`. When artwork is unavailable, the shared AALyrics foreground mark derived from `branding/android/AALyrics_foreground_android.svg` is shown over the existing artwork background instead of leaving the slot visually empty.
 
-Long title/artist text uses a synchronized horizontal marquee only when the combined identity block overflows. Title and artist move together, pause for 4 seconds at the leading position, scroll at a constant speed, keep a small repeat gap, then return to the leading position and repeat. Short text remains static. Provider/sync metadata stays fixed and truncates rather than joining the marquee.
+Long title/artist text in the Lyrics Track Card uses row-aware overflow marquee behavior. If only the title overflows, only the title moves and the artist remains fixed; if only the artist overflows, only the artist moves and the title remains fixed. When both title and artist overflow, they retain one synchronized offset so their leading edges stay aligned and both lines move at the same speed. Marquee motion pauses for 4 seconds at the leading position, scrolls at a constant speed, keeps a 32dp repeat gap, then returns seamlessly to the leading position and repeats. Overflowing marquee content can also be dragged horizontally by hand within exactly one marquee cycle: the leading position is the start bound and the repeated-copy start after the text width + gap is the end bound. Manual drag pauses auto motion; release holds the chosen position briefly for 250ms, then auto motion resumes from that position at the same velocity. Non-overflowing text remains static and is not draggable. When both lines overflow, manual drag moves title and artist together with the same shared offset. Provider/sync metadata stays fixed and truncates rather than joining the marquee. The Expanded Player reuses this richer auto + manual marquee behavior, while the persistent Collapsed Playback Bar stays motionless and represents long title/artist text with one-line ellipsis.
 
 ## Lyrics viewport
 
@@ -193,6 +200,12 @@ Lyrics   Sync   Details   Settings
 ```
 
 The navigation bar performs destination switching only. Each destination uses a stable semantic icon plus label, with cyan emphasis for the selected destination. Playback actions belong to the Playback Bar and current-track information belongs to destination content.
+
+Its background uses the same `BackgroundChrome` tone as the top bar, but intentionally remains a flat surface with no mirrored tonal fade. This keeps the lower hierarchy quiet beside the Playback Surface and selected-tab cyan indicator.
+
+The current production tab row is 54dp tall. Each destination keeps 4dp horizontal padding, 4dp top padding, and 2dp bottom padding around the 24dp icon / label / 2dp selected indicator stack. `navigationBarsPadding()` preserves the platform navigation/gesture inset outside the app-owned tab-row height, so the effective bottom chrome on a physical device includes the system inset without making the app-owned row itself oversized.
+
+`PhoneNavigationBar` is the final child of the shell `Column`, while the destination/Playback Surface region above it owns the remaining height through `weight(1f)`. Therefore reducing the Navigation Bar height automatically gives that space back to the destination region: the collapsed Playback Surface remains bottom-aligned inside that region, and `LyricsViewport` receives the larger available height without any compensating playback offset or bottom-overlay-inset change.
 
 ## Phone shell ownership
 
@@ -264,6 +277,16 @@ A component should move to `:ui:designsystem` only when it is genuinely reusable
 
 This follows the project rule: screen needs demonstrate reusable design-system APIs; the component library should not be grown speculatively.
 
+### Adopted Phone UI primitives
+
+Three current Phone patterns are now normative within `:ui:phone`:
+
+- **Anchored popup / tooltip surface** — use `PhonePopupMenu`. Its current Quick Controls-derived visual treatment is the standard: Radius16, `BackgroundSurfaceStrong`, `BorderSoft`, zero tonal elevation, and the shared shadow elevation. Do not introduce a default-styled `DropdownMenu` for an equivalent compact popup.
+- **Second-level Settings header** — use `SettingsSubscreenHeader`. Its standard back affordance is a Material rounded chevron-left at 32dp inside a 48dp touch target, paired with the subscreen title. This mirrors the chevron-right navigation affordance used when entering a Settings subscreen.
+- **Markdown documents** — use the Phone-local `PhoneMarkdownText` wrapper for bundled or presentation-provided Markdown such as the repository `LICENSE` and future GitHub Release changelogs. The wrapper delegates Markdown parsing/rendering to `mikepenz/multiplatform-markdown-renderer` Material 3 rather than implementing Markdown syntax in AALyrics. Keep the original document as the source of truth; rendering is presentation-only.
+
+These are Phone-local standards. They should remain in `:ui:phone` until reuse outside the Phone surface justifies promotion to `:ui:designsystem`.
+
 ## Intended source structure
 
 ```text
@@ -291,6 +314,7 @@ ui/phone/src/main/java/io/github/whoxamxl/aalyrics/ui/phone/
 │  └─ DetailsUiState.kt
 ├─ settings/
 │  ├─ AdvancedSettingsScreen.kt
+│  ├─ LicenseSettingsScreen.kt
 │  ├─ SettingsScreen.kt
 │  └─ SettingsUiState.kt
 └─ state/
@@ -308,7 +332,8 @@ Production shell composables live in `src/main`, while deterministic shell Previ
 Preview coverage should eventually exercise at least:
 
 - active media / no media
-- long title and artist
+- Track Card / Expanded Player title-only overflow, artist-only overflow, and both-overflow synchronized auto marquee + manual horizontal drag
+- Collapsed Playback Bar title/artist ellipsis without marquee
 - no artwork
 - loading / ready / degraded / not found / failed lyrics states
 - line-synced / word-synced / unsynced lyrics
@@ -318,18 +343,20 @@ Preview coverage should eventually exercise at least:
 - collapsed/expanded playback-surface states and capability combinations
 - Details normal and Verbose modes
 - Advanced Settings with Verbose details and disabled Karaoke mode
+- in-app License subscreen with long scrollable bundled license text
 - narrow and typical phone widths
+- the shell-owned top-chrome tonal transition and Track Card boundary/spacing
 
-Implementation should validate that the persistent top bar, playback controls, and bottom navigation still leave adequate room for the lyrics viewport.
+Implementation should validate that the persistent top bar, playback controls, and bottom navigation still leave adequate room for the lyrics viewport. Standalone `PhoneTopBar` Preview intentionally shows only the flat component; `PhoneAppShell` Preview is authoritative for the top-chrome fade because the transition is shell-owned. `PhoneNavigationBarPreviews` uses the production Navigation Bar directly and also includes a simple gesture-navigation-context mock for visual proportion only; physical-device rendering remains authoritative for the actual system navigation inset.
 
 ## Explicitly deferred
 
 The persistent shell implementation intentionally still does not decide or implement:
 
-- exact dp heights or typography sizes for shell elements
+- exact dp heights or typography sizes for shell elements not explicitly locked by the tuned production values above
 - final icons or animation
-- navigation framework/runtime
-- ViewModels or state-mapper classes
+- a general navigation framework beyond host-local primary destination selection
+- speculative ViewModel layers; the approved runtime-host slice may add minimal application-owned presentation mappers
 - media-session ownership
 - provider behavior
 - final Sync interaction model

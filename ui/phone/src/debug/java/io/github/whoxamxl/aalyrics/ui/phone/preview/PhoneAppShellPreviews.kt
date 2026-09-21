@@ -57,6 +57,19 @@ private fun PhoneAppShellHiddenControlsPreview() {
 }
 
 @Preview(
+    name = "Top chrome · Track Card boundary",
+    group = "PhoneAppShell",
+    widthDp = 412,
+    heightDp = 360,
+    showBackground = true,
+)
+@Composable
+private fun PhoneAppShellTopChromeBoundaryPreview() {
+    PhoneAppShellPreview(PhonePreviewFixtures.lyricsWithoutControls)
+}
+
+
+@Preview(
     name = "Lyrics browse · playback overlay",
     group = "PhoneAppShell",
     widthDp = 412,
@@ -211,7 +224,6 @@ internal fun PreviewSettingsDestination(
         onCheckForUpdates = {},
         onDownloadUpdate = {},
         onChangelogRequested = {},
-        onLicenseRequested = {},
         onSettingsEntered = {
             state = state.copy(
                 appUpdate = state.appUpdate.normalizedForSettingsEntry(),

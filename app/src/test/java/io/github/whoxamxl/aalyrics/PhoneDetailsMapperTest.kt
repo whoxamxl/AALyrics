@@ -54,6 +54,7 @@ class PhoneDetailsMapperTest {
             displayLocale = Locale.ENGLISH,
         )
 
+        assertEquals("com.spotify.music", state.diagnostics?.appPackageName)
         assertEquals("musixmatch", state.diagnostics?.providerId)
         assertEquals("mxm:9384756", state.diagnostics?.sourceId)
         assertEquals(
@@ -168,6 +169,7 @@ class PhoneDetailsMapperTest {
 
         assertNull(state.lyrics)
         assertEquals(DetailsLyricsUiStatus.UNAVAILABLE, state.lyricsStatus)
+        assertEquals("com.spotify.music", state.diagnostics?.appPackageName)
         assertNull(state.diagnostics?.providerId)
         assertNull(state.diagnostics?.sourceId)
         assertEquals(
@@ -198,6 +200,7 @@ class PhoneDetailsMapperTest {
 
         assertNull(state.lyrics)
         assertEquals(DetailsLyricsUiStatus.LOADING, state.lyricsStatus)
+        assertEquals("com.spotify.music", state.diagnostics?.appPackageName)
         assertNull(state.diagnostics?.providerId)
         assertNull(state.diagnostics?.sourceId)
     }
