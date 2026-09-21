@@ -139,6 +139,8 @@ The title and artist remain one line each and use the same overflow marquee cont
 
 The expanded player should remain compact. It is not intended to become a full-screen now-playing destination.
 
+Quick Controls defines the shared compact Phone popup visual language. Anchored explanatory tooltips elsewhere in the Phone UI reuse the same popup surface tokens rather than falling back to the default Material `DropdownMenu` appearance.
+
 ## Collapse triggers
 
 Expanded Player collapse is explicit and predictable.

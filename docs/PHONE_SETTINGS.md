@@ -255,7 +255,8 @@ It should:
 - be anchored to an explicit info affordance;
 - remain short;
 - dismiss normally;
-- avoid permanently consuming vertical space.
+- avoid permanently consuming vertical space;
+- use the same Phone popup surface as Playback Quick Controls: Radius16, `BackgroundSurfaceStrong`, `BorderSoft`, zero tonal elevation, and the same shadow treatment.
 
 The first demonstrated use is Plain lyrics auto-scroll.
 
