@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.AnnotatedString
@@ -41,22 +42,32 @@ internal fun TrackIdentityMarquee(
 
     BoxWithConstraints(modifier = modifier) {
         val availableWidthPx = constraints.maxWidth
-        val titleOverflows = constraints.hasBoundedWidth &&
-            availableWidthPx > 0 &&
-            textMeasurer.singleLineOverflows(
-                text = title,
-                style = titleStyle,
-                maxWidthPx = availableWidthPx,
-            )
-        val artistOverflows = constraints.hasBoundedWidth &&
-            availableWidthPx > 0 &&
-            artistText?.let { text ->
+        val titleOverflows = if (constraints.hasBoundedWidth && availableWidthPx > 0) {
+            remember(title, titleStyle, availableWidthPx, textMeasurer) {
                 textMeasurer.singleLineOverflows(
-                    text = text,
+                    text = title,
+                    style = titleStyle,
+                    maxWidthPx = availableWidthPx,
+                )
+            }
+        } else {
+            false
+        }
+        val artistOverflows = if (
+            constraints.hasBoundedWidth &&
+            availableWidthPx > 0 &&
+            artistText != null
+        ) {
+            remember(artistText, artistStyle, availableWidthPx, textMeasurer) {
+                textMeasurer.singleLineOverflows(
+                    text = artistText,
                     style = artistStyle,
                     maxWidthPx = availableWidthPx,
                 )
-            } == true
+            }
+        } else {
+            false
+        }
 
         val marqueeMode = trackIdentityMarqueeMode(
             titleOverflows = titleOverflows,
