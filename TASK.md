@@ -131,7 +131,7 @@ The code/build portion of device-test enablement is complete. The unchecked devi
 
 Do not merge PR #50 until:
 
-1. bounded Codex review is complete with no current-scope blocker;
+1. both bounded Codex review rounds are complete and all current-scope findings are resolved;
 2. the final CI head is green;
 3. the user explicitly authorizes merge.
 
@@ -149,7 +149,8 @@ Repository-side work is complete:
 - debug APK build passes;
 - unit tests pass;
 - sideloadable debug APK artifact is produced;
-- bounded Codex review found no major issues;
+- first bounded Codex review found no major issues;
+- second bounded Codex review raised two current-scope P2 findings (platform ActionBar and Lyrics browse-state reset); both were addressed in dedicated commits;
 - no unresolved review threads remain.
 
 The six Device-test readiness items intentionally remain unchecked because they require an actual physical Android device and live MediaSession. They must not be inferred from CI.
