@@ -5,7 +5,6 @@ import io.github.whoxamxl.aalyrics.translation.api.TranslationModelState
 import io.github.whoxamxl.aalyrics.translation.api.TranslationSettings
 import io.github.whoxamxl.aalyrics.ui.phone.settings.AndroidAutoCompatibilityUiStatus
 import io.github.whoxamxl.aalyrics.ui.phone.settings.AppUpdateUiPhase
-import io.github.whoxamxl.aalyrics.ui.phone.settings.ChangelogUiPhase
 import io.github.whoxamxl.aalyrics.ui.phone.settings.TranslationModelCleanupUiState
 import io.github.whoxamxl.aalyrics.ui.phone.settings.TranslationModelUiState
 import java.util.Locale
@@ -24,6 +23,7 @@ class PhoneSettingsMapperTest {
             appVersionName = "0.1.0-dev",
             currentYear = 2026,
             licenseText = "demo license",
+            changelogText = "demo changelog",
             displayLocale = Locale.ENGLISH,
         )
 
@@ -31,6 +31,7 @@ class PhoneSettingsMapperTest {
         assertEquals("en", state.translationTarget.id)
         assertEquals(TranslationModelUiState.BUILT_IN, state.translationTarget.modelState)
         assertEquals("demo license", state.licenseText)
+        assertEquals("demo changelog", state.changelogText)
     }
 
     @Test
@@ -52,6 +53,7 @@ class PhoneSettingsMapperTest {
             appVersionName = "0.1.0-dev",
             currentYear = 2026,
             licenseText = "demo license",
+            changelogText = "demo changelog",
             displayLocale = Locale.ENGLISH,
         )
 
@@ -73,6 +75,7 @@ class PhoneSettingsMapperTest {
             appVersionName = "0.1.0-dev",
             currentYear = 2026,
             licenseText = "demo license",
+            changelogText = "demo changelog",
             translationModelCleanupState = TranslationModelCleanupState.FAILED,
             displayLocale = Locale.ENGLISH,
         )
@@ -84,7 +87,7 @@ class PhoneSettingsMapperTest {
     }
 
     @Test
-    fun `runtime Settings exposes supported translation state and unavailable release actions`() {
+    fun `runtime Settings exposes supported translation state and unavailable update action`() {
         val state = mapPhoneSettingsState(
             translationSettings = TranslationSettings(
                 enabled = true,
@@ -107,6 +110,7 @@ class PhoneSettingsMapperTest {
             appVersionName = "0.1.0-dev",
             currentYear = 2026,
             licenseText = "demo license",
+            changelogText = "demo changelog",
             displayLocale = Locale.ENGLISH,
         )
 
@@ -123,6 +127,6 @@ class PhoneSettingsMapperTest {
         assertEquals(true, state.verboseDetailsEnabled)
         assertEquals(false, state.plainLyricsAutoScrollEnabled)
         assertEquals(AppUpdateUiPhase.UNAVAILABLE, state.appUpdate.phase)
-        assertEquals(ChangelogUiPhase.UNAVAILABLE, state.changelog.phase)
+        assertEquals("demo changelog", state.changelogText)
     }
 }
