@@ -133,6 +133,7 @@ private fun PhoneAppShellNarrowPreview() {
         PhoneAppShell(
             state = PhonePreviewFixtures.narrowLyricsShell,
             onDestinationSelected = {},
+            onDestinationReselected = {},
             onPrevious = {},
             onPlayPause = {},
             onNext = {},
