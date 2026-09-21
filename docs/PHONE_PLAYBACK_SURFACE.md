@@ -532,6 +532,8 @@ Deterministic Previews should cover at least:
 - enlarged font;
 - playback surface over Lyrics and over Settings.
 
+The debug-only interactive full-surface Preview uses the production `PlaybackSurface` composable directly. It is the authoritative Preview for interaction checks that cannot be represented meaningfully in a static frame, including tap expand/collapse, upward finger-following expand drag, downward finger-following collapse drag, release settling, direct seek, Queue, and Translation quick-control interaction.
+
 ## Tests
 
 Implementation should add deterministic coverage for presentation/state logic that can be tested outside gesture rendering, including:
@@ -547,7 +549,10 @@ Implementation should add deterministic coverage for presentation/state logic th
 - Translation quick control emits the same application setting callback;
 - Back collapses Expanded Player before normal back behavior;
 - destination switching does not implicitly collapse;
-- session loss clears expanded state.
+- session loss clears expanded state;
+- transformation progress maps deterministically between Collapsed and Expanded anchors;
+- slow release settles to the nearest anchor;
+- sufficiently directional upward/downward fling selects the corresponding Expanded/Collapsed anchor.
 
 ## Explicitly out of scope
 
