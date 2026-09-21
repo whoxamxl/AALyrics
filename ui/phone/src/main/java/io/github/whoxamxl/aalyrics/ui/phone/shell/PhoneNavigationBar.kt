@@ -62,8 +62,10 @@ fun PhoneNavigationBar(
                             role = Role.Tab,
                         )
                         .padding(
-                            horizontal = AALyricsSpacing.Space4,
-                            vertical = AALyricsSpacing.Space4,
+                            start = AALyricsSpacing.Space4,
+                            top = AALyricsSpacing.Space4,
+                            end = AALyricsSpacing.Space4,
+                            bottom = 2.dp,
                         ),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.SpaceBetween,
