@@ -571,7 +571,9 @@ The row is an action row, not navigation: it uses a trailing `Clear` text action
 
 The application boundary first restores Translation settings to their safe defaults, then asks the Translation model manager to delete engine-managed downloaded models. The Phone UI does not call ML Kit directly.
 
-Cleanup must also account for model downloads already in flight when the action is confirmed. A model that finishes downloading after cleanup starts must be deleted rather than silently surviving the storage action. Immediate enumeration/deletion failures are returned to the Phone presentation boundary; the UI shows an explicit cleanup-failure dialog with Retry/Close instead of silently reporting success.
+Cleanup must also account for model preparation already in flight when the action is confirmed, including the short pre-monitor window while ML Kit availability is still being checked. Preparation registration and cleanup start share one lifecycle barrier/generation so either the preparation is captured by cleanup or the stale preparation is suppressed before it can start a new download. A model that finishes downloading after cleanup starts must be deleted rather than silently surviving the storage action.
+
+The confirmed cleanup operation is application-owned and runs in the process-level application scope, not a Composable-owned coroutine scope. Leaving Advanced, switching tabs, or recreating the Activity must not cancel a confirmed cleanup. The application exposes a small cleanup lifecycle to Phone presentation; immediate enumeration/deletion failures become a persistent FAILED presentation state and Advanced shows an explicit Retry/Close dialog when it is visible again.
 
 ### Reset — Reset AALyrics
 
