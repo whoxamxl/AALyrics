@@ -175,7 +175,7 @@ fun PlaybackSurface(
         onDragStarted = {
             stopSettleAnimation()
         },
-        onDragStopped = ::settleFromDrag,
+        onDragStopped = { velocity -> settleFromDrag(velocity) },
     )
 
     fun commitSeek(positionMs: Long) {
