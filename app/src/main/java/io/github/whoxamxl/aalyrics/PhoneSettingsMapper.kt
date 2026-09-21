@@ -11,6 +11,7 @@ import io.github.whoxamxl.aalyrics.ui.phone.settings.ChangelogUiPhase
 import io.github.whoxamxl.aalyrics.ui.phone.settings.ChangelogUiState
 import io.github.whoxamxl.aalyrics.ui.phone.settings.SettingsLanguageOptionUiState
 import io.github.whoxamxl.aalyrics.ui.phone.settings.SettingsScreenUiState
+import io.github.whoxamxl.aalyrics.ui.phone.settings.TranslationModelCleanupUiState
 import io.github.whoxamxl.aalyrics.ui.phone.settings.TranslationModelUiState
 import java.util.Locale
 
@@ -23,6 +24,8 @@ internal fun mapPhoneSettingsState(
     appVersionName: String,
     currentYear: Int,
     licenseText: String,
+    translationModelCleanupState: TranslationModelCleanupState =
+        TranslationModelCleanupState.IDLE,
     displayLocale: Locale = Locale.getDefault(),
 ): SettingsScreenUiState {
     val targets = TranslationLanguages.supportedTargets.map { languageTag ->
@@ -53,6 +56,11 @@ internal fun mapPhoneSettingsState(
         translationEnabled = translationSettings.enabled,
         translationTarget = selected,
         translationTargets = targets,
+        translationModelCleanup = when (translationModelCleanupState) {
+            TranslationModelCleanupState.IDLE -> TranslationModelCleanupUiState.IDLE
+            TranslationModelCleanupState.RUNNING -> TranslationModelCleanupUiState.RUNNING
+            TranslationModelCleanupState.FAILED -> TranslationModelCleanupUiState.FAILED
+        },
         androidAutoCompatibilityStatus = androidAutoStatus,
         appVersionName = appVersionName,
         currentYear = currentYear,
