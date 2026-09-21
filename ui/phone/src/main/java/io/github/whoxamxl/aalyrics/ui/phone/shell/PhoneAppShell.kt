@@ -50,7 +50,6 @@ fun PhoneAppShell(
                 } else {
                     0.dp
                 }
-                destinationContent(state.selectedDestination, bottomOverlayInset)
 
                 Box(
                     modifier = Modifier
@@ -65,6 +64,8 @@ fun PhoneAppShell(
                             ),
                         ),
                 )
+
+                destinationContent(state.selectedDestination, bottomOverlayInset)
 
                 state.playbackSurface?.let { playbackState ->
                     PlaybackSurface(
