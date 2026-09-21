@@ -55,7 +55,7 @@ fun AdvancedSettingsScreen(
                     imageVector = AALyricsIcons.Back,
                     contentDescription = stringResource(R.string.settings_back),
                     tint = AALyricsColors.TextPrimary,
-                    modifier = Modifier.size(28.8.dp),
+                    modifier = Modifier.size(32.dp),
                 )
             }
 
