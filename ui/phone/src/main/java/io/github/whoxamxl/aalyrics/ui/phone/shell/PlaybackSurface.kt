@@ -32,7 +32,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsSpacing
 import io.github.whoxamxl.aalyrics.ui.phone.R
@@ -224,7 +223,6 @@ fun PlaybackSurface(
                     .clickable(
                         interactionSource = backdropInteractionSource,
                         indication = null,
-                        role = Role.Button,
                         onClickLabel = collapseLabel,
                         onClick = ::collapse,
                     ),
