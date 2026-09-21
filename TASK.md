@@ -228,10 +228,13 @@ Track Card and Playback Surface share the same title/artist marquee component. T
 
 Accepted refinement:
 
-- [ ] title-only overflow -> marquee title only; keep artist fixed;
-- [ ] artist-only overflow -> marquee artist only; keep title fixed;
-- [ ] both overflow -> preserve synchronized title/artist block marquee with aligned leading edges and shared speed;
-- [ ] neither overflow -> keep both lines static;
-- [ ] preserve the existing 4-second initial/repeat pause, constant marquee velocity, and repeat spacing;
-- [ ] apply the behavior through the shared component so Track Card, collapsed Playback Bar, and Expanded Player stay consistent;
-- [ ] keep deterministic Preview coverage for title-only, artist-only, and both-overflow cases.
+- [x] title-only overflow -> marquee title only; keep artist fixed;
+- [x] artist-only overflow -> marquee artist only; keep title fixed;
+- [x] both overflow -> preserve synchronized title/artist block marquee with aligned leading edges and shared speed;
+- [x] neither overflow -> keep both lines static;
+- [x] preserve the existing 4-second initial/repeat pause, constant marquee velocity, and repeat spacing;
+- [x] apply the behavior through the shared component so Track Card, collapsed Playback Bar, and Expanded Player stay consistent;
+- [x] keep deterministic Preview coverage for title-only, artist-only, and both-overflow cases.
+
+
+Repository validation for the track identity marquee refinement is pending on the final implementation head; physical-device rendering remains authoritative for motion feel.
