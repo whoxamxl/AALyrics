@@ -138,11 +138,9 @@ class AALyricsApplication : Application() {
         phonePresentationSettingsStore.setVerboseDetailsEnabled(enabled)
     }
 
-    fun clearDownloadedTranslationModels() {
+    suspend fun clearDownloadedTranslationModels(): Boolean {
         translationSettingsStore.resetToDefaults()
-        applicationScope.launch {
-            translationModelManager.clearDownloadedModels()
-        }
+        return translationModelManager.clearDownloadedModels()
     }
 
     fun resetAppOwnedSettings() {
