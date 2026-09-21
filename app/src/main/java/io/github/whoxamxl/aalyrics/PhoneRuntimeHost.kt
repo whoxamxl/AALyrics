@@ -59,7 +59,13 @@ internal fun PhoneRuntimeHost(
         while (
             isActive &&
             playback.isPlaying &&
-            selectedDestination == PhoneDestination.Lyrics
+            (
+                selectedDestination == PhoneDestination.Lyrics ||
+                    (
+                        selectedDestination == PhoneDestination.Details &&
+                            verboseDetailsEnabled
+                    )
+                )
         ) {
             delay(250L)
             monotonicTimeMs = SystemClock.elapsedRealtime()
@@ -123,7 +129,17 @@ internal fun PhoneRuntimeHost(
             )
 
             PhoneDestination.Details -> DetailsScreen(
-                state = detailsState,
+                state = if (verboseDetailsEnabled) {
+                    detailsState.copy(
+                        verboseProgress = mapPhoneDetailsVerboseProgress(
+                            playback = playback,
+                            lyricsState = lyricsState,
+                            currentMonotonicTimeMs = monotonicTimeMs,
+                        ),
+                    )
+                } else {
+                    detailsState
+                },
                 bottomOverlayInset = bottomOverlayInset,
             )
 

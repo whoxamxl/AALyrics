@@ -8,6 +8,7 @@ import io.github.whoxamxl.aalyrics.ui.phone.details.DetailsLyricsUiState
 import io.github.whoxamxl.aalyrics.ui.phone.details.DetailsLyricsUiStatus
 import io.github.whoxamxl.aalyrics.ui.phone.details.DetailsScreenUiState
 import io.github.whoxamxl.aalyrics.ui.phone.details.DetailsTrackUiState
+import io.github.whoxamxl.aalyrics.ui.phone.details.DetailsVerboseProgressUiState
 import java.util.Locale
 
 /** Application-owned mapping from canonical runtime facts into Phone Details presentation state. */
@@ -125,4 +126,30 @@ private fun languageLabel(
         .trim()
         .takeIf(String::isNotEmpty)
         ?: languageTag
+}
+
+
+/**
+ * Adds live, presentation-only verbose progress without changing the underlying
+ * application-owned Details metadata or triggering any additional lookup work.
+ */
+internal fun mapPhoneDetailsVerboseProgress(
+    playback: PlaybackSnapshot,
+    lyricsState: LyricsState,
+    currentMonotonicTimeMs: Long,
+): DetailsVerboseProgressUiState {
+    val positionMs = projectedPlaybackPosition(
+        playback = playback,
+        currentMonotonicTimeMs = currentMonotonicTimeMs,
+    )
+    val lyricsDocument = currentLyrics(playback, lyricsState).document
+
+    return DetailsVerboseProgressUiState(
+        playbackPositionLabel = playback.track
+            ?.durationMs
+            ?.let { formatDuration(positionMs) },
+        currentLineNumber = lyricsDocument
+            ?.currentTimedLineIndex(positionMs)
+            ?.plus(1),
+    )
 }

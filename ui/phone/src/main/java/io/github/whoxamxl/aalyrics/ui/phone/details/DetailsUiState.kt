@@ -29,6 +29,12 @@ data class DetailsLyricsUiState(
 )
 
 @Immutable
+data class DetailsVerboseProgressUiState(
+    val playbackPositionLabel: String? = null,
+    val currentLineNumber: Int? = null,
+)
+
+@Immutable
 data class DetailsDiagnosticsUiState(
     val appPackageName: String? = null,
     val providerId: String? = null,
@@ -41,5 +47,6 @@ data class DetailsScreenUiState(
     val track: DetailsTrackUiState? = null,
     val lyrics: DetailsLyricsUiState? = null,
     val lyricsStatus: DetailsLyricsUiStatus = DetailsLyricsUiStatus.UNAVAILABLE,
+    val verboseProgress: DetailsVerboseProgressUiState? = null,
     val diagnostics: DetailsDiagnosticsUiState? = null,
 )

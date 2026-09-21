@@ -105,6 +105,8 @@
     <string name="details_source_id">Source ID</string>
     <string name="details_track_references">Track references</string>
     <string name="details_no_diagnostics">No diagnostic identifiers available</string>
+    <string name="details_verbose_label">%1$s (verbose)</string>
+    <string name="details_verbose_unknown">—</string>
 
     <string name="playback_play">Play</string>
     <string name="playback_pause">Pause</string>

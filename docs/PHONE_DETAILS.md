@@ -20,6 +20,15 @@ Verbose details enabled?
 
 Normal Details should remain understandable to an ordinary user. Machine-facing identifiers belong only in the optional diagnostic section.
 
+When Verbose Details is enabled, the existing Duration and Lines rows stay in place but expose live progress context:
+
+```text
+Duration (verbose)      1:32 / 3:41
+Lines (verbose)         28 / 64
+```
+
+Duration uses projected current playback position over total track duration. Lines uses a one-based current synchronized lyric line over total resolved line count. PLAIN lyrics have no authoritative current line, so the verbose current-line value is shown as unavailable (`— / <total>`) rather than inventing a timed line.
+
 Enabling Verbose Details changes presentation only. It must not alter lyrics lookup, provider ordering, candidate selection, timing, Translation, playback control, or rendering behavior.
 
 ## Normal Details
@@ -74,7 +83,7 @@ WORD is a valid source sync type even while the Phone experience remains line-or
 
 ## Verbose Details
 
-`Settings > Advanced > Debug > Verbose details` adds a separate section below the normal content:
+`Settings > Advanced > Debug > Verbose details` enriches the existing Duration and Lines rows with the live progress values described above and adds a separate section below the normal content:
 
 ```text
 DEVELOPER / DIAGNOSTICS
@@ -132,7 +141,7 @@ DetailsScreen
 
 PR #49 persists the preference through an application-owned SharedPreferences store. The stable requirement remains that `:ui:phone` receives only the resolved boolean/presentation state and never reads SharedPreferences directly.
 
-The setting may control whether diagnostic values are mapped/presented, but it does not control data acquisition behavior.
+The setting may control whether diagnostic values and live progress presentation are mapped/presented, but it does not control data acquisition behavior. Live verbose playback/line progress reuses the already-available playback snapshot and resolved lyrics and does not trigger provider work.
 
 ## Destination composition
 
