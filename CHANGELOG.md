@@ -1,7 +1,5 @@
 # Changelog
 
-This file is the canonical user-facing release history for AALyrics. Update it before creating a release tag so the tagged APK can bundle the same release history it was built from.
-
 ## [0.2.0-alpha.1] - 2026-09-21
 
 ### Added
