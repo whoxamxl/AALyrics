@@ -55,7 +55,7 @@ This is a presentation/diagnostic enrichment only. It must not change media-sess
 - Present an explicit runtime status: `Connecting`, `Connected`, `Disconnected`, `Unavailable`, or `Error`.
 - `Connected` requires the runtime-selected package, current playback package, and resolved app-info package to agree.
 - `Disconnected` means session observation is healthy but no active media session is available.
-- `Unavailable` means sessions exist but the current selection/support policy cannot use one; this state is reserved for policy-driven rejection as that policy grows.
+- `Unavailable` means sessions exist but the current selection/support policy cannot use one; this state carries an explicit reason (`UNSUPPORTED_PLAYER` or `UNKNOWN`) and exposes it through a concise information tooltip. The final fallback UI must remain complete even when no app label/icon can be resolved.
 - `Error` carries one of `NOTIFICATION_ACCESS_LOST`, `SESSION_QUERY_FAILED`, `SESSION_ATTACH_FAILED`, or `UNKNOWN`; the Top Bar exposes the concise reason through an information tooltip.
 - When `Connected` and the selected playback app has a real launch capability, the whole source pill opens that app and shows the same external-link affordance used by Settings.
 - Apply semantic status color coding without changing the pill geometry: Connecting keeps the neutral treatment, Connected uses `Success`, Disconnected uses disabled/tertiary neutral, Unavailable uses `Warning`, and Error uses the shared `Error` token. Background and border receive only low-emphasis blends of the same semantic color.
@@ -90,6 +90,7 @@ Category and SDK display are diagnostic metadata only. They must not influence p
 - [x] Make launch-capable Connected pills open the selected playback app with the shared external-link icon.
 - [x] Apply consistent semantic state colors to Top Bar pill foreground, border, and background.
 - [x] Keep all Top Bar runtime-state pills on one 220dp × 36dp envelope and resolve Unavailable app identity from its runtime package.
+- [x] Give Unavailable an explicit reason, concise tooltip, and generic no-app-identity fallback presentation.
 - [x] Add app category, min SDK, and target SDK to Verbose Details Developer / Diagnostics.
 - [x] Keep Android package/application objects outside `:ui:phone`.
 - [x] Keep normal Details user-facing playback-source labeling unchanged apart from sharing the new resolver.

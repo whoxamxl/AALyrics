@@ -4,8 +4,10 @@ import io.github.whoxamxl.aalyrics.core.model.PlaybackSnapshot
 import io.github.whoxamxl.aalyrics.core.model.PlaybackSource
 import io.github.whoxamxl.aalyrics.platform.media.PlaybackSourceErrorReason
 import io.github.whoxamxl.aalyrics.platform.media.PlaybackSourceRuntimeState
+import io.github.whoxamxl.aalyrics.platform.media.PlaybackSourceUnavailableReason
 import io.github.whoxamxl.aalyrics.ui.phone.state.PlaybackSourceConnectionUiState
 import io.github.whoxamxl.aalyrics.ui.phone.state.PlaybackSourceErrorUiReason
+import io.github.whoxamxl.aalyrics.ui.phone.state.PlaybackSourceUnavailableUiReason
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -72,6 +74,33 @@ class PhonePlaybackSourceMapperTest {
         assertEquals(PlaybackSourceConnectionUiState.DISCONNECTED, disconnected.connectionState)
         assertEquals(PlaybackSourceConnectionUiState.UNAVAILABLE, unavailable.connectionState)
         assertEquals("com.blocked.player", unavailable.packageName)
+        assertEquals(
+            PlaybackSourceUnavailableUiReason.UNSUPPORTED_PLAYER,
+            unavailable.unavailableReason,
+        )
+    }
+
+    @Test
+    fun `unavailable runtime reason maps to concise presentation reason`() {
+        val expected = mapOf(
+            PlaybackSourceUnavailableReason.UNSUPPORTED_PLAYER to
+                PlaybackSourceUnavailableUiReason.UNSUPPORTED_PLAYER,
+            PlaybackSourceUnavailableReason.UNKNOWN to
+                PlaybackSourceUnavailableUiReason.UNKNOWN,
+        )
+
+        expected.forEach { (runtimeReason, uiReason) ->
+            val mapped = mapPhonePlaybackSourcePresentationState(
+                runtimeState = PlaybackSourceRuntimeState.Unavailable(
+                    reason = runtimeReason,
+                ),
+                playback = PlaybackSnapshot(),
+                playbackSourceAppInfo = null,
+            )
+
+            assertEquals(PlaybackSourceConnectionUiState.UNAVAILABLE, mapped.connectionState)
+            assertEquals(uiReason, mapped.unavailableReason)
+        }
     }
 
     @Test

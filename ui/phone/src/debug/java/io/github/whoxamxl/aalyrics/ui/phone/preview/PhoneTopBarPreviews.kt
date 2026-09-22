@@ -9,6 +9,7 @@ import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsTheme
 import io.github.whoxamxl.aalyrics.ui.phone.shell.PhoneTopBar
 import io.github.whoxamxl.aalyrics.ui.phone.state.PlaybackSourceConnectionUiState
 import io.github.whoxamxl.aalyrics.ui.phone.state.PlaybackSourceErrorUiReason
+import io.github.whoxamxl.aalyrics.ui.phone.state.PlaybackSourceUnavailableUiReason
 
 @Preview(name = "Connecting", group = "PhoneTopBar", widthDp = 412, showBackground = true)
 @Composable
@@ -54,7 +55,22 @@ private fun PhoneTopBarUnavailablePreview() {
     PhoneTopBarPreview(
         mediaSourceLabel = "Spotify",
         connectionState = PlaybackSourceConnectionUiState.UNAVAILABLE,
+        unavailableReason = PlaybackSourceUnavailableUiReason.UNSUPPORTED_PLAYER,
         mediaSourceIconPainter = ColorPainter(AALyricsColors.AccentCyan),
+    )
+}
+
+@Preview(
+    name = "Unavailable · generic fallback",
+    group = "PhoneTopBar",
+    widthDp = 412,
+    showBackground = true,
+)
+@Composable
+private fun PhoneTopBarUnavailableFallbackPreview() {
+    PhoneTopBarPreview(
+        connectionState = PlaybackSourceConnectionUiState.UNAVAILABLE,
+        unavailableReason = PlaybackSourceUnavailableUiReason.UNKNOWN,
     )
 }
 
@@ -86,6 +102,7 @@ private fun PhoneTopBarLongMediaSourcePreview() {
 private fun PhoneTopBarPreview(
     mediaSourceLabel: String? = null,
     connectionState: PlaybackSourceConnectionUiState,
+    unavailableReason: PlaybackSourceUnavailableUiReason? = null,
     errorReason: PlaybackSourceErrorUiReason? = null,
     mediaSourceCanOpenApp: Boolean = false,
     mediaSourceIconPainter: Painter? = null,
@@ -94,6 +111,7 @@ private fun PhoneTopBarPreview(
         PhoneTopBar(
             mediaSourceLabel = mediaSourceLabel,
             mediaSourceConnectionState = connectionState,
+            mediaSourceUnavailableReason = unavailableReason,
             mediaSourceErrorReason = errorReason,
             mediaSourceCanOpenApp = mediaSourceCanOpenApp,
             mediaSourceIconPainter = mediaSourceIconPainter,
