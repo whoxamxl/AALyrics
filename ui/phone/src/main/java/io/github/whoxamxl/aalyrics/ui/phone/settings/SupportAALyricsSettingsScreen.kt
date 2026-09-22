@@ -138,13 +138,13 @@ private fun SupportStickerButton(
     if (animatedDrawable != null) {
         AndroidView(
             modifier = Modifier
-                .fillMaxWidth(0.72f)
-                .widthIn(max = 244.dp)
-                .aspectRatio(160f / 73f),
+                .fillMaxWidth(0.58f)
+                .widthIn(max = 188.dp)
+                .aspectRatio(125f / 59f),
             factory = { viewContext ->
                 ImageView(viewContext).apply {
-                    adjustViewBounds = true
-                    scaleType = ImageView.ScaleType.CENTER_INSIDE
+                    adjustViewBounds = false
+                    scaleType = ImageView.ScaleType.FIT_CENTER
                     isClickable = true
                     isFocusable = true
                     this.contentDescription = contentDescription
@@ -165,9 +165,9 @@ private fun SupportStickerButton(
     } else {
         Box(
             modifier = Modifier
-                .fillMaxWidth(0.72f)
-                .widthIn(max = 244.dp)
-                .aspectRatio(160f / 73f)
+                .fillMaxWidth(0.58f)
+                .widthIn(max = 188.dp)
+                .aspectRatio(125f / 59f)
                 .background(
                     color = Color(0xFFFFDD00),
                     shape = RoundedCornerShape(percent = 50),
