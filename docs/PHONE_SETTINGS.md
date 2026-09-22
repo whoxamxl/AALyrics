@@ -597,7 +597,17 @@ General discussion           -> Discussions / General
 Report a security issue      -> GitHub private vulnerability reporting
 ```
 
-Each route is presented as an external-link row. `:ui:phone` emits callbacks only; `:app` owns browser / Custom Tabs launching. Security vulnerabilities must not be routed to a public Issue or Discussion.
+Each route is presented as an external-link row. `:ui:phone` emits a semantic `HelpFeedbackDestination` callback only; `:app` maps that action to the repository URL and owns Custom Tabs / browser fallback.
+
+Current destinations are:
+
+- Report a bug -> `https://github.com/whoxamxl/AALyrics/issues/new`
+- Ask a question -> `https://github.com/whoxamxl/AALyrics/discussions/categories/q-a`
+- Suggest an idea -> `https://github.com/whoxamxl/AALyrics/discussions/categories/ideas`
+- General discussion -> `https://github.com/whoxamxl/AALyrics/discussions/categories/general`
+- Report a security issue -> `https://github.com/whoxamxl/AALyrics/security/advisories/new`
+
+Security vulnerabilities are therefore routed to GitHub private vulnerability reporting, never a public Issue or Discussion.
 
 ### Support AALyrics
 
@@ -885,7 +895,7 @@ PR #50 implements the Phone runtime-host application-composition boundary from `
 
 A durable Plain auto-scroll preference remains a separate ownership decision unless the runtime-host implementation has an already-approved backing seam.
 
-The host does not wire active no-op callbacks for unfinished Settings capabilities. Update remains an explicit `UNAVAILABLE` presentation state until its release-network runtime is implemented. Changelog is functional without release-network wiring: the application supplies the bundled repository `CHANGELOG.md` as presentation text. The approved About & Support slice extends the same application-owned document path to `PRIVACY.md` and adds one application-owned external-link action for Buy Me a Coffee; neither capability moves asset access or browser launching into `:ui:phone`.
+The host does not wire active no-op callbacks for unfinished Settings capabilities. Update remains an explicit `UNAVAILABLE` presentation state until its release-network runtime is implemented. Changelog is functional without release-network wiring: the application supplies the bundled repository `CHANGELOG.md` as presentation text. The About & Support implementation keeps bundled legal-document access application-owned, maps Help & Feedback semantic actions to GitHub destinations in `:app`, and keeps the existing Buy Me a Coffee handoff application-owned; none of these capabilities moves asset access or browser launching into `:ui:phone`.
 
 That wiring must preserve the existing capability ownership documented in the relevant architecture files.
 

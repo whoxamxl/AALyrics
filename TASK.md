@@ -117,9 +117,9 @@ Root reselection must remain stronger than hierarchical Back and must discard an
 - [x] Expose both documents through the application-owned Settings presentation boundary.
 - [x] Add `TermsOfUseSettingsScreen` using the shared Settings header and Markdown renderer.
 - [x] Render `THIRD_PARTY_LICENSES.md` inline as the third section of `LicenseSettingsScreen`.
-- [ ] Add the native `Help & Feedback` routing hub.
-- [ ] Add application-owned external-link callbacks for the Help & Feedback destinations.
-- [ ] Preserve the existing `Support AALyrics` implementation and behavior.
+- [x] Add the native `Help & Feedback` routing hub.
+- [x] Add application-owned external-link callbacks for the Help & Feedback destinations.
+- [x] Preserve the existing `Support AALyrics` implementation and behavior.
 - [ ] Add/update strings, deterministic Previews, presentation mapping coverage, and focused navigation tests.
 - [ ] Align `docs/PHONE_SETTINGS.md` with the implemented final state.
 - [ ] Re-evaluate `Reset AALyrics`; this slice is expected to add no persisted state, so no reset behavior change should be required unless implementation changes that assumption.
@@ -131,4 +131,4 @@ Do not redesign unrelated Settings sections, change existing Support AALyrics vi
 
 ## Current stop point
 
-Terms of Use is now a Settings-level bundled-document screen. License renders REQUIRED NOTICE, LICENSE TERMS, and THIRD-PARTY LICENSES inline on one scrollable second-level screen. The unnecessary third navigation level has been removed. Help & Feedback has not been implemented yet; stop at this legal-document UI checkpoint.
+Terms of Use and the inline License sections are implemented. Help & Feedback is now a native second-level routing hub whose semantic actions are emitted by :ui:phone and mapped by :app to GitHub Issues, Discussion categories, and private vulnerability reporting via Custom Tabs with browser fallback. Support AALyrics remains unchanged in purpose and behavior. Stop at this Help & Feedback checkpoint before final tests/cleanup.

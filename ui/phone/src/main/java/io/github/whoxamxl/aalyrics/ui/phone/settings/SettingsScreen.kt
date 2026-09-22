@@ -43,6 +43,7 @@ fun SettingsScreen(
     onDownloadUpdate: () -> Unit,
     onSettingsEntered: () -> Unit,
     onOpenGitHub: () -> Unit,
+    onHelpFeedback: (HelpFeedbackDestination) -> Unit,
     onSupportAALyrics: () -> Unit,
     modifier: Modifier = Modifier,
     bottomOverlayInset: Dp = 0.dp,
@@ -112,6 +113,13 @@ fun SettingsScreen(
             bottomOverlayInset = bottomOverlayInset,
         )
 
+        SettingsSubscreen.HELP_FEEDBACK -> HelpFeedbackSettingsScreen(
+            onDestinationSelected = onHelpFeedback,
+            onBack = { activeSubscreen = SettingsSubscreen.MAIN },
+            modifier = modifier,
+            bottomOverlayInset = bottomOverlayInset,
+        )
+
         SettingsSubscreen.SUPPORT_AALYRICS -> SupportAALyricsSettingsScreen(
             onSupport = onSupportAALyrics,
             onBack = { activeSubscreen = SettingsSubscreen.MAIN },
@@ -142,6 +150,9 @@ fun SettingsScreen(
                 activeSubscreen = SettingsSubscreen.TERMS_OF_USE
             },
             onLicenseRequested = { activeSubscreen = SettingsSubscreen.LICENSE },
+            onHelpFeedbackRequested = {
+                activeSubscreen = SettingsSubscreen.HELP_FEEDBACK
+            },
             onSupportAALyricsRequested = {
                 activeSubscreen = SettingsSubscreen.SUPPORT_AALYRICS
             },
@@ -171,6 +182,7 @@ internal fun SettingsScreenContent(
     onPrivacyPolicyRequested: () -> Unit,
     onTermsOfUseRequested: () -> Unit,
     onLicenseRequested: () -> Unit,
+    onHelpFeedbackRequested: () -> Unit,
     onSupportAALyricsRequested: () -> Unit,
     onAdvancedRequested: () -> Unit,
     onOpenGitHub: () -> Unit,
@@ -339,6 +351,14 @@ internal fun SettingsScreenContent(
             SettingsDivider()
 
             SettingsNavigationRow(
+                title = stringResource(R.string.settings_help_feedback),
+                value = null,
+                onClick = onHelpFeedbackRequested,
+            )
+
+            SettingsDivider()
+
+            SettingsNavigationRow(
                 title = stringResource(R.string.settings_support_aalyrics),
                 value = null,
                 onClick = onSupportAALyricsRequested,
@@ -426,5 +446,6 @@ private enum class SettingsSubscreen {
     PRIVACY_POLICY,
     TERMS_OF_USE,
     LICENSE,
+    HELP_FEEDBACK,
     SUPPORT_AALYRICS,
 }

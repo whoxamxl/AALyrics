@@ -66,6 +66,17 @@
     <string name="settings_terms_of_use">Terms of Use</string>
     <string name="settings_license">License</string>
     <string name="settings_section_third_party_licenses">THIRD-PARTY LICENSES</string>
+    <string name="settings_help_feedback">Help &amp; Feedback</string>
+    <string name="settings_report_bug">Report a bug</string>
+    <string name="settings_ask_question">Ask a question</string>
+    <string name="settings_suggest_idea">Suggest an idea</string>
+    <string name="settings_general_discussion">General discussion</string>
+    <string name="settings_report_security_issue">Report a security issue</string>
+    <string name="settings_github_issues">Issues</string>
+    <string name="settings_github_q_and_a">Q&amp;A</string>
+    <string name="settings_github_ideas">Ideas</string>
+    <string name="settings_github_general">General</string>
+    <string name="settings_private_report">Private report</string>
     <string name="settings_support_aalyrics">Support AALyrics</string>
     <string name="settings_support_body">AALyrics is free to use.\n\nIf you\'d like to support development, you can do so via Buy Me a Coffee.</string>
     <string name="settings_support_subtext">Support is optional. Payments are handled externally by Buy Me a Coffee.</string>
