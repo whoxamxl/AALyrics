@@ -181,7 +181,12 @@ internal fun PhoneRuntimeHost(
             mediaSourceCanOpenApp = playbackSourceCanOpenApp,
             playbackSurface = playbackSurface,
         ),
-        onDestinationSelected = { selectedDestination = it },
+        onDestinationSelected = { destination ->
+            if (isSettingsNavigationEntry(selectedDestination, destination)) {
+                application.onSettingsEntered()
+            }
+            selectedDestination = destination
+        },
         onDestinationReselected = { destination ->
             destinationRootResetKey += 1
             if (destination == PhoneDestination.Lyrics) {
@@ -262,7 +267,6 @@ internal fun PhoneRuntimeHost(
                 onAndroidAutoCompatibilitySetup = onAndroidAutoCompatibilitySetup,
                 onCheckForUpdates = application::checkForUpdates,
                 onDownloadUpdate = {},
-                onSettingsEntered = application::onSettingsEntered,
                 onOpenGitHub = onOpenSourceCode,
                 onHelpFeedback = onOpenHelpFeedback,
                 onSupportAALyrics = onOpenSupportAALyrics,
@@ -623,3 +627,11 @@ private const val QUEUE_ARTWORK_HTTP_CONNECT_TIMEOUT_MS = 2_000
 private const val QUEUE_ARTWORK_HTTP_READ_TIMEOUT_MS = 3_000
 private const val QUEUE_ARTWORK_LOG_TAG = "AALyricsQueueArtwork"
 private const val PLAYBACK_SOURCE_ICON_RASTER_SIZE_PX = 96
+
+
+internal fun isSettingsNavigationEntry(
+    currentDestination: PhoneDestination,
+    nextDestination: PhoneDestination,
+): Boolean =
+    currentDestination != PhoneDestination.Settings &&
+        nextDestination == PhoneDestination.Settings

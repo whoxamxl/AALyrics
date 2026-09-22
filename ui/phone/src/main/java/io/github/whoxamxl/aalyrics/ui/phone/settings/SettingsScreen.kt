@@ -42,7 +42,6 @@ fun SettingsScreen(
     onAndroidAutoCompatibilitySetup: () -> Unit,
     onCheckForUpdates: () -> Unit,
     onDownloadUpdate: () -> Unit,
-    onSettingsEntered: () -> Unit,
     onOpenGitHub: () -> Unit,
     onHelpFeedback: (HelpFeedbackDestination) -> Unit,
     onSupportAALyrics: () -> Unit,
@@ -63,10 +62,6 @@ fun SettingsScreen(
         targetLanguagePickerVisible = false
         activeSubscreen = settingsRootSubscreen()
         mainScrollState.scrollTo(0)
-    }
-
-    LaunchedEffect(Unit) {
-        onSettingsEntered()
     }
 
     when (activeSubscreen) {
