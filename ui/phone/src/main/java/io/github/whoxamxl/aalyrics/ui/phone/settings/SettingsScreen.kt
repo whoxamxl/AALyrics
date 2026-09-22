@@ -54,12 +54,12 @@ fun SettingsScreen(
     }
 
     BackHandler(enabled = activeSubscreen != SettingsSubscreen.MAIN) {
-        activeSubscreen = SettingsSubscreen.MAIN
+        activeSubscreen = activeSubscreen.backDestination()
     }
 
     LaunchedEffect(rootResetKey) {
         targetLanguagePickerVisible = false
-        activeSubscreen = SettingsSubscreen.MAIN
+        activeSubscreen = settingsRootSubscreen()
     }
 
     LaunchedEffect(Unit) {
@@ -438,14 +438,3 @@ private fun androidAutoStatusColor(
     AndroidAutoCompatibilityUiStatus.NOT_REVIEWED -> AALyricsColors.TextSecondary
 }
 
-
-private enum class SettingsSubscreen {
-    MAIN,
-    ADVANCED,
-    CHANGELOG,
-    PRIVACY_POLICY,
-    TERMS_OF_USE,
-    LICENSE,
-    HELP_FEEDBACK,
-    SUPPORT_AALYRICS,
-}

@@ -107,7 +107,7 @@ class MainActivity : ComponentActivity() {
                                 openUrl(SOURCE_CODE_URL)
                             },
                             onOpenHelpFeedback = { destination ->
-                                openCustomTabUrl(destination.helpFeedbackUrl())
+                                openCustomTabUrl(destination.githubUrl())
                             },
                             onOpenSupportAALyrics = {
                                 openCustomTabUrl(SUPPORT_URL)
@@ -155,15 +155,6 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun HelpFeedbackDestination.helpFeedbackUrl(): String =
-        when (this) {
-            HelpFeedbackDestination.REPORT_BUG -> REPORT_BUG_URL
-            HelpFeedbackDestination.ASK_QUESTION -> ASK_QUESTION_URL
-            HelpFeedbackDestination.SUGGEST_IDEA -> SUGGEST_IDEA_URL
-            HelpFeedbackDestination.GENERAL_DISCUSSION -> GENERAL_DISCUSSION_URL
-            HelpFeedbackDestination.REPORT_SECURITY_ISSUE -> REPORT_SECURITY_ISSUE_URL
-        }
-
     private fun AndroidAutoCompatibilitySetupStatus.toUiStatus():
         AndroidAutoCompatibilityUiStatus = when (this) {
         AndroidAutoCompatibilitySetupStatus.NOT_REVIEWED ->
@@ -184,15 +175,6 @@ class MainActivity : ComponentActivity() {
         const val ENTRY_PREFERENCES_NAME = "app_entry_setup"
         const val ANDROID_AUTO_COMPATIBILITY_KEY = "android_auto_compatibility"
         const val SOURCE_CODE_URL = "https://github.com/whoxamxl/AALyrics"
-        const val REPORT_BUG_URL = "https://github.com/whoxamxl/AALyrics/issues/new"
-        const val ASK_QUESTION_URL =
-            "https://github.com/whoxamxl/AALyrics/discussions/categories/q-a"
-        const val SUGGEST_IDEA_URL =
-            "https://github.com/whoxamxl/AALyrics/discussions/categories/ideas"
-        const val GENERAL_DISCUSSION_URL =
-            "https://github.com/whoxamxl/AALyrics/discussions/categories/general"
-        const val REPORT_SECURITY_ISSUE_URL =
-            "https://github.com/whoxamxl/AALyrics/security/advisories/new"
         const val SUPPORT_URL = "https://buymeacoffee.com/whoxamxi"
     }
 }
