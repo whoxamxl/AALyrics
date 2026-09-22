@@ -104,10 +104,10 @@ Completed locally/by repository inspection:
 
 Pending before merge:
 
-- [ ] Debug APK build passes.
-- [ ] JVM/unit tests pass.
-- [ ] Generated APK contains `aalyrics_privacy.md`.
-- [ ] PR diff/Preview alignment review is complete.
+- [x] Debug APK build passes.
+- [x] JVM/unit tests pass.
+- [x] Generated APK contains `aalyrics_privacy.md`.
+- [x] PR diff/Preview alignment review is complete.
 - [ ] Bounded Codex review has no unresolved blocking findings.
 
 ## Current stop point
