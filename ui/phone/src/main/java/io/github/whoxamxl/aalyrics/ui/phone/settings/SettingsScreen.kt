@@ -29,6 +29,8 @@ fun SettingsScreen(
     state: SettingsScreenUiState,
     rootResetKey: Int = 0,
     onPlainLyricsAutoScrollChanged: (Boolean) -> Unit,
+    onIgnoreNonAudioAppsChanged: (Boolean) -> Unit,
+    onAllowUnclassifiedAppsChanged: (Boolean) -> Unit,
     onVerboseDetailsChanged: (Boolean) -> Unit,
     onTranslationEnabledChanged: (Boolean) -> Unit,
     onTranslationTargetSelected: (String) -> Unit,
@@ -65,7 +67,10 @@ fun SettingsScreen(
 
     when (activeSubscreen) {
         SettingsSubscreen.ADVANCED -> AdvancedSettingsScreen(
+            ignoreNonAudioApps = state.ignoreNonAudioApps,
+            allowUnclassifiedApps = state.allowUnclassifiedApps,
             verboseDetailsEnabled = state.verboseDetailsEnabled,
+            onAllowUnclassifiedAppsChanged = onAllowUnclassifiedAppsChanged,
             onVerboseDetailsChanged = onVerboseDetailsChanged,
             cleanupState = state.translationModelCleanup,
             onClearTranslationModels = onClearTranslationModels,
@@ -114,6 +119,7 @@ fun SettingsScreen(
                 targetLanguagePickerVisible = it
             },
             onPlainLyricsAutoScrollChanged = onPlainLyricsAutoScrollChanged,
+            onIgnoreNonAudioAppsChanged = onIgnoreNonAudioAppsChanged,
             onTranslationEnabledChanged = onTranslationEnabledChanged,
             onTranslationTargetSelected = onTranslationTargetSelected,
             onTranslationModelDownloadRequested = onTranslationModelDownloadRequested,
@@ -143,6 +149,7 @@ internal fun SettingsScreenContent(
     targetLanguagePickerVisible: Boolean,
     onTargetLanguagePickerVisibilityChanged: (Boolean) -> Unit,
     onPlainLyricsAutoScrollChanged: (Boolean) -> Unit,
+    onIgnoreNonAudioAppsChanged: (Boolean) -> Unit,
     onTranslationEnabledChanged: (Boolean) -> Unit,
     onTranslationTargetSelected: (String) -> Unit,
     onTranslationModelDownloadRequested: (String) -> Unit,
@@ -198,6 +205,17 @@ internal fun SettingsScreenContent(
                 onCheckedChange = onPlainLyricsAutoScrollChanged,
                 infoText = stringResource(R.string.settings_plain_auto_scroll_info),
                 infoContentDescription = stringResource(R.string.settings_plain_auto_scroll_info_description),
+            )
+
+            SettingsDivider()
+
+            SettingsSwitchRow(
+                title = stringResource(R.string.settings_ignore_non_audio_apps),
+                checked = state.ignoreNonAudioApps,
+                onCheckedChange = onIgnoreNonAudioAppsChanged,
+                infoText = stringResource(R.string.settings_ignore_non_audio_apps_info),
+                infoContentDescription =
+                    stringResource(R.string.settings_ignore_non_audio_apps_info_description),
             )
         }
 

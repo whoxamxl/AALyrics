@@ -30,6 +30,14 @@ private fun SettingsScreenTypicalPreview() {
     SettingsScreenPreview(PhonePreviewFixtures.settingsTypical)
 }
 
+@Preview(name = "Non-audio filter off", group = "SettingsScreen", widthDp = 412, heightDp = 760)
+@Composable
+private fun SettingsScreenNonAudioFilterOffPreview() {
+    SettingsScreenPreview(
+        PhonePreviewFixtures.settingsTypical.copy(ignoreNonAudioApps = false),
+    )
+}
+
 @Preview(name = "Translation enabled", group = "SettingsScreen", widthDp = 412, heightDp = 760)
 @Composable
 private fun SettingsScreenTranslationOnPreview() {
@@ -131,6 +139,12 @@ internal fun SettingsScreenPreview(
                 onPlainLyricsAutoScrollChanged = {
                     state = state.copy(plainLyricsAutoScrollEnabled = it)
                 },
+                onIgnoreNonAudioAppsChanged = {
+                    state = state.copy(ignoreNonAudioApps = it)
+                },
+                onAllowUnclassifiedAppsChanged = {
+                    state = state.copy(allowUnclassifiedApps = it)
+                },
                 onVerboseDetailsChanged = {
                     state = state.copy(verboseDetailsEnabled = it)
                 },
@@ -177,6 +191,8 @@ internal fun SettingsScreenPreview(
                     val english = state.translationTargets.first { it.id == "en" }
                     state = state.copy(
                         plainLyricsAutoScrollEnabled = true,
+                        ignoreNonAudioApps = true,
+                        allowUnclassifiedApps = false,
                         verboseDetailsEnabled = false,
                         translationEnabled = false,
                         translationTarget = english,
@@ -252,6 +268,9 @@ private fun SettingsScreenContentPreview(
                 onTargetLanguagePickerVisibilityChanged = { pickerVisible = it },
                 onPlainLyricsAutoScrollChanged = {
                     state = state.copy(plainLyricsAutoScrollEnabled = it)
+                },
+                onIgnoreNonAudioAppsChanged = {
+                    state = state.copy(ignoreNonAudioApps = it)
                 },
                 onTranslationEnabledChanged = {
                     state = state.copy(translationEnabled = it)

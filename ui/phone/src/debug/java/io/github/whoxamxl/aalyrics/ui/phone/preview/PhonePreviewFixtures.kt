@@ -20,6 +20,9 @@ import io.github.whoxamxl.aalyrics.ui.phone.settings.SettingsLanguageOptionUiSta
 import io.github.whoxamxl.aalyrics.ui.phone.settings.SettingsScreenUiState
 import io.github.whoxamxl.aalyrics.ui.phone.settings.TranslationModelUiState
 import io.github.whoxamxl.aalyrics.ui.phone.state.PhoneShellUiState
+import io.github.whoxamxl.aalyrics.ui.phone.state.PlaybackSourceConnectionUiState
+import io.github.whoxamxl.aalyrics.ui.phone.state.PlaybackSourceErrorUiReason
+import io.github.whoxamxl.aalyrics.ui.phone.state.PlaybackSourceUnavailableUiReason
 import io.github.whoxamxl.aalyrics.ui.phone.state.PlaybackQueueItemUiState
 import io.github.whoxamxl.aalyrics.ui.phone.state.PlaybackSurfaceUiState
 
@@ -197,16 +200,35 @@ internal object PhonePreviewFixtures {
 
     val typicalLyricsShell = PhoneShellUiState(
         mediaSourceLabel = "Spotify",
+        mediaSourceConnectionState = PlaybackSourceConnectionUiState.CONNECTED,
+        mediaSourceCanOpenApp = true,
         playbackSurface = playingSurface,
     )
     val narrowLyricsShell = PhoneShellUiState(
         mediaSourceLabel = "YouTube Music",
+        mediaSourceConnectionState = PlaybackSourceConnectionUiState.CONNECTED,
+        mediaSourceCanOpenApp = true,
         playbackSurface = pausedSurface,
     )
-    val lyricsWithoutControls = PhoneShellUiState(mediaSourceLabel = null)
+    val lyricsWithoutControls = PhoneShellUiState(
+        mediaSourceConnectionState = PlaybackSourceConnectionUiState.DISCONNECTED,
+    )
+    val connectingShell = PhoneShellUiState(
+        mediaSourceConnectionState = PlaybackSourceConnectionUiState.CONNECTING,
+    )
+    val unavailableFallbackShell = PhoneShellUiState(
+        mediaSourceConnectionState = PlaybackSourceConnectionUiState.UNAVAILABLE,
+        mediaSourceUnavailableReason = PlaybackSourceUnavailableUiReason.UNKNOWN,
+    )
+    val errorShell = PhoneShellUiState(
+        mediaSourceConnectionState = PlaybackSourceConnectionUiState.ERROR,
+        mediaSourceErrorReason = PlaybackSourceErrorUiReason.SESSION_QUERY_FAILED,
+    )
     val syncShell = PhoneShellUiState(
         selectedDestination = PhoneDestination.Sync,
         mediaSourceLabel = "Poweramp",
+        mediaSourceConnectionState = PlaybackSourceConnectionUiState.CONNECTED,
+        mediaSourceCanOpenApp = true,
         playbackSurface = pausedSurface,
     )
 
@@ -354,6 +376,8 @@ internal object PhonePreviewFixtures {
     val settingsShell = PhoneShellUiState(
         selectedDestination = PhoneDestination.Settings,
         mediaSourceLabel = "Spotify",
+        mediaSourceConnectionState = PlaybackSourceConnectionUiState.CONNECTED,
+        mediaSourceCanOpenApp = true,
         playbackSurface = playingSurface,
     )
 
@@ -392,6 +416,9 @@ internal object PhonePreviewFixtures {
         ),
         diagnostics = DetailsDiagnosticsUiState(
             appPackageName = "com.spotify.music",
+            appCategory = "Audio",
+            appMinSdkVersion = 26,
+            appTargetSdkVersion = 35,
             providerId = "musixmatch",
             sourceId = "mxm:track:9384756",
             trackReferences = listOf(
@@ -402,12 +429,16 @@ internal object PhonePreviewFixtures {
     )
     val detailsVerboseSparse = detailsPartial.copy(
         diagnostics = DetailsDiagnosticsUiState(
+            appPackageName = "com.example.player",
+            appCategory = "Undefined",
             trackReferences = listOf("spotify:demo-reference"),
         ),
     )
     val detailsShell = PhoneShellUiState(
         selectedDestination = PhoneDestination.Details,
         mediaSourceLabel = "Spotify",
+        mediaSourceConnectionState = PlaybackSourceConnectionUiState.CONNECTED,
+        mediaSourceCanOpenApp = true,
         playbackSurface = playingSurface,
     )
 
