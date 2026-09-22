@@ -234,13 +234,55 @@ The checksum verifies file integrity. Android's package signature separately pro
 
 ## In-app update entry
 
-The Phone Settings surface exposes one combined version/update row. It shows the installed version and moves through check, available, download, success, and failure/retry states.
+The Phone Settings surface exposes one combined version/update row. GitHub Releases is the authoritative source for update discovery, while the Phone Compose layer remains presentation-only.
 
-GitHub Releases remains the authoritative distribution source. The Phone Compose layer only emits presentation callbacks; application/runtime code owns network access, release selection/comparison, APK download, checksum verification, and any future install flow.
+### Check for updates
 
-When an update is available, the runtime should resolve the signed release asset named `AALyrics-vX.Y.Z[-suffix].apk` plus its matching `.sha256` file. Pressing Download should save the latest eligible APK to the device and verify the published checksum before reporting a completed download.
+The first functional update slice is intentionally **check-only**. An update check begins only when the user explicitly presses `Check for updates` or `Retry`. AALyrics must not contact GitHub merely because the app launched, resumed, or Settings was opened.
 
-The installed version shown in Settings should come from the app build metadata (`BuildConfig.VERSION_NAME`), not a duplicated UI constant.
+The application-owned release client reads the repository's public Release collection. It must not rely on GitHub's single "latest release" concept because AALyrics prerelease channels (alpha/beta/RC) are valid update candidates.
+
+Only releases whose tags match the AALyrics version grammar participate:
+
+```text
+vMAJOR.MINOR.PATCH
+vMAJOR.MINOR.PATCH-alpha.N
+vMAJOR.MINOR.PATCH-beta.N
+vMAJOR.MINOR.PATCH-rc.N
+```
+
+Draft releases and unrelated/malformed tags are ignored. Candidate ordering is determined from the parsed version, not publication time alone.
+
+Eligibility follows the installed channel:
+
+- stable installed builds consider stable releases only;
+- alpha/beta/RC installed builds consider prerelease and stable releases;
+- development builds use their embedded base release version and channel.
+
+Development metadata such as `0.2.0-alpha.1-dev+abcdef0` or `.dirty` identifies the source build but does not make the same base release appear newer. For update comparison, that example compares as `0.2.0-alpha.1`.
+
+Within one numeric `MAJOR.MINOR.PATCH`, precedence is:
+
+```text
+alpha.N < beta.N < rc.N < stable
+```
+
+The installed version shown in Settings comes from `BuildConfig.VERSION_NAME`; no duplicate UI version constant is allowed. A successful check with no newer eligible release maps to `UP_TO_DATE`; a newer eligible release maps to `UPDATE_AVAILABLE`. Network/protocol failure, an unparseable installed version, or inability to establish any comparable AALyrics release maps to `CHECK_FAILED`.
+
+The public client must not embed a GitHub token or repository secret in the APK.
+
+### Deferred download and installation
+
+The Check-only slice does **not** download an APK. While `UPDATE_AVAILABLE` is shown, the row is informational and must not expose an enabled Download action backed by a no-op callback.
+
+A later slice may activate the already-modeled download lifecycle. That implementation must resolve the signed release asset named:
+
+```text
+AALyrics-vX.Y.Z[-suffix].apk
+AALyrics-vX.Y.Z[-suffix].apk.sha256
+```
+
+and verify the published SHA-256 before reporting a completed download. Package Installer handoff and signing-identity validation remain separate concerns from release discovery.
 
 The Settings `Changelog` entry is independent of the update-network path. It renders the repository `CHANGELOG.md` bundled into the installed APK; it does not fetch GitHub Release notes at runtime. GitHub Releases remain authoritative for signed update distribution, while `CHANGELOG.md` is authoritative for the in-app release history.
 
