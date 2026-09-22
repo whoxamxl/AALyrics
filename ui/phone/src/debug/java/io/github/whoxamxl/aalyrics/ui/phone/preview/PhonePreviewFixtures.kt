@@ -373,6 +373,9 @@ internal object PhonePreviewFixtures {
         ),
         diagnostics = DetailsDiagnosticsUiState(
             appPackageName = "com.spotify.music",
+            appCategory = "Audio",
+            appMinSdkVersion = 26,
+            appTargetSdkVersion = 35,
             providerId = "musixmatch",
             sourceId = "mxm:track:9384756",
             trackReferences = listOf(
@@ -383,6 +386,8 @@ internal object PhonePreviewFixtures {
     )
     val detailsVerboseSparse = detailsPartial.copy(
         diagnostics = DetailsDiagnosticsUiState(
+            appPackageName = "com.example.player",
+            appCategory = "Undefined",
             trackReferences = listOf("spotify:demo-reference"),
         ),
     )
