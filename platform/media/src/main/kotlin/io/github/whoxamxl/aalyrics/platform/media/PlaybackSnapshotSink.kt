@@ -24,6 +24,7 @@ data class PlaybackQueueItem(
     val title: String,
     val subtitle: String? = null,
     val artworkUri: String? = null,
+    val hasEmbeddedArtwork: Boolean = false,
 )
 
 /**
@@ -93,6 +94,15 @@ fun interface PlaybackArtworkSink {
     fun onPlaybackArtwork(bitmap: Bitmap?)
 }
 
+/**
+ * Android-owned side channel for queue-entry icon bitmaps.
+ *
+ * Queue presentation state carries only an availability marker; Bitmap ownership stops at :app.
+ */
+fun interface QueueArtworkBitmapSink {
+    fun onQueueArtworkBitmaps(bitmaps: Map<Long, Bitmap>)
+}
+
 /** Framework-neutral transport commands for the currently selected media session. */
 interface PlaybackTransport {
     fun play()
@@ -118,6 +128,9 @@ object MediaSessionRuntimeHost {
 
     @Volatile
     private var artworkSink: PlaybackArtworkSink? = null
+
+    @Volatile
+    private var queueArtworkBitmapSink: QueueArtworkBitmapSink? = null
 
     @Volatile
     private var sourceRuntimeStateSink: PlaybackSourceRuntimeStateSink? = null
@@ -156,6 +169,16 @@ object MediaSessionRuntimeHost {
     @Synchronized
     fun detachArtwork(sink: PlaybackArtworkSink) {
         if (artworkSink === sink) artworkSink = null
+    }
+
+    @Synchronized
+    fun attachQueueArtworkBitmaps(sink: QueueArtworkBitmapSink) {
+        queueArtworkBitmapSink = sink
+    }
+
+    @Synchronized
+    fun detachQueueArtworkBitmaps(sink: QueueArtworkBitmapSink) {
+        if (queueArtworkBitmapSink === sink) queueArtworkBitmapSink = null
     }
 
     @Synchronized
@@ -198,6 +221,10 @@ object MediaSessionRuntimeHost {
 
     internal fun forwardArtwork(bitmap: Bitmap?) {
         artworkSink?.onPlaybackArtwork(bitmap)
+    }
+
+    internal fun forwardQueueArtworkBitmaps(bitmaps: Map<Long, Bitmap>) {
+        queueArtworkBitmapSink?.onQueueArtworkBitmaps(bitmaps)
     }
 
     internal fun forwardSourceRuntimeState(state: PlaybackSourceRuntimeState) {

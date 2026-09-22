@@ -10,6 +10,7 @@ internal interface RuntimeMediaController<Token> {
 
     fun snapshot(): PlaybackSnapshot
     fun artwork(): Bitmap? = null
+    fun queueArtworkBitmaps(): Map<Long, Bitmap> = emptyMap()
     fun controlState(): PlaybackControlState
     fun attach(callback: RuntimeMediaControllerCallback)
     fun detach(callback: RuntimeMediaControllerCallback)
@@ -80,6 +81,7 @@ internal class SelectedMediaSessionRuntime<Token>(
     private val sink: PlaybackSnapshotSink,
     private val controlStateSink: PlaybackControlStateSink,
     private val artworkSink: PlaybackArtworkSink = PlaybackArtworkSink {},
+    private val queueArtworkBitmapSink: QueueArtworkBitmapSink = QueueArtworkBitmapSink {},
     private val scheduler: MetadataTaskScheduler,
     private val refreshSessions: () -> Unit,
     private val metadataStabilizationMs: Long = DEFAULT_METADATA_STABILIZATION_MS,
@@ -175,6 +177,7 @@ internal class SelectedMediaSessionRuntime<Token>(
             sink.onPlaybackSnapshot(PlaybackSnapshot())
             controlStateSink.onPlaybackControlState(PlaybackControlState())
             artworkSink.onPlaybackArtwork(null)
+            queueArtworkBitmapSink.onQueueArtworkBitmaps(emptyMap())
             return
         }
 
@@ -188,6 +191,7 @@ internal class SelectedMediaSessionRuntime<Token>(
             sink.onPlaybackSnapshot(snapshot)
             controlStateSink.onPlaybackControlState(next.controlState())
             artworkSink.onPlaybackArtwork(next.artwork())
+            queueArtworkBitmapSink.onQueueArtworkBitmaps(next.queueArtworkBitmaps())
         } catch (failure: RuntimeException) {
             try {
                 next.detach(callback)
@@ -200,6 +204,7 @@ internal class SelectedMediaSessionRuntime<Token>(
             sink.onPlaybackSnapshot(PlaybackSnapshot())
             controlStateSink.onPlaybackControlState(PlaybackControlState())
             artworkSink.onPlaybackArtwork(null)
+            queueArtworkBitmapSink.onQueueArtworkBitmaps(emptyMap())
             throw failure
         }
     }
@@ -245,6 +250,7 @@ internal class SelectedMediaSessionRuntime<Token>(
             override fun onControlStateChanged() {
                 val current = selectedController?.takeIf { it.token == token } ?: return
                 controlStateSink.onPlaybackControlState(current.controlState())
+                queueArtworkBitmapSink.onQueueArtworkBitmaps(current.queueArtworkBitmaps())
             }
 
             override fun onSessionDestroyed() {
