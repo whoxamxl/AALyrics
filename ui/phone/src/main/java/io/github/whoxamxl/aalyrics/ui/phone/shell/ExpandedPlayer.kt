@@ -95,6 +95,7 @@ internal fun ExpandedPlayer(
     transformationDragModifier: Modifier = Modifier,
     modifier: Modifier = Modifier,
     artwork: (@Composable BoxScope.() -> Unit)? = null,
+    queueArtwork: (@Composable BoxScope.(PlaybackQueueItemUiState) -> Unit)? = null,
 ) {
     var queueVisible by remember { mutableStateOf(false) }
 
@@ -175,6 +176,7 @@ internal fun ExpandedPlayer(
                 queueVisible = false
                 onQueueItemSelected(it)
             },
+            queueArtwork = queueArtwork,
             onDismissRequest = { queueVisible = false },
         )
     }
@@ -721,6 +723,7 @@ private fun PlaybackQueueSheet(
     canOpenPlaybackApp: Boolean,
     onOpenPlaybackApp: () -> Unit,
     onQueueItemSelected: (Long) -> Unit,
+    queueArtwork: (@Composable BoxScope.(PlaybackQueueItemUiState) -> Unit)?,
     onDismissRequest: () -> Unit,
 ) {
     ModalBottomSheet(
@@ -739,6 +742,7 @@ private fun PlaybackQueueSheet(
             canOpenPlaybackApp = canOpenPlaybackApp,
             onOpenPlaybackApp = onOpenPlaybackApp,
             onQueueItemSelected = onQueueItemSelected,
+            queueArtwork = queueArtwork,
             modifier = Modifier.fillMaxHeight(QUEUE_SHEET_HEIGHT_FRACTION),
         )
     }
@@ -751,6 +755,7 @@ internal fun PlaybackQueueSheetContent(
     onOpenPlaybackApp: () -> Unit,
     onQueueItemSelected: (Long) -> Unit,
     modifier: Modifier = Modifier,
+    queueArtwork: (@Composable BoxScope.(PlaybackQueueItemUiState) -> Unit)? = null,
 ) {
     Column(
         modifier = modifier
@@ -799,6 +804,7 @@ internal fun PlaybackQueueSheetContent(
                     QueueTrackRow(
                         item = item,
                         onClick = { onQueueItemSelected(item.id) },
+                        queueArtwork = queueArtwork,
                     )
                 }
             }
@@ -847,6 +853,7 @@ private fun PlaybackQueueDragHandle() {
 private fun QueueTrackRow(
     item: PlaybackQueueItemUiState,
     onClick: () -> Unit,
+    queueArtwork: (@Composable BoxScope.(PlaybackQueueItemUiState) -> Unit)?,
 ) {
     Column(
         modifier = Modifier
@@ -867,13 +874,17 @@ private fun QueueTrackRow(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             PlaybackArtwork(
-                artwork = {
-                    Icon(
-                        imageVector = AALyricsIcons.MusicNote,
-                        contentDescription = null,
-                        tint = AALyricsColors.TextTertiary,
-                        modifier = Modifier.size(AALyricsSpacing.Space20),
-                    )
+                artwork = if (queueArtwork != null && item.artworkUri != null) {
+                    { queueArtwork(item) }
+                } else {
+                    {
+                        Icon(
+                            imageVector = AALyricsIcons.MusicNote,
+                            contentDescription = null,
+                            tint = AALyricsColors.TextTertiary,
+                            modifier = Modifier.size(AALyricsSpacing.Space20),
+                        )
+                    }
                 },
                 modifier = Modifier.size(36.dp),
             )

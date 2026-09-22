@@ -1,20 +1,29 @@
 package io.github.whoxamxl.aalyrics
 
+import android.content.ContentResolver
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.Canvas
+import android.graphics.ImageDecoder
 import android.graphics.Rect
 import android.graphics.drawable.Drawable
+import android.net.Uri
+import android.os.Build
 import android.os.SystemClock
+import android.util.Log
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.painter.BitmapPainter
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.whoxamxl.aalyrics.ui.designsystem.component.AlbumArtwork
 import io.github.whoxamxl.aalyrics.ui.phone.details.DetailsScreen
@@ -26,9 +35,12 @@ import io.github.whoxamxl.aalyrics.ui.phone.settings.HelpFeedbackDestination
 import io.github.whoxamxl.aalyrics.ui.phone.settings.SettingsScreen
 import io.github.whoxamxl.aalyrics.ui.phone.shell.PhoneAppShell
 import io.github.whoxamxl.aalyrics.ui.phone.state.PhoneShellUiState
+import io.github.whoxamxl.aalyrics.ui.phone.state.PlaybackQueueItemUiState
 import io.github.whoxamxl.aalyrics.ui.phone.sync.SyncScreen
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
+import kotlinx.coroutines.withContext
 import java.time.Year
 
 @Composable
@@ -167,6 +179,12 @@ internal fun PhoneRuntimeHost(
         playbackArtwork = {
             AlbumArtwork(image = playbackArtworkImage)
         },
+        queueArtwork = { item ->
+            QueueItemArtwork(
+                contentResolver = application.contentResolver,
+                item = item,
+            )
+        },
     ) { destination, bottomOverlayInset ->
         when (destination) {
             PhoneDestination.Lyrics -> LyricsScreen(
@@ -229,6 +247,54 @@ internal fun PhoneRuntimeHost(
     }
 }
 
+@Composable
+private fun QueueItemArtwork(
+    contentResolver: ContentResolver,
+    item: PlaybackQueueItemUiState,
+) {
+    val density = LocalDensity.current
+    val targetPx = with(density) { QUEUE_ARTWORK_SIZE.roundToPx() }
+    val image by produceState<ImageBitmap?>(
+        initialValue = null,
+        key1 = item.artworkUri,
+        key2 = targetPx,
+    ) {
+        val uri = item.artworkUri ?: return@produceState
+        value = withContext(Dispatchers.IO) {
+            loadQueueArtwork(
+                contentResolver = contentResolver,
+                artworkUri = uri,
+                targetPx = targetPx,
+            )
+        }?.asImageBitmap()
+    }
+
+    AlbumArtwork(image = image)
+}
+
+private fun loadQueueArtwork(
+    contentResolver: ContentResolver,
+    artworkUri: String,
+    targetPx: Int,
+): Bitmap? = runCatching {
+    val uri = Uri.parse(artworkUri)
+    if (Build.VERSION.SDK_INT >= 28) {
+        ImageDecoder.decodeBitmap(
+            ImageDecoder.createSource(contentResolver, uri),
+        ) { decoder, _, _ ->
+            decoder.setTargetSize(targetPx, targetPx)
+        }
+    } else {
+        contentResolver.openInputStream(uri)?.use(BitmapFactory::decodeStream)
+    }
+}.onFailure { failure ->
+    Log.d(
+        QUEUE_ARTWORK_LOG_TAG,
+        "Unable to load queue artwork uri=$artworkUri",
+        failure,
+    )
+}.getOrNull()
+
 private fun Drawable.toImageBitmapOrNull(): ImageBitmap? =
     runCatching {
         val bitmap = Bitmap.createBitmap(
@@ -252,4 +318,6 @@ private fun Drawable.toImageBitmapOrNull(): ImageBitmap? =
         bitmap.asImageBitmap()
     }.getOrNull()
 
+private val QUEUE_ARTWORK_SIZE = 36.dp
+private const val QUEUE_ARTWORK_LOG_TAG = "AALyricsQueueArtwork"
 private const val PLAYBACK_SOURCE_ICON_RASTER_SIZE_PX = 96
