@@ -49,7 +49,7 @@ internal data class AALyricsVersion(
 }
 
 internal object AALyricsVersionParser {
-    private const val NUMBER = "(0|[1-9][0-9]*)"
+    private const val NUMBER = "(?:0|[1-9][0-9]*)"
 
     private val versionPattern = Regex(
         "^v?($NUMBER)\\.($NUMBER)\\.($NUMBER)" +
