@@ -52,7 +52,11 @@ This is a presentation/diagnostic enrichment only. It must not change media-sess
 - Keep the current playback-source pill and human-readable label behavior.
 - Show the selected playback application's icon in the pill when available.
 - Retain the existing cyan-dot treatment as the visual fallback when no app icon is available.
-- Show `<App> · Connected` only when the current `PlaybackSnapshot.source.id`, selected-session `PlaybackControlState.sourcePackageName`, and resolved `PlaybackSourceAppInfo.packageName` all identify the same package. Do not use a fixed decorative status string.
+- Present an explicit runtime status: `Connecting`, `Connected`, `Disconnected`, `Unavailable`, or `Error`.
+- `Connected` requires the runtime-selected package, current playback package, and resolved app-info package to agree.
+- `Disconnected` means session observation is healthy but no active media session is available.
+- `Unavailable` means sessions exist but the current selection/support policy cannot use one; this state is reserved for policy-driven rejection as that policy grows.
+- `Error` carries one of `NOTIFICATION_ACCESS_LOST`, `SESSION_QUERY_FAILED`, `SESSION_ATTACH_FAILED`, or `UNKNOWN`; the Top Bar exposes the concise reason through an information tooltip.
 - Do not pass `ApplicationInfo`, `PackageManager`, or Android `Drawable` objects into `:ui:phone`; platform icon ownership stays on the application side and the Phone UI receives renderable presentation content only.
 
 ### Developer / Diagnostics
@@ -79,7 +83,8 @@ Category and SDK display are diagnostic metadata only. They must not influence p
 - [x] Resolve and cache package name, label, icon, category, min SDK, and target SDK from the selected playback package.
 - [x] Preserve package-name fallback semantics when application/label resolution fails.
 - [x] Present the real playback app icon in the persistent Top Bar when available, with the current cyan dot as fallback.
-- [x] Present `· Connected` only for a source verified against the currently selected MediaSession control state.
+- [x] Replace the connected Boolean with explicit Connecting / Connected / Disconnected / Unavailable / Error runtime states.
+- [x] Preserve explicit playback-source error reasons and expose a concise Error tooltip in the Top Bar.
 - [x] Add app category, min SDK, and target SDK to Verbose Details Developer / Diagnostics.
 - [x] Keep Android package/application objects outside `:ui:phone`.
 - [x] Keep normal Details user-facing playback-source labeling unchanged apart from sharing the new resolver.

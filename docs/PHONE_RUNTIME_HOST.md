@@ -128,13 +128,16 @@ The runtime host provides a real `PhoneShellUiState`:
 PhoneShellUiState
 ├─ selectedDestination   <- host-local primary destination
 ├─ mediaSourceLabel      <- app-owned playback/source presentation
-├─ mediaSourceConnected  <- verified selected-session/source-package match
+├─ mediaSourceConnectionState <- Connecting / Connected / Disconnected / Unavailable / Error
+├─ mediaSourceErrorReason <- concise Error reason when state is Error
 └─ playbackSurface       <- AALyricsApplication.phonePlaybackSurfaceState
 ```
 
 The Top Bar, Playback Surface, and Bottom Navigation remain shell-owned.
 
-Playback-source package metadata is owned by `:app`. The label-only resolver is replaced by `PlaybackSourceAppInfoResolver`, which performs one cached `ApplicationInfo` lookup per selected package and derives the presentation label, optional app icon, diagnostic category, minimum SDK level, and target SDK level. The package identifier remains the label fallback if metadata/label resolution fails. The Top Bar icon is supplied as caller-owned renderable content, analogous to selected-session artwork, so `ApplicationInfo`, `PackageManager`, and Android `Drawable` objects do not become Phone UI state. When no icon is available, `PhoneTopBar` retains its existing cyan-dot fallback. The host derives `mediaSourceConnected` only when `PlaybackSnapshot.source.id`, `PlaybackControlState.sourcePackageName`, and `PlaybackSourceAppInfo.packageName` are the same package. The UI may render `· Connected` only from that verified presentation boolean; session presence is not inferred from an app label alone.
+Playback-source package metadata is owned by `:app`. The label-only resolver is replaced by `PlaybackSourceAppInfoResolver`, which performs one cached `ApplicationInfo` lookup per selected package and derives the presentation label, optional app icon, diagnostic category, minimum SDK level, and target SDK level. The package identifier remains the label fallback if metadata/label resolution fails. The Top Bar icon is supplied as caller-owned renderable content, analogous to selected-session artwork, so `ApplicationInfo`, `PackageManager`, and Android `Drawable` objects do not become Phone UI state. When no icon is available, `PhoneTopBar` retains its cyan-dot fallback.
+
+MediaSession observation publishes a framework-neutral `PlaybackSourceRuntimeState`: `Connecting` while listener/session discovery is being established, `Connected(packageName)` for a selected usable session, `Disconnected` after a successful query with no active sessions, `Unavailable(packageName?)` when sessions exist but selection policy cannot use one, and `Error(reason)` for observation failures. Error reasons are `NOTIFICATION_ACCESS_LOST`, `SESSION_QUERY_FAILED`, `SESSION_ATTACH_FAILED`, and `UNKNOWN`. The app maps this into Phone presentation state; `Connected` is shown only after the runtime package, current playback package, and resolved app-info package agree. Error details remain concise and are exposed from the Top Bar through the shared Phone popup/tooltip surface.
 
 ## Playback actions
 
