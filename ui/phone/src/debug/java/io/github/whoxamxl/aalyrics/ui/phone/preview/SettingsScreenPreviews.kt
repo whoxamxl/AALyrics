@@ -223,6 +223,7 @@ internal fun SettingsScreenPreview(
                     )
                 },
                 onOpenGitHub = {},
+                onSupportAALyrics = {},
                 modifier = Modifier.fillMaxSize(),
             )
         }
@@ -269,7 +270,9 @@ private fun SettingsScreenContentPreview(
                 onCheckForUpdates = {},
                 onDownloadUpdate = {},
                 onChangelogRequested = {},
+                onPrivacyPolicyRequested = {},
                 onLicenseRequested = {},
+                onSupportAALyricsRequested = {},
                 onAdvancedRequested = {},
                 onOpenGitHub = {},
                 modifier = Modifier.fillMaxSize(),

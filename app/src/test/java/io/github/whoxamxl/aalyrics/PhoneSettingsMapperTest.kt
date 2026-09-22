@@ -25,6 +25,7 @@ class PhoneSettingsMapperTest {
             noticeText = "Required Notice: © 2026 Yuta Miura",
             licenseText = "demo license",
             changelogText = "demo changelog",
+            privacyPolicyText = "demo privacy",
             displayLocale = Locale.ENGLISH,
         )
 
@@ -34,6 +35,7 @@ class PhoneSettingsMapperTest {
         assertEquals("Required Notice: © 2026 Yuta Miura", state.noticeText)
         assertEquals("demo license", state.licenseText)
         assertEquals("demo changelog", state.changelogText)
+        assertEquals("demo privacy", state.privacyPolicyText)
     }
 
     @Test
