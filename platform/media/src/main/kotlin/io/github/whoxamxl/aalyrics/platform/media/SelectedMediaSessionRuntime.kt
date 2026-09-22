@@ -47,7 +47,7 @@ internal sealed interface MediaSessionSelectionResult {
     data class Unavailable(
         val packageName: String? = null,
         val reason: PlaybackSourceUnavailableReason =
-            PlaybackSourceUnavailableReason.UNSUPPORTED_PLAYER,
+            PlaybackSourceUnavailableReason.UNKNOWN,
     ) : MediaSessionSelectionResult
 }
 
@@ -111,7 +111,7 @@ internal class SelectedMediaSessionRuntime<Token>(
                 packageName = controllers
                     .firstOrNull { it.packageName != selfPackageName }
                     ?.packageName,
-                reason = PlaybackSourceUnavailableReason.UNSUPPORTED_PLAYER,
+                reason = PlaybackSourceUnavailableReason.UNKNOWN,
             )
         }
     }

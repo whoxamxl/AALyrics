@@ -377,8 +377,10 @@ private fun playbackSourceUnavailableMessage(
     reason: PlaybackSourceUnavailableUiReason?,
 ): String =
     when (reason) {
-        PlaybackSourceUnavailableUiReason.UNSUPPORTED_PLAYER ->
-            stringResource(R.string.playback_source_unavailable_unsupported_player)
+        PlaybackSourceUnavailableUiReason.NON_AUDIO_APP ->
+            stringResource(R.string.playback_source_unavailable_non_audio_app)
+        PlaybackSourceUnavailableUiReason.UNCLASSIFIED_APP ->
+            stringResource(R.string.playback_source_unavailable_unclassified_app)
         PlaybackSourceUnavailableUiReason.UNKNOWN,
         null -> stringResource(R.string.playback_source_unavailable_unknown)
     }

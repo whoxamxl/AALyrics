@@ -19,7 +19,8 @@ enum class PlaybackSourceErrorUiReason {
 }
 
 enum class PlaybackSourceUnavailableUiReason {
-    UNSUPPORTED_PLAYER,
+    NON_AUDIO_APP,
+    UNCLASSIFIED_APP,
     UNKNOWN,
 }
 

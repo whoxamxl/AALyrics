@@ -91,8 +91,10 @@ private fun PlaybackSourceErrorReason.toUiReason(): PlaybackSourceErrorUiReason 
 
 private fun PlaybackSourceUnavailableReason.toUiReason(): PlaybackSourceUnavailableUiReason =
     when (this) {
-        PlaybackSourceUnavailableReason.UNSUPPORTED_PLAYER ->
-            PlaybackSourceUnavailableUiReason.UNSUPPORTED_PLAYER
+        PlaybackSourceUnavailableReason.NON_AUDIO_APP ->
+            PlaybackSourceUnavailableUiReason.NON_AUDIO_APP
+        PlaybackSourceUnavailableReason.UNCLASSIFIED_APP ->
+            PlaybackSourceUnavailableUiReason.UNCLASSIFIED_APP
         PlaybackSourceUnavailableReason.UNKNOWN ->
             PlaybackSourceUnavailableUiReason.UNKNOWN
     }
