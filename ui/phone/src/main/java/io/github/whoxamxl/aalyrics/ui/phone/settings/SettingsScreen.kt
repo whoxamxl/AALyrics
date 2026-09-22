@@ -41,6 +41,7 @@ fun SettingsScreen(
     onDownloadUpdate: () -> Unit,
     onSettingsEntered: () -> Unit,
     onOpenGitHub: () -> Unit,
+    onSupportAALyrics: () -> Unit,
     modifier: Modifier = Modifier,
     bottomOverlayInset: Dp = 0.dp,
 ) {
@@ -83,9 +84,23 @@ fun SettingsScreen(
             bottomOverlayInset = bottomOverlayInset,
         )
 
+        SettingsSubscreen.PRIVACY_POLICY -> PrivacyPolicySettingsScreen(
+            privacyPolicyText = state.privacyPolicyText,
+            onBack = { activeSubscreen = SettingsSubscreen.MAIN },
+            modifier = modifier,
+            bottomOverlayInset = bottomOverlayInset,
+        )
+
         SettingsSubscreen.LICENSE -> LicenseSettingsScreen(
             noticeText = state.noticeText,
             licenseText = state.licenseText,
+            onBack = { activeSubscreen = SettingsSubscreen.MAIN },
+            modifier = modifier,
+            bottomOverlayInset = bottomOverlayInset,
+        )
+
+        SettingsSubscreen.SUPPORT_AALYRICS -> SupportAALyricsSettingsScreen(
+            onSupport = onSupportAALyrics,
             onBack = { activeSubscreen = SettingsSubscreen.MAIN },
             modifier = modifier,
             bottomOverlayInset = bottomOverlayInset,
@@ -106,7 +121,13 @@ fun SettingsScreen(
             onCheckForUpdates = onCheckForUpdates,
             onDownloadUpdate = onDownloadUpdate,
             onChangelogRequested = { activeSubscreen = SettingsSubscreen.CHANGELOG },
+            onPrivacyPolicyRequested = {
+                activeSubscreen = SettingsSubscreen.PRIVACY_POLICY
+            },
             onLicenseRequested = { activeSubscreen = SettingsSubscreen.LICENSE },
+            onSupportAALyricsRequested = {
+                activeSubscreen = SettingsSubscreen.SUPPORT_AALYRICS
+            },
             onAdvancedRequested = { activeSubscreen = SettingsSubscreen.ADVANCED },
             onOpenGitHub = onOpenGitHub,
             modifier = modifier,
@@ -129,7 +150,9 @@ internal fun SettingsScreenContent(
     onCheckForUpdates: () -> Unit,
     onDownloadUpdate: () -> Unit,
     onChangelogRequested: () -> Unit,
+    onPrivacyPolicyRequested: () -> Unit,
     onLicenseRequested: () -> Unit,
+    onSupportAALyricsRequested: () -> Unit,
     onAdvancedRequested: () -> Unit,
     onOpenGitHub: () -> Unit,
     modifier: Modifier = Modifier,
@@ -254,6 +277,18 @@ internal fun SettingsScreenContent(
                 value = stringResource(R.string.settings_github),
                 onClick = onOpenGitHub,
             )
+        }
+
+        Spacer(Modifier.height(AALyricsSpacing.Space20))
+
+        SettingsSection(
+            title = stringResource(R.string.settings_section_about_support),
+        ) {
+            SettingsNavigationRow(
+                title = stringResource(R.string.settings_privacy_policy),
+                value = null,
+                onClick = onPrivacyPolicyRequested,
+            )
 
             SettingsDivider()
 
@@ -261,6 +296,14 @@ internal fun SettingsScreenContent(
                 title = stringResource(R.string.settings_license),
                 value = null,
                 onClick = onLicenseRequested,
+            )
+
+            SettingsDivider()
+
+            SettingsNavigationRow(
+                title = stringResource(R.string.settings_support_aalyrics),
+                value = null,
+                onClick = onSupportAALyricsRequested,
             )
         }
 
@@ -342,5 +385,7 @@ private enum class SettingsSubscreen {
     MAIN,
     ADVANCED,
     CHANGELOG,
+    PRIVACY_POLICY,
     LICENSE,
+    SUPPORT_AALYRICS,
 }
