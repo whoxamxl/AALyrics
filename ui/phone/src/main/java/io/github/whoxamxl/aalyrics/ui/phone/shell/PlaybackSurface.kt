@@ -244,7 +244,6 @@ fun PlaybackSurface(
                         alpha = 1f - expansionProgress
                     },
                 artwork = artwork,
-                queueArtwork = queueArtwork,
             )
         }
 
@@ -271,6 +270,7 @@ fun PlaybackSurface(
                         alpha = expansionProgress
                     },
                 artwork = artwork,
+                queueArtwork = queueArtwork,
             )
         }
     }
