@@ -129,6 +129,12 @@ class AALyricsApplication : Application() {
             .use { it.readText() }
     }
 
+    val privacyPolicyText: String by lazy(LazyThreadSafetyMode.NONE) {
+        assets.open(PRIVACY_ASSET_NAME)
+            .bufferedReader()
+            .use { it.readText() }
+    }
+
     val verboseDetailsEnabled: StateFlow<Boolean>
         get() = phonePresentationSettingsStore.verboseDetailsEnabled
 
@@ -314,6 +320,7 @@ class AALyricsApplication : Application() {
         const val LICENSE_ASSET_NAME = "aalyrics_license.txt"
         const val NOTICE_ASSET_NAME = "aalyrics_notice.txt"
         const val CHANGELOG_ASSET_NAME = "aalyrics_changelog.md"
+        const val PRIVACY_ASSET_NAME = "aalyrics_privacy.md"
     }
 }
 

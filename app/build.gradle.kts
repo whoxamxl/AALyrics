@@ -58,6 +58,9 @@ val syncBundledDocumentsAssets = tasks.register<Copy>("syncBundledDocumentsAsset
     from(rootProject.file("CHANGELOG.md")) {
         rename { "aalyrics_changelog.md" }
     }
+    from(rootProject.file("PRIVACY.md")) {
+        rename { "aalyrics_privacy.md" }
+    }
     into(generatedBundledDocumentsAssetsDir)
 }
 
@@ -134,6 +137,7 @@ dependencies {
     implementation("androidx.compose.foundation:foundation-layout")
     implementation("androidx.compose.runtime:runtime")
     implementation("androidx.activity:activity-compose:1.11.0")
+    implementation("androidx.browser:browser:1.10.0")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.7.0")
     implementation("androidx.lifecycle:lifecycle-process:2.7.0")
     implementation("androidx.car.app:app:1.7.0")
