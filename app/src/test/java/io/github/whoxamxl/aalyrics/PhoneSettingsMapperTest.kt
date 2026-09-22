@@ -141,7 +141,37 @@ class PhoneSettingsMapperTest {
     }
 
     @Test
-    fun `runtime Settings exposes supported translation state and unavailable update action`() {
+    fun `update check runtime states map into Settings presentation`() {
+        fun mapped(updateState: AppUpdateCheckState) = mapPhoneSettingsState(
+            translationSettings = TranslationSettings(enabled = false),
+            translationModelStates = emptyMap(),
+            verboseDetailsEnabled = false,
+            plainLyricsAutoScrollEnabled = true,
+            ignoreNonAudioApps = true,
+            allowUnclassifiedApps = false,
+            androidAutoStatus = AndroidAutoCompatibilityUiStatus.ENABLED,
+            appVersionName = "0.2.0-alpha.1-dev+abcdef0",
+            currentYear = 2026,
+            noticeText = "notice",
+            licenseText = "license",
+            changelogText = "changelog",
+            privacyPolicyText = "privacy",
+            appUpdateCheckState = updateState,
+            displayLocale = Locale.ENGLISH,
+        ).appUpdate
+
+        assertEquals(AppUpdateUiPhase.IDLE, mapped(AppUpdateCheckState.Idle).phase)
+        assertEquals(AppUpdateUiPhase.CHECKING, mapped(AppUpdateCheckState.Checking).phase)
+        assertEquals(AppUpdateUiPhase.UP_TO_DATE, mapped(AppUpdateCheckState.UpToDate).phase)
+        assertEquals(AppUpdateUiPhase.CHECK_FAILED, mapped(AppUpdateCheckState.Failed).phase)
+
+        val available = mapped(AppUpdateCheckState.UpdateAvailable("0.2.0-alpha.2"))
+        assertEquals(AppUpdateUiPhase.UPDATE_AVAILABLE, available.phase)
+        assertEquals("0.2.0-alpha.2", available.availableVersionName)
+    }
+
+    @Test
+    fun `runtime Settings exposes supported translation state and idle update action`() {
         val state = mapPhoneSettingsState(
             translationSettings = TranslationSettings(
                 enabled = true,
@@ -186,7 +216,7 @@ class PhoneSettingsMapperTest {
         assertEquals(false, state.plainLyricsAutoScrollEnabled)
         assertEquals(false, state.ignoreNonAudioApps)
         assertEquals(true, state.allowUnclassifiedApps)
-        assertEquals(AppUpdateUiPhase.UNAVAILABLE, state.appUpdate.phase)
+        assertEquals(AppUpdateUiPhase.IDLE, state.appUpdate.phase)
         assertEquals("demo changelog", state.changelogText)
         assertEquals("demo privacy", state.privacyPolicyText)
     }
