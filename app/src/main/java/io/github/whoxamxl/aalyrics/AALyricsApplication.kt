@@ -75,6 +75,9 @@ class AALyricsApplication : Application() {
     private lateinit var translationModelManager: MlKitTranslationModelManager
     private lateinit var playbackAppLauncher: SelectedPlaybackAppLauncher
     private lateinit var playbackSourceAppInfoResolver: PlaybackSourceAppInfoResolver
+    private lateinit var playbackSnapshotSink: PlaybackSnapshotSink
+    private lateinit var effectivePlaybackSourceRuntimeStateFlow:
+        StateFlow<PlaybackSourceRuntimeState>
     private lateinit var phonePlaybackSurfaceStateFlow: StateFlow<PlaybackSurfaceUiState?>
     private lateinit var phonePlaybackSourceAppInfoStateFlow: StateFlow<PlaybackSourceAppInfo?>
     private lateinit var phonePlaybackSourceCanOpenAppStateFlow: StateFlow<Boolean>
@@ -99,7 +102,7 @@ class AALyricsApplication : Application() {
         get() = graph.playbackControlState
 
     internal val playbackSourceRuntimeState: StateFlow<PlaybackSourceRuntimeState>
-        get() = graph.playbackSourceRuntimeState
+        get() = effectivePlaybackSourceRuntimeStateFlow
 
     val translationState: StateFlow<TranslationState>
         get() = translationCoordinator.state
@@ -179,10 +182,12 @@ class AALyricsApplication : Application() {
 
     internal fun setIgnoreNonAudioApps(enabled: Boolean) {
         phonePresentationSettingsStore.setIgnoreNonAudioApps(enabled)
+        applyCurrentPlaybackSourceEligibility()
     }
 
     internal fun setAllowUnclassifiedApps(enabled: Boolean) {
         phonePresentationSettingsStore.setAllowUnclassifiedApps(enabled)
+        applyCurrentPlaybackSourceEligibility()
     }
 
     fun clearDownloadedTranslationModels() {
@@ -211,6 +216,7 @@ class AALyricsApplication : Application() {
     fun resetAppOwnedSettings() {
         translationSettingsStore.resetToDefaults()
         phonePresentationSettingsStore.resetToDefaults()
+        applyCurrentPlaybackSourceEligibility()
     }
 
     fun openSelectedPlaybackApp(): Boolean =
@@ -225,11 +231,20 @@ class AALyricsApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
-        graph = createProductionApplicationGraph(applicationScope)
         translationSettingsStore = SharedPreferencesTranslationSettingsStore(this)
         phonePresentationSettingsStore = SharedPreferencesPhonePresentationSettingsStore(this)
         playbackAppLauncher = SelectedPlaybackAppLauncher(this)
         playbackSourceAppInfoResolver = PlaybackSourceAppInfoResolver(this)
+        graph = createProductionApplicationGraph(applicationScope)
+        playbackSnapshotSink = PlaybackSnapshotSink { snapshot ->
+            graph.playbackSnapshotSink.onPlaybackSnapshot(snapshot)
+            val sourceEligible = playbackSourceEligibility(snapshot) is
+                PlaybackSourceEligibility.Allowed
+            graph.lyricsDemandGate.onPlaybackSnapshot(
+                snapshot = snapshot,
+                sourceEligible = sourceEligible,
+            )
+        }
         phonePlaybackSourceAppInfoStateFlow = combine(
             graph.playbackSourceRuntimeState,
             graph.playbackState,
@@ -246,6 +261,23 @@ class AALyricsApplication : Application() {
                 started = SharingStarted.Eagerly,
                 initialValue = null,
             )
+        effectivePlaybackSourceRuntimeStateFlow = combine(
+            graph.playbackSourceRuntimeState,
+            phonePlaybackSourceAppInfoStateFlow,
+            phonePresentationSettingsStore.ignoreNonAudioApps,
+            phonePresentationSettingsStore.allowUnclassifiedApps,
+        ) { runtimeState, appInfo, ignoreNonAudioApps, allowUnclassifiedApps ->
+            effectivePlaybackSourceRuntimeState(
+                runtimeState = runtimeState,
+                appInfo = appInfo,
+                ignoreNonAudioApps = ignoreNonAudioApps,
+                allowUnclassifiedApps = allowUnclassifiedApps,
+            )
+        }.stateIn(
+            scope = applicationScope,
+            started = SharingStarted.Eagerly,
+            initialValue = PlaybackSourceRuntimeState.Connecting,
+        )
         phonePlaybackSourceCanOpenAppStateFlow = graph.playbackControlState
             .map(playbackAppLauncher::canOpen)
             .distinctUntilChanged()
@@ -311,7 +343,7 @@ class AALyricsApplication : Application() {
             lifecycle = translationCoordinator,
             applicationScope = applicationScope,
         ).also { it.start() }
-        MediaSessionRuntimeHost.attach(graph.playbackSnapshotSink)
+        MediaSessionRuntimeHost.attach(playbackSnapshotSink)
         MediaSessionRuntimeHost.attachControlState(graph.playbackControlStateSink)
         MediaSessionRuntimeHost.attachArtwork(playbackArtworkSink)
         MediaSessionRuntimeHost.attachSourceRuntimeState(graph.playbackSourceRuntimeStateSink)
@@ -348,9 +380,26 @@ class AALyricsApplication : Application() {
         MediaSessionRuntimeHost.detachSourceRuntimeState(graph.playbackSourceRuntimeStateSink)
         MediaSessionRuntimeHost.detachArtwork(playbackArtworkSink)
         MediaSessionRuntimeHost.detachControlState(graph.playbackControlStateSink)
-        MediaSessionRuntimeHost.detach(graph.playbackSnapshotSink)
+        MediaSessionRuntimeHost.detach(playbackSnapshotSink)
         applicationScope.cancel()
         super.onTerminate()
+    }
+
+    private fun playbackSourceEligibility(
+        snapshot: PlaybackSnapshot,
+    ): PlaybackSourceEligibility =
+        PlaybackSourceEligibilityPolicy.evaluate(
+            appInfo = playbackSourceAppInfoResolver.resolve(snapshot.source?.id),
+            ignoreNonAudioApps = phonePresentationSettingsStore.ignoreNonAudioApps.value,
+            allowUnclassifiedApps =
+                phonePresentationSettingsStore.allowUnclassifiedApps.value,
+        )
+
+    private fun applyCurrentPlaybackSourceEligibility() {
+        val eligibility = playbackSourceEligibility(graph.playbackState.value)
+        graph.lyricsDemandGate.setSourceEligible(
+            eligibility is PlaybackSourceEligibility.Allowed,
+        )
     }
 
     private companion object {
@@ -380,7 +429,6 @@ internal class ApplicationGraph(
     val lyricsDemandGate = LyricsDemandGate(playbackLyricsController::onPlayback)
     val playbackSnapshotSink = PlaybackSnapshotSink { snapshot ->
         mutablePlaybackState.value = snapshot
-        lyricsDemandGate.onPlaybackSnapshot(snapshot)
     }
     val playbackControlStateSink = PlaybackControlStateSink { state ->
         mutablePlaybackControlState.value = state
