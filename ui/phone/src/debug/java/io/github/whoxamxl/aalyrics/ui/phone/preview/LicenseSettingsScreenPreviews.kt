@@ -45,7 +45,7 @@ private fun LicenseSettingsPreview() {
             LicenseSettingsScreen(
                 noticeText = PhonePreviewFixtures.noticeSample,
                 licenseText = PhonePreviewFixtures.licenseMarkdownSample,
-                onThirdPartyLicensesRequested = {},
+                thirdPartyLicensesText = PhonePreviewFixtures.thirdPartyLicensesMarkdownSample,
                 onBack = {},
                 modifier = Modifier.fillMaxSize(),
             )

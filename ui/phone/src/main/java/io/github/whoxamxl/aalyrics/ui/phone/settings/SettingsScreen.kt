@@ -53,7 +53,7 @@ fun SettingsScreen(
     }
 
     BackHandler(enabled = activeSubscreen != SettingsSubscreen.MAIN) {
-        activeSubscreen = activeSubscreen.parentForBack()
+        activeSubscreen = SettingsSubscreen.MAIN
     }
 
     LaunchedEffect(rootResetKey) {
@@ -106,17 +106,8 @@ fun SettingsScreen(
         SettingsSubscreen.LICENSE -> LicenseSettingsScreen(
             noticeText = state.noticeText,
             licenseText = state.licenseText,
-            onThirdPartyLicensesRequested = {
-                activeSubscreen = SettingsSubscreen.THIRD_PARTY_LICENSES
-            },
-            onBack = { activeSubscreen = SettingsSubscreen.MAIN },
-            modifier = modifier,
-            bottomOverlayInset = bottomOverlayInset,
-        )
-
-        SettingsSubscreen.THIRD_PARTY_LICENSES -> ThirdPartyLicensesSettingsScreen(
             thirdPartyLicensesText = state.thirdPartyLicensesText,
-            onBack = { activeSubscreen = SettingsSubscreen.LICENSE },
+            onBack = { activeSubscreen = SettingsSubscreen.MAIN },
             modifier = modifier,
             bottomOverlayInset = bottomOverlayInset,
         )
@@ -435,13 +426,5 @@ private enum class SettingsSubscreen {
     PRIVACY_POLICY,
     TERMS_OF_USE,
     LICENSE,
-    THIRD_PARTY_LICENSES,
     SUPPORT_AALYRICS,
 }
-
-private fun SettingsSubscreen.parentForBack(): SettingsSubscreen =
-    when (this) {
-        SettingsSubscreen.THIRD_PARTY_LICENSES -> SettingsSubscreen.LICENSE
-        SettingsSubscreen.MAIN -> SettingsSubscreen.MAIN
-        else -> SettingsSubscreen.MAIN
-    }
