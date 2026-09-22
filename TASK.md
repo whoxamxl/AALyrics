@@ -154,4 +154,4 @@ Those are separate implementation slices after Check for updates is proven stabl
 
 ## Current stop point
 
-Branch and documentation contract are being aligned before runtime implementation begins.
+The topic branch and documentation contract are aligned. Runtime implementation has not started yet.
