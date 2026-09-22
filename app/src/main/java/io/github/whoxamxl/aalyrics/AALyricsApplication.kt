@@ -22,6 +22,7 @@ import io.github.whoxamxl.aalyrics.platform.media.PlaybackArtworkSink
 import io.github.whoxamxl.aalyrics.platform.media.PlaybackControlState
 import io.github.whoxamxl.aalyrics.platform.media.PlaybackControlStateSink
 import io.github.whoxamxl.aalyrics.platform.media.PlaybackSnapshotSink
+import io.github.whoxamxl.aalyrics.platform.media.QueueArtworkBitmapSink
 import io.github.whoxamxl.aalyrics.platform.media.PlaybackSourceRuntimeState
 import io.github.whoxamxl.aalyrics.platform.media.PlaybackSourceRuntimeStateSink
 import io.github.whoxamxl.aalyrics.ui.automotive.AutomotiveBrowserClientTrust
@@ -84,10 +85,15 @@ class AALyricsApplication : Application() {
     private lateinit var phoneDetailsStateFlow: StateFlow<DetailsScreenUiState>
     private lateinit var appUpdateCheckRuntime: AppUpdateCheckRuntime
     private val mutablePlaybackArtworkState = MutableStateFlow<Bitmap?>(null)
+    private val mutableQueueArtworkBitmapsState =
+        MutableStateFlow<Map<Long, Bitmap>>(emptyMap())
     private val mutableTranslationModelCleanupState =
         MutableStateFlow(TranslationModelCleanupState.IDLE)
     private val playbackArtworkSink = PlaybackArtworkSink { bitmap ->
         mutablePlaybackArtworkState.value = bitmap
+    }
+    private val queueArtworkBitmapSink = QueueArtworkBitmapSink { bitmaps ->
+        mutableQueueArtworkBitmapsState.value = bitmaps
     }
 
     val playbackLyricsController: PlaybackLyricsController
@@ -124,6 +130,9 @@ class AALyricsApplication : Application() {
         get() = phoneDetailsStateFlow
 
     val playbackArtworkState: StateFlow<Bitmap?> = mutablePlaybackArtworkState.asStateFlow()
+
+    internal val queueArtworkBitmapsState: StateFlow<Map<Long, Bitmap>> =
+        mutableQueueArtworkBitmapsState.asStateFlow()
 
     val noticeText: String by lazy(LazyThreadSafetyMode.NONE) {
         assets.open(NOTICE_ASSET_NAME)
@@ -383,6 +392,7 @@ class AALyricsApplication : Application() {
         MediaSessionRuntimeHost.attach(playbackSnapshotSink)
         MediaSessionRuntimeHost.attachControlState(graph.playbackControlStateSink)
         MediaSessionRuntimeHost.attachArtwork(playbackArtworkSink)
+        MediaSessionRuntimeHost.attachQueueArtworkBitmaps(queueArtworkBitmapSink)
         MediaSessionRuntimeHost.attachSourceRuntimeState(graph.playbackSourceRuntimeStateSink)
         automotiveBinding = AutomotiveRuntimeBinding(
             playback = graph.playbackState,
@@ -415,6 +425,7 @@ class AALyricsApplication : Application() {
         demandLifecycle.stop()
         AutomotiveRuntimeHost.detach(automotiveBinding)
         MediaSessionRuntimeHost.detachSourceRuntimeState(graph.playbackSourceRuntimeStateSink)
+        MediaSessionRuntimeHost.detachQueueArtworkBitmaps(queueArtworkBitmapSink)
         MediaSessionRuntimeHost.detachArtwork(playbackArtworkSink)
         MediaSessionRuntimeHost.detachControlState(graph.playbackControlStateSink)
         MediaSessionRuntimeHost.detach(playbackSnapshotSink)

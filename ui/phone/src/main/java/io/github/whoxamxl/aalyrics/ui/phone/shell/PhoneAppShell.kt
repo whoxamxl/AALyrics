@@ -20,6 +20,7 @@ import androidx.compose.ui.unit.dp
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsColors
 import io.github.whoxamxl.aalyrics.ui.phone.navigation.PhoneDestination
 import io.github.whoxamxl.aalyrics.ui.phone.state.PhoneShellUiState
+import io.github.whoxamxl.aalyrics.ui.phone.state.PlaybackQueueItemUiState
 
 /** Persistent Phone chrome around a caller-owned selected destination body. */
 @Composable
@@ -37,6 +38,7 @@ fun PhoneAppShell(
     modifier: Modifier = Modifier,
     mediaSourceIconPainter: Painter? = null,
     playbackArtwork: (@Composable BoxScope.() -> Unit)? = null,
+    queueArtwork: (@Composable BoxScope.(PlaybackQueueItemUiState) -> Unit)? = null,
     destinationContent: @Composable (PhoneDestination, Dp) -> Unit,
 ) {
     BackHandler(
@@ -104,6 +106,7 @@ fun PhoneAppShell(
                         onOpenPlaybackApp = onOpenPlaybackApp,
                         onTranslationEnabledChanged = onTranslationEnabledChanged,
                         artwork = playbackArtwork,
+                        queueArtwork = queueArtwork,
                     )
                 }
             }

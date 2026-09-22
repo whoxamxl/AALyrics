@@ -54,6 +54,33 @@ private fun TrackCardLongTitleAndArtistPreview() {
     )
 }
 
+@Preview(name = "Loading lyrics", group = "TrackCard", widthDp = 412, showBackground = true)
+@Composable
+private fun TrackCardLoadingPreview() {
+    TrackCardPreview(
+        state = PhonePreviewFixtures.trackCardLoading,
+        showArtwork = true,
+    )
+}
+
+@Preview(name = "Lyrics not found", group = "TrackCard", widthDp = 412, showBackground = true)
+@Composable
+private fun TrackCardNotFoundPreview() {
+    TrackCardPreview(
+        state = PhonePreviewFixtures.trackCardNotFound,
+        showArtwork = true,
+    )
+}
+
+@Preview(name = "Lyrics failed", group = "TrackCard", widthDp = 412, showBackground = true)
+@Composable
+private fun TrackCardFailedPreview() {
+    TrackCardPreview(
+        state = PhonePreviewFixtures.trackCardFailed,
+        showArtwork = true,
+    )
+}
+
 @Preview(name = "No provider or sync", group = "TrackCard", widthDp = 412, showBackground = true)
 @Composable
 private fun TrackCardNoMetadataPreview() {
