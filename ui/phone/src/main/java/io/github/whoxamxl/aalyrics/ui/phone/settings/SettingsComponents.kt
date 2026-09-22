@@ -444,13 +444,10 @@ internal fun AppUpdateRow(
             }
 
             AppUpdateUiPhase.UPDATE_AVAILABLE -> {
-                AppUpdateActionRow(
-                    status = "${updateAvailableLabel} ${
+                AppUpdateStatusTextRow(
+                    label = "${updateAvailableLabel} ${
                         state.availableVersionName?.asVersionLabel().orEmpty()
                     }".trim(),
-                    actionLabel = downloadLabel,
-                    actionIcon = AALyricsIcons.Download,
-                    onAction = onDownloadUpdate,
                 )
             }
 
