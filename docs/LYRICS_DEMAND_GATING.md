@@ -25,7 +25,7 @@ Lyrics demand gate
    |             |
  demand OFF      demand ON
    |             |
- clear lookup    v
+ suspend work    v
                  PlaybackLyricsController
                         |
                         v
@@ -33,6 +33,8 @@ Lyrics demand gate
 ```
 
 MediaSession discovery and selected-controller observation stay alive independently. Demand controls only whether normalized playback is allowed to own/start lyrics work.
+
+No-demand retention is deliberately narrower than a lyrics cache. It keeps only the currently resolved usable lookup state inside the live process; it is not persisted, does not add multi-track cache policy, and does not survive process death. A real provider/disk cache remains separate future work.
 
 ## Demand semantics
 
@@ -99,7 +101,7 @@ Required behavior:
 2. While demand is inactive, incoming playback snapshots update the retained latest snapshot but are not forwarded into lyrics lookup.
 3. Transition `OFF -> ON` immediately replays the latest retained snapshot into `PlaybackLyricsController` so current playback does not need to change before lyrics load.
 4. While demand remains active, playback snapshots flow through normally; existing `PlaybackLyricsController` identity semantics continue to suppress lookup restarts caused only by position/status/rate/duration churn.
-5. Transition `ON -> OFF` clears current lyrics lookup ownership so in-flight/background provider work is cancelled and stale lyrics are not retained as active work.
+5. Transition `ON -> OFF` suspends current lyrics work. In-flight provider work is cancelled. A completed usable `Ready` / `Degraded` result may remain owned in process memory so the same playback identity can resume without refetching; incomplete or unusable states drop ownership and restart normally when demand returns.
 6. Repeated identical demand updates must be idempotent: no repeated clear and no duplicate activation replay.
 7. If playback becomes empty/no-track while demand is inactive, the retained latest snapshot must reflect that state so a later activation does not resurrect an obsolete track.
 
@@ -110,7 +112,7 @@ Demand gating must not stop or detach MediaSession observation merely to stop pr
 - Demand aggregation must be safe when phone and automotive lifecycle events arrive independently.
 - Removing one demand source must not deactivate lyrics work while the other remains active.
 - Notification-listener disconnect/security failure continues to be owned by the MediaSession runtime; any resulting no-track snapshot must remain compatible with demand gating.
-- Demand deactivation must cancel/clear current lookup through the existing playback/lookup boundary rather than reaching into provider jobs directly.
+- Demand deactivation must suspend current lookup through the existing playback/lookup boundary rather than reaching into provider jobs directly. Resolved usable lyrics may remain in memory; in-flight work must still be cancelled.
 - Demand activation must not synthesize track metadata or bypass `MediaControllerSnapshotAdapter`.
 - Process/activity recreation must not create rapid OFF/ON provider churn.
 - The gate must not change provider ranking, lookup identity, or MediaSession session-selection semantics.
@@ -121,7 +123,7 @@ Do not implement in this branch:
 
 - finished phone lyrics UI;
 - finished Android Auto presentation/browsing UI;
-- cache;
+- general-purpose provider/disk lyrics cache;
 - translation;
 - artwork/color extraction;
 - transport controls;
@@ -140,7 +142,7 @@ Add deterministic coverage for at least:
 - initial no-demand state does not forward provider-owning playback;
 - latest playback is retained while demand is off;
 - `OFF -> ON` replays the latest snapshot exactly once;
-- `ON -> OFF` clears lookup ownership exactly once;
+- `ON -> OFF` suspends lookup work exactly once;
 - repeated same-value demand updates are no-ops;
 - phone demand alone activates the gate;
 - automotive demand alone activates the gate;
@@ -149,6 +151,8 @@ Add deterministic coverage for at least:
 - track changes while demand is off do not trigger lookup but the newest track is used on activation;
 - empty/no-track playback while demand is off prevents stale replay;
 - normal playback churn while demand is on retains existing `PlaybackLyricsController` no-refetch behavior;
+- resolved same-track lyrics survive demand loss and resume without another provider request;
+- loading lookup work is cancelled on demand loss and restarts when the same track resumes;
 - brief phone activity recreation does not create a false process-level demand drop where `ProcessLifecycleOwner` semantics are used.
 
 Prefer pure deterministic tests for demand aggregation/gate transitions, with narrow Android tests only for lifecycle adapters that genuinely require framework behavior.
@@ -157,7 +161,7 @@ Prefer pure deterministic tests for demand aggregation/gate transitions, with na
 
 This slice is complete when:
 
-> Media sessions continue to be tracked in the background, but provider lookup occurs only while phone-process foreground or Android Auto projection demand is active; disabling the final demand source clears active lyrics work, and re-enabling demand immediately resumes from the latest already-observed playback snapshot without requiring a track change.
+> Media sessions continue to be tracked in the background, but provider lookup occurs only while phone-process foreground or Android Auto projection demand is active; disabling the final demand source cancels in-flight provider work while preserving an already resolved usable result in process memory, and re-enabling demand immediately resumes the latest observed playback without refetching when its identity is unchanged.
 
 Run the normal repository validation and bounded review from `AGENTS.md`, then stop before merge for explicit approval.
 
@@ -167,9 +171,10 @@ The implemented application boundary preserves the working-fork demand rule with
 
 - `LyricsDemandGate` retains every normalized `PlaybackSnapshot` received from `MediaSessionRuntimeHost` and forwards it to `PlaybackLyricsController` only while combined demand is active;
 - phone-process and automotive-projection inputs are stored independently and combined with logical OR;
-- activation replays the retained snapshot once, final deactivation sends one empty snapshot through the existing playback boundary, and unchanged source/aggregate states are no-ops;
+- activation replays the retained snapshot once; final demand deactivation suspends the playback/lookup boundary, retaining an already resolved usable result but cancelling incomplete work; unchanged source/aggregate states are no-ops;
+- source ineligibility remains a hard clear and does not reuse a retained result from a blocked playback source;
 - `ProcessLifecycleOwner` supplies phone demand, preserving its delayed process-stop behavior across brief Activity recreation;
 - `CarConnection.CONNECTION_TYPE_PROJECTION` supplies projection-wide automotive demand through an application-owned observer;
 - MediaSession discovery, selected-controller callbacks, normalization, providers, selection, and UI modules are unchanged.
 
-Deterministic tests cover all gate transitions, independent sources, retained/newest/empty snapshots, active playback churn, process-lifecycle idempotence, application preference ownership, and cancellation of in-flight provider work when the final demand source turns off.
+Deterministic tests cover all gate transitions, independent sources, retained/newest/empty snapshots, active playback churn, process-lifecycle idempotence, application preference ownership, cancellation of in-flight provider work when the final demand source turns off, and same-track foreground resume without a second provider request.

@@ -46,6 +46,25 @@ private fun PhoneAppShellTypicalLyricsPreview() {
 }
 
 @Preview(
+    name = "Lyrics intro · focus row",
+    group = "PhoneAppShell",
+    widthDp = 412,
+    heightDp = 892,
+    showBackground = true,
+)
+@Composable
+private fun PhoneAppShellLyricsOpeningPreview() {
+    PhoneAppShellPreview(
+        state = PhonePreviewFixtures.typicalLyricsShell,
+        lyricsState = PhonePreviewFixtures.lyricsScreenLine.copy(
+            viewport = PhonePreviewFixtures.viewportLineFirst.copy(
+                currentLineIndex = null,
+            ),
+        ),
+    )
+}
+
+@Preview(
     name = "Playback controls hidden",
     group = "PhoneAppShell",
     widthDp = 412,

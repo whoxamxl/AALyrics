@@ -3,7 +3,9 @@ package io.github.whoxamxl.aalyrics
 import io.github.whoxamxl.aalyrics.core.lyrics.CandidateSelectionPreferences
 import io.github.whoxamxl.aalyrics.core.lyrics.CandidateSelector
 import io.github.whoxamxl.aalyrics.core.lyrics.LyricsState
+import io.github.whoxamxl.aalyrics.core.model.LyricsDocument
 import io.github.whoxamxl.aalyrics.core.model.LyricsSyncType
+import io.github.whoxamxl.aalyrics.core.model.PlainLyricLine
 import io.github.whoxamxl.aalyrics.core.model.PlaybackSnapshot
 import io.github.whoxamxl.aalyrics.core.model.PlaybackStatus
 import io.github.whoxamxl.aalyrics.core.model.Track
@@ -80,6 +82,85 @@ class ApplicationGraphTest {
     }
 
     @Test
+    fun `resolved lyrics survive demand loss and same-track resume does not refetch`() = runTest {
+        val provider = SuccessfulProvider()
+        val graph = ApplicationGraph(
+            providers = listOf(provider),
+            selector = object : CandidateSelector {
+                override fun select(
+                    track: Track,
+                    candidates: List<LyricsCandidate>,
+                    preferences: CandidateSelectionPreferences,
+                ): LyricsCandidate? = candidates.firstOrNull()
+            },
+            applicationScope = this,
+            selectionPreferences = CandidateSelectionPreferences(),
+        )
+        val snapshot = PlaybackSnapshot(
+            track = Track(title = "Song", artists = listOf("Artist")),
+        )
+
+        graph.onEligiblePlayback(snapshot)
+        graph.lyricsDemandGate.setPhoneProcessForeground(true)
+        advanceUntilIdle()
+
+        assertIs<LyricsState.Ready>(graph.lyricsState.value)
+        assertEquals(1, provider.requests.size)
+
+        graph.lyricsDemandGate.setPhoneProcessForeground(false)
+        advanceUntilIdle()
+
+        assertIs<LyricsState.Ready>(graph.lyricsState.value)
+        assertEquals(1, provider.requests.size)
+
+        graph.lyricsDemandGate.setPhoneProcessForeground(true)
+        advanceUntilIdle()
+
+        assertIs<LyricsState.Ready>(graph.lyricsState.value)
+        assertEquals(1, provider.requests.size)
+    }
+
+    @Test
+    fun `track change while demand is off starts a fresh lookup on resume`() = runTest {
+        val provider = SuccessfulProvider()
+        val graph = ApplicationGraph(
+            providers = listOf(provider),
+            selector = object : CandidateSelector {
+                override fun select(
+                    track: Track,
+                    candidates: List<LyricsCandidate>,
+                    preferences: CandidateSelectionPreferences,
+                ): LyricsCandidate? = candidates.firstOrNull()
+            },
+            applicationScope = this,
+            selectionPreferences = CandidateSelectionPreferences(),
+        )
+        val first = PlaybackSnapshot(
+            track = Track(title = "First", artists = listOf("Artist")),
+        )
+        val second = PlaybackSnapshot(
+            track = Track(title = "Second", artists = listOf("Artist")),
+        )
+
+        graph.onEligiblePlayback(first)
+        graph.lyricsDemandGate.setPhoneProcessForeground(true)
+        advanceUntilIdle()
+        assertEquals(1, provider.requests.size)
+
+        graph.lyricsDemandGate.setPhoneProcessForeground(false)
+        graph.onEligiblePlayback(second)
+        advanceUntilIdle()
+        assertEquals(1, provider.requests.size)
+
+        graph.lyricsDemandGate.setPhoneProcessForeground(true)
+        advanceUntilIdle()
+
+        val ready = assertIs<LyricsState.Ready>(graph.lyricsState.value)
+        assertEquals("Second", ready.lookup.track.title)
+        assertEquals(2, provider.requests.size)
+    }
+
+    @Test
     fun `removing final demand source clears state and cancels provider work`() = runTest {
         val provider = BlockingProvider()
         val graph = ApplicationGraph(
@@ -142,6 +223,28 @@ class ApplicationGraphTest {
         ): LyricsCandidate? {
             this.preferences += preferences
             return null
+        }
+    }
+
+    private class SuccessfulProvider : LyricsProvider {
+        override val descriptor = LyricsProviderDescriptor(
+            id = LyricsProviderId("successful"),
+            displayName = "Successful",
+            supportedSyncTypes = setOf(LyricsSyncType.PLAIN),
+        )
+        val requests = mutableListOf<LyricsRequest>()
+
+        override suspend fun search(request: LyricsRequest): List<LyricsCandidate> {
+            requests += request
+            return listOf(
+                LyricsCandidate(
+                    providerId = descriptor.id,
+                    matchedTrack = request.track,
+                    lyrics = LyricsDocument(
+                        lines = listOf(PlainLyricLine("Retained lyrics")),
+                    ),
+                ),
+            )
         }
     }
 

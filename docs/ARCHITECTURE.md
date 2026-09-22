@@ -358,7 +358,7 @@ The MediaSession runtime continues observing and normalizing playback regardless
 Required transitions:
 
 - `OFF -> ON`: replay the latest retained snapshot exactly once so lyrics start immediately without waiting for another track event;
-- `ON -> OFF`: clear current lookup ownership once so in-flight/background provider work is cancelled;
+- `ON -> OFF`: suspend lookup ownership once, cancelling in-flight/background provider work while retaining an already resolved usable result in process memory;
 - repeated same-value demand updates: no-op;
 - one source turning off while the other remains active: demand stays on.
 
@@ -437,7 +437,7 @@ Provider-independent observable domain state for phone and automotive presentati
 - No eligible live session must clear playback ownership instead of leaving stale lyrics active.
 - Selected-controller callbacks/listeners must be detached when ownership ends.
 - With no lyrics demand, provider-owning playback must not be forwarded even though media-session observation continues.
-- Losing the final demand source must clear current lookup ownership; losing only one of multiple active demand sources must not.
+- Losing the final demand source must suspend current lookup work; a resolved usable result may remain owned for same-identity resume, while losing only one of multiple active demand sources must not suspend it.
 - UI layers must not retry, rank, merge, fetch, select media sessions, or directly start/cancel provider jobs.
 - Reusable design-system code must not import app/domain/provider/platform ownership merely for convenience.
 - Android framework media types must not cross into `:core:model`, `:core:lyrics`, or `:provider:api`.

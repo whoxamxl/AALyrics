@@ -433,7 +433,10 @@ internal class ApplicationGraph(
         lookupLifecycle = coordinator,
         defaultPreferences = selectionPreferences,
     )
-    val lyricsDemandGate = LyricsDemandGate(playbackLyricsController::onPlayback)
+    val lyricsDemandGate = LyricsDemandGate(
+        downstream = playbackLyricsController::onPlayback,
+        onDemandInactive = playbackLyricsController::suspendForNoDemand,
+    )
     val playbackSnapshotSink = PlaybackSnapshotSink { snapshot ->
         mutablePlaybackState.value = snapshot
     }

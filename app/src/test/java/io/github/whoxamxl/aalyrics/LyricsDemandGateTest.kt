@@ -13,7 +13,7 @@ class LyricsDemandGateTest {
     @Test
     fun `initial no-demand state retains eligible playback without forwarding it`() {
         val forwarded = mutableListOf<PlaybackSnapshot>()
-        val gate = LyricsDemandGate(forwarded::add)
+        val gate = LyricsDemandGate(forwarded::add) {}
 
         gate.onPlaybackSnapshot(snapshot("First"), sourceEligible = true)
 
@@ -24,7 +24,7 @@ class LyricsDemandGateTest {
     @Test
     fun `phone demand replays latest eligible snapshot exactly once`() {
         val forwarded = mutableListOf<PlaybackSnapshot>()
-        val gate = LyricsDemandGate(forwarded::add)
+        val gate = LyricsDemandGate(forwarded::add) {}
         val latest = snapshot("Latest")
         gate.onPlaybackSnapshot(latest, sourceEligible = true)
 
@@ -36,9 +36,10 @@ class LyricsDemandGateTest {
     }
 
     @Test
-    fun `automotive demand alone activates and final removal clears exactly once`() {
+    fun `automotive demand alone activates and final removal suspends exactly once`() {
         val forwarded = mutableListOf<PlaybackSnapshot>()
-        val gate = LyricsDemandGate(forwarded::add)
+        var suspendCount = 0
+        val gate = LyricsDemandGate(forwarded::add) { suspendCount += 1 }
         val latest = snapshot("Projected")
         gate.onPlaybackSnapshot(latest, sourceEligible = true)
 
@@ -47,16 +48,15 @@ class LyricsDemandGateTest {
         gate.setAutomotiveProjectionConnected(false)
 
         assertFalse(gate.isActive())
-        assertEquals(2, forwarded.size)
-        assertEquals(latest, forwarded.first())
-        assertNull(forwarded.last().track)
-        assertEquals(PlaybackStatus.IDLE, forwarded.last().status)
+        assertEquals(listOf(latest), forwarded)
+        assertEquals(1, suspendCount)
     }
 
     @Test
     fun `removing one demand source keeps lookup active while the other remains`() {
         val forwarded = mutableListOf<PlaybackSnapshot>()
-        val gate = LyricsDemandGate(forwarded::add)
+        var suspendCount = 0
+        val gate = LyricsDemandGate(forwarded::add) { suspendCount += 1 }
         val latest = snapshot("Shared")
         gate.onPlaybackSnapshot(latest, sourceEligible = true)
 
@@ -66,18 +66,19 @@ class LyricsDemandGateTest {
 
         assertTrue(gate.isActive())
         assertEquals(listOf(latest), forwarded)
+        assertEquals(0, suspendCount)
 
         gate.setAutomotiveProjectionConnected(false)
 
         assertFalse(gate.isActive())
-        assertEquals(2, forwarded.size)
-        assertNull(forwarded.last().track)
+        assertEquals(listOf(latest), forwarded)
+        assertEquals(1, suspendCount)
     }
 
     @Test
     fun `newest eligible track observed while demand is off is replayed on activation`() {
         val forwarded = mutableListOf<PlaybackSnapshot>()
-        val gate = LyricsDemandGate(forwarded::add)
+        val gate = LyricsDemandGate(forwarded::add) {}
         gate.onPlaybackSnapshot(snapshot("First"), sourceEligible = true)
         gate.onPlaybackSnapshot(snapshot("Second"), sourceEligible = true)
 
@@ -89,7 +90,7 @@ class LyricsDemandGateTest {
     @Test
     fun `empty playback observed while demand is off prevents stale replay`() {
         val forwarded = mutableListOf<PlaybackSnapshot>()
-        val gate = LyricsDemandGate(forwarded::add)
+        val gate = LyricsDemandGate(forwarded::add) {}
         gate.onPlaybackSnapshot(snapshot("Gone"), sourceEligible = true)
         gate.onPlaybackSnapshot(PlaybackSnapshot(), sourceEligible = true)
 
@@ -102,7 +103,7 @@ class LyricsDemandGateTest {
     @Test
     fun `active demand forwards eligible playback churn`() {
         val forwarded = mutableListOf<PlaybackSnapshot>()
-        val gate = LyricsDemandGate(forwarded::add)
+        val gate = LyricsDemandGate(forwarded::add) {}
         gate.onPlaybackSnapshot(PlaybackSnapshot(), sourceEligible = true)
         gate.setPhoneProcessForeground(true)
         forwarded.clear()
@@ -118,7 +119,7 @@ class LyricsDemandGateTest {
     @Test
     fun `blocked snapshot never reaches downstream and clears prior eligible lookup`() {
         val forwarded = mutableListOf<PlaybackSnapshot>()
-        val gate = LyricsDemandGate(forwarded::add)
+        val gate = LyricsDemandGate(forwarded::add) {}
         gate.onPlaybackSnapshot(snapshot("Allowed"), sourceEligible = true)
         gate.setPhoneProcessForeground(true)
 
@@ -134,9 +135,27 @@ class LyricsDemandGateTest {
     }
 
     @Test
+    fun `source becoming blocked hard-clears even after demand suspension`() {
+        val forwarded = mutableListOf<PlaybackSnapshot>()
+        var suspendCount = 0
+        val gate = LyricsDemandGate(forwarded::add) { suspendCount += 1 }
+        val allowed = snapshot("Allowed")
+        gate.onPlaybackSnapshot(allowed, sourceEligible = true)
+        gate.setPhoneProcessForeground(true)
+
+        gate.setPhoneProcessForeground(false)
+        gate.onPlaybackSnapshot(snapshot("Blocked"), sourceEligible = false)
+
+        assertEquals(1, suspendCount)
+        assertEquals(2, forwarded.size)
+        assertEquals(allowed, forwarded.first())
+        assertNull(forwarded.last().track)
+    }
+
+    @Test
     fun `blocked to allowed transition forwards only the new allowed snapshot`() {
         val forwarded = mutableListOf<PlaybackSnapshot>()
-        val gate = LyricsDemandGate(forwarded::add)
+        val gate = LyricsDemandGate(forwarded::add) {}
         gate.onPlaybackSnapshot(snapshot("Blocked"), sourceEligible = false)
         gate.setPhoneProcessForeground(true)
 
@@ -148,7 +167,7 @@ class LyricsDemandGateTest {
     @Test
     fun `setting change can block and reallow the retained current snapshot`() {
         val forwarded = mutableListOf<PlaybackSnapshot>()
-        val gate = LyricsDemandGate(forwarded::add)
+        val gate = LyricsDemandGate(forwarded::add) {}
         val current = snapshot("Current")
         gate.onPlaybackSnapshot(current, sourceEligible = true)
         gate.setPhoneProcessForeground(true)

@@ -153,6 +153,36 @@ class PlaybackLyricsControllerTest {
     }
 
     @Test
+    fun `no-demand suspension keeps resolved ownership and avoids same-track restart`() {
+        val lifecycle = RecordingLifecycle(suspendResult = true)
+        val controller = PlaybackLyricsController(lifecycle)
+        val track = Track(title = "Song", artists = listOf("Artist"))
+        val snapshot = PlaybackSnapshot(track = track)
+
+        controller.onPlayback(snapshot)
+        controller.suspendForNoDemand()
+        controller.onPlayback(snapshot)
+
+        assertEquals(1, lifecycle.suspendCount)
+        assertEquals(listOf(track), lifecycle.startedTracks)
+    }
+
+    @Test
+    fun `no-demand suspension drops incomplete ownership so same track restarts`() {
+        val lifecycle = RecordingLifecycle(suspendResult = false)
+        val controller = PlaybackLyricsController(lifecycle)
+        val track = Track(title = "Song", artists = listOf("Artist"))
+        val snapshot = PlaybackSnapshot(track = track)
+
+        controller.onPlayback(snapshot)
+        controller.suspendForNoDemand()
+        controller.onPlayback(snapshot)
+
+        assertEquals(1, lifecycle.suspendCount)
+        assertEquals(listOf(track, track), lifecycle.startedTracks)
+    }
+
+    @Test
     fun `losing the current track clears lookup ownership once`() {
         val lifecycle = RecordingLifecycle()
         val controller = PlaybackLyricsController(lifecycle)
@@ -165,11 +195,14 @@ class PlaybackLyricsControllerTest {
         assertEquals(1, lifecycle.clearCount)
     }
 
-    private class RecordingLifecycle : LyricsLookupLifecycle {
+    private class RecordingLifecycle(
+        private val suspendResult: Boolean = false,
+    ) : LyricsLookupLifecycle {
         val startedTracks = mutableListOf<Track>()
         val startedPreferences = mutableListOf<CandidateSelectionPreferences>()
         val startedIdentities = mutableListOf<PlaybackTrackIdentity>()
         val lookups = mutableListOf<LyricsLookup>()
+        var suspendCount = 0
         var clearCount = 0
         private var nextId = 0L
 
@@ -187,6 +220,11 @@ class PlaybackLyricsControllerTest {
                 track = track,
                 playbackIdentity = identity,
             ).also(lookups::add)
+        }
+
+        override fun suspendLookup(): Boolean {
+            suspendCount += 1
+            return suspendResult
         }
 
         override fun clear() {

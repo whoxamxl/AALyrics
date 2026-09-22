@@ -16,5 +16,14 @@ interface LyricsLookupLifecycle {
         playbackIdentity: PlaybackTrackIdentity? = null,
     ): LyricsLookup
 
+    /**
+     * Suspends provider-owning work because no presentation surface currently demands lyrics.
+     *
+     * Returns true only when a completed usable result can remain owned in memory and be reused
+     * if the same playback identity resumes. Loading or unusable terminal states should return
+     * false so the controller restarts lookup when demand becomes active again.
+     */
+    fun suspendLookup(): Boolean
+
     fun clear()
 }

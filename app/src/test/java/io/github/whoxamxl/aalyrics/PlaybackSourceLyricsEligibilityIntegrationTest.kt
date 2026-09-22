@@ -16,8 +16,10 @@ class PlaybackSourceLyricsEligibilityIntegrationTest {
     @Test
     fun `blocked source clears existing lookup and never starts provider work`() {
         val lifecycle = RecordingLifecycle()
+        val controller = PlaybackLyricsController(lifecycle)
         val gate = LyricsDemandGate(
-            PlaybackLyricsController(lifecycle)::onPlayback,
+            downstream = controller::onPlayback,
+            onDemandInactive = controller::suspendForNoDemand,
         )
         gate.setPhoneProcessForeground(true)
 
@@ -37,8 +39,10 @@ class PlaybackSourceLyricsEligibilityIntegrationTest {
     @Test
     fun `reenabling current blocked source starts exactly one lookup for retained snapshot`() {
         val lifecycle = RecordingLifecycle()
+        val controller = PlaybackLyricsController(lifecycle)
         val gate = LyricsDemandGate(
-            PlaybackLyricsController(lifecycle)::onPlayback,
+            downstream = controller::onPlayback,
+            onDemandInactive = controller::suspendForNoDemand,
         )
         gate.setPhoneProcessForeground(true)
         gate.onPlaybackSnapshot(
@@ -78,6 +82,8 @@ class PlaybackSourceLyricsEligibilityIntegrationTest {
                 playbackIdentity = requireNotNull(playbackIdentity),
             )
         }
+
+        override fun suspendLookup(): Boolean = false
 
         override fun clear() {
             clearCount += 1

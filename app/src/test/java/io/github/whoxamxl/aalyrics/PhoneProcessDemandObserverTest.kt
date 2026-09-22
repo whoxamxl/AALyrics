@@ -13,7 +13,7 @@ class PhoneProcessDemandObserverTest {
     @Test
     fun `duplicate process start across activity recreation does not flap demand`() {
         val forwarded = mutableListOf<PlaybackSnapshot>()
-        val gate = LyricsDemandGate(forwarded::add)
+        val gate = LyricsDemandGate(forwarded::add) {}
         gate.onPlaybackSnapshot(
             snapshot = PlaybackSnapshot(
                 track = Track(title = "Song", artists = listOf("Artist")),

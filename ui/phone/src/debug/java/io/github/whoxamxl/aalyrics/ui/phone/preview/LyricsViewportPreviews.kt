@@ -40,13 +40,15 @@ private fun LyricsViewportLinePreview() {
 private fun LyricsViewportLineTransitionPreview() {
     AALyricsTheme {
         var state by remember {
-            mutableStateOf(PhonePreviewFixtures.viewportLineFirst)
+            mutableStateOf(
+                PhonePreviewFixtures.viewportLineFirst.copy(currentLineIndex = null),
+            )
         }
         val scrollState = rememberScrollState()
 
         LaunchedEffect(Unit) {
             delay(1200)
-            for (index in 1 until state.lines.size) {
+            for (index in state.lines.indices) {
                 state = state.copy(currentLineIndex = index)
                 delay(2500)
             }
@@ -75,10 +77,12 @@ private fun LyricsViewportPlainPreview() {
     LyricsViewportPreview(PhonePreviewFixtures.viewportPlain)
 }
 
-@Preview(name = "LINE · first row", group = "LyricsViewport", widthDp = 412, heightDp = 520)
+@Preview(name = "LINE · intro focus row", group = "LyricsViewport", widthDp = 412, heightDp = 520)
 @Composable
-private fun LyricsViewportFirstPreview() {
-    LyricsViewportPreview(PhonePreviewFixtures.viewportLineFirst)
+private fun LyricsViewportIntroFocusPreview() {
+    LyricsViewportPreview(
+        PhonePreviewFixtures.viewportLineFirst.copy(currentLineIndex = null),
+    )
 }
 
 @Preview(name = "LINE · last row", group = "LyricsViewport", widthDp = 412, heightDp = 520)
