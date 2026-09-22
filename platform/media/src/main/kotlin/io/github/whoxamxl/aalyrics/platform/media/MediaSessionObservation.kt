@@ -10,66 +10,127 @@ internal interface ActiveSessionSource<Token> {
 internal class MediaSessionObservation<Token>(
     private val source: ActiveSessionSource<Token>,
     private val runtime: SelectedMediaSessionRuntime<Token>,
+    private val stateSink: PlaybackSourceRuntimeStateSink = PlaybackSourceRuntimeStateSink {},
 ) {
     private var connected = false
 
     fun connect() {
         if (connected) return
         connected = true
+        stateSink.onPlaybackSourceRuntimeState(PlaybackSourceRuntimeState.Connecting)
         try {
             source.register(::onSessionsChanged)
-            refresh()
         } catch (_: SecurityException) {
-            failAccess()
+            fail(
+                PlaybackSourceErrorReason.NOTIFICATION_ACCESS_LOST,
+                unregister = false,
+            )
+            return
+        } catch (_: RuntimeException) {
+            fail(
+                PlaybackSourceErrorReason.UNKNOWN,
+                unregister = false,
+            )
+            return
         }
+        refresh()
     }
 
     fun refresh() {
         if (!connected) return
-        try {
-            runtime.updateSessions(source.currentSessions())
+
+        val controllers = try {
+            source.currentSessions()
         } catch (_: SecurityException) {
-            failAccess()
+            fail(PlaybackSourceErrorReason.NOTIFICATION_ACCESS_LOST)
+            return
+        } catch (_: RuntimeException) {
+            fail(PlaybackSourceErrorReason.SESSION_QUERY_FAILED)
+            return
         }
+
+        applySessions(controllers)
     }
 
     fun disconnect() {
         val wasConnected = connected
         connected = false
         if (wasConnected) {
-            try {
-                source.unregister()
-            } catch (_: SecurityException) {
-                // Listener access has already been lost; runtime cleanup still applies.
-            }
+            unregisterBestEffort()
         }
-        try {
-            runtime.disconnect()
-        } catch (_: SecurityException) {
-            // Best-effort callback detachment must not crash the service.
+        disconnectRuntimeBestEffort()
+        stateSink.onPlaybackSourceRuntimeState(PlaybackSourceRuntimeState.Disconnected)
+    }
+
+    fun notificationAccessLost() {
+        fail(PlaybackSourceErrorReason.NOTIFICATION_ACCESS_LOST)
+    }
+
+    fun stop() {
+        val wasConnected = connected
+        connected = false
+        if (wasConnected) {
+            unregisterBestEffort()
         }
+        disconnectRuntimeBestEffort()
     }
 
     private fun onSessionsChanged(controllers: List<RuntimeMediaController<Token>>) {
         if (!connected) return
-        try {
+        applySessions(controllers)
+    }
+
+    private fun applySessions(controllers: List<RuntimeMediaController<Token>>) {
+        val result = try {
             runtime.updateSessions(controllers)
         } catch (_: SecurityException) {
-            failAccess()
+            fail(PlaybackSourceErrorReason.NOTIFICATION_ACCESS_LOST)
+            return
+        } catch (_: RuntimeException) {
+            fail(PlaybackSourceErrorReason.SESSION_ATTACH_FAILED)
+            return
+        }
+
+        stateSink.onPlaybackSourceRuntimeState(
+            when (result) {
+                is MediaSessionSelectionResult.Connected ->
+                    PlaybackSourceRuntimeState.Connected(result.packageName)
+                MediaSessionSelectionResult.Disconnected ->
+                    PlaybackSourceRuntimeState.Disconnected
+                is MediaSessionSelectionResult.Unavailable ->
+                    PlaybackSourceRuntimeState.Unavailable(result.packageName)
+            },
+        )
+    }
+
+    private fun fail(
+        reason: PlaybackSourceErrorReason,
+        unregister: Boolean = true,
+    ) {
+        val wasConnected = connected
+        connected = false
+        if (wasConnected && unregister) {
+            unregisterBestEffort()
+        }
+        disconnectRuntimeBestEffort()
+        stateSink.onPlaybackSourceRuntimeState(
+            PlaybackSourceRuntimeState.Error(reason),
+        )
+    }
+
+    private fun unregisterBestEffort() {
+        try {
+            source.unregister()
+        } catch (_: RuntimeException) {
+            // State reporting must not be replaced by cleanup failure.
         }
     }
 
-    private fun failAccess() {
-        connected = false
-        try {
-            source.unregister()
-        } catch (_: SecurityException) {
-            // Access failure can also make listener removal fail.
-        }
+    private fun disconnectRuntimeBestEffort() {
         try {
             runtime.disconnect()
-        } catch (_: SecurityException) {
-            // Clear as much local ownership as possible without crashing.
+        } catch (_: RuntimeException) {
+            // State reporting must not be replaced by cleanup failure.
         }
     }
 }
