@@ -29,6 +29,7 @@ private fun PhoneTopBarNoMediaSourcePreview() {
 private fun PhoneTopBarSpotifyPreview() {
     PhoneTopBarPreview(
         mediaSourceLabel = "Spotify",
+        mediaSourceConnected = true,
         mediaSourceIconPainter = ColorPainter(AALyricsColors.AccentCyan),
     )
 }
@@ -41,6 +42,20 @@ private fun PhoneTopBarSpotifyPreview() {
 )
 @Composable
 private fun PhoneTopBarSpotifyIconUnavailablePreview() {
+    PhoneTopBarPreview(
+        mediaSourceLabel = "Spotify",
+        mediaSourceConnected = true,
+    )
+}
+
+@Preview(
+    name = "Spotify · source not verified",
+    group = "PhoneTopBar",
+    widthDp = 412,
+    showBackground = true,
+)
+@Composable
+private fun PhoneTopBarSpotifyUnverifiedPreview() {
     PhoneTopBarPreview(mediaSourceLabel = "Spotify")
 }
 
@@ -91,11 +106,13 @@ private fun PhoneTopBarLongMediaSourcePreview() {
 @Composable
 private fun PhoneTopBarPreview(
     mediaSourceLabel: String?,
+    mediaSourceConnected: Boolean = false,
     mediaSourceIconPainter: Painter? = null,
 ) {
     AALyricsTheme {
         PhoneTopBar(
             mediaSourceLabel = mediaSourceLabel,
+            mediaSourceConnected = mediaSourceConnected,
             mediaSourceIconPainter = mediaSourceIconPainter,
         )
     }

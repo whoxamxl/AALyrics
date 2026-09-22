@@ -197,16 +197,19 @@ internal object PhonePreviewFixtures {
 
     val typicalLyricsShell = PhoneShellUiState(
         mediaSourceLabel = "Spotify",
+        mediaSourceConnected = true,
         playbackSurface = playingSurface,
     )
     val narrowLyricsShell = PhoneShellUiState(
         mediaSourceLabel = "YouTube Music",
+        mediaSourceConnected = true,
         playbackSurface = pausedSurface,
     )
     val lyricsWithoutControls = PhoneShellUiState(mediaSourceLabel = null)
     val syncShell = PhoneShellUiState(
         selectedDestination = PhoneDestination.Sync,
         mediaSourceLabel = "Poweramp",
+        mediaSourceConnected = true,
         playbackSurface = pausedSurface,
     )
 
@@ -335,6 +338,7 @@ internal object PhonePreviewFixtures {
     val settingsShell = PhoneShellUiState(
         selectedDestination = PhoneDestination.Settings,
         mediaSourceLabel = "Spotify",
+        mediaSourceConnected = true,
         playbackSurface = playingSurface,
     )
 
@@ -394,6 +398,7 @@ internal object PhonePreviewFixtures {
     val detailsShell = PhoneShellUiState(
         selectedDestination = PhoneDestination.Details,
         mediaSourceLabel = "Spotify",
+        mediaSourceConnected = true,
         playbackSurface = playingSurface,
     )
 

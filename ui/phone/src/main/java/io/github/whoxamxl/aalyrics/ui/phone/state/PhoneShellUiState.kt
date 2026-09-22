@@ -8,6 +8,7 @@ import io.github.whoxamxl.aalyrics.ui.phone.navigation.PhoneDestination
 data class PhoneShellUiState(
     val selectedDestination: PhoneDestination = PhoneDestination.Home,
     val mediaSourceLabel: String? = null,
+    val mediaSourceConnected: Boolean = false,
     val playbackSurface: PlaybackSurfaceUiState? = null,
 )
 

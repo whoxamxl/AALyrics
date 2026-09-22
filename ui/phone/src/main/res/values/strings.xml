@@ -141,6 +141,7 @@
     <string name="playback_expand">Expand player</string>
     <string name="playback_collapse">Collapse player</string>
     <string name="playback_translation">Translation</string>
+    <string name="playback_source_connected">Connected</string>
     <string name="playback_close">Close</string>
     <string name="playback_position">Playback position</string>
     <string name="playback_position_state">%1$s of %2$s</string>

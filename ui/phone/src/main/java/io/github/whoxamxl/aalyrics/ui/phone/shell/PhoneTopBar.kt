@@ -24,6 +24,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.github.whoxamxl.aalyrics.ui.designsystem.icon.AALyricsBrandMark
@@ -37,6 +38,7 @@ import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsTypography
 @Composable
 fun PhoneTopBar(
     mediaSourceLabel: String?,
+    mediaSourceConnected: Boolean = false,
     mediaSourceIconPainter: Painter? = null,
     modifier: Modifier = Modifier,
 ) {
@@ -65,7 +67,7 @@ fun PhoneTopBar(
             Spacer(Modifier.weight(1f))
             if (!mediaSourceLabel.isNullOrBlank()) {
                 Surface(
-                    modifier = Modifier.widthIn(max = 168.dp),
+                    modifier = Modifier.widthIn(max = 220.dp),
                     shape = RoundedCornerShape(AALyricsRadius.Full),
                     color = AALyricsColors.OverlaySoft,
                     border = BorderStroke(
@@ -105,7 +107,26 @@ fun PhoneTopBar(
                             color = AALyricsColors.AccentCyan,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
+                            modifier = if (mediaSourceConnected) {
+                                Modifier.weight(1f, fill = false)
+                            } else {
+                                Modifier
+                            },
                         )
+                        if (mediaSourceConnected) {
+                            Text(
+                                text = "·",
+                                style = AALyricsTypography.Label,
+                                color = AALyricsColors.TextSecondary,
+                                maxLines = 1,
+                            )
+                            Text(
+                                text = stringResource(R.string.playback_source_connected),
+                                style = AALyricsTypography.Label,
+                                color = AALyricsColors.AccentCyan,
+                                maxLines = 1,
+                            )
+                        }
                     }
                 }
             }

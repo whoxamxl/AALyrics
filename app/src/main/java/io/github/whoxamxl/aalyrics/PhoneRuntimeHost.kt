@@ -39,6 +39,7 @@ internal fun PhoneRuntimeHost(
     onOpenSourceCode: () -> Unit,
 ) {
     val playback by application.playbackState.collectAsStateWithLifecycle()
+    val playbackControlState by application.playbackControlState.collectAsStateWithLifecycle()
     val lyricsState by application.lyricsState.collectAsStateWithLifecycle()
     val playbackSurface by application.phonePlaybackSurfaceState.collectAsStateWithLifecycle()
     val playbackSourceAppInfo by
@@ -120,6 +121,11 @@ internal fun PhoneRuntimeHost(
         state = PhoneShellUiState(
             selectedDestination = selectedDestination,
             mediaSourceLabel = playbackSourceAppInfo?.label,
+            mediaSourceConnected = isPlaybackSourceConnected(
+                playback = playback,
+                controlState = playbackControlState,
+                playbackSourceAppInfo = playbackSourceAppInfo,
+            ),
             playbackSurface = playbackSurface,
         ),
         onDestinationSelected = { selectedDestination = it },
