@@ -22,6 +22,8 @@ import io.github.whoxamxl.aalyrics.platform.media.PlaybackArtworkSink
 import io.github.whoxamxl.aalyrics.platform.media.PlaybackControlState
 import io.github.whoxamxl.aalyrics.platform.media.PlaybackControlStateSink
 import io.github.whoxamxl.aalyrics.platform.media.PlaybackSnapshotSink
+import io.github.whoxamxl.aalyrics.platform.media.PlaybackSourceRuntimeState
+import io.github.whoxamxl.aalyrics.platform.media.PlaybackSourceRuntimeStateSink
 import io.github.whoxamxl.aalyrics.ui.automotive.AutomotiveBrowserClientTrust
 import io.github.whoxamxl.aalyrics.ui.automotive.AutomotiveRuntimeBinding
 import io.github.whoxamxl.aalyrics.ui.automotive.AutomotiveRuntimeHost
@@ -48,6 +50,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 
@@ -71,9 +74,13 @@ class AALyricsApplication : Application() {
     private lateinit var translationLanguageIdentifier: MlKitLanguageIdentifier
     private lateinit var translationModelManager: MlKitTranslationModelManager
     private lateinit var playbackAppLauncher: SelectedPlaybackAppLauncher
-    private lateinit var playbackSourceLabelResolver: PlaybackSourceLabelResolver
+    private lateinit var playbackSourceAppInfoResolver: PlaybackSourceAppInfoResolver
+    private lateinit var playbackSnapshotSink: PlaybackSnapshotSink
+    private lateinit var effectivePlaybackSourceRuntimeStateFlow:
+        StateFlow<PlaybackSourceRuntimeState>
     private lateinit var phonePlaybackSurfaceStateFlow: StateFlow<PlaybackSurfaceUiState?>
-    private lateinit var phoneMediaSourceLabelStateFlow: StateFlow<String?>
+    private lateinit var phonePlaybackSourceAppInfoStateFlow: StateFlow<PlaybackSourceAppInfo?>
+    private lateinit var phonePlaybackSourceCanOpenAppStateFlow: StateFlow<Boolean>
     private lateinit var phoneDetailsStateFlow: StateFlow<DetailsScreenUiState>
     private val mutablePlaybackArtworkState = MutableStateFlow<Bitmap?>(null)
     private val mutableTranslationModelCleanupState =
@@ -94,6 +101,9 @@ class AALyricsApplication : Application() {
     val playbackControlState: StateFlow<PlaybackControlState>
         get() = graph.playbackControlState
 
+    internal val playbackSourceRuntimeState: StateFlow<PlaybackSourceRuntimeState>
+        get() = effectivePlaybackSourceRuntimeStateFlow
+
     val translationState: StateFlow<TranslationState>
         get() = translationCoordinator.state
 
@@ -103,8 +113,11 @@ class AALyricsApplication : Application() {
     val phonePlaybackSurfaceState: StateFlow<PlaybackSurfaceUiState?>
         get() = phonePlaybackSurfaceStateFlow
 
-    val phoneMediaSourceLabel: StateFlow<String?>
-        get() = phoneMediaSourceLabelStateFlow
+    internal val phonePlaybackSourceAppInfo: StateFlow<PlaybackSourceAppInfo?>
+        get() = phonePlaybackSourceAppInfoStateFlow
+
+    internal val phonePlaybackSourceCanOpenApp: StateFlow<Boolean>
+        get() = phonePlaybackSourceCanOpenAppStateFlow
 
     val phoneDetailsState: StateFlow<DetailsScreenUiState>
         get() = phoneDetailsStateFlow
@@ -131,6 +144,12 @@ class AALyricsApplication : Application() {
 
     val verboseDetailsEnabled: StateFlow<Boolean>
         get() = phonePresentationSettingsStore.verboseDetailsEnabled
+
+    internal val ignoreNonAudioApps: StateFlow<Boolean>
+        get() = phonePresentationSettingsStore.ignoreNonAudioApps
+
+    internal val allowUnclassifiedApps: StateFlow<Boolean>
+        get() = phonePresentationSettingsStore.allowUnclassifiedApps
 
     val translationModelStates: StateFlow<Map<String, TranslationModelState>>
         get() = translationModelManager.states
@@ -161,6 +180,16 @@ class AALyricsApplication : Application() {
         phonePresentationSettingsStore.setVerboseDetailsEnabled(enabled)
     }
 
+    internal fun setIgnoreNonAudioApps(enabled: Boolean) {
+        phonePresentationSettingsStore.setIgnoreNonAudioApps(enabled)
+        applyCurrentPlaybackSourceEligibility()
+    }
+
+    internal fun setAllowUnclassifiedApps(enabled: Boolean) {
+        phonePresentationSettingsStore.setAllowUnclassifiedApps(enabled)
+        applyCurrentPlaybackSourceEligibility()
+    }
+
     fun clearDownloadedTranslationModels() {
         if (mutableTranslationModelCleanupState.value == TranslationModelCleanupState.RUNNING) {
             return
@@ -187,6 +216,7 @@ class AALyricsApplication : Application() {
     fun resetAppOwnedSettings() {
         translationSettingsStore.resetToDefaults()
         phonePresentationSettingsStore.resetToDefaults()
+        applyCurrentPlaybackSourceEligibility()
     }
 
     fun openSelectedPlaybackApp(): Boolean =
@@ -201,30 +231,72 @@ class AALyricsApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
-        graph = createProductionApplicationGraph(applicationScope)
         translationSettingsStore = SharedPreferencesTranslationSettingsStore(this)
         phonePresentationSettingsStore = SharedPreferencesPhonePresentationSettingsStore(this)
         playbackAppLauncher = SelectedPlaybackAppLauncher(this)
-        playbackSourceLabelResolver = PlaybackSourceLabelResolver(this)
-        phoneMediaSourceLabelStateFlow = graph.playbackState
-            .map { playback ->
-                playbackSourceLabelResolver.labelFor(playback.source?.id)
-            }
+        playbackSourceAppInfoResolver = PlaybackSourceAppInfoResolver(this)
+        graph = createProductionApplicationGraph(applicationScope)
+        playbackSnapshotSink = PlaybackSnapshotSink { snapshot ->
+            graph.playbackSnapshotSink.onPlaybackSnapshot(snapshot)
+            val sourceEligible = playbackSourceEligibility(snapshot) is
+                PlaybackSourceEligibility.Allowed
+            graph.lyricsDemandGate.onPlaybackSnapshot(
+                snapshot = snapshot,
+                sourceEligible = sourceEligible,
+            )
+        }
+        phonePlaybackSourceAppInfoStateFlow = combine(
+            graph.playbackSourceRuntimeState,
+            graph.playbackState,
+        ) { runtimeState, playback ->
+            playbackSourceAppInfoPackageName(
+                runtimeState = runtimeState,
+                playback = playback,
+            )
+        }
+            .distinctUntilChanged()
+            .map(playbackSourceAppInfoResolver::resolve)
             .stateIn(
                 scope = applicationScope,
                 started = SharingStarted.Eagerly,
                 initialValue = null,
             )
+        effectivePlaybackSourceRuntimeStateFlow = combine(
+            graph.playbackSourceRuntimeState,
+            phonePlaybackSourceAppInfoStateFlow,
+            phonePresentationSettingsStore.ignoreNonAudioApps,
+            phonePresentationSettingsStore.allowUnclassifiedApps,
+        ) { runtimeState, appInfo, ignoreNonAudioApps, allowUnclassifiedApps ->
+            effectivePlaybackSourceRuntimeState(
+                runtimeState = runtimeState,
+                appInfo = appInfo,
+                ignoreNonAudioApps = ignoreNonAudioApps,
+                allowUnclassifiedApps = allowUnclassifiedApps,
+            )
+        }.stateIn(
+            scope = applicationScope,
+            started = SharingStarted.Eagerly,
+            initialValue = PlaybackSourceRuntimeState.Connecting,
+        )
+        phonePlaybackSourceCanOpenAppStateFlow = graph.playbackControlState
+            .map(playbackAppLauncher::canOpen)
+            .distinctUntilChanged()
+            .stateIn(
+                scope = applicationScope,
+                started = SharingStarted.Eagerly,
+                initialValue = false,
+            )
         phonePlaybackSurfaceStateFlow = combine(
             graph.playbackState,
             graph.playbackControlState,
             translationSettingsStore.settings,
-        ) { playback, controlState, translationSettings ->
+            phonePlaybackSourceCanOpenAppStateFlow,
+        ) { playback, controlState, translationSettings, canOpenPlaybackApp ->
             mapPhonePlaybackSurfaceState(
                 playback = playback,
                 controlState = controlState,
                 translationEnabled = translationSettings.enabled,
-                canOpenPlaybackApp = playbackAppLauncher.canOpen(controlState),
+                canOpenPlaybackApp = canOpenPlaybackApp,
             )
         }.stateIn(
             scope = applicationScope,
@@ -240,7 +312,8 @@ class AALyricsApplication : Application() {
                 playback = playback,
                 lyricsState = lyrics,
                 verboseDetailsEnabled = verboseDetailsEnabled,
-                playbackSourceLabel = playbackSourceLabelResolver.labelFor(playback.source?.id),
+                playbackSourceAppInfo = playbackSourceAppInfoResolver
+                    .resolve(playback.source?.id),
             )
         }.stateIn(
             scope = applicationScope,
@@ -270,9 +343,10 @@ class AALyricsApplication : Application() {
             lifecycle = translationCoordinator,
             applicationScope = applicationScope,
         ).also { it.start() }
-        MediaSessionRuntimeHost.attach(graph.playbackSnapshotSink)
+        MediaSessionRuntimeHost.attach(playbackSnapshotSink)
         MediaSessionRuntimeHost.attachControlState(graph.playbackControlStateSink)
         MediaSessionRuntimeHost.attachArtwork(playbackArtworkSink)
+        MediaSessionRuntimeHost.attachSourceRuntimeState(graph.playbackSourceRuntimeStateSink)
         automotiveBinding = AutomotiveRuntimeBinding(
             playback = graph.playbackState,
             lyrics = graph.lyricsState,
@@ -303,11 +377,29 @@ class AALyricsApplication : Application() {
         translationSettingsStore.close()
         demandLifecycle.stop()
         AutomotiveRuntimeHost.detach(automotiveBinding)
+        MediaSessionRuntimeHost.detachSourceRuntimeState(graph.playbackSourceRuntimeStateSink)
         MediaSessionRuntimeHost.detachArtwork(playbackArtworkSink)
         MediaSessionRuntimeHost.detachControlState(graph.playbackControlStateSink)
-        MediaSessionRuntimeHost.detach(graph.playbackSnapshotSink)
+        MediaSessionRuntimeHost.detach(playbackSnapshotSink)
         applicationScope.cancel()
         super.onTerminate()
+    }
+
+    private fun playbackSourceEligibility(
+        snapshot: PlaybackSnapshot,
+    ): PlaybackSourceEligibility =
+        PlaybackSourceEligibilityPolicy.evaluate(
+            appInfo = playbackSourceAppInfoResolver.resolve(snapshot.source?.id),
+            ignoreNonAudioApps = phonePresentationSettingsStore.ignoreNonAudioApps.value,
+            allowUnclassifiedApps =
+                phonePresentationSettingsStore.allowUnclassifiedApps.value,
+        )
+
+    private fun applyCurrentPlaybackSourceEligibility() {
+        val eligibility = playbackSourceEligibility(graph.playbackState.value)
+        graph.lyricsDemandGate.setSourceEligible(
+            eligibility is PlaybackSourceEligibility.Allowed,
+        )
     }
 
     private companion object {
@@ -327,6 +419,8 @@ internal class ApplicationGraph(
     internal val coordinator = LyricsCoordinator(this.providers, selector, applicationScope)
     private val mutablePlaybackState = MutableStateFlow(PlaybackSnapshot())
     private val mutablePlaybackControlState = MutableStateFlow(PlaybackControlState())
+    private val mutablePlaybackSourceRuntimeState =
+        MutableStateFlow<PlaybackSourceRuntimeState>(PlaybackSourceRuntimeState.Connecting)
 
     val playbackLyricsController = PlaybackLyricsController(
         lookupLifecycle = coordinator,
@@ -335,14 +429,18 @@ internal class ApplicationGraph(
     val lyricsDemandGate = LyricsDemandGate(playbackLyricsController::onPlayback)
     val playbackSnapshotSink = PlaybackSnapshotSink { snapshot ->
         mutablePlaybackState.value = snapshot
-        lyricsDemandGate.onPlaybackSnapshot(snapshot)
     }
     val playbackControlStateSink = PlaybackControlStateSink { state ->
         mutablePlaybackControlState.value = state
     }
+    val playbackSourceRuntimeStateSink = PlaybackSourceRuntimeStateSink { state ->
+        mutablePlaybackSourceRuntimeState.value = state
+    }
     val playbackState: StateFlow<PlaybackSnapshot> = mutablePlaybackState.asStateFlow()
     val playbackControlState: StateFlow<PlaybackControlState> =
         mutablePlaybackControlState.asStateFlow()
+    val playbackSourceRuntimeState: StateFlow<PlaybackSourceRuntimeState> =
+        mutablePlaybackSourceRuntimeState.asStateFlow()
     val lyricsState: StateFlow<LyricsState> = coordinator.state
 }
 

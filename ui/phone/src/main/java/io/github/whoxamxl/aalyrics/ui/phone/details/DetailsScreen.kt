@@ -170,6 +170,33 @@ fun DetailsScreen(
                     )
                 }
 
+                diagnostics.appCategory?.let {
+                    if (hasValue) DetailsDivider()
+                    hasValue = true
+                    DetailsValueRow(
+                        label = stringResource(R.string.details_app_category),
+                        value = it,
+                    )
+                }
+
+                diagnostics.appMinSdkVersion?.let {
+                    if (hasValue) DetailsDivider()
+                    hasValue = true
+                    DetailsValueRow(
+                        label = stringResource(R.string.details_app_min_sdk),
+                        value = it.toString(),
+                    )
+                }
+
+                diagnostics.appTargetSdkVersion?.let {
+                    if (hasValue) DetailsDivider()
+                    hasValue = true
+                    DetailsValueRow(
+                        label = stringResource(R.string.details_app_target_sdk),
+                        value = it.toString(),
+                    )
+                }
+
                 diagnostics.providerId?.let {
                     if (hasValue) DetailsDivider()
                     hasValue = true

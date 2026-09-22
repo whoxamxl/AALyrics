@@ -89,6 +89,9 @@ WORD is a valid source sync type even while the Phone experience remains line-or
 DEVELOPER / DIAGNOSTICS
 
 App package           com.spotify.music
+App category          Audio
+Min SDK               23
+Target SDK            35
 Provider ID           musixmatch
 Source ID             <provider source id>
 Track references      <namespace:value ...>
@@ -99,6 +102,8 @@ The initial diagnostic surface should prefer already-available framework-neutral
 Suitable first fields include:
 
 - playback application package / `PlaybackSource.id`, such as `com.spotify.music`; Verbose Details always exposes this raw identifier, while normal `Playback source` prefers the human-readable app label and uses the package name as the final fallback when label resolution fails;
+- Android application category from the same application-owned playback-source metadata resolution, rendered as a stable diagnostic label such as `Audio`, `Video`, or `Game`; Android `CATEGORY_UNDEFINED` is shown as `Undefined`, while category may be unavailable if application metadata lookup itself fails. The same underlying category fact may independently participate in the explicit playback-source lyrics eligibility policy; Verbose Details only controls whether that already-resolved fact is shown;
+- minimum SDK level from `ApplicationInfo.minSdkVersion` and target SDK level from `ApplicationInfo.targetSdkVersion`; these values are diagnostic facts only and do not define AALyrics compatibility policy;
 - provider key / `LyricsAttribution.providerId`;
 - provider source identifier / `LyricsAttribution.sourceId`, when available;
 - normalized track references such as `namespace:value`, when available.
@@ -107,7 +112,7 @@ These values are useful for reproducing provider and identity issues but are not
 
 ### Diagnostic boundary
 
-Verbose Details must remain presentation-only.
+Verbose Details must remain presentation-only. Playback-source category eligibility is application-owned and evaluated independently of this toggle; enabling Verbose Details neither enables nor disables filtering and must not initiate metadata/provider work that would not otherwise occur.
 
 Turning it on must not:
 
@@ -177,6 +182,10 @@ DetailsScreenUiState
 │  └─ lineCount
 ├─ verboseDetailsEnabled
 └─ diagnostics
+   ├─ appPackageName
+   ├─ appCategory
+   ├─ appMinSdkVersion
+   ├─ appTargetSdkVersion
    ├─ providerId
    ├─ sourceId
    └─ trackReferences
@@ -195,7 +204,9 @@ Examples:
 - resolved lyrics without language tag;
 - provider attribution without source ID;
 - no stable external track references;
-- no active media session.
+- no active media session;
+- playback package available while app category metadata is undefined or unavailable;
+- playback package available while SDK metadata is unavailable because application metadata lookup failed.
 
 The screen should show only facts that are authoritative for the current state and avoid stale values from the previous track.
 
@@ -222,7 +233,7 @@ PR #49 provides deterministic Previews covering:
 - normal Details with partial metadata;
 - lyrics loading/unavailable;
 - Verbose Details OFF;
-- Verbose Details ON with provider/source IDs and track references;
+- Verbose Details ON with playback package/category/SDK levels, provider/source IDs, and track references;
 - Verbose Details ON with missing optional diagnostic values;
 - narrow width;
 - enlarged font;

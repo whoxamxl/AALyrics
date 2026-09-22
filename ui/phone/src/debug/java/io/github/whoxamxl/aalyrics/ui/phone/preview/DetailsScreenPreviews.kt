@@ -23,6 +23,17 @@ private fun DetailsVerbosePreview() {
     DetailsScreenPreview(PhonePreviewFixtures.detailsVerbose)
 }
 
+@Preview(
+    name = "Verbose · undefined app category",
+    group = "DetailsScreen",
+    widthDp = 412,
+    heightDp = 900,
+)
+@Composable
+private fun DetailsVerboseUndefinedCategoryPreview() {
+    DetailsScreenPreview(PhonePreviewFixtures.detailsVerboseSparse)
+}
+
 @Preview(name = "Partial", group = "DetailsScreen", widthDp = 412, heightDp = 760)
 @Composable
 private fun DetailsPartialPreview() {

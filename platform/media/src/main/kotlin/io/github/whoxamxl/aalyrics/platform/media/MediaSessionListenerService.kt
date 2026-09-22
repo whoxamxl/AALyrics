@@ -32,7 +32,13 @@ class MediaSessionListenerService : NotificationListenerService() {
         )
         MediaSessionRuntimeHost.attachTransport(runtime)
         MediaSessionRuntimeHost.attachSessionLauncher(runtime)
-        observation = MediaSessionObservation(source, runtime)
+        observation = MediaSessionObservation(
+            source = source,
+            runtime = runtime,
+            stateSink = PlaybackSourceRuntimeStateSink(
+                MediaSessionRuntimeHost::forwardSourceRuntimeState,
+            ),
+        )
     }
 
     override fun onListenerConnected() {
@@ -41,7 +47,7 @@ class MediaSessionListenerService : NotificationListenerService() {
     }
 
     override fun onListenerDisconnected() {
-        observation.disconnect()
+        observation.listenerDisconnected()
         super.onListenerDisconnected()
     }
 
@@ -50,7 +56,7 @@ class MediaSessionListenerService : NotificationListenerService() {
     }
 
     override fun onDestroy() {
-        observation.disconnect()
+        observation.stop()
         MediaSessionRuntimeHost.detachSessionLauncher(runtime)
         MediaSessionRuntimeHost.detachTransport(runtime)
         super.onDestroy()

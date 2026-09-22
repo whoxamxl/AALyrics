@@ -14,6 +14,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsColors
@@ -34,6 +35,7 @@ fun PhoneAppShell(
     onOpenPlaybackApp: () -> Unit,
     onTranslationEnabledChanged: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
+    mediaSourceIconPainter: Painter? = null,
     playbackArtwork: (@Composable BoxScope.() -> Unit)? = null,
     destinationContent: @Composable (PhoneDestination, Dp) -> Unit,
 ) {
@@ -48,7 +50,15 @@ fun PhoneAppShell(
         color = AALyricsColors.BackgroundBase,
     ) {
         Column(Modifier.fillMaxSize()) {
-            PhoneTopBar(mediaSourceLabel = state.mediaSourceLabel)
+            PhoneTopBar(
+                mediaSourceLabel = state.mediaSourceLabel,
+                mediaSourceConnectionState = state.mediaSourceConnectionState,
+                mediaSourceUnavailableReason = state.mediaSourceUnavailableReason,
+                mediaSourceErrorReason = state.mediaSourceErrorReason,
+                mediaSourceCanOpenApp = state.mediaSourceCanOpenApp,
+                mediaSourceIconPainter = mediaSourceIconPainter,
+                onOpenPlaybackApp = onOpenPlaybackApp,
+            )
             Box(
                 modifier = Modifier
                     .fillMaxWidth()

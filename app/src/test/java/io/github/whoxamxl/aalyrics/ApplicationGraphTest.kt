@@ -59,14 +59,14 @@ class ApplicationGraphTest {
         )
         val track = Track(title = "Song", artists = listOf("Artist"))
 
-        graph.playbackSnapshotSink.onPlaybackSnapshot(PlaybackSnapshot(track = track))
+        graph.onEligiblePlayback(PlaybackSnapshot(track = track))
         advanceUntilIdle()
         assertEquals(emptyList(), provider.requests)
         assertEquals(track, graph.playbackState.value.track)
 
         graph.lyricsDemandGate.setPhoneProcessForeground(true)
         advanceUntilIdle()
-        graph.playbackSnapshotSink.onPlaybackSnapshot(
+        graph.onEligiblePlayback(
             PlaybackSnapshot(
                 track = track.copy(durationMs = 200_000L),
                 status = PlaybackStatus.PLAYING,
@@ -88,7 +88,7 @@ class ApplicationGraphTest {
             applicationScope = this,
             selectionPreferences = CandidateSelectionPreferences(),
         )
-        graph.playbackSnapshotSink.onPlaybackSnapshot(
+        graph.onEligiblePlayback(
             PlaybackSnapshot(track = Track(title = "Song", artists = listOf("Artist"))),
         )
 
@@ -108,6 +108,14 @@ class ApplicationGraphTest {
 
         assertIs<LyricsState.Idle>(graph.lyricsState.value)
         assertTrue(provider.cancelled)
+    }
+
+    private fun ApplicationGraph.onEligiblePlayback(snapshot: PlaybackSnapshot) {
+        playbackSnapshotSink.onPlaybackSnapshot(snapshot)
+        lyricsDemandGate.onPlaybackSnapshot(
+            snapshot = snapshot,
+            sourceEligible = true,
+        )
     }
 
     private class RecordingProvider : LyricsProvider {

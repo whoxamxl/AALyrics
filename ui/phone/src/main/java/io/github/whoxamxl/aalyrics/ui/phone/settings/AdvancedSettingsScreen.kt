@@ -23,8 +23,11 @@ import io.github.whoxamxl.aalyrics.ui.phone.R
 /** Second-level Settings surface for narrowly scoped debug, storage, and reset actions. */
 @Composable
 fun AdvancedSettingsScreen(
+    ignoreNonAudioApps: Boolean,
+    allowUnclassifiedApps: Boolean,
     verboseDetailsEnabled: Boolean,
     cleanupState: TranslationModelCleanupUiState,
+    onAllowUnclassifiedAppsChanged: (Boolean) -> Unit,
     onVerboseDetailsChanged: (Boolean) -> Unit,
     onClearTranslationModels: () -> Unit,
     onDismissTranslationModelCleanupFailure: () -> Unit,
@@ -54,6 +57,22 @@ fun AdvancedSettingsScreen(
         )
 
         Spacer(Modifier.height(AALyricsSpacing.Space12))
+
+        SettingsSection(
+            title = stringResource(R.string.settings_section_playback_source),
+        ) {
+            SettingsSwitchRow(
+                title = stringResource(R.string.settings_allow_unclassified_apps),
+                checked = allowUnclassifiedApps,
+                onCheckedChange = onAllowUnclassifiedAppsChanged,
+                enabled = ignoreNonAudioApps,
+                infoText = stringResource(R.string.settings_allow_unclassified_apps_info),
+                infoContentDescription =
+                    stringResource(R.string.settings_allow_unclassified_apps_info_description),
+            )
+        }
+
+        Spacer(Modifier.height(AALyricsSpacing.Space20))
 
         SettingsSection(
             title = stringResource(R.string.settings_section_debug),

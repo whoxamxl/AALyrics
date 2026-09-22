@@ -37,6 +37,20 @@ internal fun interface MetadataTaskScheduler {
     fun schedule(delayMs: Long, task: () -> Unit): ScheduledMetadataTask
 }
 
+internal sealed interface MediaSessionSelectionResult {
+    data class Connected(
+        val packageName: String,
+    ) : MediaSessionSelectionResult
+
+    data object Disconnected : MediaSessionSelectionResult
+
+    data class Unavailable(
+        val packageName: String? = null,
+        val reason: PlaybackSourceUnavailableReason =
+            PlaybackSourceUnavailableReason.UNKNOWN,
+    ) : MediaSessionSelectionResult
+}
+
 internal object MediaSessionSelectionPolicy {
     fun <Token> select(
         currentToken: Token?,
@@ -75,15 +89,31 @@ internal class SelectedMediaSessionRuntime<Token>(
     private var stableSnapshot: PlaybackSnapshot? = null
     private var pendingMetadataTask: ScheduledMetadataTask? = null
 
-    fun updateSessions(controllers: List<RuntimeMediaController<Token>>) {
+    fun updateSessions(
+        controllers: List<RuntimeMediaController<Token>>,
+    ): MediaSessionSelectionResult {
         val next = MediaSessionSelectionPolicy.select(
             currentToken = selectedController?.token,
             controllers = controllers,
             selfPackageName = selfPackageName,
         )
 
-        if (next != null && next.token == selectedController?.token) return
+        if (next != null && next.token == selectedController?.token) {
+            return MediaSessionSelectionResult.Connected(next.packageName)
+        }
+
         switchTo(next)
+
+        return when {
+            next != null -> MediaSessionSelectionResult.Connected(next.packageName)
+            controllers.isEmpty() -> MediaSessionSelectionResult.Disconnected
+            else -> MediaSessionSelectionResult.Unavailable(
+                packageName = controllers
+                    .firstOrNull { it.packageName != selfPackageName }
+                    ?.packageName,
+                reason = PlaybackSourceUnavailableReason.UNKNOWN,
+            )
+        }
     }
 
     fun disconnect() {

@@ -2,17 +2,19 @@ package io.github.whoxamxl.aalyrics
 
 import android.content.Context
 import android.content.SharedPreferences
+import io.github.whoxamxl.aalyrics.PhonePresentationSettingsPersistence.Companion.ALLOW_UNCLASSIFIED_APPS_KEY
+import io.github.whoxamxl.aalyrics.PhonePresentationSettingsPersistence.Companion.IGNORE_NON_AUDIO_APPS_KEY
+import io.github.whoxamxl.aalyrics.PhonePresentationSettingsPersistence.Companion.VERBOSE_DETAILS_ENABLED_KEY
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import java.io.Closeable
 
 /**
- * Application-owned persistence for Phone presentation preferences.
+ * Application-owned persistence for Phone presentation and playback-source preferences.
  *
- * These preferences may change what the Phone UI presents, but must not alter
- * provider lookup, candidate selection, timing, Translation execution, or
- * MediaSession ownership.
+ * Runtime policy may consume the playback-source eligibility settings, but Android framework
+ * ownership and Settings presentation remain outside this store.
  */
 internal class SharedPreferencesPhonePresentationSettingsStore(
     context: Context,
@@ -21,14 +23,45 @@ internal class SharedPreferencesPhonePresentationSettingsStore(
         PREFERENCES_NAME,
         Context.MODE_PRIVATE,
     )
+    private val persistence = PhonePresentationSettingsPersistence(
+        readBoolean = preferences::getBoolean,
+        writeBooleans = { values ->
+            preferences.edit()
+                .also { editor ->
+                    values.forEach { (key, value) ->
+                        editor.putBoolean(key, value)
+                    }
+                }
+                .apply()
+        },
+    )
 
-    private val mutableVerboseDetailsEnabled = MutableStateFlow(readVerboseDetailsEnabled())
+    private val initialSettings = persistence.read()
+
+    private val mutableVerboseDetailsEnabled =
+        MutableStateFlow(initialSettings.verboseDetailsEnabled)
     val verboseDetailsEnabled: StateFlow<Boolean> =
         mutableVerboseDetailsEnabled.asStateFlow()
 
+    private val mutableIgnoreNonAudioApps =
+        MutableStateFlow(initialSettings.ignoreNonAudioApps)
+    val ignoreNonAudioApps: StateFlow<Boolean> =
+        mutableIgnoreNonAudioApps.asStateFlow()
+
+    private val mutableAllowUnclassifiedApps =
+        MutableStateFlow(initialSettings.allowUnclassifiedApps)
+    val allowUnclassifiedApps: StateFlow<Boolean> =
+        mutableAllowUnclassifiedApps.asStateFlow()
+
     private val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
-        if (key == VERBOSE_DETAILS_ENABLED_KEY) {
-            mutableVerboseDetailsEnabled.value = readVerboseDetailsEnabled()
+        val settings = persistence.read()
+        when (key) {
+            VERBOSE_DETAILS_ENABLED_KEY ->
+                mutableVerboseDetailsEnabled.value = settings.verboseDetailsEnabled
+            IGNORE_NON_AUDIO_APPS_KEY ->
+                mutableIgnoreNonAudioApps.value = settings.ignoreNonAudioApps
+            ALLOW_UNCLASSIFIED_APPS_KEY ->
+                mutableAllowUnclassifiedApps.value = settings.allowUnclassifiedApps
         }
     }
 
@@ -37,33 +70,33 @@ internal class SharedPreferencesPhonePresentationSettingsStore(
     }
 
     fun setVerboseDetailsEnabled(enabled: Boolean) {
-        preferences.edit()
-            .putBoolean(VERBOSE_DETAILS_ENABLED_KEY, enabled)
-            .apply()
+        mutableVerboseDetailsEnabled.value = enabled
+        persistence.setVerboseDetailsEnabled(enabled)
+    }
+
+    fun setIgnoreNonAudioApps(enabled: Boolean) {
+        mutableIgnoreNonAudioApps.value = enabled
+        persistence.setIgnoreNonAudioApps(enabled)
+    }
+
+    fun setAllowUnclassifiedApps(enabled: Boolean) {
+        mutableAllowUnclassifiedApps.value = enabled
+        persistence.setAllowUnclassifiedApps(enabled)
     }
 
     fun resetToDefaults() {
-        preferences.edit()
-            .putBoolean(
-                VERBOSE_DETAILS_ENABLED_KEY,
-                DEFAULT_VERBOSE_DETAILS_ENABLED,
-            )
-            .apply()
+        val defaults = PhonePresentationSettingsSnapshot()
+        mutableVerboseDetailsEnabled.value = defaults.verboseDetailsEnabled
+        mutableIgnoreNonAudioApps.value = defaults.ignoreNonAudioApps
+        mutableAllowUnclassifiedApps.value = defaults.allowUnclassifiedApps
+        persistence.resetToDefaults()
     }
 
     override fun close() {
         preferences.unregisterOnSharedPreferenceChangeListener(listener)
     }
 
-    private fun readVerboseDetailsEnabled(): Boolean =
-        preferences.getBoolean(
-            VERBOSE_DETAILS_ENABLED_KEY,
-            DEFAULT_VERBOSE_DETAILS_ENABLED,
-        )
-
     private companion object {
         private const val PREFERENCES_NAME = "aalyrics_preferences"
-        private const val VERBOSE_DETAILS_ENABLED_KEY = "phone_verbose_details_enabled"
-        private const val DEFAULT_VERBOSE_DETAILS_ENABLED = false
     }
 }

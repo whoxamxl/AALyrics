@@ -16,12 +16,14 @@ internal fun mapPhoneDetailsState(
     playback: PlaybackSnapshot,
     lyricsState: LyricsState,
     verboseDetailsEnabled: Boolean,
-    playbackSourceLabel: String? = null,
+    playbackSourceAppInfo: PlaybackSourceAppInfo? = null,
     displayLocale: Locale = Locale.getDefault(),
 ): DetailsScreenUiState {
     val track = playback.track
     val resolvedLyrics = currentLyrics(playback, lyricsState)
     val lyricsDocument = resolvedLyrics.document
+    val sourceAppInfo = playbackSourceAppInfo
+        ?.takeIf { appInfo -> appInfo.packageName == playback.source?.id }
 
     return DetailsScreenUiState(
         track = track?.let {
@@ -32,7 +34,7 @@ internal fun mapPhoneDetailsState(
                     ?.joinToString(separator = ", "),
                 album = it.album,
                 durationLabel = it.durationMs?.let(::formatDuration),
-                playbackSourceLabel = playbackSourceLabel,
+                playbackSourceLabel = sourceAppInfo?.label,
             )
         },
         lyrics = lyricsDocument?.let { lyrics ->
@@ -49,6 +51,9 @@ internal fun mapPhoneDetailsState(
         diagnostics = if (verboseDetailsEnabled) {
             DetailsDiagnosticsUiState(
                 appPackageName = playback.source?.id,
+                appCategory = sourceAppInfo?.category?.displayLabel,
+                appMinSdkVersion = sourceAppInfo?.minSdkVersion,
+                appTargetSdkVersion = sourceAppInfo?.targetSdkVersion,
                 providerId = lyricsDocument?.attribution?.providerId,
                 sourceId = lyricsDocument?.attribution?.sourceId,
                 trackReferences = track
