@@ -129,6 +129,7 @@ internal fun PhoneRuntimeHost(
         noticeText = application.noticeText,
         licenseText = application.licenseText,
         changelogText = application.changelogText,
+        privacyPolicyText = application.privacyPolicyText,
         translationModelCleanupState = translationModelCleanupState,
     )
 

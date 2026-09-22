@@ -113,8 +113,9 @@ Pending before merge:
 - [x] Verify Preview and production render the same `SupportAALyricsSettingsScreen`; typical/narrow/enlarged previews use a deterministic frozen animation state, while the dedicated Interactive Preview exercises the real animation.
 - [x] Verify the finalized CTA on a physical device: 0.98↔1.02 pulse, diagonal shimmer, no tilt, no positional float.
 - [x] Sync the branch with current `main` after PR #62 and resolve the overlapping Settings/runtime/docs changes.
-- [ ] Re-run CI on the conflict-resolved head.
-- [ ] Re-run bounded Codex review on the finalized VectorDrawable/native-Compose implementation.
+- [x] Address Codex P1 review finding by restoring the bundled Privacy Policy production path through `AALyricsApplication` -> `mapPhoneSettingsState` -> `SettingsScreenUiState`, with focused mapper coverage.
+- [ ] Re-run CI on the post-review-fix head.
+- [ ] Re-run bounded Codex review on the post-review-fix head.
 
 ## Current stop point
 
