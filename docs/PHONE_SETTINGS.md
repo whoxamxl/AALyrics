@@ -8,7 +8,7 @@ The production `SettingsScreen` and its Phone-local row components are implement
 
 The first Settings surface was integrated into `main` via PR #44 and polished in PR #45. PR #49 established the second-level `Advanced` surface with the functional `Verbose details` preference and disabled future `Karaoke mode` affordance. The current Advanced contract also includes explicit Translation model storage cleanup and AALyrics-owned reset actions. PR #50 hosts Settings in the production READY runtime and adds the in-app `License` second-level surface, the shared Phone Markdown renderer, and the adopted Phone popup/subscreen-header standards. PR #58 extends the bundled legal-document path so Settings > License presents the repository `NOTICE` together with the unchanged `LICENSE`. Changelog now follows the same application-owned bundled-document model.
 
-The next approved Settings slice on `feature/settings-about-support` reorganizes the lower Settings information architecture into `APP`, `ABOUT & SUPPORT`, a standalone `Advanced` card, and the existing branding footer. It adds an in-app Privacy Policy backed by repository-root `PRIVACY.md` and a native `Support AALyrics` subscreen whose only payment-service action is an external handoff to Buy Me a Coffee. This document describes that target contract; those additions are not yet implemented on `main`.
+The `feature/settings-about-support` slice implements the approved lower Settings information architecture on its topic branch: `APP`, `ABOUT & SUPPORT`, a standalone `Advanced` card, and the existing branding footer. It adds an in-app Privacy Policy backed by repository-root `PRIVACY.md` and a native `Support AALyrics` subscreen whose only payment-service action is an external handoff to Buy Me a Coffee. Merge/validation status is tracked in `TASK.md`; `main` remains unchanged until the pull request is approved and merged.
 
 ## Product intent
 
@@ -460,7 +460,7 @@ A `Privacy Policy >` internal navigation row is the first entry in `ABOUT & SUPP
 
 Opening it presents an in-app second-level Settings surface using the standard `SettingsSubscreenHeader`. The policy is vertically scrollable and selectable and is rendered through the shared `PhoneMarkdownText` wrapper.
 
-The repository-root `PRIVACY.md` file is the canonical privacy-policy source for AALyrics. The implementation should follow the existing bundled-document ownership model:
+The repository-root `PRIVACY.md` file is the canonical privacy-policy source for AALyrics. The implementation follows the existing bundled-document ownership model:
 
 ```text
 repository PRIVACY.md

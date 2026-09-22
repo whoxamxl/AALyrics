@@ -74,24 +74,42 @@ The policy must describe actual AALyrics behavior; placeholder privacy claims ar
 
 ### Implementation stage
 
-- [ ] Audit current data/privacy behavior and add repository-root `PRIVACY.md`.
-- [ ] Bundle `PRIVACY.md` through the existing generated-asset path.
-- [ ] Expose `privacyPolicyText` through application-owned Settings presentation mapping.
-- [ ] Add `PrivacyPolicySettingsScreen` using `SettingsSubscreenHeader` + `PhoneMarkdownText`.
-- [ ] Split the current lower Settings layout into `APP` and `ABOUT & SUPPORT` without changing unrelated sections.
-- [ ] Move License visually under `ABOUT & SUPPORT` without changing its existing NOTICE/LICENSE behavior.
-- [ ] Add `Support AALyrics` native subscreen.
-- [ ] Wire Buy Me a Coffee handoff through an app-owned Custom Tab / external-browser action.
-- [ ] Keep `Advanced` in its own existing card and keep the branding footer last.
-- [ ] Update deterministic Previews for Settings home, Privacy Policy, Support AALyrics, narrow width, and enlarged font.
-- [ ] Add/update focused tests for presentation mapping and Settings root-reset/subscreen behavior as needed.
-- [ ] Re-evaluate `Reset AALyrics`; document that no new persisted state is introduced by this slice unless implementation changes that assumption.
+- [x] Audit current data/privacy behavior and add repository-root `PRIVACY.md`.
+- [x] Bundle `PRIVACY.md` through the existing generated-asset path.
+- [x] Expose `privacyPolicyText` through application-owned Settings presentation mapping.
+- [x] Add `PrivacyPolicySettingsScreen` using `SettingsSubscreenHeader` + `PhoneMarkdownText`.
+- [x] Split the current lower Settings layout into `APP` and `ABOUT & SUPPORT` without changing unrelated sections.
+- [x] Move License visually under `ABOUT & SUPPORT` without changing its existing NOTICE/LICENSE behavior.
+- [x] Add `Support AALyrics` native subscreen.
+- [x] Wire Buy Me a Coffee handoff through an app-owned Custom Tab / external-browser action.
+- [x] Keep `Advanced` in its own existing card and keep the branding footer last.
+- [x] Update deterministic Previews for Settings home, Privacy Policy, Support AALyrics, narrow width, and enlarged font.
+- [x] Add/update focused tests for presentation mapping and Settings root-reset/subscreen behavior as needed.
+- [x] Re-evaluate `Reset AALyrics`; document that no new persisted state is introduced by this slice unless implementation changes that assumption.
 - [ ] Run architecture checks, unit tests, debug APK build, CI, and bounded review before merge.
 
 ## Scope guard
 
 Do not implement payment UI, embedded checkout, WebView payment flows, transaction tracking, donor entitlements, or undocumented Buy Me a Coffee URL-prefill behavior. Do not redesign unrelated Settings sections, Sync, provider behavior, Translation semantics, or Advanced functionality.
 
+## Validation status
+
+Implementation is complete on `feature/settings-about-support` and PR #60 is open as a draft.
+
+Completed locally/by repository inspection:
+
+- [x] Privacy behavior audited against current manifest, providers, persistence, and Translation implementation.
+- [x] No new app-owned persisted state was introduced; the existing `Reset AALyrics` contract therefore requires no behavior change.
+- [x] Branch-name, commit-message, and architecture checks passed in GitHub Actions.
+
+Pending before merge:
+
+- [ ] Debug APK build passes.
+- [ ] JVM/unit tests pass.
+- [ ] Generated APK contains `aalyrics_privacy.md`.
+- [ ] PR diff/Preview alignment review is complete.
+- [ ] Bounded Codex review has no unresolved blocking findings.
+
 ## Current stop point
 
-Documentation contract aligned. Implementation has **not** started. Resume only after explicit user instruction.
+Implementation is present on the topic branch. Continue validation/review; do not merge without explicit user authorization.

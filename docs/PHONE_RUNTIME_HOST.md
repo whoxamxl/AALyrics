@@ -26,7 +26,7 @@ The current production branch state now has:
 
 The debug APK now builds with the real Phone shell reachable after onboarding prerequisites are satisfied. Physical-device smoke testing remains the final empirical validation step; CI alone does not claim that device interaction has been observed.
 
-The next approved Settings extension in `docs/PHONE_SETTINGS.md` preserves this host boundary: `:app` will supply bundled `PRIVACY.md` text and own the external Buy Me a Coffee browser/Custom-Tab launch, while `:ui:phone` remains presentation-only.
+The Settings extension implemented on `feature/settings-about-support` preserves this host boundary: `:app` supplies bundled `PRIVACY.md` text and owns the external Buy Me a Coffee browser/Custom-Tab launch, while `:ui:phone` remains presentation-only.
 
 ## Goal
 
@@ -252,7 +252,7 @@ Do not expand this slice into implementation of those capabilities merely becaus
 The following may remain UI/host-local because they do not represent durable application policy:
 
 - currently selected Phone primary destination;
-- Settings sub-screen selection/visibility (target contract: Main / Advanced / Changelog / Privacy Policy / License / Support AALyrics);
+- Settings sub-screen selection/visibility (Main / Advanced / Changelog / Privacy Policy / License / Support AALyrics);
 - modal/picker visibility;
 - Lyrics viewport follow/browse interaction mode;
 - expanded/collapsed Playback Surface presentation state where already component-owned.
