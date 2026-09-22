@@ -1,5 +1,6 @@
 package io.github.whoxamxl.aalyrics
 
+import io.github.whoxamxl.aalyrics.platform.media.PlaybackSourceRuntimeState
 import io.github.whoxamxl.aalyrics.platform.media.PlaybackSourceUnavailableReason
 
 internal sealed interface PlaybackSourceEligibility {
@@ -45,5 +46,39 @@ internal object PlaybackSourceEligibilityPolicy {
                     PlaybackSourceUnavailableReason.NON_AUDIO_APP,
                 )
         }
+    }
+}
+
+
+internal fun effectivePlaybackSourceRuntimeState(
+    runtimeState: PlaybackSourceRuntimeState,
+    appInfo: PlaybackSourceAppInfo?,
+    ignoreNonAudioApps: Boolean,
+    allowUnclassifiedApps: Boolean,
+): PlaybackSourceRuntimeState {
+    if (runtimeState !is PlaybackSourceRuntimeState.Connected) {
+        return runtimeState
+    }
+
+    // A null or mismatched record is a transient app-info resolution state, not evidence that
+    // the package itself is unclassified. The resolver returns a package-matched fallback record
+    // with category=null when metadata lookup genuinely fails.
+    if (appInfo == null || appInfo.packageName != runtimeState.packageName) {
+        return runtimeState
+    }
+
+    return when (
+        val eligibility = PlaybackSourceEligibilityPolicy.evaluate(
+            appInfo = appInfo,
+            ignoreNonAudioApps = ignoreNonAudioApps,
+            allowUnclassifiedApps = allowUnclassifiedApps,
+        )
+    ) {
+        PlaybackSourceEligibility.Allowed -> runtimeState
+        is PlaybackSourceEligibility.Blocked ->
+            PlaybackSourceRuntimeState.Unavailable(
+                packageName = runtimeState.packageName,
+                reason = eligibility.reason,
+            )
     }
 }

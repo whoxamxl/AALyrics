@@ -1,5 +1,6 @@
 package io.github.whoxamxl.aalyrics
 
+import io.github.whoxamxl.aalyrics.platform.media.PlaybackSourceRuntimeState
 import io.github.whoxamxl.aalyrics.platform.media.PlaybackSourceUnavailableReason
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -130,6 +131,113 @@ class PlaybackSourceEligibilityPolicyTest {
                 allowUnclassifiedApps = true,
             ),
         )
+    }
+
+    @Test
+    fun `effective state converts connected known non audio source to unavailable`() {
+        assertEquals(
+            PlaybackSourceRuntimeState.Unavailable(
+                packageName = "com.example.player",
+                reason = PlaybackSourceUnavailableReason.NON_AUDIO_APP,
+            ),
+            effectivePlaybackSourceRuntimeState(
+                runtimeState = PlaybackSourceRuntimeState.Connected("com.example.player"),
+                appInfo = appInfo(PlaybackSourceAppCategory.VIDEO),
+                ignoreNonAudioApps = true,
+                allowUnclassifiedApps = false,
+            ),
+        )
+    }
+
+    @Test
+    fun `effective state converts connected unclassified source to unavailable`() {
+        assertEquals(
+            PlaybackSourceRuntimeState.Unavailable(
+                packageName = "com.example.player",
+                reason = PlaybackSourceUnavailableReason.UNCLASSIFIED_APP,
+            ),
+            effectivePlaybackSourceRuntimeState(
+                runtimeState = PlaybackSourceRuntimeState.Connected("com.example.player"),
+                appInfo = appInfo(null),
+                ignoreNonAudioApps = true,
+                allowUnclassifiedApps = false,
+            ),
+        )
+    }
+
+    @Test
+    fun `effective state keeps connected source when category policy allows it`() {
+        assertEquals(
+            PlaybackSourceRuntimeState.Connected("com.example.player"),
+            effectivePlaybackSourceRuntimeState(
+                runtimeState = PlaybackSourceRuntimeState.Connected("com.example.player"),
+                appInfo = appInfo(PlaybackSourceAppCategory.AUDIO),
+                ignoreNonAudioApps = true,
+                allowUnclassifiedApps = false,
+            ),
+        )
+        assertEquals(
+            PlaybackSourceRuntimeState.Connected("com.example.player"),
+            effectivePlaybackSourceRuntimeState(
+                runtimeState = PlaybackSourceRuntimeState.Connected("com.example.player"),
+                appInfo = appInfo(PlaybackSourceAppCategory.UNDEFINED),
+                ignoreNonAudioApps = true,
+                allowUnclassifiedApps = true,
+            ),
+        )
+    }
+
+    @Test
+    fun `effective state does not misclassify pending or mismatched app info`() {
+        val connected = PlaybackSourceRuntimeState.Connected("com.example.player")
+
+        assertEquals(
+            connected,
+            effectivePlaybackSourceRuntimeState(
+                runtimeState = connected,
+                appInfo = null,
+                ignoreNonAudioApps = true,
+                allowUnclassifiedApps = false,
+            ),
+        )
+        assertEquals(
+            connected,
+            effectivePlaybackSourceRuntimeState(
+                runtimeState = connected,
+                appInfo = appInfo(PlaybackSourceAppCategory.VIDEO).copy(
+                    packageName = "com.other.player",
+                ),
+                ignoreNonAudioApps = true,
+                allowUnclassifiedApps = false,
+            ),
+        )
+    }
+
+    @Test
+    fun `effective state preserves non connected runtime states`() {
+        val states = listOf(
+            PlaybackSourceRuntimeState.Connecting,
+            PlaybackSourceRuntimeState.Disconnected,
+            PlaybackSourceRuntimeState.Unavailable(
+                packageName = "com.example.player",
+                reason = PlaybackSourceUnavailableReason.UNKNOWN,
+            ),
+            PlaybackSourceRuntimeState.Error(
+                io.github.whoxamxl.aalyrics.platform.media.PlaybackSourceErrorReason.UNKNOWN,
+            ),
+        )
+
+        states.forEach { state ->
+            assertEquals(
+                state,
+                effectivePlaybackSourceRuntimeState(
+                    runtimeState = state,
+                    appInfo = appInfo(PlaybackSourceAppCategory.VIDEO),
+                    ignoreNonAudioApps = true,
+                    allowUnclassifiedApps = false,
+                ),
+            )
+        }
     }
 
     private fun appInfo(
