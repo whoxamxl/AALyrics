@@ -516,13 +516,9 @@ A `Support AALyrics >` internal navigation row sits directly below License.
 
 Opening it presents a native second-level Settings surface using `SettingsSubscreenHeader`. The surface may explain that AALyrics is free to use and that voluntary support helps continued development, but it must remain concise and non-coercive.
 
-The initial support surface contains one external action:
+The support surface is a compact branded landing card rather than a generic Settings row. It uses the official Buy Me a Coffee full logo and official yellow Buy Me a Coffee button supplied as local drawable assets, with a short native AALyrics explanation between them. QR assets are intentionally not used on the in-app phone surface.
 
-```text
-Support on Buy Me a Coffee   [external-link icon]
-```
-
-The action hands off to the configured Buy Me a Coffee page in a secure browser surface, preferably Android Custom Tabs with ordinary external-browser fallback where necessary. The application/runtime boundary owns launching that external destination; `:ui:phone` emits a support-link callback and must not own Android intents, Custom Tabs, or browser APIs.
+The official Buy Me a Coffee button is the single external CTA. Tapping it hands off to the configured Buy Me a Coffee page in a secure browser surface, preferably Android Custom Tabs with ordinary external-browser fallback where necessary. The application/runtime boundary owns launching that external destination; `:ui:phone` emits a support-link callback and must not own Android intents, Custom Tabs, or browser APIs.
 
 The canonical support account must stay aligned with repository `.github/FUNDING.yml` (currently Buy Me a Coffee account `whoxamxi`).
 

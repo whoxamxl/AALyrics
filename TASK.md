@@ -81,6 +81,7 @@ The policy must describe actual AALyrics behavior; placeholder privacy claims ar
 - [x] Split the current lower Settings layout into `APP` and `ABOUT & SUPPORT` without changing unrelated sections.
 - [x] Move License visually under `ABOUT & SUPPORT` without changing its existing NOTICE/LICENSE behavior.
 - [x] Add `Support AALyrics` native subscreen.
+- [x] Refine the Support surface into one branded card using the official Buy Me a Coffee full logo and yellow CTA button; keep QR assets out of the phone UI.
 - [x] Wire Buy Me a Coffee handoff through an app-owned Custom Tab / external-browser action.
 - [x] Keep `Advanced` in its own existing card and keep the branding footer last.
 - [x] Update deterministic Previews for Settings home, Privacy Policy, Support AALyrics, narrow width, and enlarged font.
@@ -94,7 +95,7 @@ Do not implement payment UI, embedded checkout, WebView payment flows, transacti
 
 ## Validation status
 
-Implementation is complete on `feature/settings-about-support` and PR #60 is open as a draft.
+Implementation is complete on `feature/settings-about-support` and PR #60 is open for review.
 
 Completed locally/by repository inspection:
 
@@ -108,8 +109,8 @@ Pending before merge:
 - [x] JVM/unit tests pass.
 - [x] Generated APK contains `aalyrics_privacy.md`.
 - [x] PR diff/Preview alignment review is complete.
-- [x] Bounded Codex review has no unresolved blocking findings (`f2a1a4c`: no major issues; later changes are validation-status documentation only).
+- [ ] Re-run CI and bounded Codex review after the Buy Me a Coffee visual refinement.
 
 ## Current stop point
 
-Implementation and repository validation are complete on the topic branch. PR #60 is ready for the explicit pre-merge approval gate; do not merge without user authorization.
+Support AALyrics visual refinement is implemented. Re-run repository validation and bounded review before returning PR #60 to the explicit pre-merge approval gate.
