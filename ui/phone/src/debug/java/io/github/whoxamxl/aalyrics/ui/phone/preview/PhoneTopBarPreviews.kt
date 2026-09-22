@@ -52,8 +52,9 @@ private fun PhoneTopBarDisconnectedPreview() {
 @Composable
 private fun PhoneTopBarUnavailablePreview() {
     PhoneTopBarPreview(
-        mediaSourceLabel = "Unsupported Player",
+        mediaSourceLabel = "Spotify",
         connectionState = PlaybackSourceConnectionUiState.UNAVAILABLE,
+        mediaSourceIconPainter = ColorPainter(AALyricsColors.AccentCyan),
     )
 }
 

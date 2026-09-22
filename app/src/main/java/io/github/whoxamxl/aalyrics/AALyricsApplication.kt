@@ -216,8 +216,19 @@ class AALyricsApplication : Application() {
         phonePresentationSettingsStore = SharedPreferencesPhonePresentationSettingsStore(this)
         playbackAppLauncher = SelectedPlaybackAppLauncher(this)
         playbackSourceAppInfoResolver = PlaybackSourceAppInfoResolver(this)
-        phonePlaybackSourceAppInfoStateFlow = graph.playbackState
-            .map { playback -> playback.source?.id }
+        phonePlaybackSourceAppInfoStateFlow = combine(
+            graph.playbackSourceRuntimeState,
+            graph.playbackState,
+        ) { runtimeState, playback ->
+            when (runtimeState) {
+                is PlaybackSourceRuntimeState.Connected -> runtimeState.packageName
+                is PlaybackSourceRuntimeState.Unavailable ->
+                    runtimeState.packageName ?: playback.source?.id
+                PlaybackSourceRuntimeState.Connecting -> playback.source?.id
+                PlaybackSourceRuntimeState.Disconnected,
+                is PlaybackSourceRuntimeState.Error -> null
+            }
+        }
             .distinctUntilChanged()
             .map(playbackSourceAppInfoResolver::resolve)
             .stateIn(
