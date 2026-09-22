@@ -3,69 +3,84 @@ package io.github.whoxamxl.aalyrics
 import android.content.Context
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
-import android.graphics.drawable.Drawable
 import java.util.concurrent.ConcurrentHashMap
+
+internal fun interface PlaybackSourceAppInfoLoader {
+    fun load(packageName: String): PlaybackSourceAppInfo?
+}
 
 /**
  * Resolves the selected playback package into cached application metadata.
  *
- * One PackageManager application-info lookup supplies all metadata for a package. If Android can no
- * longer resolve the package, the package identifier is retained as the human-readable label
- * fallback while optional metadata remains unavailable.
+ * One loader lookup supplies all metadata for a package. Missing packages retain the package
+ * identifier as the human-readable label fallback while optional metadata remains unavailable.
  */
 internal class PlaybackSourceAppInfoResolver(
-    context: Context,
+    private val loader: PlaybackSourceAppInfoLoader,
 ) {
-    private val packageManager = context.applicationContext.packageManager
+    constructor(context: Context) : this(
+        AndroidPlaybackSourceAppInfoLoader(context.applicationContext.packageManager),
+    )
+
     private val appInfoByPackage = ConcurrentHashMap<String, PlaybackSourceAppInfo>()
 
     fun resolve(packageName: String?): PlaybackSourceAppInfo? {
         packageName ?: return null
         return appInfoByPackage.getOrPut(packageName) {
-            resolveUncached(packageName)
+            loader.load(packageName) ?: fallbackFor(packageName)
         }
     }
 
-    private fun resolveUncached(packageName: String): PlaybackSourceAppInfo =
-        try {
-            packageManager
-                .getApplicationInfo(packageName, 0)
-                .toPlaybackSourceAppInfo(packageName)
+    private fun fallbackFor(packageName: String) =
+        PlaybackSourceAppInfo(
+            packageName = packageName,
+            label = packageName,
+            icon = null,
+            category = null,
+            minSdkVersion = null,
+            targetSdkVersion = null,
+        )
+}
+
+private class AndroidPlaybackSourceAppInfoLoader(
+    private val packageManager: PackageManager,
+) : PlaybackSourceAppInfoLoader {
+    override fun load(packageName: String): PlaybackSourceAppInfo? {
+        val applicationInfo = try {
+            packageManager.getApplicationInfo(packageName, 0)
         } catch (_: PackageManager.NameNotFoundException) {
-            PlaybackSourceAppInfo(
-                packageName = packageName,
-                label = packageName,
-                icon = null,
-                category = null,
-                minSdkVersion = null,
-                targetSdkVersion = null,
-            )
+            return null
         }
 
-    private fun ApplicationInfo.toPlaybackSourceAppInfo(
-        sourcePackageName: String,
-    ): PlaybackSourceAppInfo =
-        PlaybackSourceAppInfo(
-            packageName = sourcePackageName,
-            label = resolvedLabel(sourcePackageName),
-            icon = resolvedIcon(),
-            category = category,
-            minSdkVersion = minSdkVersion,
-            targetSdkVersion = targetSdkVersion,
+        return PlaybackSourceAppInfo(
+            packageName = packageName,
+            label = applicationInfo.resolvedLabel(packageName),
+            icon = runCatching { applicationInfo.loadIcon(packageManager) }.getOrNull(),
+            category = playbackSourceAppCategory(applicationInfo.category),
+            minSdkVersion = applicationInfo.minSdkVersion,
+            targetSdkVersion = applicationInfo.targetSdkVersion,
         )
+    }
 
-    private fun ApplicationInfo.resolvedLabel(
-        fallbackPackageName: String,
-    ): String =
+    private fun ApplicationInfo.resolvedLabel(fallbackPackageName: String): String =
         runCatching {
             loadLabel(packageManager)
                 .toString()
                 .trim()
                 .takeIf(String::isNotEmpty)
         }.getOrNull() ?: fallbackPackageName
-
-    private fun ApplicationInfo.resolvedIcon(): Drawable? =
-        runCatching {
-            loadIcon(packageManager)
-        }.getOrNull()
 }
+
+internal fun playbackSourceAppCategory(category: Int): PlaybackSourceAppCategory =
+    when (category) {
+        ApplicationInfo.CATEGORY_GAME -> PlaybackSourceAppCategory.GAME
+        ApplicationInfo.CATEGORY_AUDIO -> PlaybackSourceAppCategory.AUDIO
+        ApplicationInfo.CATEGORY_VIDEO -> PlaybackSourceAppCategory.VIDEO
+        ApplicationInfo.CATEGORY_IMAGE -> PlaybackSourceAppCategory.IMAGE
+        ApplicationInfo.CATEGORY_SOCIAL -> PlaybackSourceAppCategory.SOCIAL
+        ApplicationInfo.CATEGORY_NEWS -> PlaybackSourceAppCategory.NEWS
+        ApplicationInfo.CATEGORY_MAPS -> PlaybackSourceAppCategory.MAPS
+        ApplicationInfo.CATEGORY_PRODUCTIVITY -> PlaybackSourceAppCategory.PRODUCTIVITY
+        ApplicationInfo.CATEGORY_ACCESSIBILITY -> PlaybackSourceAppCategory.ACCESSIBILITY
+        else -> PlaybackSourceAppCategory.UNDEFINED
+    }

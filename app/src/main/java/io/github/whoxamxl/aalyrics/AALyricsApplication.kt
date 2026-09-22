@@ -48,6 +48,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 
@@ -71,8 +72,9 @@ class AALyricsApplication : Application() {
     private lateinit var translationLanguageIdentifier: MlKitLanguageIdentifier
     private lateinit var translationModelManager: MlKitTranslationModelManager
     private lateinit var playbackAppLauncher: SelectedPlaybackAppLauncher
-    private lateinit var playbackSourceLabelResolver: PlaybackSourceLabelResolver
+    private lateinit var playbackSourceAppInfoResolver: PlaybackSourceAppInfoResolver
     private lateinit var phonePlaybackSurfaceStateFlow: StateFlow<PlaybackSurfaceUiState?>
+    private lateinit var phonePlaybackSourceAppInfoStateFlow: StateFlow<PlaybackSourceAppInfo?>
     private lateinit var phoneMediaSourceLabelStateFlow: StateFlow<String?>
     private lateinit var phoneDetailsStateFlow: StateFlow<DetailsScreenUiState>
     private val mutablePlaybackArtworkState = MutableStateFlow<Bitmap?>(null)
@@ -102,6 +104,9 @@ class AALyricsApplication : Application() {
 
     val phonePlaybackSurfaceState: StateFlow<PlaybackSurfaceUiState?>
         get() = phonePlaybackSurfaceStateFlow
+
+    internal val phonePlaybackSourceAppInfo: StateFlow<PlaybackSourceAppInfo?>
+        get() = phonePlaybackSourceAppInfoStateFlow
 
     val phoneMediaSourceLabel: StateFlow<String?>
         get() = phoneMediaSourceLabelStateFlow
@@ -205,11 +210,18 @@ class AALyricsApplication : Application() {
         translationSettingsStore = SharedPreferencesTranslationSettingsStore(this)
         phonePresentationSettingsStore = SharedPreferencesPhonePresentationSettingsStore(this)
         playbackAppLauncher = SelectedPlaybackAppLauncher(this)
-        playbackSourceLabelResolver = PlaybackSourceLabelResolver(this)
-        phoneMediaSourceLabelStateFlow = graph.playbackState
-            .map { playback ->
-                playbackSourceLabelResolver.labelFor(playback.source?.id)
-            }
+        playbackSourceAppInfoResolver = PlaybackSourceAppInfoResolver(this)
+        phonePlaybackSourceAppInfoStateFlow = graph.playbackState
+            .map { playback -> playback.source?.id }
+            .distinctUntilChanged()
+            .map(playbackSourceAppInfoResolver::resolve)
+            .stateIn(
+                scope = applicationScope,
+                started = SharingStarted.Eagerly,
+                initialValue = null,
+            )
+        phoneMediaSourceLabelStateFlow = phonePlaybackSourceAppInfoStateFlow
+            .map { sourceAppInfo -> sourceAppInfo?.label }
             .stateIn(
                 scope = applicationScope,
                 started = SharingStarted.Eagerly,
@@ -240,7 +252,9 @@ class AALyricsApplication : Application() {
                 playback = playback,
                 lyricsState = lyrics,
                 verboseDetailsEnabled = verboseDetailsEnabled,
-                playbackSourceLabel = playbackSourceLabelResolver.labelFor(playback.source?.id),
+                playbackSourceLabel = playbackSourceAppInfoResolver
+                    .resolve(playback.source?.id)
+                    ?.label,
             )
         }.stateIn(
             scope = applicationScope,

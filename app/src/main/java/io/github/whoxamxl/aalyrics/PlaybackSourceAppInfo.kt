@@ -12,7 +12,22 @@ internal data class PlaybackSourceAppInfo(
     val packageName: String,
     val label: String,
     val icon: Drawable?,
-    val category: Int?,
+    val category: PlaybackSourceAppCategory?,
     val minSdkVersion: Int?,
     val targetSdkVersion: Int?,
 )
+
+internal enum class PlaybackSourceAppCategory(
+    val displayLabel: String,
+) {
+    GAME("Game"),
+    AUDIO("Audio"),
+    VIDEO("Video"),
+    IMAGE("Image"),
+    SOCIAL("Social"),
+    NEWS("News"),
+    MAPS("Maps"),
+    PRODUCTIVITY("Productivity"),
+    ACCESSIBILITY("Accessibility"),
+    UNDEFINED("Undefined"),
+}
