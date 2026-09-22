@@ -147,7 +147,7 @@ Only one check may be active at a time. Active work is application-owned and sur
 - [x] Map checking, up-to-date, available, and failure results into `SettingsScreenUiState`.
 - [x] Keep `UPDATE_AVAILABLE` informational until download support exists.
 - [x] Add focused mapping/lifecycle/presentation tests and update deterministic Previews where required.
-- [ ] Run architecture checks, unit tests, debug APK build, CI, and bounded review before merge.
+- [x] Run architecture checks, unit tests, debug APK build, CI, and bounded review before merge.
 
 ## Scope guard
 
@@ -157,4 +157,4 @@ Those are separate implementation slices after Check for updates is proven stabl
 
 ## Current stop point
 
-The Check-only runtime is wired end to end: version comparison, GitHub Release discovery, candidate selection, application-owned lifecycle, Settings mapping/callbacks, informational UPDATE_AVAILABLE presentation, focused tests, and Preview alignment are implemented. Full build/CI validation and real-device verification remain.
+The Check-only runtime is wired end to end and validated: version comparison, GitHub Release discovery, candidate selection, application-owned lifecycle, Settings mapping/callbacks, informational UPDATE_AVAILABLE presentation, focused tests, Preview alignment, synchronized-main CI, Codex review, and real-device verification are complete.
