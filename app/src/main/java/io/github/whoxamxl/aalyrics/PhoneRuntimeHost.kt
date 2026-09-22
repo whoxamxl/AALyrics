@@ -1,5 +1,9 @@
 package io.github.whoxamxl.aalyrics
 
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Rect
+import android.graphics.drawable.Drawable
 import android.os.SystemClock
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -195,7 +199,6 @@ internal fun PhoneRuntimeHost(
         }
     }
 }
-
 
 private fun Drawable.toImageBitmapOrNull(): ImageBitmap? =
     runCatching {

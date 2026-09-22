@@ -75,7 +75,6 @@ class AALyricsApplication : Application() {
     private lateinit var playbackSourceAppInfoResolver: PlaybackSourceAppInfoResolver
     private lateinit var phonePlaybackSurfaceStateFlow: StateFlow<PlaybackSurfaceUiState?>
     private lateinit var phonePlaybackSourceAppInfoStateFlow: StateFlow<PlaybackSourceAppInfo?>
-    private lateinit var phoneMediaSourceLabelStateFlow: StateFlow<String?>
     private lateinit var phoneDetailsStateFlow: StateFlow<DetailsScreenUiState>
     private val mutablePlaybackArtworkState = MutableStateFlow<Bitmap?>(null)
     private val mutableTranslationModelCleanupState =
@@ -107,9 +106,6 @@ class AALyricsApplication : Application() {
 
     internal val phonePlaybackSourceAppInfo: StateFlow<PlaybackSourceAppInfo?>
         get() = phonePlaybackSourceAppInfoStateFlow
-
-    val phoneMediaSourceLabel: StateFlow<String?>
-        get() = phoneMediaSourceLabelStateFlow
 
     val phoneDetailsState: StateFlow<DetailsScreenUiState>
         get() = phoneDetailsStateFlow
@@ -215,13 +211,6 @@ class AALyricsApplication : Application() {
             .map { playback -> playback.source?.id }
             .distinctUntilChanged()
             .map(playbackSourceAppInfoResolver::resolve)
-            .stateIn(
-                scope = applicationScope,
-                started = SharingStarted.Eagerly,
-                initialValue = null,
-            )
-        phoneMediaSourceLabelStateFlow = phonePlaybackSourceAppInfoStateFlow
-            .map { sourceAppInfo -> sourceAppInfo?.label }
             .stateIn(
                 scope = applicationScope,
                 started = SharingStarted.Eagerly,
