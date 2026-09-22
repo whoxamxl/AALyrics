@@ -78,11 +78,11 @@ Category and SDK display are diagnostic metadata only. They must not influence p
 - [x] Resolve and cache package name, label, icon, category, min SDK, and target SDK from the selected playback package.
 - [x] Preserve package-name fallback semantics when application/label resolution fails.
 - [x] Present the real playback app icon in the persistent Top Bar when available, with the current cyan dot as fallback.
-- [ ] Add app category, min SDK, and target SDK to Verbose Details Developer / Diagnostics.
+- [x] Add app category, min SDK, and target SDK to Verbose Details Developer / Diagnostics.
 - [x] Keep Android package/application objects outside `:ui:phone`.
 - [x] Keep normal Details user-facing playback-source labeling unchanged apart from sharing the new resolver.
-- [ ] Add focused tests for resolver/mapping fallback, category behavior, and SDK diagnostic mapping.
-- [ ] Align deterministic Top Bar / shell / Details Previews for icon-present, icon-unavailable, known-category, and undefined-category cases where practical.
+- [x] Add focused tests for resolver/mapping fallback, category behavior, and SDK diagnostic mapping.
+- [x] Align deterministic Top Bar / shell / Details Previews for icon-present, icon-unavailable, known-category, and undefined-category cases where practical.
 - [x] Update relevant Phone/runtime/details documentation and keep implementation aligned with this task.
 - [ ] Run architecture checks, unit tests, debug APK build, CI, and bounded review before merge.
 
