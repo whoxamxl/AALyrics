@@ -119,6 +119,9 @@
     <string name="details_sync_word">Word synced</string>
     <string name="details_section_diagnostics">DEVELOPER / DIAGNOSTICS</string>
     <string name="details_app_package">App package</string>
+    <string name="details_app_category">App category</string>
+    <string name="details_app_min_sdk">Min SDK</string>
+    <string name="details_app_target_sdk">Target SDK</string>
     <string name="details_provider_id">Provider ID</string>
     <string name="details_source_id">Source ID</string>
     <string name="details_track_references">Track references</string>

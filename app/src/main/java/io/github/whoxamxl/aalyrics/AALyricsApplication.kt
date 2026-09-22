@@ -241,9 +241,8 @@ class AALyricsApplication : Application() {
                 playback = playback,
                 lyricsState = lyrics,
                 verboseDetailsEnabled = verboseDetailsEnabled,
-                playbackSourceLabel = playbackSourceAppInfoResolver
-                    .resolve(playback.source?.id)
-                    ?.label,
+                playbackSourceAppInfo = playbackSourceAppInfoResolver
+                    .resolve(playback.source?.id),
             )
         }.stateIn(
             scope = applicationScope,
