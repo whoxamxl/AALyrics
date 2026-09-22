@@ -1,6 +1,7 @@
 package io.github.whoxamxl.aalyrics.ui.phone.shell
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -21,6 +22,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.github.whoxamxl.aalyrics.ui.designsystem.icon.AALyricsBrandMark
@@ -34,6 +37,7 @@ import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsTypography
 @Composable
 fun PhoneTopBar(
     mediaSourceLabel: String?,
+    mediaSourceIconPainter: Painter? = null,
     modifier: Modifier = Modifier,
 ) {
     Surface(
@@ -77,14 +81,24 @@ fun PhoneTopBar(
                         horizontalArrangement = Arrangement.spacedBy(AALyricsSpacing.Space4),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Box(
-                            modifier = Modifier
-                                .size(AALyricsSpacing.Space4)
-                                .background(
-                                    color = AALyricsColors.AccentCyan,
-                                    shape = CircleShape,
-                                ),
-                        )
+                        if (mediaSourceIconPainter != null) {
+                            Image(
+                                painter = mediaSourceIconPainter,
+                                contentDescription = null,
+                                modifier = Modifier
+                                    .size(AALyricsSpacing.Space16)
+                                    .clip(RoundedCornerShape(AALyricsRadius.Radius4)),
+                            )
+                        } else {
+                            Box(
+                                modifier = Modifier
+                                    .size(AALyricsSpacing.Space4)
+                                    .background(
+                                        color = AALyricsColors.AccentCyan,
+                                        shape = CircleShape,
+                                    ),
+                            )
+                        }
                         Text(
                             text = mediaSourceLabel,
                             style = AALyricsTypography.Label,

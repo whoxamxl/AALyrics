@@ -8,7 +8,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.whoxamxl.aalyrics.ui.designsystem.component.AlbumArtwork
 import io.github.whoxamxl.aalyrics.ui.phone.details.DetailsScreen
@@ -35,7 +37,8 @@ internal fun PhoneRuntimeHost(
     val playback by application.playbackState.collectAsStateWithLifecycle()
     val lyricsState by application.lyricsState.collectAsStateWithLifecycle()
     val playbackSurface by application.phonePlaybackSurfaceState.collectAsStateWithLifecycle()
-    val mediaSourceLabel by application.phoneMediaSourceLabel.collectAsStateWithLifecycle()
+    val playbackSourceAppInfo by
+        application.phonePlaybackSourceAppInfo.collectAsStateWithLifecycle()
     val detailsState by application.phoneDetailsState.collectAsStateWithLifecycle()
     val playbackArtwork by application.playbackArtworkState.collectAsStateWithLifecycle()
     val translationSettings by application.translationSettings.collectAsStateWithLifecycle()
@@ -88,6 +91,12 @@ internal fun PhoneRuntimeHost(
     val playbackArtworkImage = remember(playbackArtwork) {
         playbackArtwork?.asImageBitmap()
     }
+    val playbackSourceIconPainter = remember(playbackSourceAppInfo?.icon) {
+        playbackSourceAppInfo
+            ?.icon
+            ?.toImageBitmapOrNull()
+            ?.let(::BitmapPainter)
+    }
 
     val settingsState = mapPhoneSettingsState(
         translationSettings = translationSettings,
@@ -106,7 +115,7 @@ internal fun PhoneRuntimeHost(
     PhoneAppShell(
         state = PhoneShellUiState(
             selectedDestination = selectedDestination,
-            mediaSourceLabel = mediaSourceLabel,
+            mediaSourceLabel = playbackSourceAppInfo?.label,
             playbackSurface = playbackSurface,
         ),
         onDestinationSelected = { selectedDestination = it },
@@ -125,6 +134,7 @@ internal fun PhoneRuntimeHost(
         onQueueItemSelected = application::skipToQueueItem,
         onOpenPlaybackApp = { application.openSelectedPlaybackApp() },
         onTranslationEnabledChanged = application::setTranslationEnabled,
+        mediaSourceIconPainter = playbackSourceIconPainter,
         playbackArtwork = {
             AlbumArtwork(image = playbackArtworkImage)
         },
@@ -185,3 +195,29 @@ internal fun PhoneRuntimeHost(
         }
     }
 }
+
+
+private fun Drawable.toImageBitmapOrNull(): ImageBitmap? =
+    runCatching {
+        val bitmap = Bitmap.createBitmap(
+            PLAYBACK_SOURCE_ICON_RASTER_SIZE_PX,
+            PLAYBACK_SOURCE_ICON_RASTER_SIZE_PX,
+            Bitmap.Config.ARGB_8888,
+        )
+        val canvas = Canvas(bitmap)
+        val originalBounds = Rect(bounds)
+        try {
+            setBounds(
+                0,
+                0,
+                PLAYBACK_SOURCE_ICON_RASTER_SIZE_PX,
+                PLAYBACK_SOURCE_ICON_RASTER_SIZE_PX,
+            )
+            draw(canvas)
+        } finally {
+            setBounds(originalBounds)
+        }
+        bitmap.asImageBitmap()
+    }.getOrNull()
+
+private const val PLAYBACK_SOURCE_ICON_RASTER_SIZE_PX = 96

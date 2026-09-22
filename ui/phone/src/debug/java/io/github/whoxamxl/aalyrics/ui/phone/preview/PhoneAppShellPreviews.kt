@@ -13,6 +13,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.painter.ColorPainter
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
@@ -68,6 +69,20 @@ private fun PhoneAppShellTopChromeBoundaryPreview() {
     PhoneAppShellPreview(PhonePreviewFixtures.lyricsWithoutControls)
 }
 
+@Preview(
+    name = "Top bar · icon unavailable fallback",
+    group = "PhoneAppShell",
+    widthDp = 412,
+    heightDp = 360,
+    showBackground = true,
+)
+@Composable
+private fun PhoneAppShellTopBarIconFallbackPreview() {
+    PhoneAppShellPreview(
+        state = PhonePreviewFixtures.typicalLyricsShell,
+        showMediaSourceIcon = false,
+    )
+}
 
 @Preview(
     name = "Lyrics browse · playback overlay",
@@ -134,6 +149,7 @@ private fun PhoneAppShellPreview(
     lyricsState: LyricsScreenUiState = PhonePreviewFixtures.lyricsScreenLine,
     detailsState: DetailsScreenUiState = PhonePreviewFixtures.detailsTypical,
     settingsState: SettingsScreenUiState = PhonePreviewFixtures.settingsTypical,
+    showMediaSourceIcon: Boolean = true,
 ) {
     AALyricsTheme {
         PhoneAppShell(
@@ -147,6 +163,11 @@ private fun PhoneAppShellPreview(
             onQueueItemSelected = {},
             onOpenPlaybackApp = {},
             onTranslationEnabledChanged = {},
+            mediaSourceIconPainter = if (showMediaSourceIcon && state.mediaSourceLabel != null) {
+                ColorPainter(AALyricsColors.AccentCyan)
+            } else {
+                null
+            },
         ) { destination, bottomOverlayInset ->
             when (destination) {
                 PhoneDestination.Lyrics -> {

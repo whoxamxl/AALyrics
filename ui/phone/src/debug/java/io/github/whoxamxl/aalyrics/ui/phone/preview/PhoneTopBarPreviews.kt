@@ -1,7 +1,10 @@
 package io.github.whoxamxl.aalyrics.ui.phone.preview
 
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.painter.ColorPainter
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.tooling.preview.Preview
+import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsColors
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsTheme
 import io.github.whoxamxl.aalyrics.ui.phone.shell.PhoneTopBar
 
@@ -24,6 +27,20 @@ private fun PhoneTopBarNoMediaSourcePreview() {
 )
 @Composable
 private fun PhoneTopBarSpotifyPreview() {
+    PhoneTopBarPreview(
+        mediaSourceLabel = "Spotify",
+        mediaSourceIconPainter = ColorPainter(AALyricsColors.AccentCyan),
+    )
+}
+
+@Preview(
+    name = "Spotify · icon unavailable",
+    group = "PhoneTopBar",
+    widthDp = 412,
+    showBackground = true,
+)
+@Composable
+private fun PhoneTopBarSpotifyIconUnavailablePreview() {
     PhoneTopBarPreview(mediaSourceLabel = "Spotify")
 }
 
@@ -72,8 +89,14 @@ private fun PhoneTopBarLongMediaSourcePreview() {
 }
 
 @Composable
-private fun PhoneTopBarPreview(mediaSourceLabel: String?) {
+private fun PhoneTopBarPreview(
+    mediaSourceLabel: String?,
+    mediaSourceIconPainter: Painter? = null,
+) {
     AALyricsTheme {
-        PhoneTopBar(mediaSourceLabel = mediaSourceLabel)
+        PhoneTopBar(
+            mediaSourceLabel = mediaSourceLabel,
+            mediaSourceIconPainter = mediaSourceIconPainter,
+        )
     }
 }
