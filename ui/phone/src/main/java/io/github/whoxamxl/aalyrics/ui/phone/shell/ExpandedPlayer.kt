@@ -90,6 +90,7 @@ internal fun ExpandedPlayer(
     onSeekCommit: (Long) -> Unit,
     onSeekCancel: () -> Unit,
     onQueueItemSelected: (Long) -> Unit,
+    onQueueOpened: (List<PlaybackQueueItemUiState>) -> Unit = {},
     onOpenPlaybackApp: () -> Unit,
     onTranslationEnabledChanged: (Boolean) -> Unit,
     transformationDragModifier: Modifier = Modifier,
@@ -160,7 +161,10 @@ internal fun ExpandedPlayer(
                 onSeekPreview = onSeekPreview,
                 onSeekCommit = onSeekCommit,
                 onSeekCancel = onSeekCancel,
-                onQueue = { queueVisible = true },
+                onQueue = {
+                    onQueueOpened(state.queue)
+                    queueVisible = true
+                },
                 onOpenPlaybackApp = onOpenPlaybackApp,
                 onTranslationEnabledChanged = onTranslationEnabledChanged,
             )

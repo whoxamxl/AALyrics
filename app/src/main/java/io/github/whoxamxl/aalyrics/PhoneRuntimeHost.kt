@@ -11,10 +11,12 @@ import android.net.Uri
 import android.os.Build
 import android.os.SystemClock
 import android.util.Log
+import android.util.LruCache
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -37,9 +39,17 @@ import io.github.whoxamxl.aalyrics.ui.phone.shell.PhoneAppShell
 import io.github.whoxamxl.aalyrics.ui.phone.state.PhoneShellUiState
 import io.github.whoxamxl.aalyrics.ui.phone.state.PlaybackQueueItemUiState
 import io.github.whoxamxl.aalyrics.ui.phone.sync.SyncScreen
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import java.time.Year
 
@@ -71,6 +81,13 @@ internal fun PhoneRuntimeHost(
     val verboseDetailsEnabled by application.verboseDetailsEnabled.collectAsStateWithLifecycle()
     val ignoreNonAudioApps by application.ignoreNonAudioApps.collectAsStateWithLifecycle()
     val allowUnclassifiedApps by application.allowUnclassifiedApps.collectAsStateWithLifecycle()
+
+    val queueArtworkCache = remember {
+        QueueArtworkCache(maxEntries = QUEUE_ARTWORK_CACHE_ENTRIES)
+    }
+    val queueArtworkScope = rememberCoroutineScope()
+    val density = LocalDensity.current
+    val queueArtworkTargetPx = with(density) { QUEUE_ARTWORK_SIZE.roundToPx() }
 
     var selectedDestination by rememberSaveable {
         mutableStateOf(PhoneDestination.Home)
@@ -173,6 +190,16 @@ internal fun PhoneRuntimeHost(
         onNext = application::skipToNext,
         onSeekTo = application::seekTo,
         onQueueItemSelected = application::skipToQueueItem,
+        onQueueOpened = { queue ->
+            queueArtworkScope.launch {
+                prefetchQueueArtwork(
+                    contentResolver = application.contentResolver,
+                    cache = queueArtworkCache,
+                    queue = queue,
+                    targetPx = queueArtworkTargetPx,
+                )
+            }
+        },
         onOpenPlaybackApp = { application.openSelectedPlaybackApp() },
         onTranslationEnabledChanged = application::setTranslationEnabled,
         mediaSourceIconPainter = playbackSourceIconPainter,
@@ -182,7 +209,9 @@ internal fun PhoneRuntimeHost(
         queueArtwork = { item ->
             QueueItemArtwork(
                 contentResolver = application.contentResolver,
+                cache = queueArtworkCache,
                 item = item,
+                targetPx = queueArtworkTargetPx,
             )
         },
     ) { destination, bottomOverlayInset ->
@@ -250,26 +279,124 @@ internal fun PhoneRuntimeHost(
 @Composable
 private fun QueueItemArtwork(
     contentResolver: ContentResolver,
+    cache: QueueArtworkCache,
     item: PlaybackQueueItemUiState,
+    targetPx: Int,
 ) {
-    val density = LocalDensity.current
-    val targetPx = with(density) { QUEUE_ARTWORK_SIZE.roundToPx() }
+    val artworkUri = item.artworkUri
     val image by produceState<ImageBitmap?>(
-        initialValue = null,
-        key1 = item.artworkUri,
+        initialValue = artworkUri
+            ?.let { cache.get(it, targetPx) }
+            ?.asImageBitmap(),
+        key1 = artworkUri,
         key2 = targetPx,
     ) {
-        val uri = item.artworkUri ?: return@produceState
-        value = withContext(Dispatchers.IO) {
-            loadQueueArtwork(
-                contentResolver = contentResolver,
-                artworkUri = uri,
-                targetPx = targetPx,
-            )
-        }?.asImageBitmap()
+        val uri = artworkUri ?: return@produceState
+        value = cache.getOrLoad(
+            contentResolver = contentResolver,
+            artworkUri = uri,
+            targetPx = targetPx,
+        )?.asImageBitmap()
     }
 
     AlbumArtwork(image = image)
+}
+
+private suspend fun prefetchQueueArtwork(
+    contentResolver: ContentResolver,
+    cache: QueueArtworkCache,
+    queue: List<PlaybackQueueItemUiState>,
+    targetPx: Int,
+) {
+    val artworkUris = queue
+        .mapNotNull { it.artworkUri }
+        .distinct()
+    suspend fun prefetch(uris: List<String>) {
+        coroutineScope {
+            uris.map { artworkUri ->
+                async {
+                    cache.getOrLoad(
+                        contentResolver = contentResolver,
+                        artworkUri = artworkUri,
+                        targetPx = targetPx,
+                    )
+                }
+            }.awaitAll()
+        }
+    }
+
+    prefetch(artworkUris.take(QUEUE_ARTWORK_PRIORITY_COUNT))
+    prefetch(artworkUris.drop(QUEUE_ARTWORK_PRIORITY_COUNT))
+}
+
+private class QueueArtworkCache(
+    maxEntries: Int,
+) {
+    private val cache = LruCache<String, Bitmap>(maxEntries)
+    private val mutex = Mutex()
+    private val inFlight = mutableMapOf<String, CompletableDeferred<Bitmap?>>()
+
+    fun get(
+        artworkUri: String,
+        targetPx: Int,
+    ): Bitmap? = cache.get(cacheKey(artworkUri, targetPx))
+
+    suspend fun getOrLoad(
+        contentResolver: ContentResolver,
+        artworkUri: String,
+        targetPx: Int,
+    ): Bitmap? {
+        val key = cacheKey(artworkUri, targetPx)
+        cache.get(key)?.let { return it }
+
+        var cachedAfterLock: Bitmap? = null
+        var ownsLoad = false
+        val deferred = mutex.withLock {
+            cache.get(key)?.let {
+                cachedAfterLock = it
+                return@withLock null
+            }
+            inFlight[key] ?: CompletableDeferred<Bitmap?>().also {
+                inFlight[key] = it
+                ownsLoad = true
+            }
+        }
+        cachedAfterLock?.let { return it }
+        val request = deferred ?: return null
+
+        if (!ownsLoad) {
+            return request.await()
+        }
+
+        return try {
+            val bitmap = withContext(Dispatchers.IO) {
+                loadQueueArtwork(
+                    contentResolver = contentResolver,
+                    artworkUri = artworkUri,
+                    targetPx = targetPx,
+                )
+            }
+            if (bitmap != null) {
+                cache.put(key, bitmap)
+            }
+            request.complete(bitmap)
+            bitmap
+        } catch (cancelled: CancellationException) {
+            request.complete(null)
+            throw cancelled
+        } finally {
+            mutex.withLock {
+                if (inFlight[key] === request) {
+                    inFlight.remove(key)
+                }
+            }
+        }
+    }
+
+    private fun cacheKey(
+        artworkUri: String,
+        targetPx: Int,
+    ): String = "$targetPx\u0000$artworkUri"
 }
 
 private fun loadQueueArtwork(
@@ -319,5 +446,7 @@ private fun Drawable.toImageBitmapOrNull(): ImageBitmap? =
     }.getOrNull()
 
 private val QUEUE_ARTWORK_SIZE = 36.dp
+private const val QUEUE_ARTWORK_CACHE_ENTRIES = 32
+private const val QUEUE_ARTWORK_PRIORITY_COUNT = 10
 private const val QUEUE_ARTWORK_LOG_TAG = "AALyricsQueueArtwork"
 private const val PLAYBACK_SOURCE_ICON_RASTER_SIZE_PX = 96
