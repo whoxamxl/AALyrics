@@ -24,6 +24,9 @@
     <string name="settings_plain_auto_scroll">Plain lyrics auto-scroll</string>
     <string name="settings_plain_auto_scroll_info">Estimates where playback is in untimed lyrics and scrolls smoothly to match. Requires track duration.</string>
     <string name="settings_plain_auto_scroll_info_description">About Plain lyrics auto-scroll</string>
+    <string name="settings_ignore_non_audio_apps">Ignore non-audio apps</string>
+    <string name="settings_ignore_non_audio_apps_info">Only apps Android identifies as audio apps are used for lyrics lookup. This prevents unnecessary searches from games, browsers, social apps, and other media sources. Unclassified apps are blocked unless allowed in Advanced settings.</string>
+    <string name="settings_ignore_non_audio_apps_info_description">About ignoring non-audio apps</string>
 
     <string name="settings_section_translation">TRANSLATION</string>
     <string name="settings_translation_enabled">Translation</string>
@@ -64,6 +67,10 @@
     <string name="settings_not_available_yet">Not available yet</string>
     <string name="settings_advanced">Advanced</string>
     <string name="settings_back">Back</string>
+    <string name="settings_section_playback_source">PLAYBACK SOURCE</string>
+    <string name="settings_allow_unclassified_apps">Allow unclassified apps</string>
+    <string name="settings_allow_unclassified_apps_info">Allows lyrics lookup when Android cannot identify a playback app as an audio app. Enable this if a valid music player appears as Unavailable. Only applies while Ignore non-audio apps is enabled.</string>
+    <string name="settings_allow_unclassified_apps_info_description">About allowing unclassified apps</string>
     <string name="settings_section_debug">DEBUG</string>
     <string name="settings_verbose_details">Verbose details</string>
     <string name="settings_section_experimental">EXPERIMENTAL FEATURES</string>
