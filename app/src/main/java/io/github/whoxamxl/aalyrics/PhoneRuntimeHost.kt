@@ -41,6 +41,7 @@ import io.github.whoxamxl.aalyrics.ui.phone.sync.SyncScreen
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.sync.Mutex
@@ -48,6 +49,11 @@ import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
+import java.io.ByteArrayOutputStream
+import java.io.InputStream
+import java.net.HttpURLConnection
+import java.net.URL
+import java.nio.ByteBuffer
 import java.time.Year
 
 @Composable
@@ -325,8 +331,10 @@ private class QueueArtworkCache(
     ): Bitmap? {
         val key = embeddedCacheKey(bitmap, targetPx)
         cache.get(key)?.let { return it }
-        val scaled = withContext(Dispatchers.Default) {
-            scaleQueueArtworkBitmap(bitmap, targetPx)
+        val scaled = loadSemaphore.withPermit {
+            withContext(Dispatchers.Default) {
+                scaleQueueArtworkBitmap(bitmap, targetPx)
+            }
         }
         cache.put(key, scaled)
         return scaled
@@ -378,9 +386,11 @@ private class QueueArtworkCache(
             request.complete(null)
             throw cancelled
         } finally {
-            mutex.withLock {
-                if (inFlight[key] === request) {
-                    inFlight.remove(key)
+            withContext(NonCancellable) {
+                mutex.withLock {
+                    if (inFlight[key] === request) {
+                        inFlight.remove(key)
+                    }
                 }
             }
         }
@@ -416,15 +426,14 @@ private fun loadQueueArtwork(
     targetPx: Int,
 ): Bitmap? = runCatching {
     val uri = Uri.parse(artworkUri)
-    if (Build.VERSION.SDK_INT >= 28) {
-        ImageDecoder.decodeBitmap(
-            ImageDecoder.createSource(contentResolver, uri),
-        ) { decoder, _, _ ->
-            decoder.setTargetSize(targetPx, targetPx)
-        }
-    } else {
-        contentResolver.openInputStream(uri)?.use(BitmapFactory::decodeStream)
-    }
+    val encoded = readQueueArtworkBytes(
+        contentResolver = contentResolver,
+        uri = uri,
+    ) ?: return@runCatching null
+    decodeQueueArtwork(
+        encoded = encoded,
+        targetPx = targetPx,
+    )
 }.onFailure { failure ->
     Log.d(
         QUEUE_ARTWORK_LOG_TAG,
@@ -432,6 +441,125 @@ private fun loadQueueArtwork(
         failure,
     )
 }.getOrNull()
+
+private fun readQueueArtworkBytes(
+    contentResolver: ContentResolver,
+    uri: Uri,
+): ByteArray? = when (uri.scheme?.lowercase()) {
+    "content",
+    "file",
+    "android.resource" -> contentResolver.openInputStream(uri)?.use { stream ->
+        stream.readBoundedBytes(MAX_QUEUE_ARTWORK_ENCODED_BYTES)
+    }
+
+    "http",
+    "https" -> readRemoteQueueArtworkBytes(uri)
+
+    else -> {
+        Log.d(
+            QUEUE_ARTWORK_LOG_TAG,
+            "Unsupported queue artwork URI scheme: " + uri.scheme,
+        )
+        null
+    }
+}
+
+private fun readRemoteQueueArtworkBytes(uri: Uri): ByteArray? {
+    val connection = (URL(uri.toString()).openConnection() as? HttpURLConnection)
+        ?: return null
+    return try {
+        connection.connectTimeout = QUEUE_ARTWORK_HTTP_CONNECT_TIMEOUT_MS
+        connection.readTimeout = QUEUE_ARTWORK_HTTP_READ_TIMEOUT_MS
+        connection.instanceFollowRedirects = true
+        connection.requestMethod = "GET"
+        val status = connection.responseCode
+        if (status !in 200..299) {
+            null
+        } else if (
+            connection.contentLengthLong > MAX_QUEUE_ARTWORK_ENCODED_BYTES &&
+            connection.contentLengthLong >= 0L
+        ) {
+            null
+        } else {
+            connection.inputStream.use { stream ->
+                stream.readBoundedBytes(MAX_QUEUE_ARTWORK_ENCODED_BYTES)
+            }
+        }
+    } finally {
+        connection.disconnect()
+    }
+}
+
+private fun InputStream.readBoundedBytes(maxBytes: Int): ByteArray? {
+    val output = ByteArrayOutputStream(minOf(maxBytes, 64 * 1024))
+    val buffer = ByteArray(8 * 1024)
+    var total = 0
+    while (true) {
+        val count = read(buffer)
+        if (count < 0) break
+        total += count
+        if (total > maxBytes) return null
+        output.write(buffer, 0, count)
+    }
+    return output.toByteArray()
+}
+
+private fun decodeQueueArtwork(
+    encoded: ByteArray,
+    targetPx: Int,
+): Bitmap? {
+    if (Build.VERSION.SDK_INT >= 28) {
+        return ImageDecoder.decodeBitmap(
+            ImageDecoder.createSource(ByteBuffer.wrap(encoded)),
+        ) { decoder, info, _ ->
+            val longestSide = maxOf(info.size.width, info.size.height)
+            if (longestSide > 0) {
+                val scale = targetPx.toFloat() / longestSide.toFloat()
+                val width = (info.size.width * scale).toInt().coerceAtLeast(1)
+                val height = (info.size.height * scale).toInt().coerceAtLeast(1)
+                decoder.setTargetSize(width, height)
+            }
+        }
+    }
+
+    val bounds = BitmapFactory.Options().apply {
+        inJustDecodeBounds = true
+    }
+    BitmapFactory.decodeByteArray(encoded, 0, encoded.size, bounds)
+    if (bounds.outWidth <= 0 || bounds.outHeight <= 0) return null
+
+    val options = BitmapFactory.Options().apply {
+        inSampleSize = queueArtworkSampleSize(
+            width = bounds.outWidth,
+            height = bounds.outHeight,
+            targetPx = targetPx,
+        )
+    }
+    val decoded = BitmapFactory.decodeByteArray(
+        encoded,
+        0,
+        encoded.size,
+        options,
+    ) ?: return null
+    val scaled = scaleQueueArtworkBitmap(decoded, targetPx)
+    if (scaled !== decoded) {
+        decoded.recycle()
+    }
+    return scaled
+}
+
+private fun queueArtworkSampleSize(
+    width: Int,
+    height: Int,
+    targetPx: Int,
+): Int {
+    var sample = 1
+    val longestSide = maxOf(width, height)
+    while (longestSide / (sample * 2) >= targetPx) {
+        sample *= 2
+    }
+    return sample
+}
 
 private fun Drawable.toImageBitmapOrNull(): ImageBitmap? =
     runCatching {
@@ -459,5 +587,8 @@ private fun Drawable.toImageBitmapOrNull(): ImageBitmap? =
 private val QUEUE_ARTWORK_SIZE = 36.dp
 private const val QUEUE_ARTWORK_CACHE_ENTRIES = 32
 private const val QUEUE_ARTWORK_MAX_CONCURRENT_LOADS = 3
+private const val MAX_QUEUE_ARTWORK_ENCODED_BYTES = 8 * 1024 * 1024
+private const val QUEUE_ARTWORK_HTTP_CONNECT_TIMEOUT_MS = 2_000
+private const val QUEUE_ARTWORK_HTTP_READ_TIMEOUT_MS = 3_000
 private const val QUEUE_ARTWORK_LOG_TAG = "AALyricsQueueArtwork"
 private const val PLAYBACK_SOURCE_ICON_RASTER_SIZE_PX = 96
