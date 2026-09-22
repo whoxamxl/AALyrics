@@ -216,7 +216,6 @@ internal fun SettingsScreenPreview(
                     }
                 },
                 onDownloadUpdate = {},
-                onSettingsEntered = {},
                 onOpenGitHub = {},
                 onHelpFeedback = {},
                 onSupportAALyrics = {},
