@@ -75,7 +75,7 @@ class PhonePlaybackSourceMapperTest {
         assertEquals(PlaybackSourceConnectionUiState.UNAVAILABLE, unavailable.connectionState)
         assertEquals("com.blocked.player", unavailable.packageName)
         assertEquals(
-            PlaybackSourceUnavailableUiReason.UNSUPPORTED_PLAYER,
+            PlaybackSourceUnavailableUiReason.UNKNOWN,
             unavailable.unavailableReason,
         )
     }
@@ -83,8 +83,10 @@ class PhonePlaybackSourceMapperTest {
     @Test
     fun `unavailable runtime reason maps to concise presentation reason`() {
         val expected = mapOf(
-            PlaybackSourceUnavailableReason.UNSUPPORTED_PLAYER to
-                PlaybackSourceUnavailableUiReason.UNSUPPORTED_PLAYER,
+            PlaybackSourceUnavailableReason.NON_AUDIO_APP to
+                PlaybackSourceUnavailableUiReason.NON_AUDIO_APP,
+            PlaybackSourceUnavailableReason.UNCLASSIFIED_APP to
+                PlaybackSourceUnavailableUiReason.UNCLASSIFIED_APP,
             PlaybackSourceUnavailableReason.UNKNOWN to
                 PlaybackSourceUnavailableUiReason.UNKNOWN,
         )

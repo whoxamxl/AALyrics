@@ -49,14 +49,24 @@ private fun PhoneTopBarDisconnectedPreview() {
     PhoneTopBarPreview(connectionState = PlaybackSourceConnectionUiState.DISCONNECTED)
 }
 
-@Preview(name = "Unavailable", group = "PhoneTopBar", widthDp = 412, showBackground = true)
+@Preview(name = "Unavailable · non-audio", group = "PhoneTopBar", widthDp = 412, showBackground = true)
 @Composable
-private fun PhoneTopBarUnavailablePreview() {
+private fun PhoneTopBarUnavailableNonAudioPreview() {
     PhoneTopBarPreview(
-        mediaSourceLabel = "Spotify",
+        mediaSourceLabel = "Video Player",
         connectionState = PlaybackSourceConnectionUiState.UNAVAILABLE,
-        unavailableReason = PlaybackSourceUnavailableUiReason.UNSUPPORTED_PLAYER,
+        unavailableReason = PlaybackSourceUnavailableUiReason.NON_AUDIO_APP,
         mediaSourceIconPainter = ColorPainter(AALyricsColors.AccentCyan),
+    )
+}
+
+@Preview(name = "Unavailable · unclassified", group = "PhoneTopBar", widthDp = 412, showBackground = true)
+@Composable
+private fun PhoneTopBarUnavailableUnclassifiedPreview() {
+    PhoneTopBarPreview(
+        mediaSourceLabel = "Unknown Player",
+        connectionState = PlaybackSourceConnectionUiState.UNAVAILABLE,
+        unavailableReason = PlaybackSourceUnavailableUiReason.UNCLASSIFIED_APP,
     )
 }
 
