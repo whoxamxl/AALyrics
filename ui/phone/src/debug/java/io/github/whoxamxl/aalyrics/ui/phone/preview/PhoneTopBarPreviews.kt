@@ -67,7 +67,10 @@ private fun PhoneTopBarSpotifyUnverifiedPreview() {
 )
 @Composable
 private fun PhoneTopBarPackageFallbackPreview() {
-    PhoneTopBarPreview(mediaSourceLabel = "com.spotify.music")
+    PhoneTopBarPreview(
+        mediaSourceLabel = "com.spotify.music",
+        mediaSourceConnected = true,
+    )
 }
 
 @Preview(
