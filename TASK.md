@@ -32,13 +32,13 @@ PlaybackSourceAppInfo
         └─ Verbose Details: package + category + SDK levels
 ```
 
-This is a presentation/diagnostic enrichment only. It must not change media-session discovery, source selection, playback transport, lyrics lookup, provider behavior, or persistence.
+This slice enriches presentation/diagnostics and exposes MediaSession observation health without changing the existing session-selection policy, playback transport, lyrics lookup, provider behavior, or persistence.
 
 ## Approved behavior
 
 ### Resolution
 
-- Resolve from the selected playback package already exposed by `PlaybackSnapshot.source.id`.
+- Resolve normal selected-source metadata from the active playback package. For `Unavailable`, prefer the package carried by `PlaybackSourceRuntimeState.Unavailable` so a policy-rejected session can still resolve its real app identity; use the current playback package only as a transitional fallback.
 - Replace `PlaybackSourceLabelResolver` with an application-owned `PlaybackSourceAppInfoResolver`.
 - Perform one `ApplicationInfo` lookup per package and cache the resolved result rather than issuing separate label/icon/category/SDK lookups.
 - Keep the package identifier as the human-readable label fallback when application lookup or label resolution fails.
@@ -95,7 +95,7 @@ Category and SDK display are diagnostic metadata only. They must not influence p
 - [x] Keep Android package/application objects outside `:ui:phone`.
 - [x] Keep normal Details user-facing playback-source labeling unchanged apart from sharing the new resolver.
 - [x] Add focused tests for resolver/mapping fallback, category behavior, and SDK diagnostic mapping.
-- [x] Align deterministic Top Bar / shell / Details Previews for icon-present, icon-unavailable, known-category, and undefined-category cases where practical.
+- [x] Align deterministic Top Bar / shell / Details Previews for icon-present, icon-unavailable, all five runtime states, Unavailable generic fallback, known-category, and undefined-category cases where practical.
 - [x] Update relevant Phone/runtime/details documentation and keep implementation aligned with this task.
 - [ ] Run architecture checks, unit tests, debug APK build, CI, and bounded review before merge.
 

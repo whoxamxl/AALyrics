@@ -85,6 +85,42 @@ private fun PhoneAppShellTopBarIconFallbackPreview() {
 }
 
 @Preview(
+    name = "Top bar · connecting",
+    group = "PhoneAppShell",
+    widthDp = 412,
+    heightDp = 360,
+    showBackground = true,
+)
+@Composable
+private fun PhoneAppShellTopBarConnectingPreview() {
+    PhoneAppShellPreview(PhonePreviewFixtures.connectingShell)
+}
+
+@Preview(
+    name = "Top bar · unavailable fallback",
+    group = "PhoneAppShell",
+    widthDp = 412,
+    heightDp = 360,
+    showBackground = true,
+)
+@Composable
+private fun PhoneAppShellTopBarUnavailableFallbackPreview() {
+    PhoneAppShellPreview(PhonePreviewFixtures.unavailableFallbackShell)
+}
+
+@Preview(
+    name = "Top bar · error",
+    group = "PhoneAppShell",
+    widthDp = 412,
+    heightDp = 360,
+    showBackground = true,
+)
+@Composable
+private fun PhoneAppShellTopBarErrorPreview() {
+    PhoneAppShellPreview(PhonePreviewFixtures.errorShell)
+}
+
+@Preview(
     name = "Lyrics browse · playback overlay",
     group = "PhoneAppShell",
     widthDp = 412,

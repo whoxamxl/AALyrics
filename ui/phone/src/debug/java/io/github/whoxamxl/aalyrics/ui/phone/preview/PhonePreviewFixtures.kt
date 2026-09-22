@@ -21,6 +21,8 @@ import io.github.whoxamxl.aalyrics.ui.phone.settings.SettingsScreenUiState
 import io.github.whoxamxl.aalyrics.ui.phone.settings.TranslationModelUiState
 import io.github.whoxamxl.aalyrics.ui.phone.state.PhoneShellUiState
 import io.github.whoxamxl.aalyrics.ui.phone.state.PlaybackSourceConnectionUiState
+import io.github.whoxamxl.aalyrics.ui.phone.state.PlaybackSourceErrorUiReason
+import io.github.whoxamxl.aalyrics.ui.phone.state.PlaybackSourceUnavailableUiReason
 import io.github.whoxamxl.aalyrics.ui.phone.state.PlaybackQueueItemUiState
 import io.github.whoxamxl.aalyrics.ui.phone.state.PlaybackSurfaceUiState
 
@@ -210,6 +212,17 @@ internal object PhonePreviewFixtures {
     )
     val lyricsWithoutControls = PhoneShellUiState(
         mediaSourceConnectionState = PlaybackSourceConnectionUiState.DISCONNECTED,
+    )
+    val connectingShell = PhoneShellUiState(
+        mediaSourceConnectionState = PlaybackSourceConnectionUiState.CONNECTING,
+    )
+    val unavailableFallbackShell = PhoneShellUiState(
+        mediaSourceConnectionState = PlaybackSourceConnectionUiState.UNAVAILABLE,
+        mediaSourceUnavailableReason = PlaybackSourceUnavailableUiReason.UNKNOWN,
+    )
+    val errorShell = PhoneShellUiState(
+        mediaSourceConnectionState = PlaybackSourceConnectionUiState.ERROR,
+        mediaSourceErrorReason = PlaybackSourceErrorUiReason.SESSION_QUERY_FAILED,
     )
     val syncShell = PhoneShellUiState(
         selectedDestination = PhoneDestination.Sync,
