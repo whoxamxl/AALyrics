@@ -1,6 +1,7 @@
 package io.github.whoxamxl.aalyrics.ui.phone.settings
 
 import android.graphics.ImageDecoder
+import android.graphics.Matrix
 import android.graphics.drawable.AnimatedImageDrawable
 import android.os.Build
 import android.widget.ImageView
@@ -36,6 +37,11 @@ import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsColors
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsSpacing
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsTypography
 import io.github.whoxamxl.aalyrics.ui.phone.R
+
+private const val SUPPORT_STICKER_CONTENT_LEFT = 119f
+private const val SUPPORT_STICKER_CONTENT_TOP = 187f
+private const val SUPPORT_STICKER_CONTENT_WIDTH = 242f
+private const val SUPPORT_STICKER_CONTENT_HEIGHT = 101f
 
 /** Native Settings landing surface for the external AALyrics support destination. */
 @Composable
@@ -140,16 +146,18 @@ private fun SupportStickerButton(
             modifier = Modifier
                 .fillMaxWidth(0.58f)
                 .widthIn(max = 188.dp)
-                .aspectRatio(125f / 59f),
+                .aspectRatio(SUPPORT_STICKER_CONTENT_WIDTH / SUPPORT_STICKER_CONTENT_HEIGHT),
             factory = { viewContext ->
                 ImageView(viewContext).apply {
-                    adjustViewBounds = false
-                    scaleType = ImageView.ScaleType.FIT_CENTER
+                    scaleType = ImageView.ScaleType.MATRIX
                     isClickable = true
                     isFocusable = true
                     this.contentDescription = contentDescription
                     setOnClickListener { onSupport() }
                     setImageDrawable(animatedDrawable)
+                    addOnLayoutChangeListener { view, _, _, _, _, _, _, _, _ ->
+                        updateSupportStickerMatrix(view as ImageView)
+                    }
                     (animatedDrawable as? AnimatedImageDrawable)?.start()
                 }
             },
@@ -159,6 +167,7 @@ private fun SupportStickerButton(
                 if (imageView.drawable !== animatedDrawable) {
                     imageView.setImageDrawable(animatedDrawable)
                 }
+                updateSupportStickerMatrix(imageView)
                 (animatedDrawable as? AnimatedImageDrawable)?.start()
             },
         )
@@ -167,7 +176,7 @@ private fun SupportStickerButton(
             modifier = Modifier
                 .fillMaxWidth(0.58f)
                 .widthIn(max = 188.dp)
-                .aspectRatio(125f / 59f)
+                .aspectRatio(SUPPORT_STICKER_CONTENT_WIDTH / SUPPORT_STICKER_CONTENT_HEIGHT)
                 .background(
                     color = Color(0xFFFFDD00),
                     shape = RoundedCornerShape(percent = 50),
@@ -186,5 +195,29 @@ private fun SupportStickerButton(
                 modifier = Modifier.padding(horizontal = AALyricsSpacing.Space12),
             )
         }
+    }
+}
+
+private fun updateSupportStickerMatrix(
+    imageView: ImageView,
+) {
+    val viewWidth = imageView.width.toFloat()
+    val viewHeight = imageView.height.toFloat()
+    if (viewWidth <= 0f || viewHeight <= 0f) return
+
+    val scale = minOf(
+        viewWidth / SUPPORT_STICKER_CONTENT_WIDTH,
+        viewHeight / SUPPORT_STICKER_CONTENT_HEIGHT,
+    )
+    val translateX =
+        ((viewWidth - SUPPORT_STICKER_CONTENT_WIDTH * scale) / 2f) -
+            SUPPORT_STICKER_CONTENT_LEFT * scale
+    val translateY =
+        ((viewHeight - SUPPORT_STICKER_CONTENT_HEIGHT * scale) / 2f) -
+            SUPPORT_STICKER_CONTENT_TOP * scale
+
+    imageView.imageMatrix = Matrix().apply {
+        setScale(scale, scale)
+        postTranslate(translateX, translateY)
     }
 }
