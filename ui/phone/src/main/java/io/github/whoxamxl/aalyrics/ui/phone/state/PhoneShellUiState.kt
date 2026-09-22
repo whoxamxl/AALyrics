@@ -44,6 +44,7 @@ data class PlaybackQueueItemUiState(
     val title: String,
     val subtitle: String? = null,
     val artworkUri: String? = null,
+    val hasEmbeddedArtwork: Boolean = false,
 )
 
 /**
@@ -91,11 +92,9 @@ data class PlaybackSurfaceUiState(
         get() = if (isPlaying) canPause else canPlay
 
     /**
-     * Compatibility probe: some players (notably Spotify) publish a non-empty
-     * MediaSession queue without advertising ACTION_SKIP_TO_QUEUE_ITEM.
-     *
-     * Keep the queue visible while this branch verifies whether those sessions
-     * still accept TransportControls.skipToQueueItem(queueItemId).
+     * Some players, including Spotify, publish a usable queue without advertising
+     * ACTION_SKIP_TO_QUEUE_ITEM. Published queue data is therefore the availability
+     * signal; the action flag remains descriptive rather than a hard UI gate.
      */
     val queueAvailable: Boolean
         get() = queue.isNotEmpty()

@@ -42,6 +42,7 @@ internal fun mapPhonePlaybackSurfaceState(
                     title = item.title,
                     subtitle = item.subtitle,
                     artworkUri = item.artworkUri,
+                    hasEmbeddedArtwork = item.hasEmbeddedArtwork,
                 )
             }
         } else {

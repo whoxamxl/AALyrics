@@ -33,6 +33,7 @@ class PhonePlaybackSurfaceMapperTest {
                     title = "Next Track",
                     subtitle = "Next Artist",
                     artworkUri = "content://com.example.player/artwork/7",
+                    hasEmbeddedArtwork = true,
                 ),
             ),
             hasSessionActivity = true,
@@ -56,6 +57,7 @@ class PhonePlaybackSurfaceMapperTest {
             "content://com.example.player/artwork/7",
             state.queue.single().artworkUri,
         )
+        assertTrue(state.queue.single().hasEmbeddedArtwork)
         assertTrue(state.canOpenPlaybackApp)
         assertFalse(state.translationEnabled)
     }

@@ -874,7 +874,10 @@ private fun QueueTrackRow(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             PlaybackArtwork(
-                artwork = if (queueArtwork != null && item.artworkUri != null) {
+                artwork = if (
+                    queueArtwork != null &&
+                    (item.hasEmbeddedArtwork || item.artworkUri != null)
+                ) {
                     { queueArtwork(item) }
                 } else {
                     {

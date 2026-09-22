@@ -71,6 +71,7 @@ internal fun PhoneRuntimeHost(
         application.phonePlaybackSourceCanOpenApp.collectAsStateWithLifecycle()
     val detailsState by application.phoneDetailsState.collectAsStateWithLifecycle()
     val playbackArtwork by application.playbackArtworkState.collectAsStateWithLifecycle()
+    val queueArtworkBitmaps by application.queueArtworkBitmapsState.collectAsStateWithLifecycle()
     val translationSettings by application.translationSettings.collectAsStateWithLifecycle()
     val translationModelStates by application.translationModelStates.collectAsStateWithLifecycle()
     val translationModelCleanupState by
@@ -197,6 +198,7 @@ internal fun PhoneRuntimeHost(
                 contentResolver = application.contentResolver,
                 cache = queueArtworkCache,
                 item = item,
+                embeddedBitmap = queueArtworkBitmaps[item.id],
                 targetPx = queueArtworkTargetPx,
             )
         },
@@ -267,22 +269,33 @@ private fun QueueItemArtwork(
     contentResolver: ContentResolver,
     cache: QueueArtworkCache,
     item: PlaybackQueueItemUiState,
+    embeddedBitmap: Bitmap?,
     targetPx: Int,
 ) {
     val artworkUri = item.artworkUri
     val image by produceState<ImageBitmap?>(
-        initialValue = artworkUri
-            ?.let { cache.get(it, targetPx) }
-            ?.asImageBitmap(),
-        key1 = artworkUri,
-        key2 = targetPx,
+        initialValue = embeddedBitmap
+            ?.let { cache.getEmbedded(it, targetPx) }
+            ?.asImageBitmap()
+            ?: artworkUri
+                ?.let { cache.get(it, targetPx) }
+                ?.asImageBitmap(),
+        key1 = embeddedBitmap,
+        key2 = artworkUri,
+        key3 = targetPx,
     ) {
-        val uri = artworkUri ?: return@produceState
-        value = cache.getOrLoad(
-            contentResolver = contentResolver,
-            artworkUri = uri,
-            targetPx = targetPx,
-        )?.asImageBitmap()
+        value = when {
+            embeddedBitmap != null -> cache.getOrScaleEmbedded(
+                bitmap = embeddedBitmap,
+                targetPx = targetPx,
+            )
+            artworkUri != null -> cache.getOrLoad(
+                contentResolver = contentResolver,
+                artworkUri = artworkUri,
+                targetPx = targetPx,
+            )
+            else -> null
+        }?.asImageBitmap()
     }
 
     AlbumArtwork(image = image)
@@ -300,6 +313,24 @@ private class QueueArtworkCache(
         artworkUri: String,
         targetPx: Int,
     ): Bitmap? = cache.get(cacheKey(artworkUri, targetPx))
+
+    fun getEmbedded(
+        bitmap: Bitmap,
+        targetPx: Int,
+    ): Bitmap? = cache.get(embeddedCacheKey(bitmap, targetPx))
+
+    suspend fun getOrScaleEmbedded(
+        bitmap: Bitmap,
+        targetPx: Int,
+    ): Bitmap? {
+        val key = embeddedCacheKey(bitmap, targetPx)
+        cache.get(key)?.let { return it }
+        val scaled = withContext(Dispatchers.Default) {
+            scaleQueueArtworkBitmap(bitmap, targetPx)
+        }
+        cache.put(key, scaled)
+        return scaled
+    }
 
     suspend fun getOrLoad(
         contentResolver: ContentResolver,
@@ -359,6 +390,24 @@ private class QueueArtworkCache(
         artworkUri: String,
         targetPx: Int,
     ): String = "$targetPx\u0000$artworkUri"
+
+    private fun embeddedCacheKey(
+        bitmap: Bitmap,
+        targetPx: Int,
+    ): String = "embedded:" + targetPx + ":" +
+        System.identityHashCode(bitmap) + ":" + bitmap.generationId
+}
+
+private fun scaleQueueArtworkBitmap(
+    bitmap: Bitmap,
+    targetPx: Int,
+): Bitmap {
+    val longestSide = maxOf(bitmap.width, bitmap.height)
+    if (longestSide <= targetPx || longestSide <= 0) return bitmap
+    val scale = targetPx.toFloat() / longestSide.toFloat()
+    val width = (bitmap.width * scale).toInt().coerceAtLeast(1)
+    val height = (bitmap.height * scale).toInt().coerceAtLeast(1)
+    return Bitmap.createScaledBitmap(bitmap, width, height, true)
 }
 
 private fun loadQueueArtwork(
