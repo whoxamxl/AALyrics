@@ -89,6 +89,7 @@ Category and SDK display are diagnostic metadata only. They must not influence p
 - [x] Preserve explicit playback-source error reasons and expose a concise Error tooltip in the Top Bar.
 - [x] Make launch-capable Connected pills open the selected playback app with the shared external-link icon.
 - [x] Apply consistent semantic state colors to Top Bar pill foreground, border, and background.
+- [x] Keep all Top Bar runtime-state pills on one 220dp × 36dp envelope and resolve Unavailable app identity from its runtime package.
 - [x] Add app category, min SDK, and target SDK to Verbose Details Developer / Diagnostics.
 - [x] Keep Android package/application objects outside `:ui:phone`.
 - [x] Keep normal Details user-facing playback-source labeling unchanged apart from sharing the new resolver.
