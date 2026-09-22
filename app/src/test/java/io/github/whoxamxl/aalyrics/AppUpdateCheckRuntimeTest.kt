@@ -78,6 +78,22 @@ class AppUpdateCheckRuntimeTest {
     }
 
     @Test
+    fun `unexpected client exception becomes check failed`() = runTest {
+        val runtime = AppUpdateCheckRuntime(
+            installedVersionName = "0.2.0-alpha.1",
+            releaseClient = GitHubReleaseClient {
+                throw IllegalStateException("unexpected client failure")
+            },
+            applicationScope = this,
+        )
+
+        runtime.checkForUpdates()
+        runCurrent()
+
+        assertEquals(AppUpdateCheckState.Failed, runtime.state.value)
+    }
+
+    @Test
     fun `malformed installed version becomes check failed without network call`() = runTest {
         var fetchCount = 0
         val runtime = AppUpdateCheckRuntime(
