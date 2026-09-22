@@ -130,6 +130,8 @@ internal fun PhoneRuntimeHost(
         licenseText = application.licenseText,
         changelogText = application.changelogText,
         privacyPolicyText = application.privacyPolicyText,
+        termsOfUseText = application.termsOfUseText,
+        thirdPartyLicensesText = application.thirdPartyLicensesText,
         translationModelCleanupState = translationModelCleanupState,
     )
 

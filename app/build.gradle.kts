@@ -61,6 +61,12 @@ val syncBundledDocumentsAssets = tasks.register<Copy>("syncBundledDocumentsAsset
     from(rootProject.file("PRIVACY.md")) {
         rename { "aalyrics_privacy.md" }
     }
+    from(rootProject.file("TERMS_OF_USE.md")) {
+        rename { "aalyrics_terms_of_use.md" }
+    }
+    from(rootProject.file("THIRD_PARTY_LICENSES.md")) {
+        rename { "aalyrics_third_party_licenses.md" }
+    }
     into(generatedBundledDocumentsAssetsDir)
 }
 

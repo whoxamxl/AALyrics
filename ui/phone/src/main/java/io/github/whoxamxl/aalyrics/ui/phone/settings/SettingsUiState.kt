@@ -87,5 +87,7 @@ data class SettingsScreenUiState(
     val licenseText: String = "",
     val changelogText: String = "",
     val privacyPolicyText: String = "",
+    val termsOfUseText: String = "",
+    val thirdPartyLicensesText: String = "",
     val appUpdate: AppUpdateUiState = AppUpdateUiState(),
 )

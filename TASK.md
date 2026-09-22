@@ -122,8 +122,8 @@ Root reselection must remain stronger than hierarchical Back and must discard an
 
 ### Implementation
 
-- [ ] Bundle `TERMS_OF_USE.md` and `THIRD_PARTY_LICENSES.md` as generated app assets.
-- [ ] Expose both documents through the application-owned Settings presentation boundary.
+- [x] Bundle `TERMS_OF_USE.md` and `THIRD_PARTY_LICENSES.md` as generated app assets.
+- [x] Expose both documents through the application-owned Settings presentation boundary.
 - [ ] Add `TermsOfUseSettingsScreen` using the shared Settings header and Markdown renderer.
 - [ ] Add `ThirdPartyLicensesSettingsScreen` using the shared Settings header and Markdown renderer.
 - [ ] Add the License -> Third-party licenses navigation row.
@@ -142,4 +142,4 @@ Do not redesign unrelated Settings sections, change existing Support AALyrics vi
 
 ## Current stop point
 
-Documentation contract is being established first. Stop after the documentation checkpoint before beginning production implementation.
+The new Terms of Use and third-party license documents are bundled through the existing generated-assets path and exposed through the application-owned Settings presentation state. No new Settings UI or navigation has been added yet. Stop at this application-boundary checkpoint before implementing document screens.

@@ -28,6 +28,8 @@ class PhoneSettingsMapperTest {
             licenseText = "demo license",
             changelogText = "demo changelog",
             privacyPolicyText = "demo privacy",
+            termsOfUseText = "demo terms",
+            thirdPartyLicensesText = "demo third-party licenses",
             displayLocale = Locale.ENGLISH,
         )
 
@@ -38,6 +40,8 @@ class PhoneSettingsMapperTest {
         assertEquals("demo license", state.licenseText)
         assertEquals("demo changelog", state.changelogText)
         assertEquals("demo privacy", state.privacyPolicyText)
+        assertEquals("demo terms", state.termsOfUseText)
+        assertEquals("demo third-party licenses", state.thirdPartyLicensesText)
     }
 
     @Test
