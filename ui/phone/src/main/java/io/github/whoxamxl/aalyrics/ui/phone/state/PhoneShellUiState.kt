@@ -89,8 +89,15 @@ data class PlaybackSurfaceUiState(
     val playPauseEnabled: Boolean
         get() = if (isPlaying) canPause else canPlay
 
+    /**
+     * Compatibility probe: some players (notably Spotify) publish a non-empty
+     * MediaSession queue without advertising ACTION_SKIP_TO_QUEUE_ITEM.
+     *
+     * Keep the queue visible while this branch verifies whether those sessions
+     * still accept TransportControls.skipToQueueItem(queueItemId).
+     */
     val queueAvailable: Boolean
-        get() = canSkipToQueueItem && queue.isNotEmpty()
+        get() = queue.isNotEmpty()
 
     val seekEnabled: Boolean
         get() = canSeek && durationMs != null

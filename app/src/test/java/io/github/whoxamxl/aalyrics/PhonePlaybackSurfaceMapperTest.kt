@@ -52,7 +52,7 @@ class PhonePlaybackSurfaceMapperTest {
     }
 
     @Test
-    fun `informational queue without skip-to-queue action is not actionable`() {
+    fun `published queue remains actionable for skip-to-queue compatibility probe`() {
         val state = assertNotNull(
             mapPhonePlaybackSurfaceState(
                 playback = playback(),
@@ -72,7 +72,8 @@ class PhonePlaybackSurfaceMapperTest {
         )
 
         assertEquals(listOf(8L), state.queue.map { it.id })
-        assertFalse(state.queueAvailable)
+        assertFalse(state.canSkipToQueueItem)
+        assertTrue(state.queueAvailable)
         assertTrue(state.canOpenPlaybackApp)
     }
 
