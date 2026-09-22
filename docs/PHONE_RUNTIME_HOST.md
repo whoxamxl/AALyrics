@@ -16,7 +16,7 @@ The current production branch state now has:
 - live app-owned playback, lyrics, Details, Translation, model, and Verbose Details state collected lifecycle-aware;
 - Playback Surface commands routed through the existing application/platform media boundary;
 - selected MediaSession album artwork forwarded through an app-owned Android boundary and rendered in both Track Card and Playback Surface, with the AALyrics mark as the no-artwork fallback;
-- playback source packages resolved to human-readable app labels where possible, with the package identifier retained as the final normal-UI fallback and always exposed separately in Verbose Details;
+- playback source packages resolved through an application-owned metadata boundary to a human-readable app label and source app icon where possible, with the package identifier retained as the final normal-UI fallback and always exposed separately in Verbose Details; Android application category and min/target SDK levels are available to Verbose Details from the same resolved metadata;
 - Translation persisted default disabled on an unconfigured install while English remains the built-in/default target;
 - production Lyrics and Settings presentation mapping;
 - in-app License navigation backed by build-synchronized repository `NOTICE` + `LICENSE`, rendered through the shared Phone Markdown wrapper;
@@ -130,12 +130,36 @@ The runtime host provides a real `PhoneShellUiState`:
 PhoneShellUiState
 ├─ selectedDestination   <- host-local primary destination
 ├─ mediaSourceLabel      <- app-owned playback/source presentation
+├─ mediaSourceConnectionState <- Connecting / Connected / Disconnected / Unavailable / Error
+├─ mediaSourceUnavailableReason <- concise Unavailable reason when state is Unavailable
+├─ mediaSourceErrorReason <- concise Error reason when state is Error
+├─ mediaSourceCanOpenApp <- selected source has real launch capability
 └─ playbackSurface       <- AALyricsApplication.phonePlaybackSurfaceState
 ```
 
 The Top Bar, Playback Surface, and Bottom Navigation remain shell-owned.
 
-The runtime-host slice may add the minimal application-owned source-label/shell mapping needed to avoid duplicating package-label logic in the Activity.
+Playback-source package metadata is owned by `:app`. The label-only resolver is replaced by `PlaybackSourceAppInfoResolver`, which performs one cached `ApplicationInfo` lookup per package and derives the presentation label, optional app icon, diagnostic category, minimum SDK level, and target SDK level. Connected resolution follows the selected playback package. Unavailable resolution prefers the package carried by the runtime state, allowing a policy-rejected session to retain real app identity even when no selected playback snapshot exists; if app metadata still cannot be resolved, the Top Bar falls back to its metadata-independent Unavailable presentation. The package identifier remains the human-readable label fallback after successful package identification but failed label lookup. The Top Bar icon is supplied as caller-owned renderable content, analogous to selected-session artwork, so `ApplicationInfo`, `PackageManager`, and Android `Drawable` objects do not become Phone UI state. When no icon is available for a known app, `PhoneTopBar` retains its cyan-dot fallback.
+
+MediaSession observation publishes framework-neutral source/session health independently from Android application-category policy. The application layer then combines the selected runtime package, `PlaybackSourceAppInfo`, and persisted eligibility settings into an effective Phone/lyrics source state. A raw connected session may therefore remain selected and controllable while its effective AALyrics source state becomes `Unavailable(packageName?, reason)` for lyrics processing. Approved Unavailable reasons are `NON_AUDIO_APP`, `UNCLASSIFIED_APP`, and `UNKNOWN`; Error reasons remain `NOTIFICATION_ACCESS_LOST`, `SESSION_QUERY_FAILED`, `SESSION_ATTACH_FAILED`, and `UNKNOWN`. Category/settings policy must stay outside `:platform:media` because it depends on application metadata and user preferences.
+
+The effective eligibility rules are: filtering OFF allows all selected sources; filtering ON allows `CATEGORY_AUDIO`; known non-audio categories become `NON_AUDIO_APP`; `CATEGORY_UNDEFINED`, unknown/future categories normalized to Undefined, and unresolved `ApplicationInfo` become `UNCLASSIFIED_APP` unless `Allow unclassified apps` is enabled. Rejection happens before provider lookup starts. The application-owned playback sink evaluates category/settings synchronously for each new snapshot, then updates `LyricsDemandGate` with the snapshot and eligibility in one atomic transition. This prevents a newly blocked source from briefly starting provider work and prevents a newly allowed source from replaying the prior blocked snapshot. Changing either eligibility setting re-evaluates the retained current snapshot immediately; blocking clears active lookup ownership, while allowing replays the retained snapshot exactly once when demand is active. MediaSession selection, callback ownership, playback transport, source-app launching, and provider ranking/scoring remain unchanged. Unavailable and Error details remain concise and are exposed from the Top Bar through the shared Phone popup/tooltip surface. Unavailable also has a metadata-independent generic fallback, so missing app identity cannot suppress the status.
+
+Launch capability is resolved independently from track availability using the selected `PlaybackControlState`: explicit MediaSession activity first, then the package launcher fallback. That shared capability feeds both the Playback Surface and Top Bar. A Connected Top Bar pill is clickable only when this capability is true, preventing an active-looking external-link affordance from becoming a no-op.
+
+Conceptually:
+
+```text
+PlaybackSourceRuntimeState + PlaybackSourceAppInfo
+                    + playback-source eligibility settings
+                              ↓
+                 app-owned eligibility policy
+                    ├─ allowed
+                    │    └─ lyrics lookup may start
+                    └─ blocked
+                         ├─ effective Unavailable(reason)
+                         └─ no lyrics-provider lookup
+```
 
 ## Playback actions
 
@@ -218,7 +242,7 @@ AALyricsApplication.phoneDetailsState
 DetailsScreen
 ```
 
-The runtime-host slice must not add provider/network requests for diagnostics.
+The runtime-host slice must not add provider/network requests for diagnostics. Verbose Details may reuse the already-resolved playback-source app metadata to show the Android application category and min/target SDK levels alongside the raw playback package; this metadata must not influence MediaSession selection, compatibility gating, playback behavior, or feature availability.
 
 ## Settings destination
 
