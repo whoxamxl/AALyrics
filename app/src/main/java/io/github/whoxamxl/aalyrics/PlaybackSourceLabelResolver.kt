@@ -1,33 +1,19 @@
 package io.github.whoxamxl.aalyrics
 
 import android.content.Context
-import android.content.pm.PackageManager
-import java.util.concurrent.ConcurrentHashMap
 
-/** Resolves media-session package names into stable human-readable application labels. */
+/**
+ * Transitional compatibility adapter for the existing application wiring.
+ *
+ * New playback-source metadata resolution lives in [PlaybackSourceAppInfoResolver]. This adapter
+ * remains only until the application state is switched from a label-only flow to the resolved
+ * app-info flow.
+ */
 internal class PlaybackSourceLabelResolver(
     context: Context,
 ) {
-    private val packageManager = context.applicationContext.packageManager
-    private val labels = ConcurrentHashMap<String, String>()
+    private val appInfoResolver = PlaybackSourceAppInfoResolver(context)
 
-    fun labelFor(packageName: String?): String? {
-        packageName ?: return null
-        return labels.getOrPut(packageName) {
-            resolve(packageName)
-        }
-    }
-
-    private fun resolve(packageName: String): String =
-        try {
-            packageManager
-                .getApplicationInfo(packageName, 0)
-                .loadLabel(packageManager)
-                .toString()
-                .trim()
-                .takeIf(String::isNotEmpty)
-                ?: packageName
-        } catch (_: PackageManager.NameNotFoundException) {
-            packageName
-        }
+    fun labelFor(packageName: String?): String? =
+        appInfoResolver.resolve(packageName)?.label
 }
