@@ -35,7 +35,10 @@ Development builds additionally use:
 ```text
 <release-version>-dev+<short-sha>
 <release-version>-dev+<short-sha>.dirty
+<release-version>-dev
 ```
+
+The final form is the existing Git-metadata-unavailable fallback; it still compares as its embedded base release version.
 
 The development suffix is build identity, not a release precedence level. For update comparison, a development build compares as its embedded base release version.
 
@@ -136,7 +139,7 @@ Only one check may be active at a time. Active work is application-owned and sur
 
 ### Implementation
 
-- [ ] Add an Android-independent AALyrics version parser/comparator with focused tests.
+- [x] Add an Android-independent AALyrics version parser/comparator with focused tests.
 - [ ] Add an application-owned GitHub Release client/model boundary.
 - [ ] Select the highest eligible non-Draft AALyrics release.
 - [ ] Wire `onCheckForUpdates` to application-owned check orchestration.
@@ -154,4 +157,4 @@ Those are separate implementation slices after Check for updates is proven stabl
 
 ## Current stop point
 
-The topic branch and documentation contract are aligned. Runtime implementation has not started yet.
+Version parsing/comparison and focused unit-test coverage are implemented. GitHub Release networking and runtime wiring have not started yet.
