@@ -142,11 +142,11 @@ Only one check may be active at a time. Active work is application-owned and sur
 - [x] Add an Android-independent AALyrics version parser/comparator with focused tests.
 - [x] Add an application-owned GitHub Release client/model boundary.
 - [x] Select the highest eligible non-Draft AALyrics release.
-- [ ] Wire `onCheckForUpdates` to application-owned check orchestration.
-- [ ] Replace the production `UNAVAILABLE` update state with `IDLE`.
-- [ ] Map checking, up-to-date, available, and failure results into `SettingsScreenUiState`.
-- [ ] Keep `UPDATE_AVAILABLE` informational until download support exists.
-- [ ] Add focused mapping/lifecycle/presentation tests and update deterministic Previews where required.
+- [x] Wire `onCheckForUpdates` to application-owned check orchestration.
+- [x] Replace the production `UNAVAILABLE` update state with `IDLE`.
+- [x] Map checking, up-to-date, available, and failure results into `SettingsScreenUiState`.
+- [x] Keep `UPDATE_AVAILABLE` informational until download support exists.
+- [x] Add focused mapping/lifecycle/presentation tests and update deterministic Previews where required.
 - [ ] Run architecture checks, unit tests, debug APK build, CI, and bounded review before merge.
 
 ## Scope guard
@@ -157,4 +157,4 @@ Those are separate implementation slices after Check for updates is proven stabl
 
 ## Current stop point
 
-Version parsing/comparison, the public GitHub Release client boundary, release candidate selection, and focused selection tests are implemented. Settings/runtime wiring has not started yet.
+The Check-only runtime is wired end to end: version comparison, GitHub Release discovery, candidate selection, application-owned lifecycle, Settings mapping/callbacks, informational UPDATE_AVAILABLE presentation, focused tests, and Preview alignment are implemented. Full build/CI validation and real-device verification remain.
