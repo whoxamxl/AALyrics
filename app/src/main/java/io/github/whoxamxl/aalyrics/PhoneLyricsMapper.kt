@@ -9,6 +9,7 @@ import io.github.whoxamxl.aalyrics.ui.phone.lyrics.LyricsScreenUiState
 import io.github.whoxamxl.aalyrics.ui.phone.lyrics.LyricsViewportInteractionMode
 import io.github.whoxamxl.aalyrics.ui.phone.lyrics.LyricsViewportLineUiState
 import io.github.whoxamxl.aalyrics.ui.phone.lyrics.LyricsViewportUiState
+import io.github.whoxamxl.aalyrics.ui.phone.lyrics.TrackCardLyricsStatus
 import io.github.whoxamxl.aalyrics.ui.phone.lyrics.TrackCardUiState
 import kotlin.math.roundToLong
 
@@ -47,7 +48,14 @@ internal fun mapPhoneLyricsState(
                 ?.joinToString(separator = ", "),
             providerLabel = document?.attribution?.displayName,
             syncLabel = document?.let { sourceSyncType.label() },
-            lyricsLoading = matchingLyricsState is LyricsState.Loading,
+            lyricsStatus = when (matchingLyricsState) {
+                is LyricsState.Loading -> TrackCardLyricsStatus.LOADING
+                is LyricsState.Ready,
+                is LyricsState.Degraded -> TrackCardLyricsStatus.READY
+                is LyricsState.NotFound -> TrackCardLyricsStatus.NOT_FOUND
+                is LyricsState.Failed -> TrackCardLyricsStatus.FAILED
+                else -> TrackCardLyricsStatus.IDLE
+            },
         ),
         viewport = LyricsViewportUiState(
             lines = document

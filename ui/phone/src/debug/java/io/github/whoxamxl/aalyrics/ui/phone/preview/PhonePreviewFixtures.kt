@@ -11,6 +11,7 @@ import io.github.whoxamxl.aalyrics.ui.phone.lyrics.LyricsScreenUiState
 import io.github.whoxamxl.aalyrics.ui.phone.lyrics.LyricsViewportInteractionMode
 import io.github.whoxamxl.aalyrics.ui.phone.lyrics.LyricsViewportLineUiState
 import io.github.whoxamxl.aalyrics.ui.phone.lyrics.LyricsViewportUiState
+import io.github.whoxamxl.aalyrics.ui.phone.lyrics.TrackCardLyricsStatus
 import io.github.whoxamxl.aalyrics.ui.phone.lyrics.TrackCardUiState
 import io.github.whoxamxl.aalyrics.ui.phone.navigation.PhoneDestination
 import io.github.whoxamxl.aalyrics.ui.phone.settings.AndroidAutoCompatibilityUiStatus
@@ -33,6 +34,7 @@ internal object PhonePreviewFixtures {
         artist = "The Northbound Lights",
         providerLabel = "Musixmatch",
         syncLabel = "Word synced",
+        lyricsStatus = TrackCardLyricsStatus.READY,
     )
     val trackCardLongTitle = TrackCardUiState(
         title = "A Track Title Long Enough to Demonstrate the Overflow Marquee Behavior",
@@ -59,7 +61,17 @@ internal object PhonePreviewFixtures {
     val trackCardLoading = TrackCardUiState(
         title = "Midnight Signals",
         artist = "The Northbound Lights",
-        lyricsLoading = true,
+        lyricsStatus = TrackCardLyricsStatus.LOADING,
+    )
+    val trackCardNotFound = TrackCardUiState(
+        title = "Midnight Signals",
+        artist = "The Northbound Lights",
+        lyricsStatus = TrackCardLyricsStatus.NOT_FOUND,
+    )
+    val trackCardFailed = TrackCardUiState(
+        title = "Midnight Signals",
+        artist = "The Northbound Lights",
+        lyricsStatus = TrackCardLyricsStatus.FAILED,
     )
     val trackCardNoArtist = TrackCardUiState(
         title = "Untitled Session",

@@ -14,6 +14,7 @@ import io.github.whoxamxl.aalyrics.core.model.TimedWord
 import io.github.whoxamxl.aalyrics.core.model.Track
 import io.github.whoxamxl.aalyrics.core.model.TrackReference
 import io.github.whoxamxl.aalyrics.ui.phone.lyrics.LyricsViewportInteractionMode
+import io.github.whoxamxl.aalyrics.ui.phone.lyrics.TrackCardLyricsStatus
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
@@ -57,9 +58,64 @@ class PhoneLyricsMapperTest {
             currentMonotonicTimeMs = 1_000L,
         )
 
-        assertTrue(state.trackCard.lyricsLoading)
+        assertEquals(TrackCardLyricsStatus.LOADING, state.trackCard.lyricsStatus)
         assertNull(state.trackCard.providerLabel)
         assertNull(state.trackCard.syncLabel)
+        assertTrue(state.viewport.lines.isEmpty())
+    }
+
+    @Test
+    fun `matching not found lookup maps Track Card not found state`() {
+        val track = track()
+        val playback = PlaybackSnapshot(
+            track = track,
+            source = PlaybackSource("com.spotify.music"),
+        )
+        val lookup = LyricsLookup(
+            id = LyricsLookupId(2L),
+            track = track,
+            playbackIdentity = requireNotNull(playback.trackIdentity),
+        )
+
+        val state = mapPhoneLyricsState(
+            playback = playback,
+            lyricsState = LyricsState.NotFound(lookup),
+            plainLyricsAutoScrollEnabled = true,
+            interactionMode = LyricsViewportInteractionMode.FOLLOW,
+            currentMonotonicTimeMs = 1_000L,
+        )
+
+        assertEquals(TrackCardLyricsStatus.NOT_FOUND, state.trackCard.lyricsStatus)
+        assertNull(state.trackCard.providerLabel)
+        assertNull(state.trackCard.syncLabel)
+        assertTrue(state.viewport.lines.isEmpty())
+    }
+
+    @Test
+    fun `matching failed lookup maps Track Card failed state`() {
+        val track = track()
+        val playback = PlaybackSnapshot(
+            track = track,
+            source = PlaybackSource("com.spotify.music"),
+        )
+        val lookup = LyricsLookup(
+            id = LyricsLookupId(3L),
+            track = track,
+            playbackIdentity = requireNotNull(playback.trackIdentity),
+        )
+
+        val state = mapPhoneLyricsState(
+            playback = playback,
+            lyricsState = LyricsState.Failed(
+                lookup = lookup,
+                failedAttempts = 1,
+            ),
+            plainLyricsAutoScrollEnabled = true,
+            interactionMode = LyricsViewportInteractionMode.FOLLOW,
+            currentMonotonicTimeMs = 1_000L,
+        )
+
+        assertEquals(TrackCardLyricsStatus.FAILED, state.trackCard.lyricsStatus)
         assertTrue(state.viewport.lines.isEmpty())
     }
 
@@ -93,6 +149,7 @@ class PhoneLyricsMapperTest {
         assertEquals(LyricsSyncType.LINE, state.viewport.syncType)
         assertEquals("Musixmatch", state.trackCard.providerLabel)
         assertEquals("Line synced", state.trackCard.syncLabel)
+        assertEquals(TrackCardLyricsStatus.READY, state.trackCard.lyricsStatus)
     }
 
     @Test

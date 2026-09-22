@@ -101,8 +101,8 @@ private fun TrackIdentity(
             title = state.title,
             artist = artist,
         )
-        when {
-            state.lyricsLoading -> {
+        when (state.lyricsStatus) {
+            TrackCardLyricsStatus.LOADING -> {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
@@ -121,15 +121,37 @@ private fun TrackIdentity(
                 }
             }
 
-            metadata.isNotEmpty() -> {
+            TrackCardLyricsStatus.NOT_FOUND -> {
                 Text(
-                    text = metadata,
+                    text = stringResource(R.string.track_card_lyrics_not_found),
                     style = AALyricsTypography.Label,
-                    color = AALyricsColors.AccentCyan,
+                    color = AALyricsColors.TextSecondary,
                     maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
                 )
             }
+
+            TrackCardLyricsStatus.FAILED -> {
+                Text(
+                    text = stringResource(R.string.track_card_lyrics_failed),
+                    style = AALyricsTypography.Label,
+                    color = AALyricsColors.Error,
+                    maxLines = 1,
+                )
+            }
+
+            TrackCardLyricsStatus.READY -> {
+                if (metadata.isNotEmpty()) {
+                    Text(
+                        text = metadata,
+                        style = AALyricsTypography.Label,
+                        color = AALyricsColors.AccentCyan,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+            }
+
+            TrackCardLyricsStatus.IDLE -> Unit
         }
     }
 }
