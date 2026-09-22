@@ -20,6 +20,7 @@ import io.github.whoxamxl.aalyrics.ui.phone.settings.SettingsLanguageOptionUiSta
 import io.github.whoxamxl.aalyrics.ui.phone.settings.SettingsScreenUiState
 import io.github.whoxamxl.aalyrics.ui.phone.settings.TranslationModelUiState
 import io.github.whoxamxl.aalyrics.ui.phone.state.PhoneShellUiState
+import io.github.whoxamxl.aalyrics.ui.phone.state.PlaybackSourceConnectionUiState
 import io.github.whoxamxl.aalyrics.ui.phone.state.PlaybackQueueItemUiState
 import io.github.whoxamxl.aalyrics.ui.phone.state.PlaybackSurfaceUiState
 
@@ -197,19 +198,21 @@ internal object PhonePreviewFixtures {
 
     val typicalLyricsShell = PhoneShellUiState(
         mediaSourceLabel = "Spotify",
-        mediaSourceConnected = true,
+        mediaSourceConnectionState = PlaybackSourceConnectionUiState.CONNECTED,
         playbackSurface = playingSurface,
     )
     val narrowLyricsShell = PhoneShellUiState(
         mediaSourceLabel = "YouTube Music",
-        mediaSourceConnected = true,
+        mediaSourceConnectionState = PlaybackSourceConnectionUiState.CONNECTED,
         playbackSurface = pausedSurface,
     )
-    val lyricsWithoutControls = PhoneShellUiState(mediaSourceLabel = null)
+    val lyricsWithoutControls = PhoneShellUiState(
+        mediaSourceConnectionState = PlaybackSourceConnectionUiState.DISCONNECTED,
+    )
     val syncShell = PhoneShellUiState(
         selectedDestination = PhoneDestination.Sync,
         mediaSourceLabel = "Poweramp",
-        mediaSourceConnected = true,
+        mediaSourceConnectionState = PlaybackSourceConnectionUiState.CONNECTED,
         playbackSurface = pausedSurface,
     )
 
@@ -338,7 +341,7 @@ internal object PhonePreviewFixtures {
     val settingsShell = PhoneShellUiState(
         selectedDestination = PhoneDestination.Settings,
         mediaSourceLabel = "Spotify",
-        mediaSourceConnected = true,
+        mediaSourceConnectionState = PlaybackSourceConnectionUiState.CONNECTED,
         playbackSurface = playingSurface,
     )
 
@@ -398,7 +401,7 @@ internal object PhonePreviewFixtures {
     val detailsShell = PhoneShellUiState(
         selectedDestination = PhoneDestination.Details,
         mediaSourceLabel = "Spotify",
-        mediaSourceConnected = true,
+        mediaSourceConnectionState = PlaybackSourceConnectionUiState.CONNECTED,
         playbackSurface = playingSurface,
     )
 
