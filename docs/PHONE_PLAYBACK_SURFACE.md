@@ -495,7 +495,7 @@ When no track artwork is available, the artwork slot uses the shared AALyrics fo
 Queue rows accept the three MediaSession artwork shapes independently:
 
 1. `MediaDescription.iconBitmap` — embedded bitmap, preferred when both bitmap and URI are present;
-2. `MediaDescription.iconUri` — URI-backed artwork; `content://`, `file://`, and `android.resource://` resolve through `ContentResolver`, while `http://` and `https://` use bounded remote loading;
+2. `MediaDescription.iconUri` — URI-backed artwork; `content://`, `file://`, and `android.resource://` resolve through `ContentResolver`, while `https://` uses bounded remote loading. Cleartext `http://` is intentionally unsupported and falls back without weakening the app's network-security policy;
 3. neither — render the queue-row music-note placeholder without starting artwork work.
 
 Queue artwork is decoded/scaled to the 36dp presentation target and retained in a bounded in-memory LRU cache. API 26–27 must downsample before retaining decoded bitmaps. Visible queue rows load on demand with bounded concurrency; closing the Queue cancels row-owned work, and cancellation must not poison future cache retries. The selected session exposes at most 20 normalized queue entries.

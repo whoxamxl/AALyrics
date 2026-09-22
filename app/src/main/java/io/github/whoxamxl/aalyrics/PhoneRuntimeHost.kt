@@ -313,7 +313,8 @@ private class QueueArtworkCache(
     private val cache = LruCache<String, Bitmap>(maxEntries)
     private val mutex = Mutex()
     private val loadSemaphore = Semaphore(QUEUE_ARTWORK_MAX_CONCURRENT_LOADS)
-    private val inFlight = mutableMapOf<String, CompletableDeferred<Bitmap?>>()
+    private val inFlight =
+        mutableMapOf<String, CompletableDeferred<QueueArtworkLoadResult>>()
 
     fun get(
         artworkUri: String,
@@ -346,50 +347,63 @@ private class QueueArtworkCache(
         targetPx: Int,
     ): Bitmap? {
         val key = cacheKey(artworkUri, targetPx)
-        cache.get(key)?.let { return it }
 
-        var cachedAfterLock: Bitmap? = null
-        var ownsLoad = false
-        val deferred = mutex.withLock {
-            cache.get(key)?.let {
-                cachedAfterLock = it
-                return@withLock null
-            }
-            inFlight[key] ?: CompletableDeferred<Bitmap?>().also {
-                inFlight[key] = it
-                ownsLoad = true
-            }
-        }
-        cachedAfterLock?.let { return it }
-        val request = deferred ?: return null
+        while (true) {
+            cache.get(key)?.let { return it }
 
-        if (!ownsLoad) {
-            return request.await()
-        }
-
-        return try {
-            val bitmap = loadSemaphore.withPermit {
-                withContext(Dispatchers.IO) {
-                    loadQueueArtwork(
-                        contentResolver = contentResolver,
-                        artworkUri = artworkUri,
-                        targetPx = targetPx,
-                    )
+            var cachedAfterLock: Bitmap? = null
+            var ownsLoad = false
+            val request = mutex.withLock {
+                cache.get(key)?.let {
+                    cachedAfterLock = it
+                    return@withLock null
+                }
+                inFlight[key] ?: CompletableDeferred<QueueArtworkLoadResult>().also {
+                    inFlight[key] = it
+                    ownsLoad = true
                 }
             }
-            if (bitmap != null) {
-                cache.put(key, bitmap)
+            cachedAfterLock?.let { return it }
+            request ?: return null
+
+            if (!ownsLoad) {
+                when (val result = request.await()) {
+                    is QueueArtworkLoadResult.Complete -> return result.bitmap
+                    QueueArtworkLoadResult.Retry -> continue
+                }
             }
-            request.complete(bitmap)
-            bitmap
-        } catch (cancelled: CancellationException) {
-            request.complete(null)
-            throw cancelled
-        } finally {
-            withContext(NonCancellable) {
-                mutex.withLock {
-                    if (inFlight[key] === request) {
-                        inFlight.remove(key)
+
+            return try {
+                val bitmap = loadSemaphore.withPermit {
+                    withContext(Dispatchers.IO) {
+                        loadQueueArtwork(
+                            contentResolver = contentResolver,
+                            artworkUri = artworkUri,
+                            targetPx = targetPx,
+                        )
+                    }
+                }
+                if (bitmap != null) {
+                    cache.put(key, bitmap)
+                }
+                request.complete(QueueArtworkLoadResult.Complete(bitmap))
+                bitmap
+            } catch (cancelled: CancellationException) {
+                withContext(NonCancellable) {
+                    mutex.withLock {
+                        if (inFlight[key] === request) {
+                            inFlight.remove(key)
+                        }
+                    }
+                    request.complete(QueueArtworkLoadResult.Retry)
+                }
+                throw cancelled
+            } finally {
+                withContext(NonCancellable) {
+                    mutex.withLock {
+                        if (inFlight[key] === request) {
+                            inFlight.remove(key)
+                        }
                     }
                 }
             }
@@ -406,6 +420,14 @@ private class QueueArtworkCache(
         targetPx: Int,
     ): String = "embedded:" + targetPx + ":" +
         System.identityHashCode(bitmap) + ":" + bitmap.generationId
+}
+
+private sealed interface QueueArtworkLoadResult {
+    data class Complete(
+        val bitmap: Bitmap?,
+    ) : QueueArtworkLoadResult
+
+    data object Retry : QueueArtworkLoadResult
 }
 
 private fun scaleQueueArtworkBitmap(
@@ -452,8 +474,15 @@ private fun readQueueArtworkBytes(
         stream.readBoundedBytes(MAX_QUEUE_ARTWORK_ENCODED_BYTES)
     }
 
-    "http",
     "https" -> readRemoteQueueArtworkBytes(uri)
+
+    "http" -> {
+        Log.d(
+            QUEUE_ARTWORK_LOG_TAG,
+            "Cleartext queue artwork URI is unsupported",
+        )
+        null
+    }
 
     else -> {
         Log.d(
