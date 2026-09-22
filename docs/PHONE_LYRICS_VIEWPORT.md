@@ -60,7 +60,8 @@ LINE and WORD presentation use one continuous animated focus position rather tha
 - Interpolate the document focus position between the measured centers of adjacent rows. This keeps motion continuous even when rows have different wrapped heights.
 - Keep timed-row text layout stable at 20sp / 30sp / Bold for all timed rows. Express hierarchy as a visual transform around the start-edge center: approximately `0.90x` scale with `0.48` alpha for completed rows and `0.70` alpha for upcoming rows, rising continuously to approximately `1.15x` scale and full opacity at focus.
 - Reserve timed-row layout width for the maximum `1.15x` transform (approximately `1 / 1.15` of the available lyric width). This keeps the focused layer inside the viewport's horizontal bounds while preserving the existing start edge and stable wrapping across focus handoff.
-- The scale/alpha transform must not participate in measurement, so a focus handoff does not change wrapping, row height, or surrounding document geometry.
+- Reserve vertical room for maximum focus scaling without inflating ordinary rows unnecessarily. The normal 16dp inter-row spacing absorbs scale overflow first; only wrapped/tall timed rows whose `1.15x` growth exceeds that spacing receive additional stable measured height. Center the unscaled row inside that reservation so the focused transform cannot overlap adjacent rows.
+- The scale/alpha transform itself must not participate in measurement, so a focus handoff does not change wrapping, row height reservation, or surrounding document geometry.
 - PLAIN lyrics do not use the timed focus spring or timed focus transforms.
 
 This motion model is adapted from the proven idea in the legacy Auto-Lyrics Performance view—one continuous focus coordinate drives both movement and emphasis—without adopting its fullscreen layout, centered text, focal position, or more aggressive visual scaling.
@@ -162,7 +163,7 @@ All sync modes share the same responsive viewport, edge fading, manual scrolling
 WORD timing provides karaoke-level progress.
 
 - Align lyrics to the start edge using the existing 20dp horizontal viewport inset.
-- Timed rows use stable 20sp / 30sp / Bold layout geometry and reserve horizontal room for the maximum 1.15x focus transform. Do not change measured font size, line-height, weight, width reservation, or neighbor spacing when focus changes.
+- Timed rows use stable 20sp / 30sp / Bold layout geometry and reserve horizontal plus overflow-safe vertical room for the maximum 1.15x focus transform. Do not change measured font size, line-height, weight, width/height reservation, or neighbor spacing when focus changes.
 - The shared animated focus position drives visual scale and opacity continuously between supporting and focused states.
 - A completed supporting timed row is rendered at approximately 0.90x scale and 0.48 alpha; an upcoming supporting row uses the same scale with approximately 0.70 alpha; the focused row reaches approximately 1.15x scale and full opacity.
 - The current timed lyric row receives the strongest line hierarchy without reflowing the document.
@@ -180,7 +181,7 @@ WORD timing provides karaoke-level progress.
 LINE timing follows row boundaries.
 
 - Align lyrics to the start edge using the existing 20dp horizontal viewport inset.
-- Timed rows use the same stable 20sp / 30sp / Bold measured geometry and maximum-scale width reservation as WORD mode.
+- Timed rows use the same stable 20sp / 30sp / Bold measured geometry and maximum-scale width/vertical-overflow reservation as WORD mode.
 - The shared animated focus position drives both visual emphasis and viewport movement; there is no separate emphasis tween and scroll tween.
 - A completed supporting row is approximately 0.90x / 0.48 alpha, an upcoming supporting row approximately 0.90x / 0.70 alpha, and the focused row approximately 1.15x / full opacity.
 - Previous and upcoming rows remain readable while the focused row has clearly stronger contrast.

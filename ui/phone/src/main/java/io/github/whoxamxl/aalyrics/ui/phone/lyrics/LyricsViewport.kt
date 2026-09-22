@@ -49,6 +49,7 @@ import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
@@ -72,6 +73,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import kotlin.math.abs
+import kotlin.math.ceil
 import kotlin.math.roundToInt
 
 /**
@@ -313,6 +315,7 @@ fun LyricsViewport(
                         line = line,
                         index = index,
                         focusPosition = animatedFocusIndex,
+                        rowSpacingPx = rowSpacingPx,
                         modifier = Modifier.fillMaxWidth(),
                         onTextHeightChanged = { height ->
                             lineHeights[index] = height
@@ -360,6 +363,7 @@ private fun LyricsViewportRow(
     line: LyricsViewportLineUiState,
     index: Int,
     focusPosition: Animatable<Float, AnimationVector1D>,
+    rowSpacingPx: Int,
     modifier: Modifier = Modifier,
     onTextHeightChanged: (Int) -> Unit,
 ) {
@@ -380,9 +384,13 @@ private fun LyricsViewportRow(
         buildAnnotatedString { append(line.text) }
     }
 
+    val isTimed = state.syncType != LyricsSyncType.PLAIN
+
     Box(
-        modifier = modifier.onSizeChanged { size ->
-            onTextHeightChanged(size.height)
+        modifier = if (isTimed) {
+            modifier.reserveTimedScaleHeight(rowSpacingPx)
+        } else {
+            modifier
         },
     ) {
         Text(
@@ -395,6 +403,19 @@ private fun LyricsViewportRow(
                         TimedTextWidthFraction
                     },
                 )
+                .onSizeChanged { size ->
+                    onTextHeightChanged(
+                        if (isTimed) {
+                            reservedTimedRowHeightPx(
+                                unscaledHeightPx = size.height,
+                                rowSpacingPx = rowSpacingPx,
+                                maxScale = CurrentScale,
+                            )
+                        } else {
+                            size.height
+                        },
+                    )
+                }
                 .graphicsLayer {
                     if (state.syncType == LyricsSyncType.PLAIN) {
                         scaleX = 1f
@@ -629,6 +650,41 @@ private fun documentCenterForVirtualRow(
     }
 
     return topPx + (currentHeight / 2f)
+}
+
+private fun Modifier.reserveTimedScaleHeight(
+    rowSpacingPx: Int,
+): Modifier = layout { measurable, constraints ->
+    val placeable = measurable.measure(constraints)
+    val reservedHeight = reservedTimedRowHeightPx(
+        unscaledHeightPx = placeable.height,
+        rowSpacingPx = rowSpacingPx,
+        maxScale = CurrentScale,
+    )
+    layout(placeable.width, reservedHeight) {
+        placeable.placeRelative(
+            x = 0,
+            y = (reservedHeight - placeable.height) / 2,
+        )
+    }
+}
+
+internal fun reservedTimedRowHeightPx(
+    unscaledHeightPx: Int,
+    rowSpacingPx: Int,
+    maxScale: Float,
+): Int {
+    require(unscaledHeightPx >= 0) { "Unscaled row height must not be negative" }
+    require(rowSpacingPx >= 0) { "Row spacing must not be negative" }
+    require(maxScale >= 1f && maxScale.isFinite()) {
+        "Maximum row scale must be finite and at least 1"
+    }
+
+    val scaledHeightPx = ceil(unscaledHeightPx * maxScale).toInt()
+    return maxOf(
+        unscaledHeightPx,
+        scaledHeightPx - rowSpacingPx,
+    )
 }
 
 private fun focusAmount(
