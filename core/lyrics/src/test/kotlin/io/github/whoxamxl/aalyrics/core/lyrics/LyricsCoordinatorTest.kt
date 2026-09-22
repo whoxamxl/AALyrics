@@ -182,6 +182,57 @@ class LyricsCoordinatorTest {
     }
 
     @Test
+    fun `suspend keeps resolved lyrics reusable in memory`() = runTest {
+        val winner = candidate("provider", "Retained")
+        val provider = FakeProvider("provider") { listOf(winner) }
+        val coordinator = LyricsCoordinator(
+            providers = listOf(provider),
+            selector = RecordingSelector { _, candidates, _ -> candidates.firstOrNull() },
+            scope = this,
+        )
+
+        coordinator.startLookup(track)
+        advanceUntilIdle()
+        val beforeSuspend = assertIs<LyricsState.Ready>(coordinator.state.value)
+
+        val reusable = coordinator.suspendLookup()
+
+        assertTrue(reusable)
+        val afterSuspend = assertIs<LyricsState.Ready>(coordinator.state.value)
+        assertEquals(beforeSuspend, afterSuspend)
+    }
+
+    @Test
+    fun `suspend cancels loading work and marks ownership non-reusable`() = runTest {
+        val started = CompletableDeferred<Unit>()
+        val cancelled = CompletableDeferred<Unit>()
+        val provider = FakeProvider("provider") {
+            started.complete(Unit)
+            try {
+                awaitCancellation()
+            } finally {
+                cancelled.complete(Unit)
+            }
+        }
+        val coordinator = LyricsCoordinator(
+            providers = listOf(provider),
+            selector = RecordingSelector { _, _, _ -> null },
+            scope = this,
+        )
+
+        coordinator.startLookup(track)
+        runCurrent()
+        assertTrue(started.isCompleted)
+
+        val reusable = coordinator.suspendLookup()
+        advanceUntilIdle()
+
+        assertTrue(cancelled.isCompleted)
+        assertEquals(false, reusable)
+        assertEquals(LyricsState.Idle, coordinator.state.value)
+    }
+
+    @Test
     fun `clear cancels active work and returns to idle`() = runTest {
         val started = CompletableDeferred<Unit>()
         val cancelled = CompletableDeferred<Unit>()

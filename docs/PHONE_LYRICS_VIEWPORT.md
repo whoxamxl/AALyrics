@@ -25,13 +25,12 @@ Rules:
 - Let the actual number of visible rows be determined by viewport height, width, line wrapping, font metrics, and user font scale.
 - Long lyrics wrap naturally and remain one logical lyric row even when they occupy multiple visual lines.
 - Do not shrink typography merely to fit more lyrics on screen.
-- Do not use one fixed center point for every current lyric row. The rendered current block may occupy one, two, three, or more visual lines after wrapping.
-- For ordinary timed rows, use the measured bottom edge of the current block as the primary focus reference. Target that bottom edge near 52% of viewport height.
-- Keep the current block inside an approximate 28%–60% focus band when its measured height permits. This naturally places a one-line block lower, a two-line block near the previous ~42% visual center, and a three-line block slightly higher without special-casing visual-line counts.
-- If a current block is taller than the focus band, center the block around the focus band's center rather than forcing either edge outside the viewport unnecessarily.
-- At the document start, place the first lyric row so its **bottom edge** reaches the 50% viewport boundary.
+- For LINE and WORD lyrics, use the measured center of the current lyric block as the normal Follow reference and target that center at approximately 45% of viewport height.
+- Treat the instrumental lead-in before the first timed lyric as a virtual opening row rendered as `♪`. The virtual row participates in document geometry exactly like a row before lyric index 0.
+- Keep the first real lyric row anchored at the 15% top-fade boundary. Fit the virtual `♪` row plus normal row spacing into the fade region above it, so adding the intro row does not push the lyric document downward. While no timed line is current, `♪` is the focused row.
+- When the first timed line becomes current, keep the `♪` glyph in place and move one shared animated focus position from virtual row 0 (`♪`) to virtual row 1 (the first lyric). The note therefore demotes to supporting emphasis while the first lyric gains focus without changing either row's measured geometry.
+- Keep scroll at the document origin while the focused row remains above the 45% center target. As successive current rows progress downward and their measured center would pass 45%, begin Follow scrolling so later current rows remain centered near 45%.
 - At the document end, place the final lyric row so its **top edge** begins at the 50% viewport boundary.
-- These boundary rules create deliberate opening/closing breathing space while preserving the adaptive focus behavior through the middle of the document.
 - All focus/boundary positions are responsive viewport fractions, not fixed dp offsets.
 
 ## Edge fading
@@ -40,15 +39,32 @@ Lyrics should not clip abruptly at the top and bottom edges.
 
 Use an alpha mask over the rendered lyrics content:
 
-- top approximately 20%: transparent -> fully visible,
-- middle approximately 60%: fully visible,
-- bottom approximately 20%: fully visible -> transparent.
+- top approximately 15%: transparent -> fully visible,
+- middle approximately 70%: fully visible,
+- bottom approximately 15%: fully visible -> transparent.
 
 The fade applies to the lyric content itself rather than painting an opaque surface over it. This allows the effect to remain correct over the AALyrics background and future visual treatments.
 
-Keep the edge mask active at the document boundaries as well. Because the first and final lyric rows are centered vertically, the boundary spacing itself keeps those rows clear of the fade region.
+Keep the edge mask active at the document boundaries as well. For timed lyrics, the virtual `♪` opening row may sit inside the top fade while the first real lyric begins where the fade reaches full opacity. For PLAIN lyrics, the first lyric row itself begins at that boundary. At the closing boundary, the existing 50% placement keeps the final row clear of the bottom fade.
 
-The 20% value is the current approved target and may still be tuned slightly in Preview if it proves visually too strong or too weak.
+The top and bottom fades are currently balanced at 15% each. These values may still be tuned slightly in Preview if either edge proves visually too strong or too weak.
+
+## Timed focus motion
+
+LINE and WORD presentation use one continuous animated focus position rather than separate text-emphasis and scroll animations.
+
+- Treat the virtual `♪` row as focus index `0f`; lyric row `n` uses virtual focus index `n + 1f`.
+- When playback advances from one timed row to the next, animate this focus index with a damped spring. The current implementation uses stiffness `120`, damping ratio `0.82`, and a small settle threshold.
+- For seeks or discontinuities larger than approximately six rows, snap the focus index to the new playback region rather than animating visibly through unrelated lyrics.
+- Derive both viewport scroll and row visual emphasis from the same animated focus index. Do not run an independent current-row tween beside an independent scroll tween.
+- Interpolate the document focus position between the measured centers of adjacent rows. This keeps motion continuous even when rows have different wrapped heights.
+- Keep timed-row text layout stable at 20sp / 30sp / Bold for all timed rows. Express hierarchy as a visual transform around the start-edge center: approximately `0.90x` scale with `0.48` alpha for completed rows and `0.70` alpha for upcoming rows, rising continuously to approximately `1.15x` scale and full opacity at focus.
+- Reserve timed-row layout width for the maximum `1.15x` transform (approximately `1 / 1.15` of the available lyric width). This keeps the focused layer inside the viewport's horizontal bounds while preserving the existing start edge and stable wrapping across focus handoff.
+- Reserve vertical room for maximum focus scaling without inflating ordinary rows unnecessarily. The normal 16dp inter-row spacing absorbs scale overflow first; only wrapped/tall timed rows whose `1.15x` growth exceeds that spacing receive additional stable measured height. Center the unscaled row inside that reservation so the focused transform cannot overlap adjacent rows.
+- The scale/alpha transform itself must not participate in measurement, so a focus handoff does not change wrapping, row height reservation, or surrounding document geometry.
+- PLAIN lyrics do not use the timed focus spring or timed focus transforms.
+
+This motion model is adapted from the proven idea in the legacy Auto-Lyrics Performance view—one continuous focus coordinate drives both movement and emphasis—without adopting its fullscreen layout, centered text, focal position, or more aggressive visual scaling.
 
 ## Scroll ownership
 
@@ -147,11 +163,10 @@ All sync modes share the same responsive viewport, edge fading, manual scrolling
 WORD timing provides karaoke-level progress.
 
 - Align lyrics to the start edge using the existing 20dp horizontal viewport inset.
-- The current timed lyric row uses 22sp Bold typography.
-- Supporting lyric rows use 18sp Medium typography.
-- Transition between supporting and current emphasis over roughly 320ms: interpolate 18sp -> 22sp, Medium -> Bold, supporting -> primary color, and 0dp -> 16dp current-neighbor separation with one shared easing curve.
-- Add an extra 16dp of vertical separation between the current row and its immediate supporting neighbors at full current emphasis.
-- The current timed lyric row receives the strongest line hierarchy.
+- Timed rows use stable 20sp / 30sp / Bold layout geometry and reserve horizontal plus overflow-safe vertical room for the maximum 1.15x focus transform. Do not change measured font size, line-height, weight, width/height reservation, or neighbor spacing when focus changes.
+- The shared animated focus position drives visual scale and opacity continuously between supporting and focused states.
+- A completed supporting timed row is rendered at approximately 0.90x scale and 0.48 alpha; an upcoming supporting row uses the same scale with approximately 0.70 alpha; the focused row reaches approximately 1.15x scale and full opacity.
+- The current timed lyric row receives the strongest line hierarchy without reflowing the document.
 - Word progress must not change glyph/word geometry or trigger line reflow.
 - Do not reproduce the legacy Performance mode's active-word size pop.
 - Prefer color/progress emphasis:
@@ -166,12 +181,12 @@ WORD timing provides karaoke-level progress.
 LINE timing follows row boundaries.
 
 - Align lyrics to the start edge using the existing 20dp horizontal viewport inset.
-- Current row: 22sp Bold, strongest color treatment.
-- Supporting rows: 18sp Medium.
-- Add an extra 16dp of vertical separation between the current row and its immediate supporting neighbors at full current emphasis.
-- Previous and upcoming rows remain readable with one consistent supporting color; do not add extra distance-based dimming because the viewport edge alpha mask already provides spatial falloff.
-- When the timed current row changes, move the viewport smoothly toward the adaptive measured-height focus target.
-- Do not snap merely because the current index changed.
+- Timed rows use the same stable 20sp / 30sp / Bold measured geometry and maximum-scale width/vertical-overflow reservation as WORD mode.
+- The shared animated focus position drives both visual emphasis and viewport movement; there is no separate emphasis tween and scroll tween.
+- A completed supporting row is approximately 0.90x / 0.48 alpha, an upcoming supporting row approximately 0.90x / 0.70 alpha, and the focused row approximately 1.15x / full opacity.
+- Previous and upcoming rows remain readable while the focused row has clearly stronger contrast.
+- Interpolate between measured row centers and keep the animated focus center near 45% once scrolling is available.
+- Snap only for large discontinuities such as seeks beyond approximately six rows; ordinary row changes use the spring transition.
 
 ### PLAIN
 
@@ -230,8 +245,10 @@ At minimum cover:
 - tall viewport,
 - narrow width,
 - long wrapped lyric row,
-- first current row,
-- middle current row,
+- instrumental lead-in with the focused virtual `♪` opening row,
+- handoff from focused `♪` to the first timed lyric while the note remains as a supporting row,
+- first current lyric while the document is still at origin,
+- middle current row centered near 45%,
 - last current row,
 - Browse mode with playback above,
 - Browse mode with playback below,
@@ -258,10 +275,11 @@ Runtime state mapping will later supply playback position, duration, lyrics timi
 
 The following details are intentionally not frozen until the first interactive Preview/device pass:
 
-- exact supporting-line spacing,
-- exact adaptive focus-band bounds around the measured current block,
+- exact supporting scale/opacity values,
+- exact spring stiffness/damping tuning,
+- exact center-focus tuning for unusually tall wrapped current blocks,
 - final low-opacity circle/border values for the return control,
-- exact fade percentage if the current 20% target needs slight visual adjustment,
+- exact top/bottom fade percentages if the current 15% / 15% targets need slight visual adjustment,
 - whether long instrumental gaps should dim the previous timed current row after its explicit `endMs`,
 - exact PLAIN lead-in/lead-out weighting.
 

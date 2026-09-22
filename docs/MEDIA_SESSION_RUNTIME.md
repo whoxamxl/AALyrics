@@ -121,7 +121,7 @@ The MediaSession runtime deliberately keeps session monitoring independent from 
 
 The next dedicated lifecycle slice is `feature/lyrics-demand-gating`, documented in `docs/LYRICS_DEMAND_GATING.md`. That slice preserves the working fork's `phone process foreground OR Android Auto projection connected` demand rule while keeping MediaSession discovery/selection alive.
 
-Demand gating belongs between the platform playback sink and `PlaybackLyricsController`: when demand is inactive, the latest normalized snapshot is retained but provider-owning playback is not forwarded; deactivation clears current lyrics work, and reactivation immediately replays the latest snapshot.
+Demand gating belongs between the platform playback sink and `PlaybackLyricsController`: when demand is inactive, the latest normalized snapshot is retained but provider-owning playback is not forwarded; deactivation cancels in-flight provider work while preserving an already resolved usable result in process memory, and reactivation immediately replays the latest snapshot.
 
 `:platform:media` must remain unaware of phone/automotive demand policy.
 

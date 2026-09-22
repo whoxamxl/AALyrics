@@ -43,6 +43,22 @@ class PlaybackLyricsController(
         )
     }
 
+    /**
+     * Stops provider-owning work when no UI/AA surface currently demands lyrics.
+     *
+     * Completed usable lyrics may stay owned in memory. If they do, keeping [activeLookup]
+     * means replaying the same playback identity on demand reactivation is a no-op and therefore
+     * does not refetch providers. Incomplete/unusable work drops ownership so reactivation starts
+     * a fresh lookup.
+     */
+    @Synchronized
+    fun suspendForNoDemand() {
+        if (activeLookup == null) return
+        if (!lookupLifecycle.suspendLookup()) {
+            activeLookup = null
+        }
+    }
+
     private data class LookupOwnership(
         val trackIdentity: PlaybackTrackIdentity,
         val preferences: CandidateSelectionPreferences,

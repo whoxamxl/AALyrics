@@ -123,6 +123,28 @@ class LyricsCoordinator(
         return lookup
     }
 
+    /**
+     * Cancels provider work when lyrics demand disappears.
+     *
+     * A completed usable result stays in memory so foregrounding the same playback identity can
+     * resume immediately without a provider refetch. Loading and unusable terminal states are
+     * cleared so they restart normally when demand returns.
+     */
+    override fun suspendLookup(): Boolean {
+        activeJob?.cancel()
+        activeJob = null
+
+        return when (_state.value) {
+            is LyricsState.Ready,
+            is LyricsState.Degraded -> true
+
+            else -> {
+                _state.update { current -> current.reduce(LyricsStateEvent.Cleared) }
+                false
+            }
+        }
+    }
+
     /** Cancels active lookup work and returns observable state to idle. */
     override fun clear() {
         activeJob?.cancel()

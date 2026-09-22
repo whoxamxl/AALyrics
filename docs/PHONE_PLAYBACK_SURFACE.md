@@ -393,7 +393,7 @@ The UI must not assume Queue availability from the app package name.
 
 When Queue is unavailable, the slot opens the currently selected playback app when a safe launch target is available.
 
-Application/platform resolution should prefer the selected session's explicit session activity when usable, then an ordinary package launch intent fallback.
+Application/platform resolution should prefer the selected playback package's ordinary launcher activity for the user-facing Open playback app action. If no usable package launch target exists or package launch fails, fall back to the selected MediaSession's explicit session activity. PendingIntent session launch must use the platform-required sender activity-start opt-in on Android 14+.
 
 The Phone UI receives only `canOpenPlaybackApp` and an `onOpenPlaybackApp` callback. It must not construct Android intents.
 

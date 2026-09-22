@@ -205,7 +205,7 @@ PlaybackLyricsController
 provider lookup
 ```
 
-MediaSession discovery and selected-controller callbacks remain alive even when demand is inactive. The gate controls only lyrics work. While demand is off it retains the latest normalized playback snapshot but does not start provider lookup; deactivation clears current lookup ownership, and reactivation immediately replays the latest snapshot without requiring another track change.
+MediaSession discovery and selected-controller callbacks remain alive even when demand is inactive. The gate controls only lyrics work. While demand is off it retains the latest normalized playback snapshot but does not start provider lookup; deactivation cancels in-flight work while allowing an already resolved usable result to stay owned in process memory, and reactivation immediately replays the latest snapshot without refetching when its identity is unchanged.
 
 Detailed behavior is defined in `docs/LYRICS_DEMAND_GATING.md`.
 
