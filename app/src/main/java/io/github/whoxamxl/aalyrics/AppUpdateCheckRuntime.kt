@@ -1,5 +1,6 @@
 package io.github.whoxamxl.aalyrics
 
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -36,7 +37,13 @@ internal class AppUpdateCheckRuntime(
 
         mutableState.value = AppUpdateCheckState.Checking
         checkJob = applicationScope.launch {
-            mutableState.value = resolveCheckState()
+            mutableState.value = try {
+                resolveCheckState()
+            } catch (error: CancellationException) {
+                throw error
+            } catch (_: Exception) {
+                AppUpdateCheckState.Failed
+            }
         }
     }
 
