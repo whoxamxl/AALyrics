@@ -8,7 +8,7 @@ The production `SettingsScreen` and its Phone-local row components are implement
 
 The first Settings surface was integrated into `main` via PR #44 and polished in PR #45. PR #49 established the second-level `Advanced` surface with the functional `Verbose details` preference and disabled future `Karaoke mode` affordance. The current Advanced contract also includes explicit Translation model storage cleanup and AALyrics-owned reset actions. PR #50 hosts Settings in the production READY runtime and adds the in-app `License` second-level surface, the shared Phone Markdown renderer, and the adopted Phone popup/subscreen-header standards. PR #58 extends the bundled legal-document path so Settings > License presents the repository `NOTICE` together with the unchanged `LICENSE`. Changelog now follows the same application-owned bundled-document model.
 
-PR #60 integrated the lower Settings information architecture into `main`: `APP`, `ABOUT & SUPPORT`, a standalone `Advanced` card, the in-app Privacy Policy, and the native `Support AALyrics` surface. The current `feature/settings-legal-help` slice extends that merged baseline with Terms of Use, nested third-party license notices, and a distinct Help & Feedback routing hub.
+PR #60 integrated the lower Settings information architecture into `main`: `APP`, `ABOUT & SUPPORT`, a standalone `Advanced` card, the in-app Privacy Policy, and the native `Support AALyrics` surface. The current `feature/settings-legal-help` slice extends that merged baseline with Terms of Use, inline third-party license notices within License, and a distinct Help & Feedback routing hub.
 
 ## Product intent
 
@@ -16,7 +16,7 @@ Settings should expose stable user configuration without turning the Phone UI in
 
 The production Settings surface remains intentionally focused. Lyrics owns the user-facing playback-source eligibility toggle alongside Plain auto-scroll. Advanced contains the narrow unclassified-source override, one debug presentation preference, one explicitly unavailable experimental affordance, one Translation storage-management action, and one app-owned reset action. It does not become a general developer-settings surface. Changelog, Privacy Policy, Terms of Use, License, and Third-party licenses are read-only bundled-document surfaces and do not create networking ownership. `Help & Feedback` is a native routing hub for end-user help and feedback destinations. `Support AALyrics` remains a separate voluntary project-support surface; payment interaction remains entirely outside AALyrics.
 
-Settings subscreens use the shared `SettingsSubscreenHeader` rather than implementing their own header. The standard back affordance is the Material rounded chevron-left used by the current Advanced screen: 32dp icon inside a 48dp touch target, followed by the screen title. This intentionally mirrors the chevron-right affordance used to enter `Advanced`. Text-only `Back` actions and alternate arrow shapes are not used for normal Settings hierarchy navigation. Most subscreens return directly to Settings home; `Third-party licenses` is intentionally nested under `License`, so its header/System Back returns to `License`.
+Settings subscreens use the shared `SettingsSubscreenHeader` rather than implementing their own header. The standard back affordance is the Material rounded chevron-left used by the current Advanced screen: 32dp icon inside a 48dp touch target, followed by the screen title. This intentionally mirrors the chevron-right affordance used to enter `Advanced`. Text-only `Back` actions and alternate arrow shapes are not used for normal Settings hierarchy navigation. Legal content remains at one Settings depth: License renders its required notice, AALyrics license terms, and third-party licenses inline on one scrollable screen.
 
 Initial structure:
 
@@ -54,10 +54,12 @@ Terms of Use
 └─ repository TERMS_OF_USE.md rendered as compact Markdown
 
 License
-├─ repository NOTICE + LICENSE rendered as compact Markdown
-└─ THIRD-PARTY SOFTWARE
-   └─ Third-party licenses                    >
-      └─ repository THIRD_PARTY_LICENSES.md rendered as compact Markdown
+├─ REQUIRED NOTICE
+│  └─ repository NOTICE
+├─ LICENSE TERMS
+│  └─ repository LICENSE rendered as compact Markdown
+└─ THIRD-PARTY LICENSES
+   └─ repository THIRD_PARTY_LICENSES.md rendered as compact Markdown
 
 Help & Feedback
 ├─ Report a bug                               ↗
@@ -553,7 +555,7 @@ The repository-root `NOTICE` and `LICENSE` files remain the legal-content source
 - the display removes only the mechanical `Required Notice:` prefix while preserving the notice content itself;
 - the exact original `Required Notice:` line remains unchanged in the bundled `NOTICE` asset;
 - a separate `LICENSE TERMS` section renders the untouched repository `LICENSE` through the shared Phone-local `PhoneMarkdownText` wrapper;
-- a dedicated `THIRD-PARTY SOFTWARE` section contains a `Third-party licenses >` internal navigation row, keeping third-party OSS notices visibly subordinate to License without mixing them into AALyrics' own license text.
+- a dedicated `THIRD-PARTY LICENSES` section renders the bundled third-party OSS notices inline below AALyrics' own license terms, preserving visual separation without adding another navigation level.
 
 The current required notice is `Required Notice: © 2026 Yuta Miura`. The `©` symbol is part of the canonical repository notice rather than a UI-only substitution.
 
@@ -563,17 +565,9 @@ Markdown parsing/rendering for the license terms is delegated to `mikepenz/multi
 
 The wrapper applies a compact AALyrics Phone Markdown theme instead of the renderer's default Material display typography. Current baseline: H1 24sp/30sp, H2 20sp/26sp, body 14sp/20sp, inline/code text 13sp/18sp, compact block spacing, and AALyrics cyan underlined links. This keeps long technical documents readable on narrow phones without changing their Markdown sources.
 
-The repository-root `THIRD_PARTY_LICENSES.md` file is likewise copied into the generated app assets and exposed as `SettingsScreenUiState.thirdPartyLicensesText`. `ThirdPartyLicensesSettingsScreen` renders it as a read-only Markdown child of License.
+The repository-root `THIRD_PARTY_LICENSES.md` file is likewise copied into the generated app assets and exposed as `SettingsScreenUiState.thirdPartyLicensesText`. `LicenseSettingsScreen` renders it directly in the `THIRD-PARTY LICENSES` section through the shared Markdown renderer.
 
-Navigation is hierarchical:
-
-```text
-Settings
-  -> License
-      -> Third-party licenses
-```
-
-Header Back and System Back from Third-party licenses return to License. Settings-tab reselection remains a root reset and returns directly to Settings home from either depth.
+There is no third-level legal navigation. Header Back and System Back from License return directly to Settings home, while Settings-tab reselection retains the same root-reset behavior.
 
 Therefore:
 
@@ -787,7 +781,7 @@ Both Storage and Reset explanations use the shared `SettingInfoTooltip`; explana
 
 The Advanced surface remains Settings-owned UI. It does not become a fifth primary destination.
 
-Reselecting the already-selected Settings bottom-navigation tab is a Settings-root reset. It dismisses any active Settings modal, discards uncommitted dialog-local draft state such as a Target-language selection, leaves Advanced, Changelog, Privacy Policy, Terms of Use, License, Third-party licenses, Help & Feedback, or Support AALyrics, returns directly to the main Settings surface, and scrolls the Settings home content back to the top. This root reset intentionally overrides normal hierarchy: System/Header Back from Third-party licenses returns to License, while Settings-tab reselection from Third-party licenses returns directly to Settings home.
+Reselecting the already-selected Settings bottom-navigation tab is a Settings-root reset. It dismisses any active Settings modal, discards uncommitted dialog-local draft state such as a Target-language selection, leaves Advanced, Changelog, Privacy Policy, Terms of Use, License, Help & Feedback, or Support AALyrics, returns directly to the main Settings surface, and scrolls the Settings home content back to the top.
 
 A suitable presentation interaction is conceptually:
 
@@ -860,8 +854,7 @@ Deterministic debug Previews should cover at least:
 - Changelog screen at typical, narrow, and enlarged-font configurations;
 - Privacy Policy screen at typical, narrow, and enlarged-font configurations;
 - Terms of Use screen at typical, narrow, and enlarged-font configurations;
-- License screen with Third-party licenses navigation;
-- Third-party licenses screen at typical, narrow, and enlarged-font configurations;
+- License screen with inline Third-party licenses content at typical, narrow, and enlarged-font configurations;
 - Help & Feedback screen at typical, narrow, and enlarged-font configurations;
 - Support AALyrics screen at typical, narrow, and enlarged-font configurations;
 - branding footer;

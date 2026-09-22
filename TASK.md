@@ -49,26 +49,18 @@ The document is available offline and is not fetched from GitHub at runtime.
 
 The existing `License` entry remains a second-level Settings screen.
 
-`LicenseSettingsScreen` continues to present the AALyrics required notice and AALyrics license terms, and gains one internal navigation row:
+`LicenseSettingsScreen` presents all three legal/license blocks inline:
 
 ```text
 License
 ├─ REQUIRED NOTICE
 ├─ LICENSE TERMS
-└─ Third-party licenses           >
+└─ THIRD-PARTY LICENSES
 ```
 
-`THIRD_PARTY_LICENSES.md` is bundled through the same application-owned document path and rendered by a dedicated read-only Markdown screen.
+`THIRD_PARTY_LICENSES.md` is bundled through the same application-owned document path and rendered directly inside the third License section through `PhoneMarkdownText`. It does not introduce another navigation level.
 
-Navigation depth is intentional:
-
-```text
-Settings
-  -> License
-      -> Third-party licenses
-```
-
-System Back from `Third-party licenses` returns to `License`. System Back from `License` returns to Settings home.
+System Back from `License` returns directly to Settings home.
 
 ### Help & Feedback
 
@@ -103,7 +95,6 @@ Normal System Back follows the current hierarchy.
 - Help & Feedback -> Settings home
 - Support AALyrics -> Settings home
 - License -> Settings home
-- Third-party licenses -> License
 - Settings-tab reselection from any Settings depth -> Settings home and scroll home content to top
 
 Root reselection must remain stronger than hierarchical Back and must discard any transient Settings-local modal/draft state as it does today.
@@ -125,12 +116,10 @@ Root reselection must remain stronger than hierarchical Back and must discard an
 - [x] Bundle `TERMS_OF_USE.md` and `THIRD_PARTY_LICENSES.md` as generated app assets.
 - [x] Expose both documents through the application-owned Settings presentation boundary.
 - [x] Add `TermsOfUseSettingsScreen` using the shared Settings header and Markdown renderer.
-- [x] Add `ThirdPartyLicensesSettingsScreen` using the shared Settings header and Markdown renderer.
-- [x] Add the License -> Third-party licenses navigation row.
+- [x] Render `THIRD_PARTY_LICENSES.md` inline as the third section of `LicenseSettingsScreen`.
 - [ ] Add the native `Help & Feedback` routing hub.
 - [ ] Add application-owned external-link callbacks for the Help & Feedback destinations.
 - [ ] Preserve the existing `Support AALyrics` implementation and behavior.
-- [x] Extend Settings navigation state so Third-party licenses Back returns to License while root reselection still returns directly to Settings home.
 - [ ] Add/update strings, deterministic Previews, presentation mapping coverage, and focused navigation tests.
 - [ ] Align `docs/PHONE_SETTINGS.md` with the implemented final state.
 - [ ] Re-evaluate `Reset AALyrics`; this slice is expected to add no persisted state, so no reset behavior change should be required unless implementation changes that assumption.
@@ -142,4 +131,4 @@ Do not redesign unrelated Settings sections, change existing Support AALyrics vi
 
 ## Current stop point
 
-Terms of Use is now a Settings-level bundled-document screen. License now contains a dedicated THIRD-PARTY SOFTWARE section whose Third-party licenses row opens the bundled third-party license document as a child screen. Hierarchical Back returns that child to License, while Settings-tab reselection still resets directly to Settings home. Help & Feedback has not been implemented yet; stop at this legal-document UI checkpoint.
+Terms of Use is now a Settings-level bundled-document screen. License renders REQUIRED NOTICE, LICENSE TERMS, and THIRD-PARTY LICENSES inline on one scrollable second-level screen. The unnecessary third navigation level has been removed. Help & Feedback has not been implemented yet; stop at this legal-document UI checkpoint.
