@@ -112,8 +112,9 @@ Pending before merge:
 - [x] Replace the earlier GIF path with the final SVG-derived VectorDrawable CTA.
 - [x] Verify Preview and production render the same `SupportAALyricsSettingsScreen`; typical/narrow/enlarged previews use a deterministic frozen animation state, while the dedicated Interactive Preview exercises the real animation.
 - [x] Verify the finalized CTA on a physical device: 0.98↔1.02 pulse, diagonal shimmer, no tilt, no positional float.
+- [ ] Sync the branch with current `main` after PR #62, resolve the overlapping Settings/runtime/docs changes, and re-run CI on the resulting head.
 - [ ] Re-run bounded Codex review on the finalized VectorDrawable/native-Compose implementation.
 
 ## Current stop point
 
-The final SVG-derived VectorDrawable CTA is implemented and confirmed on a physical device. Preview, documentation, and production Phone UI are aligned; CI is green. Re-run bounded Codex review before returning PR #60 to the explicit pre-merge approval gate.
+The final SVG-derived VectorDrawable CTA is implemented and confirmed on a physical device. Preview, documentation, and production Phone UI are aligned. CI passed on finalized implementation head `1178ab3`; the later Preview/status-alignment head cannot receive a pull-request CI run until the branch is synced with current `main`, because PR #62 introduced overlapping changes and PR #60 is temporarily conflict-blocked. Sync `main`, re-run CI, then run the bounded Codex review before returning PR #60 to the explicit pre-merge approval gate.
