@@ -91,24 +91,42 @@ internal class AndroidRuntimeMediaController(
                 canSkipToQueueItem = actions.supports(PlaybackState.ACTION_SKIP_TO_QUEUE_ITEM),
                 canSeek = actions.supports(PlaybackState.ACTION_SEEK_TO),
             ),
-            queue = controller.queue.orEmpty().mapNotNull { item ->
-                val title = item.description.title?.toString()?.trim().orEmpty()
+            queue = controller.queue.orEmpty().asSequence().mapNotNull { item ->
+                val description = item.description
+                val title = description.title?.toString()?.trim().orEmpty()
                 if (title.isEmpty()) {
                     null
                 } else {
                     PlaybackQueueItem(
                         id = item.queueId,
                         title = title,
-                        subtitle = item.description.subtitle
+                        subtitle = description.subtitle
                             ?.toString()
                             ?.trim()
                             ?.takeIf(String::isNotEmpty),
+                        artworkUri = description.iconUri?.toString(),
+                        hasEmbeddedArtwork = description.iconBitmap != null,
                     )
                 }
-            },
+            }.take(MAX_QUEUE_ITEMS).toList(),
             hasSessionActivity = controller.sessionActivity != null,
         )
     }
+
+    override fun queueArtworkBitmaps(): Map<Long, android.graphics.Bitmap> =
+        controller.queue.orEmpty()
+            .asSequence()
+            .mapNotNull { item ->
+                val description = item.description
+                val title = description.title?.toString()?.trim().orEmpty()
+                if (title.isEmpty()) {
+                    null
+                } else {
+                    description.iconBitmap?.let { bitmap -> item.queueId to bitmap }
+                }
+            }
+            .take(MAX_QUEUE_ITEMS)
+            .toMap()
 
     override fun attach(callback: RuntimeMediaControllerCallback) {
         check(attached == null) { "Media controller callback is already attached" }
@@ -212,6 +230,8 @@ internal fun pendingIntentBackgroundActivityStartModeForSdk(sdkInt: Int): Int? =
         sdkInt >= 34 -> ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOWED
         else -> null
     }
+
+private const val MAX_QUEUE_ITEMS = 20
 
 internal class HandlerMetadataTaskScheduler(
     private val handler: Handler,

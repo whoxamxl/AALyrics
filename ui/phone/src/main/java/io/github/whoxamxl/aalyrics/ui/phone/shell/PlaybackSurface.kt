@@ -35,6 +35,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsSpacing
 import io.github.whoxamxl.aalyrics.ui.phone.R
+import io.github.whoxamxl.aalyrics.ui.phone.state.PlaybackQueueItemUiState
 import io.github.whoxamxl.aalyrics.ui.phone.state.PlaybackSurfaceUiState
 import kotlin.math.abs
 import kotlin.math.roundToInt
@@ -55,6 +56,7 @@ fun PlaybackSurface(
     onTranslationEnabledChanged: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
     artwork: (@Composable BoxScope.() -> Unit)? = null,
+    queueArtwork: (@Composable BoxScope.(PlaybackQueueItemUiState) -> Unit)? = null,
 ) {
     val collapseLabel = stringResource(R.string.playback_collapse)
     val density = LocalDensity.current
@@ -268,6 +270,7 @@ fun PlaybackSurface(
                         alpha = expansionProgress
                     },
                 artwork = artwork,
+                queueArtwork = queueArtwork,
             )
         }
     }

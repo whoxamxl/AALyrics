@@ -146,7 +146,8 @@ That feature may extend the existing selected-session boundary with normalized p
 - the Phone layer receives presentation-ready capability state and callbacks only;
 - the existing framework-neutral `PlaybackTransport` remains the transport boundary for play, pause, previous, next, and `seekTo`;
 - Previous/Next long-press relative seek is deliberately implemented by local preview plus a single `seekTo()` on release, not by adding framework `rewind()` / `fastForward()` behavior;
-- queue selection may add a framework-neutral queue-item command if required;
+- queue selection uses the framework-neutral `skipToQueueItem(id)` command; published non-empty queue data is the availability signal because some sessions, confirmed with Spotify, omit `ACTION_SKIP_TO_QUEUE_ITEM` while still accepting the command;
+- queue entries are normalized to at most 20 presentation-safe items; `MediaDescription.iconUri` crosses the boundary only as a String, while embedded `iconBitmap` data uses an Android-owned queue-artwork side channel that stops at `:app`;
 - opening the selected playback app remains application/platform navigation behavior rather than a media transport command.
 
 The original PR #29 runtime did not own finished transport presentation. This follow-up consumes and may narrowly extend that runtime without changing its session-selection policy.

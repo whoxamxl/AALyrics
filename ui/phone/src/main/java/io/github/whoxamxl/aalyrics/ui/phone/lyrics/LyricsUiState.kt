@@ -3,6 +3,14 @@ package io.github.whoxamxl.aalyrics.ui.phone.lyrics
 import androidx.compose.runtime.Immutable
 import io.github.whoxamxl.aalyrics.core.model.LyricsSyncType
 
+enum class TrackCardLyricsStatus {
+    IDLE,
+    LOADING,
+    READY,
+    NOT_FOUND,
+    FAILED,
+}
+
 /** Presentation-ready current-track identity shown at the top of the Lyrics destination. */
 @Immutable
 data class TrackCardUiState(
@@ -10,6 +18,7 @@ data class TrackCardUiState(
     val artist: String? = null,
     val providerLabel: String? = null,
     val syncLabel: String? = null,
+    val lyricsStatus: TrackCardLyricsStatus = TrackCardLyricsStatus.IDLE,
 )
 
 /** Which owner currently controls the vertical position of the lyrics viewport. */

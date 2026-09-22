@@ -43,6 +43,8 @@ data class PlaybackQueueItemUiState(
     val id: Long,
     val title: String,
     val subtitle: String? = null,
+    val artworkUri: String? = null,
+    val hasEmbeddedArtwork: Boolean = false,
 )
 
 /**
@@ -89,8 +91,13 @@ data class PlaybackSurfaceUiState(
     val playPauseEnabled: Boolean
         get() = if (isPlaying) canPause else canPlay
 
+    /**
+     * Some players, including Spotify, publish a usable queue without advertising
+     * ACTION_SKIP_TO_QUEUE_ITEM. Published queue data is therefore the availability
+     * signal; the action flag remains descriptive rather than a hard UI gate.
+     */
     val queueAvailable: Boolean
-        get() = canSkipToQueueItem && queue.isNotEmpty()
+        get() = queue.isNotEmpty()
 
     val seekEnabled: Boolean
         get() = canSeek && durationMs != null
