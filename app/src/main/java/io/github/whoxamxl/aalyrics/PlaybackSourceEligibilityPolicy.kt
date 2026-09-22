@@ -14,8 +14,8 @@ internal sealed interface PlaybackSourceEligibility {
 /**
  * Application-owned policy deciding whether the selected playback source may start lyrics work.
  *
- * This policy does not own MediaSession discovery/selection and is intentionally independent
- * from the lyrics/provider pipeline until the lookup gate is wired in a later slice.
+ * This policy does not own MediaSession discovery/selection. The application composition layer
+ * consumes its result to gate lyrics work before provider lookup starts.
  */
 internal object PlaybackSourceEligibilityPolicy {
     fun evaluate(
