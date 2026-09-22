@@ -86,7 +86,7 @@ The policy must describe actual AALyrics behavior; placeholder privacy claims ar
 - [x] Update deterministic Previews for Settings home, Privacy Policy, Support AALyrics, narrow width, and enlarged font.
 - [x] Add/update focused tests for presentation mapping and Settings root-reset/subscreen behavior as needed.
 - [x] Re-evaluate `Reset AALyrics`; document that no new persisted state is introduced by this slice unless implementation changes that assumption.
-- [ ] Run architecture checks, unit tests, debug APK build, CI, and bounded review before merge.
+- [x] Run architecture checks, unit tests, debug APK build, CI, and bounded review before merge.
 
 ## Scope guard
 
@@ -108,8 +108,8 @@ Pending before merge:
 - [x] JVM/unit tests pass.
 - [x] Generated APK contains `aalyrics_privacy.md`.
 - [x] PR diff/Preview alignment review is complete.
-- [ ] Bounded Codex review has no unresolved blocking findings.
+- [x] Bounded Codex review has no unresolved blocking findings (`f2a1a4c`: no major issues; later changes are validation-status documentation only).
 
 ## Current stop point
 
-Implementation is present on the topic branch. Continue validation/review; do not merge without explicit user authorization.
+Implementation and repository validation are complete on the topic branch. PR #60 is ready for the explicit pre-merge approval gate; do not merge without user authorization.
