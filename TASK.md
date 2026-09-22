@@ -111,8 +111,8 @@ Pending before merge:
 - [x] PR diff/Preview alignment review is complete.
 - [x] Remove the custom `bmc_logo.png` Compose animation that could crash when entering Support AALyrics.
 - [x] Add a defensive GIF decode path with a native fallback so GIF decode failure cannot crash the Settings surface.
-- [ ] Re-run CI and bounded Codex review after the final GIF-based Support AALyrics refinement.
+- [x] Re-run CI and bounded Codex review after the final GIF-based Support AALyrics refinement (`bbf5d64`: Build/unit tests/APK upload green; Codex: no major issues).
 
 ## Current stop point
 
-Support AALyrics visual refinement is implemented. Re-run repository validation and bounded review before returning PR #60 to the explicit pre-merge approval gate.
+Implementation and repository validation are complete. PR #60 is ready for the explicit pre-merge approval gate; do not merge without user authorization.
