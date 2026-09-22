@@ -145,6 +145,9 @@
     <string name="playback_source_connected">Connected</string>
     <string name="playback_source_disconnected">Disconnected</string>
     <string name="playback_source_unavailable">Unavailable</string>
+    <string name="playback_source_unavailable_details_description">Why this playback source is unavailable</string>
+    <string name="playback_source_unavailable_unsupported_player">Unsupported player.</string>
+    <string name="playback_source_unavailable_unknown">This playback source is not available.</string>
     <string name="playback_source_error">Error</string>
     <string name="playback_source_open_app_description">Open playback app</string>
     <string name="playback_source_error_details_description">Playback source error details</string>

@@ -52,6 +52,7 @@ import io.github.whoxamxl.aalyrics.ui.phone.R
 import io.github.whoxamxl.aalyrics.ui.phone.component.PhonePopupMenu
 import io.github.whoxamxl.aalyrics.ui.phone.state.PlaybackSourceConnectionUiState
 import io.github.whoxamxl.aalyrics.ui.phone.state.PlaybackSourceErrorUiReason
+import io.github.whoxamxl.aalyrics.ui.phone.state.PlaybackSourceUnavailableUiReason
 
 /** Compact persistent app identity and media-session runtime status presentation. */
 @Composable
@@ -59,6 +60,7 @@ fun PhoneTopBar(
     mediaSourceLabel: String?,
     mediaSourceConnectionState: PlaybackSourceConnectionUiState =
         PlaybackSourceConnectionUiState.CONNECTING,
+    mediaSourceUnavailableReason: PlaybackSourceUnavailableUiReason? = null,
     mediaSourceErrorReason: PlaybackSourceErrorUiReason? = null,
     mediaSourceCanOpenApp: Boolean = false,
     mediaSourceIconPainter: Painter? = null,
@@ -92,6 +94,7 @@ fun PhoneTopBar(
             PlaybackSourceStatusPill(
                 mediaSourceLabel = mediaSourceLabel,
                 connectionState = mediaSourceConnectionState,
+                unavailableReason = mediaSourceUnavailableReason,
                 errorReason = mediaSourceErrorReason,
                 mediaSourceCanOpenApp = mediaSourceCanOpenApp,
                 mediaSourceIconPainter = mediaSourceIconPainter,
@@ -105,6 +108,7 @@ fun PhoneTopBar(
 private fun PlaybackSourceStatusPill(
     mediaSourceLabel: String?,
     connectionState: PlaybackSourceConnectionUiState,
+    unavailableReason: PlaybackSourceUnavailableUiReason?,
     errorReason: PlaybackSourceErrorUiReason?,
     mediaSourceCanOpenApp: Boolean,
     mediaSourceIconPainter: Painter?,
@@ -204,6 +208,10 @@ private fun PlaybackSourceStatusPill(
                     StatusText(
                         text = stringResource(R.string.playback_source_unavailable),
                         color = palette.foreground,
+                    )
+                    PlaybackSourceUnavailableTooltip(
+                        reason = unavailableReason,
+                        tint = palette.foreground,
                     )
                 }
 
@@ -326,6 +334,54 @@ private fun StatusText(
         maxLines = 1,
     )
 }
+
+@Composable
+private fun PlaybackSourceUnavailableTooltip(
+    reason: PlaybackSourceUnavailableUiReason?,
+    tint: Color,
+) {
+    var expanded by remember { mutableStateOf(false) }
+
+    Box {
+        IconButton(
+            onClick = { expanded = true },
+            modifier = Modifier.size(AALyricsSpacing.Space24),
+        ) {
+            Icon(
+                imageVector = AALyricsIcons.Info,
+                contentDescription = stringResource(
+                    R.string.playback_source_unavailable_details_description,
+                ),
+                tint = tint,
+                modifier = Modifier.size(AALyricsSpacing.Space16),
+            )
+        }
+
+        PhonePopupMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
+            modifier = Modifier.widthIn(max = 280.dp),
+        ) {
+            Text(
+                text = playbackSourceUnavailableMessage(reason),
+                style = AALyricsTypography.TrackArtist,
+                color = AALyricsColors.TextPrimary,
+                modifier = Modifier.padding(AALyricsSpacing.Space16),
+            )
+        }
+    }
+}
+
+@Composable
+private fun playbackSourceUnavailableMessage(
+    reason: PlaybackSourceUnavailableUiReason?,
+): String =
+    when (reason) {
+        PlaybackSourceUnavailableUiReason.UNSUPPORTED_PLAYER ->
+            stringResource(R.string.playback_source_unavailable_unsupported_player)
+        PlaybackSourceUnavailableUiReason.UNKNOWN,
+        null -> stringResource(R.string.playback_source_unavailable_unknown)
+    }
 
 @Composable
 private fun PlaybackSourceErrorTooltip(

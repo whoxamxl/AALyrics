@@ -53,6 +53,7 @@ fun PhoneAppShell(
             PhoneTopBar(
                 mediaSourceLabel = state.mediaSourceLabel,
                 mediaSourceConnectionState = state.mediaSourceConnectionState,
+                mediaSourceUnavailableReason = state.mediaSourceUnavailableReason,
                 mediaSourceErrorReason = state.mediaSourceErrorReason,
                 mediaSourceCanOpenApp = state.mediaSourceCanOpenApp,
                 mediaSourceIconPainter = mediaSourceIconPainter,
