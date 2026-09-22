@@ -54,6 +54,8 @@ internal fun PhoneRuntimeHost(
     val translationModelCleanupState by
         application.translationModelCleanupState.collectAsStateWithLifecycle()
     val verboseDetailsEnabled by application.verboseDetailsEnabled.collectAsStateWithLifecycle()
+    val ignoreNonAudioApps by application.ignoreNonAudioApps.collectAsStateWithLifecycle()
+    val allowUnclassifiedApps by application.allowUnclassifiedApps.collectAsStateWithLifecycle()
 
     var selectedDestination by rememberSaveable {
         mutableStateOf(PhoneDestination.Home)
@@ -118,6 +120,8 @@ internal fun PhoneRuntimeHost(
         translationModelStates = translationModelStates,
         verboseDetailsEnabled = verboseDetailsEnabled,
         plainLyricsAutoScrollEnabled = plainLyricsAutoScrollEnabled,
+        ignoreNonAudioApps = ignoreNonAudioApps,
+        allowUnclassifiedApps = allowUnclassifiedApps,
         androidAutoStatus = androidAutoStatus,
         appVersionName = BuildConfig.VERSION_NAME,
         currentYear = Year.now().value,
@@ -192,6 +196,8 @@ internal fun PhoneRuntimeHost(
                 state = settingsState,
                 rootResetKey = destinationRootResetKey,
                 onPlainLyricsAutoScrollChanged = { plainLyricsAutoScrollEnabled = it },
+                onIgnoreNonAudioAppsChanged = application::setIgnoreNonAudioApps,
+                onAllowUnclassifiedAppsChanged = application::setAllowUnclassifiedApps,
                 onVerboseDetailsChanged = application::setVerboseDetailsEnabled,
                 onTranslationEnabledChanged = application::setTranslationEnabled,
                 onTranslationTargetSelected = application::setTranslationTargetLanguage,

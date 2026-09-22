@@ -18,6 +18,8 @@ internal fun mapPhoneSettingsState(
     translationModelStates: Map<String, TranslationModelState>,
     verboseDetailsEnabled: Boolean,
     plainLyricsAutoScrollEnabled: Boolean,
+    ignoreNonAudioApps: Boolean,
+    allowUnclassifiedApps: Boolean,
     androidAutoStatus: AndroidAutoCompatibilityUiStatus,
     appVersionName: String,
     currentYear: Int,
@@ -52,6 +54,8 @@ internal fun mapPhoneSettingsState(
 
     return SettingsScreenUiState(
         plainLyricsAutoScrollEnabled = plainLyricsAutoScrollEnabled,
+        ignoreNonAudioApps = ignoreNonAudioApps,
+        allowUnclassifiedApps = allowUnclassifiedApps,
         verboseDetailsEnabled = verboseDetailsEnabled,
         translationEnabled = translationSettings.enabled,
         translationTarget = selected,
