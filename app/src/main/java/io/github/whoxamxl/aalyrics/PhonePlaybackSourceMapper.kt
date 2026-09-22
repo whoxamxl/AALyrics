@@ -3,8 +3,10 @@ package io.github.whoxamxl.aalyrics
 import io.github.whoxamxl.aalyrics.core.model.PlaybackSnapshot
 import io.github.whoxamxl.aalyrics.platform.media.PlaybackSourceErrorReason
 import io.github.whoxamxl.aalyrics.platform.media.PlaybackSourceRuntimeState
+import io.github.whoxamxl.aalyrics.platform.media.PlaybackSourceUnavailableReason
 import io.github.whoxamxl.aalyrics.ui.phone.state.PlaybackSourceConnectionUiState
 import io.github.whoxamxl.aalyrics.ui.phone.state.PlaybackSourceErrorUiReason
+import io.github.whoxamxl.aalyrics.ui.phone.state.PlaybackSourceUnavailableUiReason
 
 internal fun playbackSourceAppInfoPackageName(
     runtimeState: PlaybackSourceRuntimeState,
@@ -22,6 +24,7 @@ internal fun playbackSourceAppInfoPackageName(
 internal data class PhonePlaybackSourcePresentationState(
     val connectionState: PlaybackSourceConnectionUiState,
     val packageName: String? = null,
+    val unavailableReason: PlaybackSourceUnavailableUiReason? = null,
     val errorReason: PlaybackSourceErrorUiReason? = null,
 )
 
@@ -63,6 +66,7 @@ internal fun mapPhonePlaybackSourcePresentationState(
             PhonePlaybackSourcePresentationState(
                 connectionState = PlaybackSourceConnectionUiState.UNAVAILABLE,
                 packageName = runtimeState.packageName,
+                unavailableReason = runtimeState.reason.toUiReason(),
             )
 
         is PlaybackSourceRuntimeState.Error ->
@@ -82,4 +86,13 @@ private fun PlaybackSourceErrorReason.toUiReason(): PlaybackSourceErrorUiReason 
             PlaybackSourceErrorUiReason.SESSION_ATTACH_FAILED
         PlaybackSourceErrorReason.UNKNOWN ->
             PlaybackSourceErrorUiReason.UNKNOWN
+    }
+
+
+private fun PlaybackSourceUnavailableReason.toUiReason(): PlaybackSourceUnavailableUiReason =
+    when (this) {
+        PlaybackSourceUnavailableReason.UNSUPPORTED_PLAYER ->
+            PlaybackSourceUnavailableUiReason.UNSUPPORTED_PLAYER
+        PlaybackSourceUnavailableReason.UNKNOWN ->
+            PlaybackSourceUnavailableUiReason.UNKNOWN
     }

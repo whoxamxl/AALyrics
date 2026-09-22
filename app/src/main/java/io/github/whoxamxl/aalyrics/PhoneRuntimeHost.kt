@@ -132,6 +132,7 @@ internal fun PhoneRuntimeHost(
             selectedDestination = selectedDestination,
             mediaSourceLabel = displayedPlaybackSourceAppInfo?.label,
             mediaSourceConnectionState = playbackSourcePresentation.connectionState,
+            mediaSourceUnavailableReason = playbackSourcePresentation.unavailableReason,
             mediaSourceErrorReason = playbackSourcePresentation.errorReason,
             mediaSourceCanOpenApp = playbackSourceCanOpenApp,
             playbackSurface = playbackSurface,

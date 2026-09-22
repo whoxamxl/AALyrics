@@ -52,6 +52,11 @@ enum class PlaybackSourceErrorReason {
     UNKNOWN,
 }
 
+enum class PlaybackSourceUnavailableReason {
+    UNSUPPORTED_PLAYER,
+    UNKNOWN,
+}
+
 sealed interface PlaybackSourceRuntimeState {
     data object Connecting : PlaybackSourceRuntimeState
 
@@ -63,6 +68,8 @@ sealed interface PlaybackSourceRuntimeState {
 
     data class Unavailable(
         val packageName: String? = null,
+        val reason: PlaybackSourceUnavailableReason =
+            PlaybackSourceUnavailableReason.UNSUPPORTED_PLAYER,
     ) : PlaybackSourceRuntimeState
 
     data class Error(

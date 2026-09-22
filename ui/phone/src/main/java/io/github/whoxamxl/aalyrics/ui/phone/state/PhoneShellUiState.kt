@@ -18,6 +18,11 @@ enum class PlaybackSourceErrorUiReason {
     UNKNOWN,
 }
 
+enum class PlaybackSourceUnavailableUiReason {
+    UNSUPPORTED_PLAYER,
+    UNKNOWN,
+}
+
 /** Presentation-only state for persistent Phone shell chrome. */
 @Immutable
 data class PhoneShellUiState(
@@ -25,6 +30,7 @@ data class PhoneShellUiState(
     val mediaSourceLabel: String? = null,
     val mediaSourceConnectionState: PlaybackSourceConnectionUiState =
         PlaybackSourceConnectionUiState.CONNECTING,
+    val mediaSourceUnavailableReason: PlaybackSourceUnavailableUiReason? = null,
     val mediaSourceErrorReason: PlaybackSourceErrorUiReason? = null,
     val mediaSourceCanOpenApp: Boolean = false,
     val playbackSurface: PlaybackSurfaceUiState? = null,

@@ -98,7 +98,10 @@ internal class MediaSessionObservation<Token>(
                 MediaSessionSelectionResult.Disconnected ->
                     PlaybackSourceRuntimeState.Disconnected
                 is MediaSessionSelectionResult.Unavailable ->
-                    PlaybackSourceRuntimeState.Unavailable(result.packageName)
+                    PlaybackSourceRuntimeState.Unavailable(
+                        packageName = result.packageName,
+                        reason = result.reason,
+                    )
             },
         )
     }
