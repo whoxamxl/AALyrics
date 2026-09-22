@@ -16,7 +16,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -42,14 +41,12 @@ import io.github.whoxamxl.aalyrics.ui.phone.sync.SyncScreen
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
 import java.time.Year
 
@@ -85,7 +82,6 @@ internal fun PhoneRuntimeHost(
     val queueArtworkCache = remember {
         QueueArtworkCache(maxEntries = QUEUE_ARTWORK_CACHE_ENTRIES)
     }
-    val queueArtworkScope = rememberCoroutineScope()
     val density = LocalDensity.current
     val queueArtworkTargetPx = with(density) { QUEUE_ARTWORK_SIZE.roundToPx() }
 
@@ -190,16 +186,6 @@ internal fun PhoneRuntimeHost(
         onNext = application::skipToNext,
         onSeekTo = application::seekTo,
         onQueueItemSelected = application::skipToQueueItem,
-        onQueueOpened = { queue ->
-            queueArtworkScope.launch {
-                prefetchQueueArtwork(
-                    contentResolver = application.contentResolver,
-                    cache = queueArtworkCache,
-                    queue = queue,
-                    targetPx = queueArtworkTargetPx,
-                )
-            }
-        },
         onOpenPlaybackApp = { application.openSelectedPlaybackApp() },
         onTranslationEnabledChanged = application::setTranslationEnabled,
         mediaSourceIconPainter = playbackSourceIconPainter,
@@ -302,38 +288,12 @@ private fun QueueItemArtwork(
     AlbumArtwork(image = image)
 }
 
-private suspend fun prefetchQueueArtwork(
-    contentResolver: ContentResolver,
-    cache: QueueArtworkCache,
-    queue: List<PlaybackQueueItemUiState>,
-    targetPx: Int,
-) {
-    val artworkUris = queue
-        .mapNotNull { it.artworkUri }
-        .distinct()
-    suspend fun prefetch(uris: List<String>) {
-        coroutineScope {
-            uris.map { artworkUri ->
-                async {
-                    cache.getOrLoad(
-                        contentResolver = contentResolver,
-                        artworkUri = artworkUri,
-                        targetPx = targetPx,
-                    )
-                }
-            }.awaitAll()
-        }
-    }
-
-    prefetch(artworkUris.take(QUEUE_ARTWORK_PRIORITY_COUNT))
-    prefetch(artworkUris.drop(QUEUE_ARTWORK_PRIORITY_COUNT))
-}
-
 private class QueueArtworkCache(
     maxEntries: Int,
 ) {
     private val cache = LruCache<String, Bitmap>(maxEntries)
     private val mutex = Mutex()
+    private val loadSemaphore = Semaphore(QUEUE_ARTWORK_MAX_CONCURRENT_LOADS)
     private val inFlight = mutableMapOf<String, CompletableDeferred<Bitmap?>>()
 
     fun get(
@@ -369,12 +329,14 @@ private class QueueArtworkCache(
         }
 
         return try {
-            val bitmap = withContext(Dispatchers.IO) {
-                loadQueueArtwork(
-                    contentResolver = contentResolver,
-                    artworkUri = artworkUri,
-                    targetPx = targetPx,
-                )
+            val bitmap = loadSemaphore.withPermit {
+                withContext(Dispatchers.IO) {
+                    loadQueueArtwork(
+                        contentResolver = contentResolver,
+                        artworkUri = artworkUri,
+                        targetPx = targetPx,
+                    )
+                }
             }
             if (bitmap != null) {
                 cache.put(key, bitmap)
@@ -447,6 +409,6 @@ private fun Drawable.toImageBitmapOrNull(): ImageBitmap? =
 
 private val QUEUE_ARTWORK_SIZE = 36.dp
 private const val QUEUE_ARTWORK_CACHE_ENTRIES = 32
-private const val QUEUE_ARTWORK_PRIORITY_COUNT = 10
+private const val QUEUE_ARTWORK_MAX_CONCURRENT_LOADS = 3
 private const val QUEUE_ARTWORK_LOG_TAG = "AALyricsQueueArtwork"
 private const val PLAYBACK_SOURCE_ICON_RASTER_SIZE_PX = 96
