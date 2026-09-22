@@ -16,7 +16,7 @@ The current production branch state now has:
 - live app-owned playback, lyrics, Details, Translation, model, and Verbose Details state collected lifecycle-aware;
 - Playback Surface commands routed through the existing application/platform media boundary;
 - selected MediaSession album artwork forwarded through an app-owned Android boundary and rendered in both Track Card and Playback Surface, with the AALyrics mark as the no-artwork fallback;
-- playback source packages resolved through an application-owned metadata boundary to a human-readable app label and source app icon where possible, with the package identifier retained as the final normal-UI fallback and always exposed separately in Verbose Details; Android application category is available to Verbose Details from the same resolved metadata;
+- playback source packages resolved through an application-owned metadata boundary to a human-readable app label and source app icon where possible, with the package identifier retained as the final normal-UI fallback and always exposed separately in Verbose Details; Android application category and min/target SDK levels are available to Verbose Details from the same resolved metadata;
 - Translation persisted default disabled on an unconfigured install while English remains the built-in/default target;
 - production Lyrics and Settings presentation mapping;
 - in-app License navigation backed by build-synchronized repository `NOTICE` + `LICENSE`, rendered through the shared Phone Markdown wrapper;
@@ -133,7 +133,7 @@ PhoneShellUiState
 
 The Top Bar, Playback Surface, and Bottom Navigation remain shell-owned.
 
-Playback-source package metadata is owned by `:app`. The label-only resolver is replaced by `PlaybackSourceAppInfoResolver`, which performs one cached `ApplicationInfo` lookup per selected package and derives the presentation label, optional app icon, and diagnostic category. The package identifier remains the label fallback if metadata/label resolution fails. The Top Bar icon is supplied as caller-owned renderable content, analogous to selected-session artwork, so `ApplicationInfo`, `PackageManager`, and Android `Drawable` objects do not become Phone UI state. When no icon is available, `PhoneTopBar` retains its existing cyan-dot fallback.
+Playback-source package metadata is owned by `:app`. The label-only resolver is replaced by `PlaybackSourceAppInfoResolver`, which performs one cached `ApplicationInfo` lookup per selected package and derives the presentation label, optional app icon, diagnostic category, minimum SDK level, and target SDK level. The package identifier remains the label fallback if metadata/label resolution fails. The Top Bar icon is supplied as caller-owned renderable content, analogous to selected-session artwork, so `ApplicationInfo`, `PackageManager`, and Android `Drawable` objects do not become Phone UI state. When no icon is available, `PhoneTopBar` retains its existing cyan-dot fallback.
 
 ## Playback actions
 
@@ -216,7 +216,7 @@ AALyricsApplication.phoneDetailsState
 DetailsScreen
 ```
 
-The runtime-host slice must not add provider/network requests for diagnostics. Verbose Details may reuse the already-resolved playback-source app metadata to show the Android application category alongside the raw playback package; this metadata must not influence MediaSession selection or playback behavior.
+The runtime-host slice must not add provider/network requests for diagnostics. Verbose Details may reuse the already-resolved playback-source app metadata to show the Android application category and min/target SDK levels alongside the raw playback package; this metadata must not influence MediaSession selection, compatibility gating, playback behavior, or feature availability.
 
 ## Settings destination
 

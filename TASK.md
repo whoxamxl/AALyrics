@@ -9,7 +9,7 @@
 
 ## Goal
 
-Replace the current label-only playback-source package resolution with one application-owned metadata resolver that derives the selected playback app's human-readable label, application icon, and Android application category from `ApplicationInfo`.
+Replace the current label-only playback-source package resolution with one application-owned metadata resolver that derives the selected playback app's human-readable label, application icon, Android application category, minimum SDK level, and target SDK level from `ApplicationInfo`.
 
 The selected MediaSession package remains the source identity:
 
@@ -24,10 +24,12 @@ PlaybackSourceAppInfo
 ├─ packageName
 ├─ label
 ├─ icon
-└─ category
+├─ category
+├─ minSdkVersion
+└─ targetSdkVersion
         ↓
         ├─ persistent Phone Top Bar: icon + label
-        └─ Verbose Details: package + category
+        └─ Verbose Details: package + category + SDK levels
 ```
 
 This is a presentation/diagnostic enrichment only. It must not change media-session discovery, source selection, playback transport, lyrics lookup, provider behavior, or persistence.
@@ -38,11 +40,12 @@ This is a presentation/diagnostic enrichment only. It must not change media-sess
 
 - Resolve from the selected playback package already exposed by `PlaybackSnapshot.source.id`.
 - Replace `PlaybackSourceLabelResolver` with an application-owned `PlaybackSourceAppInfoResolver`.
-- Perform one `ApplicationInfo` lookup per package and cache the resolved result rather than issuing separate label/icon/category lookups.
+- Perform one `ApplicationInfo` lookup per package and cache the resolved result rather than issuing separate label/icon/category/SDK lookups.
 - Keep the package identifier as the human-readable label fallback when application lookup or label resolution fails.
 - Treat the source icon as optional presentation data; failure to resolve an icon must not hide the playback source.
 - Normalize known `ApplicationInfo.category` constants into stable presentation labels such as `Audio`, `Video`, and `Game`.
 - Preserve an explicit `Undefined` category when Android reports `CATEGORY_UNDEFINED`; if application metadata itself cannot be resolved, the diagnostic category may be unavailable.
+- Carry `minSdkVersion` and `targetSdkVersion` from the same resolved `ApplicationInfo` into presentation-ready diagnostic fields; they are informational only and must not drive compatibility or feature decisions.
 
 ### Top Bar
 
@@ -53,30 +56,32 @@ This is a presentation/diagnostic enrichment only. It must not change media-sess
 
 ### Developer / Diagnostics
 
-When `Settings > Advanced > Verbose details` is enabled, keep the raw playback package and add the resolved Android app category:
+When `Settings > Advanced > Verbose details` is enabled, keep the raw playback package and add the resolved Android app category plus SDK levels:
 
 ```text
 DEVELOPER / DIAGNOSTICS
 
 App package           com.spotify.music
 App category          Audio
+Min SDK               23
+Target SDK            35
 Provider ID           ...
 Source ID             ...
 Track references      ...
 ```
 
-Category display is diagnostic metadata only. It must not influence playback-source eligibility, media-session selection, provider selection, or UI feature availability.
+Category and SDK display are diagnostic metadata only. They must not influence playback-source eligibility, media-session selection, provider selection, compatibility gating, or UI feature availability.
 
 ## Acceptance criteria
 
 - [ ] Replace the label-only resolver with `PlaybackSourceAppInfoResolver` and an immutable resolved app-info model.
-- [ ] Resolve and cache package name, label, icon, and category from the selected playback package.
+- [ ] Resolve and cache package name, label, icon, category, min SDK, and target SDK from the selected playback package.
 - [ ] Preserve package-name fallback semantics when application/label resolution fails.
 - [ ] Present the real playback app icon in the persistent Top Bar when available, with the current cyan dot as fallback.
-- [ ] Add app category to Verbose Details Developer / Diagnostics.
+- [ ] Add app category, min SDK, and target SDK to Verbose Details Developer / Diagnostics.
 - [ ] Keep Android package/application objects outside `:ui:phone`.
 - [ ] Keep normal Details user-facing playback-source labeling unchanged apart from sharing the new resolver.
-- [ ] Add focused tests for resolver/mapping fallback and category behavior.
+- [ ] Add focused tests for resolver/mapping fallback, category behavior, and SDK diagnostic mapping.
 - [ ] Align deterministic Top Bar / shell / Details Previews for icon-present, icon-unavailable, known-category, and undefined-category cases where practical.
 - [ ] Update relevant Phone/runtime/details documentation and keep implementation aligned with this task.
 - [ ] Run architecture checks, unit tests, debug APK build, CI, and bounded review before merge.
@@ -87,6 +92,6 @@ This slice adds no persisted setting, onboarding acknowledgement, downloaded ass
 
 ## Scope guard
 
-Do not add playback-app allowlists, category-based filtering, media-session selection changes, provider behavior, package-version diagnostics, SDK-version diagnostics, permission inspection, signature inspection, install-source inspection, or new persistence in this slice.
+Do not add playback-app allowlists, category-based filtering, media-session selection changes, provider behavior, package-version diagnostics, permission inspection, signature inspection, install-source inspection, compile-SDK diagnostics, or new persistence in this slice.
 
 Do not expose raw `ApplicationInfo`, `PackageManager`, `Drawable`, `MediaController`, or other Android framework objects through the Phone presentation model.
