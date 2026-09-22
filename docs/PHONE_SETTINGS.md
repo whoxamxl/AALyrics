@@ -461,7 +461,9 @@ The check path is public and unauthenticated. Do not embed a GitHub token or rep
 
 Update results are intentionally short-lived so Settings does not keep presenting a stale GitHub Release result.
 
-When the Settings destination is entered, the UI emits `onSettingsEntered`. Application/presentation wiring keeps an active `CHECKING` operation but normalizes completed/stale check results back to `IDLE`:
+The Phone navigation host owns Settings-visit entry detection. A transition from any non-Settings destination into Settings starts a new Settings visit. The presentation `SettingsScreen` itself does not emit an entry callback from composition.
+
+On an actual Settings navigation entry, application/runtime wiring keeps an active `CHECKING` operation but normalizes completed/stale check results back to `IDLE`:
 
 ```text
 CHECKING        -> keep
@@ -470,7 +472,7 @@ everything else -> IDLE
 
 Therefore `UP_TO_DATE`, `UPDATE_AVAILABLE`, and `CHECK_FAILED` are results for the current Settings visit only. Leaving Settings and returning presents `Check for updates` again, forcing the next explicit check to query current GitHub Releases rather than reusing an old result.
 
-The active check is application-owned and continues across destination changes. If it completes while Settings is away, its completed result is normalized back to `IDLE` on the next Settings entry.
+Configuration changes, Activity recreation, recomposition, Settings subscreen navigation, and Settings-tab reselection while already in Settings remain the same visit and must not clear a completed result. The active check is application-owned and continues across destination changes. If it completes while Settings is away, its completed result is normalized back to `IDLE` on the next actual Settings navigation entry.
 
 Only one check may be active at a time. The checking presentation has no second Check/Retry action.
 
