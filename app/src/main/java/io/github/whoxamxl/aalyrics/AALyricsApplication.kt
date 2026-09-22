@@ -142,6 +142,12 @@ class AALyricsApplication : Application() {
     val verboseDetailsEnabled: StateFlow<Boolean>
         get() = phonePresentationSettingsStore.verboseDetailsEnabled
 
+    internal val ignoreNonAudioApps: StateFlow<Boolean>
+        get() = phonePresentationSettingsStore.ignoreNonAudioApps
+
+    internal val allowUnclassifiedApps: StateFlow<Boolean>
+        get() = phonePresentationSettingsStore.allowUnclassifiedApps
+
     val translationModelStates: StateFlow<Map<String, TranslationModelState>>
         get() = translationModelManager.states
 
@@ -169,6 +175,14 @@ class AALyricsApplication : Application() {
 
     fun setVerboseDetailsEnabled(enabled: Boolean) {
         phonePresentationSettingsStore.setVerboseDetailsEnabled(enabled)
+    }
+
+    internal fun setIgnoreNonAudioApps(enabled: Boolean) {
+        phonePresentationSettingsStore.setIgnoreNonAudioApps(enabled)
+    }
+
+    internal fun setAllowUnclassifiedApps(enabled: Boolean) {
+        phonePresentationSettingsStore.setAllowUnclassifiedApps(enabled)
     }
 
     fun clearDownloadedTranslationModels() {
