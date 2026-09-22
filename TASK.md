@@ -57,6 +57,8 @@ This is a presentation/diagnostic enrichment only. It must not change media-sess
 - `Disconnected` means session observation is healthy but no active media session is available.
 - `Unavailable` means sessions exist but the current selection/support policy cannot use one; this state is reserved for policy-driven rejection as that policy grows.
 - `Error` carries one of `NOTIFICATION_ACCESS_LOST`, `SESSION_QUERY_FAILED`, `SESSION_ATTACH_FAILED`, or `UNKNOWN`; the Top Bar exposes the concise reason through an information tooltip.
+- When `Connected` and the selected playback app has a real launch capability, the whole source pill opens that app and shows the same external-link affordance used by Settings.
+- Apply semantic status color coding without changing the pill geometry: Connecting keeps the neutral treatment, Connected uses `Success`, Disconnected uses disabled/tertiary neutral, Unavailable uses `Warning`, and Error uses the shared `Error` token. Background and border receive only low-emphasis blends of the same semantic color.
 - Do not pass `ApplicationInfo`, `PackageManager`, or Android `Drawable` objects into `:ui:phone`; platform icon ownership stays on the application side and the Phone UI receives renderable presentation content only.
 
 ### Developer / Diagnostics
@@ -85,6 +87,8 @@ Category and SDK display are diagnostic metadata only. They must not influence p
 - [x] Present the real playback app icon in the persistent Top Bar when available, with the current cyan dot as fallback.
 - [x] Replace the connected Boolean with explicit Connecting / Connected / Disconnected / Unavailable / Error runtime states.
 - [x] Preserve explicit playback-source error reasons and expose a concise Error tooltip in the Top Bar.
+- [x] Make launch-capable Connected pills open the selected playback app with the shared external-link icon.
+- [x] Apply consistent semantic state colors to Top Bar pill foreground, border, and background.
 - [x] Add app category, min SDK, and target SDK to Verbose Details Developer / Diagnostics.
 - [x] Keep Android package/application objects outside `:ui:phone`.
 - [x] Keep normal Details user-facing playback-source labeling unchanged apart from sharing the new resolver.
