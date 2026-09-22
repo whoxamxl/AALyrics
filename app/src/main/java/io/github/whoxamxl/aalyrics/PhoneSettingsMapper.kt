@@ -18,13 +18,14 @@ internal fun mapPhoneSettingsState(
     translationModelStates: Map<String, TranslationModelState>,
     verboseDetailsEnabled: Boolean,
     plainLyricsAutoScrollEnabled: Boolean,
+    ignoreNonAudioApps: Boolean,
+    allowUnclassifiedApps: Boolean,
     androidAutoStatus: AndroidAutoCompatibilityUiStatus,
     appVersionName: String,
     currentYear: Int,
     noticeText: String,
     licenseText: String,
     changelogText: String,
-    privacyPolicyText: String = "",
     translationModelCleanupState: TranslationModelCleanupState =
         TranslationModelCleanupState.IDLE,
     displayLocale: Locale = Locale.getDefault(),
@@ -53,6 +54,8 @@ internal fun mapPhoneSettingsState(
 
     return SettingsScreenUiState(
         plainLyricsAutoScrollEnabled = plainLyricsAutoScrollEnabled,
+        ignoreNonAudioApps = ignoreNonAudioApps,
+        allowUnclassifiedApps = allowUnclassifiedApps,
         verboseDetailsEnabled = verboseDetailsEnabled,
         translationEnabled = translationSettings.enabled,
         translationTarget = selected,
@@ -68,7 +71,6 @@ internal fun mapPhoneSettingsState(
         noticeText = noticeText,
         licenseText = licenseText,
         changelogText = changelogText,
-        privacyPolicyText = privacyPolicyText,
         appUpdate = AppUpdateUiState(phase = AppUpdateUiPhase.UNAVAILABLE),
     )
 }
