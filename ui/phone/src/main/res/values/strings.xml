@@ -62,7 +62,7 @@
     <string name="settings_privacy_policy">Privacy Policy</string>
     <string name="settings_license">License</string>
     <string name="settings_support_aalyrics">Support AALyrics</string>
-    <string name="settings_support_body">AALyrics is free to use.\n\nIf you'd like to support development, you can do so via Buy Me a Coffee.</string>
+    <string name="settings_support_body">AALyrics is free to use.\n\nIf you\'d like to support development, you can do so via Buy Me a Coffee.</string>
     <string name="settings_support_subtext">Support is optional. Payments are handled externally by Buy Me a Coffee.</string>
     <string name="settings_support_button_description">Support AALyrics on Buy Me a Coffee</string>
     <string name="settings_support_open_note">Opens Buy Me a Coffee</string>
