@@ -52,6 +52,7 @@ This is a presentation/diagnostic enrichment only. It must not change media-sess
 - Keep the current playback-source pill and human-readable label behavior.
 - Show the selected playback application's icon in the pill when available.
 - Retain the existing cyan-dot treatment as the visual fallback when no app icon is available.
+- Show `<App> · Connected` only when the current `PlaybackSnapshot.source.id`, selected-session `PlaybackControlState.sourcePackageName`, and resolved `PlaybackSourceAppInfo.packageName` all identify the same package. Do not use a fixed decorative status string.
 - Do not pass `ApplicationInfo`, `PackageManager`, or Android `Drawable` objects into `:ui:phone`; platform icon ownership stays on the application side and the Phone UI receives renderable presentation content only.
 
 ### Developer / Diagnostics
@@ -78,6 +79,7 @@ Category and SDK display are diagnostic metadata only. They must not influence p
 - [x] Resolve and cache package name, label, icon, category, min SDK, and target SDK from the selected playback package.
 - [x] Preserve package-name fallback semantics when application/label resolution fails.
 - [x] Present the real playback app icon in the persistent Top Bar when available, with the current cyan dot as fallback.
+- [x] Present `· Connected` only for a source verified against the currently selected MediaSession control state.
 - [x] Add app category, min SDK, and target SDK to Verbose Details Developer / Diagnostics.
 - [x] Keep Android package/application objects outside `:ui:phone`.
 - [x] Keep normal Details user-facing playback-source labeling unchanged apart from sharing the new resolver.
