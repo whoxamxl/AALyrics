@@ -18,6 +18,16 @@ These artifacts are for development/testing only:
 - they are not the durable user distribution package;
 - they are not expected to update a release-signed installation.
 
+When `AALYRICS_VERSION_NAME` is not injected, development builds derive Android
+`versionName` from the latest reachable release tag and the current short Git commit.
+For example, a clean development build after `v0.2.0-alpha.1` may report
+`0.2.0-alpha.1-dev+89906f2`. A local build with tracked or untracked working-tree
+changes appends `.dirty`. If Git metadata is unavailable, the build falls back to
+`0.1.0-dev`.
+
+Release builds are unaffected by this fallback: the Release workflow continues to
+inject the tag-derived `AALYRICS_VERSION_NAME` explicitly.
+
 ### GitHub Pre-releases
 
 Development milestones use semantic-version-style prerelease tags:
