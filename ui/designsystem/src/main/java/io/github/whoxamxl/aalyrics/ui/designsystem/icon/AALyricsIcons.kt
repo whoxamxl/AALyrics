@@ -4,7 +4,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ExpandLess
 import androidx.compose.material.icons.rounded.ExpandMore
 import androidx.compose.material.icons.rounded.ChevronLeft
+import androidx.compose.material.icons.rounded.Block
 import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.ErrorOutline
+import androidx.compose.material.icons.rounded.LinkOff
 import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.Download
 import androidx.compose.material.icons.rounded.Info
@@ -44,6 +47,9 @@ object AALyricsIcons {
     val Queue: ImageVector = Icons.Rounded.QueueMusic
     val OpenPlaybackApp: ImageVector = Icons.Rounded.OpenInNew
     val MusicNote: ImageVector = Icons.Rounded.MusicNote
+    val Disconnected: ImageVector = Icons.Rounded.LinkOff
+    val Unavailable: ImageVector = Icons.Rounded.Block
+    val Error: ImageVector = Icons.Rounded.ErrorOutline
 
     val PlaybackAbove: ImageVector = Icons.Rounded.ExpandLess
     val PlaybackBelow: ImageVector = Icons.Rounded.ExpandMore

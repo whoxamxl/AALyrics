@@ -141,7 +141,16 @@
     <string name="playback_expand">Expand player</string>
     <string name="playback_collapse">Collapse player</string>
     <string name="playback_translation">Translation</string>
+    <string name="playback_source_connecting">Connecting</string>
     <string name="playback_source_connected">Connected</string>
+    <string name="playback_source_disconnected">Disconnected</string>
+    <string name="playback_source_unavailable">Unavailable</string>
+    <string name="playback_source_error">Error</string>
+    <string name="playback_source_error_details_description">Playback source error details</string>
+    <string name="playback_source_error_notification_access_lost">Notification access was lost.</string>
+    <string name="playback_source_error_session_query_failed">Could not read active media sessions.</string>
+    <string name="playback_source_error_session_attach_failed">Could not connect to the selected media session.</string>
+    <string name="playback_source_error_unknown">An unexpected media-session error occurred.</string>
     <string name="playback_close">Close</string>
     <string name="playback_position">Playback position</string>
     <string name="playback_position_state">%1$s of %2$s</string>

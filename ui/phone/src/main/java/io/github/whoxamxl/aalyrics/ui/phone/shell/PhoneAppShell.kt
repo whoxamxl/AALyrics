@@ -52,7 +52,8 @@ fun PhoneAppShell(
         Column(Modifier.fillMaxSize()) {
             PhoneTopBar(
                 mediaSourceLabel = state.mediaSourceLabel,
-                mediaSourceConnected = state.mediaSourceConnected,
+                mediaSourceConnectionState = state.mediaSourceConnectionState,
+                mediaSourceErrorReason = state.mediaSourceErrorReason,
                 mediaSourceIconPainter = mediaSourceIconPainter,
             )
             Box(
