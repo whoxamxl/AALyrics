@@ -47,7 +47,7 @@ class MediaSessionListenerService : NotificationListenerService() {
     }
 
     override fun onListenerDisconnected() {
-        observation.notificationAccessLost()
+        observation.listenerDisconnected()
         super.onListenerDisconnected()
     }
 

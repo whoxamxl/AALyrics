@@ -156,6 +156,34 @@ class MediaSessionObservationTest {
     }
 
     @Test
+    fun `listener disconnect reports unknown error clears playback and can reconnect`() {
+        val snapshots = mutableListOf<PlaybackSnapshot>()
+        val states = mutableListOf<PlaybackSourceRuntimeState>()
+        val controller = FakeController("selected")
+        val source = FakeSource().apply { sessions = listOf(controller) }
+        val observation = observation(source, snapshots, states)
+
+        observation.connect()
+        observation.listenerDisconnected()
+
+        assertEquals(1, source.unregisterCount)
+        assertEquals(1, controller.detachCount)
+        assertNull(snapshots.last().track)
+        assertEquals(
+            PlaybackSourceRuntimeState.Error(PlaybackSourceErrorReason.UNKNOWN),
+            states.last(),
+        )
+
+        observation.connect()
+
+        assertEquals(2, source.registerCount)
+        assertEquals(
+            PlaybackSourceRuntimeState.Connected("com.example.player"),
+            states.last(),
+        )
+    }
+
+    @Test
     fun `disconnect unregisters listener detaches callback and clears playback`() {
         val snapshots = mutableListOf<PlaybackSnapshot>()
         val states = mutableListOf<PlaybackSourceRuntimeState>()

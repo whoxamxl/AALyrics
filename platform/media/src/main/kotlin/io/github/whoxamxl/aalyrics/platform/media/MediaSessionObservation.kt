@@ -62,8 +62,8 @@ internal class MediaSessionObservation<Token>(
         stateSink.onPlaybackSourceRuntimeState(PlaybackSourceRuntimeState.Disconnected)
     }
 
-    fun notificationAccessLost() {
-        fail(PlaybackSourceErrorReason.NOTIFICATION_ACCESS_LOST)
+    fun listenerDisconnected() {
+        fail(PlaybackSourceErrorReason.UNKNOWN)
     }
 
     fun stop() {
