@@ -140,8 +140,8 @@ Only one check may be active at a time. Active work is application-owned and sur
 ### Implementation
 
 - [x] Add an Android-independent AALyrics version parser/comparator with focused tests.
-- [ ] Add an application-owned GitHub Release client/model boundary.
-- [ ] Select the highest eligible non-Draft AALyrics release.
+- [x] Add an application-owned GitHub Release client/model boundary.
+- [x] Select the highest eligible non-Draft AALyrics release.
 - [ ] Wire `onCheckForUpdates` to application-owned check orchestration.
 - [ ] Replace the production `UNAVAILABLE` update state with `IDLE`.
 - [ ] Map checking, up-to-date, available, and failure results into `SettingsScreenUiState`.
@@ -157,4 +157,4 @@ Those are separate implementation slices after Check for updates is proven stabl
 
 ## Current stop point
 
-Version parsing/comparison and focused unit-test coverage are implemented. GitHub Release networking and runtime wiring have not started yet.
+Version parsing/comparison, the public GitHub Release client boundary, release candidate selection, and focused selection tests are implemented. Settings/runtime wiring has not started yet.
