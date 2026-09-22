@@ -24,8 +24,8 @@ PR #69 made completed update-check results visit-local, but `SettingsScreen` inv
 - [x] Preserve completed update-check results when Settings is already the active destination.
 - [x] Add focused unit coverage for Settings navigation-entry detection.
 - [x] Align deterministic Previews and `docs/PHONE_SETTINGS.md`.
-- [ ] Run architecture checks, unit tests, debug APK build, CI, and bounded review before merge.
+- [x] Run architecture checks, unit tests, debug APK build, CI, and bounded review before merge.
 
 ## Current stop point
 
-The lifecycle trigger is corrected and focused coverage/documentation are in place. Validation remains.
+The lifecycle trigger is corrected and validated. Architecture checks, debug APK build, unit tests, CI, and bounded regression review are complete.
