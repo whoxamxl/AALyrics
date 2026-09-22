@@ -70,7 +70,11 @@ class MediaSessionObservationTest {
 
         observation.connect()
 
-        assertIs<PlaybackSourceRuntimeState.Unavailable>(states.last())
+        val unavailable = assertIs<PlaybackSourceRuntimeState.Unavailable>(states.last())
+        assertEquals(
+            PlaybackSourceUnavailableReason.UNSUPPORTED_PLAYER,
+            unavailable.reason,
+        )
     }
 
     @Test
