@@ -125,11 +125,11 @@ The Verbose Details rows are diagnostic presentation. The underlying application
 - [x] Apply consistent semantic state colors to Top Bar pill foreground, border, and background.
 - [x] Keep Top Bar runtime-state pills content-sized with shared padding/max-width behavior, and resolve Unavailable app identity from its runtime package.
 - [x] Give Unavailable an explicit reason, concise tooltip, and generic no-app-identity fallback presentation.
-- [ ] Replace the provisional Unavailable reasons with `NON_AUDIO_APP`, `UNCLASSIFIED_APP`, and `UNKNOWN`, including the approved tooltip copy.
+- [x] Replace the provisional Unavailable reasons with `NON_AUDIO_APP`, `UNCLASSIFIED_APP`, and `UNKNOWN`, including the approved tooltip copy.
 - [x] Add application-owned persistence for `Ignore non-audio apps` (default ON) and `Allow unclassified apps` (default OFF), including Reset defaults and focused persistence tests.
 - [x] Add Settings presentation/callback wiring for `Ignore non-audio apps` and `Allow unclassified apps`, including disabled Advanced override presentation and deterministic Previews.
-- [ ] Add an app-owned source-eligibility policy and gate lyrics lookup before provider work without changing MediaSession selection/transport.
-- [ ] Map known non-audio sources to `Unavailable(NON_AUDIO_APP)` and undefined/unresolved sources to `Unavailable(UNCLASSIFIED_APP)` unless the Advanced override allows them.
+- [x] Add an app-owned source-eligibility policy and atomically gate lyrics lookup before provider work without changing MediaSession selection/transport.
+- [x] Map known non-audio sources to `Unavailable(NON_AUDIO_APP)` and undefined/unresolved sources to `Unavailable(UNCLASSIFIED_APP)` unless the Advanced override allows them.
 - [x] Update Settings/Top Bar Previews and focused tests for policy defaults, overrides, both Unavailable reasons, and Reset behavior.
 - [x] Add app category, min SDK, and target SDK to Verbose Details Developer / Diagnostics.
 - [x] Keep Android package/application objects outside `:ui:phone`.
