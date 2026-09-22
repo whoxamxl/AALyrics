@@ -303,7 +303,7 @@ fun LyricsViewport(
                 if (hasOpeningFocusRow) {
                     OpeningFocusRow(
                         focusPosition = animatedFocusIndex,
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier.fillMaxWidth(TimedTextWidthFraction),
                     )
                 }
 
@@ -388,7 +388,13 @@ private fun LyricsViewportRow(
         Text(
             text = text,
             modifier = Modifier
-                .fillMaxWidth()
+                .fillMaxWidth(
+                    fraction = if (state.syncType == LyricsSyncType.PLAIN) {
+                        1f
+                    } else {
+                        TimedTextWidthFraction
+                    },
+                )
                 .graphicsLayer {
                     if (state.syncType == LyricsSyncType.PLAIN) {
                         scaleX = 1f
@@ -698,6 +704,7 @@ private const val FocusSnapJumpRows = 6f
 private const val OpeningFocusVirtualIndex = 0f
 private const val SupportingScale = 0.90f
 private const val CurrentScale = 1.15f
+private const val TimedTextWidthFraction = 1f / CurrentScale
 private const val PastSupportingAlpha = 0.48f
 private const val FutureSupportingAlpha = 0.70f
 private const val PlainFollowScrollDurationMillis = 350
