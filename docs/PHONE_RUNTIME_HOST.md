@@ -139,9 +139,25 @@ The Top Bar, Playback Surface, and Bottom Navigation remain shell-owned.
 
 Playback-source package metadata is owned by `:app`. The label-only resolver is replaced by `PlaybackSourceAppInfoResolver`, which performs one cached `ApplicationInfo` lookup per package and derives the presentation label, optional app icon, diagnostic category, minimum SDK level, and target SDK level. Connected resolution follows the selected playback package. Unavailable resolution prefers the package carried by the runtime state, allowing a policy-rejected session to retain real app identity even when no selected playback snapshot exists; if app metadata still cannot be resolved, the Top Bar falls back to its metadata-independent Unavailable presentation. The package identifier remains the human-readable label fallback after successful package identification but failed label lookup. The Top Bar icon is supplied as caller-owned renderable content, analogous to selected-session artwork, so `ApplicationInfo`, `PackageManager`, and Android `Drawable` objects do not become Phone UI state. When no icon is available for a known app, `PhoneTopBar` retains its cyan-dot fallback.
 
-MediaSession observation publishes a framework-neutral `PlaybackSourceRuntimeState`: `Connecting` while listener/session discovery is being established, `Connected(packageName)` for a selected usable session, `Disconnected` after a successful query with no active sessions, `Unavailable(packageName?, reason)` when sessions exist but selection policy cannot use one, and `Error(reason)` for observation failures. Unavailable reasons are currently `UNSUPPORTED_PLAYER` and `UNKNOWN`; Error reasons are `NOTIFICATION_ACCESS_LOST`, `SESSION_QUERY_FAILED`, `SESSION_ATTACH_FAILED`, and `UNKNOWN`. The app maps both reason types into Phone presentation state. `Connected` is shown only after the runtime package, current playback package, and resolved app-info package agree. Unavailable and Error details remain concise and are exposed from the Top Bar through the shared Phone popup/tooltip surface. Unavailable also has a metadata-independent generic fallback, so missing app identity cannot suppress the status.
+MediaSession observation publishes framework-neutral source/session health independently from Android application-category policy. The application layer then combines the selected runtime package, `PlaybackSourceAppInfo`, and persisted eligibility settings into an effective Phone/lyrics source state. A raw connected session may therefore remain selected and controllable while its effective AALyrics source state becomes `Unavailable(packageName?, reason)` for lyrics processing. Approved Unavailable reasons are `NON_AUDIO_APP`, `UNCLASSIFIED_APP`, and `UNKNOWN`; Error reasons remain `NOTIFICATION_ACCESS_LOST`, `SESSION_QUERY_FAILED`, `SESSION_ATTACH_FAILED`, and `UNKNOWN`. Category/settings policy must stay outside `:platform:media` because it depends on application metadata and user preferences.
+
+The effective eligibility rules are: filtering OFF allows all selected sources; filtering ON allows `CATEGORY_AUDIO`; known non-audio categories become `NON_AUDIO_APP`; `CATEGORY_UNDEFINED`, unknown/future categories normalized to Undefined, and unresolved `ApplicationInfo` become `UNCLASSIFIED_APP` unless `Allow unclassified apps` is enabled. Rejection happens before provider lookup starts. It must not change MediaSession selection, callback ownership, playback transport, source-app launching, or provider ranking/scoring. Unavailable and Error details remain concise and are exposed from the Top Bar through the shared Phone popup/tooltip surface. Unavailable also has a metadata-independent generic fallback, so missing app identity cannot suppress the status.
 
 Launch capability is resolved independently from track availability using the selected `PlaybackControlState`: explicit MediaSession activity first, then the package launcher fallback. That shared capability feeds both the Playback Surface and Top Bar. A Connected Top Bar pill is clickable only when this capability is true, preventing an active-looking external-link affordance from becoming a no-op.
+
+Conceptually:
+
+```text
+PlaybackSourceRuntimeState + PlaybackSourceAppInfo
+                    + playback-source eligibility settings
+                              ↓
+                 app-owned eligibility policy
+                    ├─ allowed
+                    │    └─ lyrics lookup may start
+                    └─ blocked
+                         ├─ effective Unavailable(reason)
+                         └─ no lyrics-provider lookup
+```
 
 ## Playback actions
 

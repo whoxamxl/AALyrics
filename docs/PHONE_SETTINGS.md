@@ -12,7 +12,7 @@ The first Settings surface was integrated into `main` via PR #44 and polished in
 
 Settings should expose stable user configuration without turning the Phone UI into an owner of application state.
 
-The production Settings surface remains intentionally focused. Advanced contains one debug presentation preference, one explicitly unavailable experimental affordance, one Translation storage-management action, and one app-owned reset action. It does not become a general developer-settings surface. Changelog and License are read-only second-level document surfaces and do not create new runtime policy or networking ownership.
+The production Settings surface remains intentionally focused. Lyrics owns the user-facing playback-source eligibility toggle alongside Plain auto-scroll. Advanced contains the narrow unclassified-source override, one debug presentation preference, one explicitly unavailable experimental affordance, one Translation storage-management action, and one app-owned reset action. It does not become a general developer-settings surface. Changelog and License are read-only second-level document surfaces and do not create networking ownership.
 
 Second-level Settings surfaces use the shared `SettingsSubscreenHeader` rather than implementing their own header. The standard back affordance is the Material rounded chevron-left used by the current Advanced screen: 32dp icon inside a 48dp touch target, followed by the screen title. This intentionally mirrors the chevron-right affordance used to enter `Advanced`. Text-only `Back` actions and alternate arrow shapes are not used for normal second-level Settings navigation. System Back remains behaviorally equivalent.
 
@@ -21,7 +21,8 @@ Initial structure:
 ```text
 Settings
 ├─ Lyrics
-│  └─ Plain lyrics auto-scroll       [switch]  ⓘ
+│  ├─ Plain lyrics auto-scroll       [switch]  ⓘ
+│  └─ Ignore non-audio apps          [switch]  ⓘ
 ├─ Translation
 │  ├─ Translation                    [switch]
 │  └─ Target language                <value>  >
@@ -43,6 +44,8 @@ License
 └─ repository NOTICE + LICENSE rendered as compact Markdown
 
 Advanced
+├─ Playback source
+│  └─ Allow unclassified apps           [switch]  ⓘ
 ├─ Debug
 │  └─ Verbose details                  [switch]
 ├─ Experimental features
@@ -59,7 +62,7 @@ Version: vX.X.X
 © <current year> Yuta Miura (whoxamxl)
 ```
 
-Provider preferences, appearance/theme selection, log export, and other future taxonomy remain out of scope. The approved Advanced surface remains narrow: Verbose Details controls read-only diagnostic presentation, Karaoke mode remains visible but unavailable and unwired, Storage owns explicit Translation-model cleanup, and Reset restores only AALyrics-owned state.
+Provider preferences, appearance/theme selection, log export, and other future taxonomy remain out of scope. The approved Advanced surface remains narrow: Playback source owns only the unclassified-app escape hatch, Verbose Details controls read-only diagnostic presentation, Karaoke mode remains visible but unavailable and unwired, Storage owns explicit Translation-model cleanup, and Reset restores only AALyrics-owned state.
 
 ## Destination composition
 
@@ -97,6 +100,8 @@ A suitable presentation model may contain facts equivalent to:
 ```text
 SettingsScreenUiState
 ├─ plainLyricsAutoScrollEnabled
+├─ ignoreNonAudioApps
+├─ allowUnclassifiedApps
 ├─ translationEnabled
 ├─ translationTarget
 ├─ translationTargetOptions
@@ -138,6 +143,29 @@ Approved copy:
 > Estimates where playback is in untimed lyrics and scrolls smoothly to match. Requires track duration.
 
 The LyricsViewport continues to receive only the resolved boolean presentation value. Settings persistence must not move into the viewport.
+
+### Ignore non-audio apps
+
+Presentation:
+
+```text
+Ignore non-audio apps            ⓘ   [ON]
+```
+
+This is an application-owned persisted preference and defaults to **ON**. It controls whether a selected playback source must be verified as an Android audio application before AALyrics starts lyrics-provider lookup.
+
+Approved tooltip copy:
+
+> Only apps Android identifies as audio apps are used for lyrics lookup. This prevents unnecessary searches from games, browsers, social apps, and other media sources. Unclassified apps are blocked unless allowed in Advanced settings.
+
+Behavior:
+
+- OFF -> do not apply category-based lyrics eligibility filtering;
+- ON + `CATEGORY_AUDIO` -> allow lyrics lookup;
+- ON + known non-audio category -> block lookup with `Unavailable(NON_AUDIO_APP)`;
+- ON + `CATEGORY_UNDEFINED`, unknown/future category normalized to Undefined, or unresolved `ApplicationInfo` -> defer to `Advanced > Playback source > Allow unclassified apps`.
+
+This setting gates whether lyrics lookup begins. It does not change MediaSession discovery/selection, playback transport, source-app launching, or provider ranking.
 
 ## Translation section
 
@@ -510,6 +538,9 @@ Initial structure:
 ```text
 Advanced
 
+Playback source
+Allow unclassified apps                 [OFF]  ⓘ
+
 Debug
 Verbose details                         [OFF]
 
@@ -517,6 +548,27 @@ Experimental features
 Karaoke mode                            [OFF]
                                         Not available yet
 ```
+
+### Playback source — Allow unclassified apps
+
+`Allow unclassified apps` is an application-owned persisted escape hatch for valid music players Android cannot classify as Audio. It defaults to **OFF**.
+
+Approved tooltip copy:
+
+> Allows lyrics lookup when Android cannot identify a playback app as an audio app. Enable this if a valid music player appears as Unavailable. Only applies while Ignore non-audio apps is enabled.
+
+Behavior while `Ignore non-audio apps` is ON:
+
+- ON -> allow `CATEGORY_UNDEFINED`, unknown/future categories normalized to Undefined, and sources whose `ApplicationInfo` cannot be resolved;
+- OFF -> block those sources with `Unavailable(UNCLASSIFIED_APP)`.
+
+Known non-audio categories remain blocked with `NON_AUDIO_APP`; this override does not turn them into allowed audio sources.
+
+When `Ignore non-audio apps` is OFF, this setting has no behavioral effect. The Advanced switch may be rendered disabled while retaining its persisted value so re-enabling the primary filter restores the user's override.
+
+For `UNCLASSIFIED_APP`, the Top Bar tooltip explicitly directs the user here:
+
+> AALyrics could not verify this app as an audio app. Enable Settings > Advanced > Allow unclassified apps to allow lyrics lookup.
 
 ### Debug — Verbose details
 
@@ -599,6 +651,8 @@ After confirmation, reset restores:
 - Target language -> English;
 - Verbose details -> OFF;
 - Plain lyrics auto-scroll -> its Phone default;
+- Ignore non-audio apps -> ON;
+- Allow unclassified apps -> OFF;
 - Android Auto compatibility acknowledgement -> Not reviewed.
 
 Reset does **not**:
@@ -676,7 +730,9 @@ Deterministic debug Previews should cover at least:
 - Changelog screen at typical, narrow, and enlarged-font configurations;
 - branding footer;
 - Advanced navigation row;
+- Lyrics source filtering with Ignore non-audio apps ON (default) and OFF;
 - Advanced screen with Verbose details OFF and ON;
+- Advanced Playback source with Allow unclassified apps OFF (default), ON, and primary-filter-disabled presentation;
 - disabled Karaoke mode row;
 - Advanced Storage and Reset rows;
 - Clear translation models confirmation;
@@ -695,6 +751,7 @@ PR #50 implements the Phone runtime-host application-composition boundary from `
 - Android Auto acknowledgement -> presentation status;
 - compatibility-row callback -> existing compatibility setup flow;
 - application-owned Verbose Details preference -> Settings and Details presentation state;
+- application-owned playback-source eligibility preferences -> Lyrics and Advanced rows plus the pre-provider lookup gate;
 - build/version facts and other already-owned application presentation data.
 
 A durable Plain auto-scroll preference remains a separate ownership decision unless the runtime-host implementation has an already-approved backing seam.
@@ -715,4 +772,4 @@ The first Settings slice does not define or implement:
 - Android Auto runtime/projection settings;
 - Sync/calibration settings;
 - functional Karaoke mode or any Karaoke runtime wiring;
-- additional developer/experimental controls beyond the approved Advanced contract.
+- additional developer/experimental controls beyond the approved Advanced contract, including playback-source overrides other than `Allow unclassified apps`.
