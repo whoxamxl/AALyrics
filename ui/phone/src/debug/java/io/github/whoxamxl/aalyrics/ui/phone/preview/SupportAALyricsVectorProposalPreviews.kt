@@ -14,8 +14,16 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -110,6 +118,61 @@ private fun SupportBmcVectorCtaProposal(
             )
         }
     }
+}
+
+@Composable
+private fun SupportBmcVectorAnimatedCtaProposal(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val transition = rememberInfiniteTransition(label = "supportBmcPreview")
+
+    val shimmerProgress by transition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(
+                durationMillis = 1_800,
+                easing = LinearEasing,
+            ),
+            repeatMode = RepeatMode.Restart,
+        ),
+        label = "supportBmcShimmer",
+    )
+
+    val pulseScale by transition.animateFloat(
+        initialValue = 0.992f,
+        targetValue = 1.008f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(
+                durationMillis = 1_250,
+                easing = FastOutSlowInEasing,
+            ),
+            repeatMode = RepeatMode.Reverse,
+        ),
+        label = "supportBmcPulse",
+    )
+
+    val rotationDegrees by transition.animateFloat(
+        initialValue = -0.35f,
+        targetValue = 0.35f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(
+                durationMillis = 1_450,
+                easing = FastOutSlowInEasing,
+            ),
+            repeatMode = RepeatMode.Reverse,
+        ),
+        label = "supportBmcTilt",
+    )
+
+    SupportBmcVectorCtaProposal(
+        onClick = onClick,
+        shimmerProgress = shimmerProgress,
+        pulseScale = pulseScale,
+        rotationDegrees = rotationDegrees,
+        modifier = modifier,
+    )
 }
 
 @Composable
@@ -219,6 +282,33 @@ private fun SupportBmcVectorCtaStaticPreview() {
 }
 
 @Preview(
+    name = "CTA · Interactive animation",
+    group = "Support SVG Proposal",
+    widthDp = 412,
+    heightDp = 180,
+)
+@Composable
+private fun SupportBmcVectorCtaInteractivePreview() {
+    AALyricsTheme {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(AALyricsColors.BackgroundBase)
+                .padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            SupportBmcVectorAnimatedCtaProposal(
+                onClick = {},
+                modifier = Modifier
+                    .fillMaxWidth(0.58f)
+                    .widthIn(max = 188.dp)
+                    .aspectRatio(BMC_BUTTON_ASPECT_RATIO),
+            )
+        }
+    }
+}
+
+@Preview(
     name = "CTA · Motion snapshot",
     group = "Support SVG Proposal",
     widthDp = 412,
@@ -266,6 +356,70 @@ private fun SupportAALyricsVectorProposalPreview() {
                 shimmerProgress = 0.48f,
                 pulseScale = 1.012f,
                 rotationDegrees = 0.35f,
+            )
+        }
+    }
+}
+
+@Preview(
+    name = "Screen · Interactive animation",
+    group = "Support SVG Proposal",
+    widthDp = 412,
+    heightDp = 760,
+)
+@Composable
+private fun SupportAALyricsVectorInteractivePreview() {
+    val transition = rememberInfiniteTransition(label = "supportBmcScreenPreview")
+
+    val shimmerProgress by transition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(
+                durationMillis = 1_800,
+                easing = LinearEasing,
+            ),
+            repeatMode = RepeatMode.Restart,
+        ),
+        label = "supportBmcScreenShimmer",
+    )
+
+    val pulseScale by transition.animateFloat(
+        initialValue = 0.992f,
+        targetValue = 1.008f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(
+                durationMillis = 1_250,
+                easing = FastOutSlowInEasing,
+            ),
+            repeatMode = RepeatMode.Reverse,
+        ),
+        label = "supportBmcScreenPulse",
+    )
+
+    val rotationDegrees by transition.animateFloat(
+        initialValue = -0.35f,
+        targetValue = 0.35f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(
+                durationMillis = 1_450,
+                easing = FastOutSlowInEasing,
+            ),
+            repeatMode = RepeatMode.Reverse,
+        ),
+        label = "supportBmcScreenTilt",
+    )
+
+    AALyricsTheme {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(AALyricsColors.BackgroundBase),
+        ) {
+            SupportAALyricsVectorProposalScreen(
+                shimmerProgress = shimmerProgress,
+                pulseScale = pulseScale,
+                rotationDegrees = rotationDegrees,
             )
         }
     }
