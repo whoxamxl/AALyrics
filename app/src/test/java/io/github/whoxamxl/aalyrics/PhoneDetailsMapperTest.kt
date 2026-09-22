@@ -27,7 +27,7 @@ class PhoneDetailsMapperTest {
             playback = playback(track),
             lyricsState = readyLyrics(track, playback(track).trackIdentity!!),
             verboseDetailsEnabled = false,
-            playbackSourceLabel = "Spotify",
+            playbackSourceAppInfo = playbackSourceAppInfo(),
             displayLocale = Locale.ENGLISH,
         )
 
@@ -51,11 +51,14 @@ class PhoneDetailsMapperTest {
             playback = playback(track),
             lyricsState = readyLyrics(track, playback(track).trackIdentity!!),
             verboseDetailsEnabled = true,
-            playbackSourceLabel = "Spotify",
+            playbackSourceAppInfo = playbackSourceAppInfo(),
             displayLocale = Locale.ENGLISH,
         )
 
         assertEquals("com.spotify.music", state.diagnostics?.appPackageName)
+        assertEquals("Audio", state.diagnostics?.appCategory)
+        assertEquals(26, state.diagnostics?.appMinSdkVersion)
+        assertEquals(36, state.diagnostics?.appTargetSdkVersion)
         assertEquals("musixmatch", state.diagnostics?.providerId)
         assertEquals("mxm:9384756", state.diagnostics?.sourceId)
         assertEquals(
@@ -92,7 +95,7 @@ class PhoneDetailsMapperTest {
                 requireNotNull(lookupPlayback.trackIdentity),
             ),
             verboseDetailsEnabled = false,
-            playbackSourceLabel = "Spotify",
+            playbackSourceAppInfo = playbackSourceAppInfo(),
             displayLocale = Locale.ENGLISH,
         )
 
@@ -125,7 +128,10 @@ class PhoneDetailsMapperTest {
                 requireNotNull(lookupPlayback.trackIdentity),
             ),
             verboseDetailsEnabled = false,
-            playbackSourceLabel = "Example Player",
+            playbackSourceAppInfo = playbackSourceAppInfo(
+                packageName = "com.example.player",
+                label = "Example Player",
+            ),
             displayLocale = Locale.ENGLISH,
         )
 
@@ -142,7 +148,7 @@ class PhoneDetailsMapperTest {
             playback = playback(playbackTrack),
             lyricsState = readyLyrics(lookupTrack, playback(lookupTrack).trackIdentity!!),
             verboseDetailsEnabled = false,
-            playbackSourceLabel = "Spotify",
+            playbackSourceAppInfo = playbackSourceAppInfo(),
             displayLocale = Locale.ENGLISH,
         )
 
@@ -164,7 +170,7 @@ class PhoneDetailsMapperTest {
             playback = playback(current),
             lyricsState = readyLyrics(staleTrack, playback(staleTrack).trackIdentity!!),
             verboseDetailsEnabled = true,
-            playbackSourceLabel = "Spotify",
+            playbackSourceAppInfo = playbackSourceAppInfo(),
             displayLocale = Locale.ENGLISH,
         )
 
@@ -195,7 +201,7 @@ class PhoneDetailsMapperTest {
                 ),
             ),
             verboseDetailsEnabled = true,
-            playbackSourceLabel = "Spotify",
+            playbackSourceAppInfo = playbackSourceAppInfo(),
             displayLocale = Locale.ENGLISH,
         )
 
@@ -204,6 +210,44 @@ class PhoneDetailsMapperTest {
         assertEquals("com.spotify.music", state.diagnostics?.appPackageName)
         assertNull(state.diagnostics?.providerId)
         assertNull(state.diagnostics?.sourceId)
+    }
+
+    @Test
+    fun `Verbose Details keeps raw package when app metadata is unavailable`() {
+        val track = currentTrack()
+        val state = mapPhoneDetailsState(
+            playback = playback(track),
+            lyricsState = readyLyrics(track, playback(track).trackIdentity!!),
+            verboseDetailsEnabled = true,
+            playbackSourceAppInfo = null,
+            displayLocale = Locale.ENGLISH,
+        )
+
+        assertEquals("com.spotify.music", state.diagnostics?.appPackageName)
+        assertNull(state.diagnostics?.appCategory)
+        assertNull(state.diagnostics?.appMinSdkVersion)
+        assertNull(state.diagnostics?.appTargetSdkVersion)
+    }
+
+    @Test
+    fun `mismatched app metadata is not exposed for the current playback source`() {
+        val track = currentTrack()
+        val state = mapPhoneDetailsState(
+            playback = playback(track),
+            lyricsState = readyLyrics(track, playback(track).trackIdentity!!),
+            verboseDetailsEnabled = true,
+            playbackSourceAppInfo = playbackSourceAppInfo(
+                packageName = "com.other.player",
+                label = "Other Player",
+            ),
+            displayLocale = Locale.ENGLISH,
+        )
+
+        assertNull(state.track?.playbackSourceLabel)
+        assertEquals("com.spotify.music", state.diagnostics?.appPackageName)
+        assertNull(state.diagnostics?.appCategory)
+        assertNull(state.diagnostics?.appMinSdkVersion)
+        assertNull(state.diagnostics?.appTargetSdkVersion)
     }
 
     @Test
@@ -230,6 +274,18 @@ class PhoneDetailsMapperTest {
         assertEquals("1:35", progress.playbackPositionLabel)
         assertEquals(2, progress.currentLineNumber)
     }
+
+    private fun playbackSourceAppInfo(
+        packageName: String = "com.spotify.music",
+        label: String = "Spotify",
+    ) = PlaybackSourceAppInfo(
+        packageName = packageName,
+        label = label,
+        icon = null,
+        category = PlaybackSourceAppCategory.AUDIO,
+        minSdkVersion = 26,
+        targetSdkVersion = 36,
+    )
 
     private fun currentTrack() = Track(
         title = "Midnight Signals",

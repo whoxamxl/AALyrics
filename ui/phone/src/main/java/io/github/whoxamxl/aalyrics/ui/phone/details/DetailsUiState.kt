@@ -37,6 +37,9 @@ data class DetailsVerboseProgressUiState(
 @Immutable
 data class DetailsDiagnosticsUiState(
     val appPackageName: String? = null,
+    val appCategory: String? = null,
+    val appMinSdkVersion: Int? = null,
+    val appTargetSdkVersion: Int? = null,
     val providerId: String? = null,
     val sourceId: String? = null,
     val trackReferences: List<String> = emptyList(),

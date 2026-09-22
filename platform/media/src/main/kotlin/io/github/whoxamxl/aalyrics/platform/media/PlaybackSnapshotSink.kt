@@ -45,6 +45,43 @@ fun interface PlaybackControlStateSink {
     fun onPlaybackControlState(state: PlaybackControlState)
 }
 
+enum class PlaybackSourceErrorReason {
+    NOTIFICATION_ACCESS_LOST,
+    SESSION_QUERY_FAILED,
+    SESSION_ATTACH_FAILED,
+    UNKNOWN,
+}
+
+enum class PlaybackSourceUnavailableReason {
+    NON_AUDIO_APP,
+    UNCLASSIFIED_APP,
+    UNKNOWN,
+}
+
+sealed interface PlaybackSourceRuntimeState {
+    data object Connecting : PlaybackSourceRuntimeState
+
+    data class Connected(
+        val packageName: String,
+    ) : PlaybackSourceRuntimeState
+
+    data object Disconnected : PlaybackSourceRuntimeState
+
+    data class Unavailable(
+        val packageName: String? = null,
+        val reason: PlaybackSourceUnavailableReason =
+            PlaybackSourceUnavailableReason.UNKNOWN,
+    ) : PlaybackSourceRuntimeState
+
+    data class Error(
+        val reason: PlaybackSourceErrorReason,
+    ) : PlaybackSourceRuntimeState
+}
+
+fun interface PlaybackSourceRuntimeStateSink {
+    fun onPlaybackSourceRuntimeState(state: PlaybackSourceRuntimeState)
+}
+
 /**
  * Android-owned artwork boundary for the selected session.
  *
@@ -80,6 +117,9 @@ object MediaSessionRuntimeHost {
 
     @Volatile
     private var artworkSink: PlaybackArtworkSink? = null
+
+    @Volatile
+    private var sourceRuntimeStateSink: PlaybackSourceRuntimeStateSink? = null
 
     @Volatile
     private var transport: PlaybackTransport? = null
@@ -118,6 +158,16 @@ object MediaSessionRuntimeHost {
     }
 
     @Synchronized
+    fun attachSourceRuntimeState(sink: PlaybackSourceRuntimeStateSink) {
+        sourceRuntimeStateSink = sink
+    }
+
+    @Synchronized
+    fun detachSourceRuntimeState(sink: PlaybackSourceRuntimeStateSink) {
+        if (sourceRuntimeStateSink === sink) sourceRuntimeStateSink = null
+    }
+
+    @Synchronized
     internal fun attachTransport(transport: PlaybackTransport) {
         this.transport = transport
     }
@@ -147,6 +197,10 @@ object MediaSessionRuntimeHost {
 
     internal fun forwardArtwork(bitmap: Bitmap?) {
         artworkSink?.onPlaybackArtwork(bitmap)
+    }
+
+    internal fun forwardSourceRuntimeState(state: PlaybackSourceRuntimeState) {
+        sourceRuntimeStateSink?.onPlaybackSourceRuntimeState(state)
     }
 
     fun play() {

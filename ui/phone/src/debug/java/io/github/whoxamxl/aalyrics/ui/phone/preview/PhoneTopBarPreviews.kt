@@ -1,79 +1,130 @@
 package io.github.whoxamxl.aalyrics.ui.phone.preview
 
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.painter.ColorPainter
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.tooling.preview.Preview
+import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsColors
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsTheme
 import io.github.whoxamxl.aalyrics.ui.phone.shell.PhoneTopBar
+import io.github.whoxamxl.aalyrics.ui.phone.state.PlaybackSourceConnectionUiState
+import io.github.whoxamxl.aalyrics.ui.phone.state.PlaybackSourceErrorUiReason
+import io.github.whoxamxl.aalyrics.ui.phone.state.PlaybackSourceUnavailableUiReason
+
+@Preview(name = "Connecting", group = "PhoneTopBar", widthDp = 412, showBackground = true)
+@Composable
+private fun PhoneTopBarConnectingPreview() {
+    PhoneTopBarPreview(connectionState = PlaybackSourceConnectionUiState.CONNECTING)
+}
+
+@Preview(name = "Connected", group = "PhoneTopBar", widthDp = 412, showBackground = true)
+@Composable
+private fun PhoneTopBarConnectedPreview() {
+    PhoneTopBarPreview(
+        mediaSourceLabel = "Spotify",
+        connectionState = PlaybackSourceConnectionUiState.CONNECTED,
+        mediaSourceCanOpenApp = true,
+        mediaSourceIconPainter = ColorPainter(AALyricsColors.AccentCyan),
+    )
+}
 
 @Preview(
-    name = "No media source",
+    name = "Connected · icon unavailable",
     group = "PhoneTopBar",
     widthDp = 412,
     showBackground = true,
 )
 @Composable
-private fun PhoneTopBarNoMediaSourcePreview() {
-    PhoneTopBarPreview(mediaSourceLabel = null)
+private fun PhoneTopBarConnectedIconUnavailablePreview() {
+    PhoneTopBarPreview(
+        mediaSourceLabel = "Spotify",
+        connectionState = PlaybackSourceConnectionUiState.CONNECTED,
+        mediaSourceCanOpenApp = true,
+    )
+}
+
+@Preview(name = "Disconnected", group = "PhoneTopBar", widthDp = 412, showBackground = true)
+@Composable
+private fun PhoneTopBarDisconnectedPreview() {
+    PhoneTopBarPreview(connectionState = PlaybackSourceConnectionUiState.DISCONNECTED)
+}
+
+@Preview(name = "Unavailable · non-audio", group = "PhoneTopBar", widthDp = 412, showBackground = true)
+@Composable
+private fun PhoneTopBarUnavailableNonAudioPreview() {
+    PhoneTopBarPreview(
+        mediaSourceLabel = "Video Player",
+        connectionState = PlaybackSourceConnectionUiState.UNAVAILABLE,
+        unavailableReason = PlaybackSourceUnavailableUiReason.NON_AUDIO_APP,
+        mediaSourceIconPainter = ColorPainter(AALyricsColors.AccentCyan),
+    )
+}
+
+@Preview(name = "Unavailable · unclassified", group = "PhoneTopBar", widthDp = 412, showBackground = true)
+@Composable
+private fun PhoneTopBarUnavailableUnclassifiedPreview() {
+    PhoneTopBarPreview(
+        mediaSourceLabel = "Unknown Player",
+        connectionState = PlaybackSourceConnectionUiState.UNAVAILABLE,
+        unavailableReason = PlaybackSourceUnavailableUiReason.UNCLASSIFIED_APP,
+    )
 }
 
 @Preview(
-    name = "Spotify",
+    name = "Unavailable · generic fallback",
     group = "PhoneTopBar",
     widthDp = 412,
     showBackground = true,
 )
 @Composable
-private fun PhoneTopBarSpotifyPreview() {
-    PhoneTopBarPreview(mediaSourceLabel = "Spotify")
+private fun PhoneTopBarUnavailableFallbackPreview() {
+    PhoneTopBarPreview(
+        connectionState = PlaybackSourceConnectionUiState.UNAVAILABLE,
+        unavailableReason = PlaybackSourceUnavailableUiReason.UNKNOWN,
+    )
 }
 
-@Preview(
-    name = "Package fallback",
-    group = "PhoneTopBar",
-    widthDp = 412,
-    showBackground = true,
-)
+@Preview(name = "Error", group = "PhoneTopBar", widthDp = 412, showBackground = true)
 @Composable
-private fun PhoneTopBarPackageFallbackPreview() {
-    PhoneTopBarPreview(mediaSourceLabel = "com.spotify.music")
+private fun PhoneTopBarErrorPreview() {
+    PhoneTopBarPreview(
+        connectionState = PlaybackSourceConnectionUiState.ERROR,
+        errorReason = PlaybackSourceErrorUiReason.SESSION_QUERY_FAILED,
+    )
 }
 
 @Preview(
-    name = "YouTube Music",
-    group = "PhoneTopBar",
-    widthDp = 412,
-    showBackground = true,
-)
-@Composable
-private fun PhoneTopBarYouTubeMusicPreview() {
-    PhoneTopBarPreview(mediaSourceLabel = "YouTube Music")
-}
-
-@Preview(
-    name = "Poweramp",
-    group = "PhoneTopBar",
-    widthDp = 412,
-    showBackground = true,
-)
-@Composable
-private fun PhoneTopBarPowerampPreview() {
-    PhoneTopBarPreview(mediaSourceLabel = "Poweramp")
-}
-
-@Preview(
-    name = "Long media source",
+    name = "Connected · long app name",
     group = "PhoneTopBar",
     widthDp = 412,
     showBackground = true,
 )
 @Composable
 private fun PhoneTopBarLongMediaSourcePreview() {
-    PhoneTopBarPreview(mediaSourceLabel = "Very Long Music Player Application")
+    PhoneTopBarPreview(
+        mediaSourceLabel = "Very Long Music Player Application",
+        connectionState = PlaybackSourceConnectionUiState.CONNECTED,
+        mediaSourceCanOpenApp = true,
+    )
 }
 
 @Composable
-private fun PhoneTopBarPreview(mediaSourceLabel: String?) {
+private fun PhoneTopBarPreview(
+    mediaSourceLabel: String? = null,
+    connectionState: PlaybackSourceConnectionUiState,
+    unavailableReason: PlaybackSourceUnavailableUiReason? = null,
+    errorReason: PlaybackSourceErrorUiReason? = null,
+    mediaSourceCanOpenApp: Boolean = false,
+    mediaSourceIconPainter: Painter? = null,
+) {
     AALyricsTheme {
-        PhoneTopBar(mediaSourceLabel = mediaSourceLabel)
+        PhoneTopBar(
+            mediaSourceLabel = mediaSourceLabel,
+            mediaSourceConnectionState = connectionState,
+            mediaSourceUnavailableReason = unavailableReason,
+            mediaSourceErrorReason = errorReason,
+            mediaSourceCanOpenApp = mediaSourceCanOpenApp,
+            mediaSourceIconPainter = mediaSourceIconPainter,
+        )
     }
 }

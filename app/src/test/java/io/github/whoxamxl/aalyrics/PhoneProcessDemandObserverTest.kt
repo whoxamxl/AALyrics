@@ -15,7 +15,10 @@ class PhoneProcessDemandObserverTest {
         val forwarded = mutableListOf<PlaybackSnapshot>()
         val gate = LyricsDemandGate(forwarded::add)
         gate.onPlaybackSnapshot(
-            PlaybackSnapshot(track = Track(title = "Song", artists = listOf("Artist"))),
+            snapshot = PlaybackSnapshot(
+                track = Track(title = "Song", artists = listOf("Artist")),
+            ),
+            sourceEligible = true,
         )
         val observer = PhoneProcessDemandObserver(gate)
         val owner = TestLifecycleOwner()
