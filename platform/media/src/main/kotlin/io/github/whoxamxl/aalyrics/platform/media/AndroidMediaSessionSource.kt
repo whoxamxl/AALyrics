@@ -10,7 +10,6 @@ import android.media.session.MediaSession
 import android.media.session.MediaSessionManager
 import android.media.session.PlaybackState
 import android.os.Handler
-import android.util.Log
 
 internal class AndroidMediaSessionSource(
     private val context: Context,
@@ -95,13 +94,6 @@ internal class AndroidRuntimeMediaController(
             queue = controller.queue.orEmpty().mapNotNull { item ->
                 val description = item.description
                 val title = description.title?.toString()?.trim().orEmpty()
-                Log.d(
-                    QUEUE_ARTWORK_PROBE_TAG,
-                    "pkg=${controller.packageName} id=${item.queueId} " +
-                        "title=${title.take(80)} " +
-                        "iconBitmap=${description.iconBitmap != null} " +
-                        "iconUri=${description.iconUri}",
-                )
                 if (title.isEmpty()) {
                     null
                 } else {
@@ -112,6 +104,7 @@ internal class AndroidRuntimeMediaController(
                             ?.toString()
                             ?.trim()
                             ?.takeIf(String::isNotEmpty),
+                        artworkUri = description.iconUri?.toString(),
                     )
                 }
             },
@@ -206,10 +199,6 @@ internal class AndroidRuntimeMediaController(
 
     private fun Long.supports(vararg actions: Long): Boolean =
         actions.any { action -> this and action != 0L }
-
-    private companion object {
-        const val QUEUE_ARTWORK_PROBE_TAG = "AALyricsQueueProbe"
-    }
 
     private data class AttachedCallback(
         val runtimeCallback: RuntimeMediaControllerCallback,

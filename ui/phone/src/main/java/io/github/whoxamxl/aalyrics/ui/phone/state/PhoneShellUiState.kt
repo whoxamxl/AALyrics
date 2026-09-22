@@ -43,6 +43,7 @@ data class PlaybackQueueItemUiState(
     val id: Long,
     val title: String,
     val subtitle: String? = null,
+    val artworkUri: String? = null,
 )
 
 /**

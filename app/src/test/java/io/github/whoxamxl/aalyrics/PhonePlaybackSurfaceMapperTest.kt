@@ -28,7 +28,12 @@ class PhonePlaybackSurfaceMapperTest {
                 canSeek = true,
             ),
             queue = listOf(
-                PlaybackQueueItem(7L, "Next Track", "Next Artist"),
+                PlaybackQueueItem(
+                    id = 7L,
+                    title = "Next Track",
+                    subtitle = "Next Artist",
+                    artworkUri = "content://com.example.player/artwork/7",
+                ),
             ),
             hasSessionActivity = true,
         )
@@ -47,6 +52,10 @@ class PhonePlaybackSurfaceMapperTest {
         assertTrue(state.canSeek)
         assertTrue(state.queueAvailable)
         assertEquals(listOf(7L), state.queue.map { it.id })
+        assertEquals(
+            "content://com.example.player/artwork/7",
+            state.queue.single().artworkUri,
+        )
         assertTrue(state.canOpenPlaybackApp)
         assertFalse(state.translationEnabled)
     }
