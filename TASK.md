@@ -81,7 +81,7 @@ The policy must describe actual AALyrics behavior; placeholder privacy claims ar
 - [x] Split the current lower Settings layout into `APP` and `ABOUT & SUPPORT` without changing unrelated sections.
 - [x] Move License visually under `ABOUT & SUPPORT` without changing its existing NOTICE/LICENSE behavior.
 - [x] Add `Support AALyrics` native subscreen.
-- [x] Refine the Support surface into one branded card using the official Buy Me a Coffee full logo and yellow CTA button; keep QR assets out of the phone UI.
+- [x] Refine the Support surface into one compact card with no duplicate logo panel, a smaller centered official yellow CTA, and an explicit `Opens Buy Me a Coffee` affordance; keep QR assets out of the phone UI.
 - [x] Wire Buy Me a Coffee handoff through an app-owned Custom Tab / external-browser action.
 - [x] Keep `Advanced` in its own existing card and keep the branding footer last.
 - [x] Update deterministic Previews for Settings home, Privacy Policy, Support AALyrics, narrow width, and enlarged font.
@@ -109,7 +109,7 @@ Pending before merge:
 - [x] JVM/unit tests pass.
 - [x] Generated APK contains `aalyrics_privacy.md`.
 - [x] PR diff/Preview alignment review is complete.
-- [ ] Re-run CI and bounded Codex review after the Buy Me a Coffee visual refinement.
+- [ ] Re-run CI and bounded Codex review after the final compact Buy Me a Coffee visual refinement.
 
 ## Current stop point
 

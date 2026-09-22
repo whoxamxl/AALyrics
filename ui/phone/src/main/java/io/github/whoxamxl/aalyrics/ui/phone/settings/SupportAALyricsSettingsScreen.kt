@@ -1,9 +1,7 @@
 package io.github.whoxamxl.aalyrics.ui.phone.settings
 
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
@@ -20,7 +18,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -29,7 +26,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsColors
-import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsRadius
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsSpacing
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsTypography
 import io.github.whoxamxl.aalyrics.ui.phone.R
@@ -68,31 +64,6 @@ internal fun SupportAALyricsSettingsScreen(
                     .padding(AALyricsSpacing.Space20),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(AALyricsRadius.Radius12))
-                        .background(Color.White)
-                        .padding(
-                            horizontal = AALyricsSpacing.Space20,
-                            vertical = AALyricsSpacing.Space16,
-                        ),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Image(
-                        painter = painterResource(R.drawable.bmc_full_logo),
-                        contentDescription =
-                            stringResource(R.string.settings_support_brand_description),
-                        contentScale = ContentScale.Fit,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .widthIn(max = 280.dp)
-                            .aspectRatio(720f / 158f),
-                    )
-                }
-
-                Spacer(Modifier.height(AALyricsSpacing.Space20))
-
                 Text(
                     text = stringResource(R.string.settings_support_body),
                     style = AALyricsTypography.AppTitle,
@@ -101,10 +72,10 @@ internal fun SupportAALyricsSettingsScreen(
                     modifier = Modifier.fillMaxWidth(),
                 )
 
-                Spacer(Modifier.height(AALyricsSpacing.Space8))
+                Spacer(Modifier.height(AALyricsSpacing.Space12))
 
                 Text(
-                    text = stringResource(R.string.settings_support_footer),
+                    text = stringResource(R.string.settings_support_subtext),
                     style = AALyricsTypography.TrackArtist,
                     color = AALyricsColors.TextSecondary,
                     textAlign = TextAlign.Center,
@@ -119,14 +90,23 @@ internal fun SupportAALyricsSettingsScreen(
                         stringResource(R.string.settings_support_button_description),
                     contentScale = ContentScale.Fit,
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .widthIn(max = 300.dp)
+                        .fillMaxWidth(0.72f)
+                        .widthIn(max = 244.dp)
                         .aspectRatio(720f / 202f)
                         .clip(RoundedCornerShape(percent = 50))
                         .clickable(
                             role = Role.Button,
                             onClick = onSupport,
                         ),
+                )
+
+                Spacer(Modifier.height(AALyricsSpacing.Space8))
+
+                Text(
+                    text = stringResource(R.string.settings_support_open_note),
+                    style = AALyricsTypography.Label,
+                    color = AALyricsColors.TextTertiary,
+                    textAlign = TextAlign.Center,
                 )
             }
         }
