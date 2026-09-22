@@ -8,7 +8,6 @@ import androidx.activity.compose.setContent
 import androidx.browser.customtabs.CustomTabsIntent
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsTheme
 import io.github.whoxamxl.aalyrics.ui.phone.settings.AndroidAutoCompatibilityUiStatus
-import io.github.whoxamxl.aalyrics.ui.phone.settings.HelpFeedbackDestination
 import io.github.whoxamxl.aalyrics.ui.phone.setup.createAndroidAutoCompatibilitySetupView
 import io.github.whoxamxl.aalyrics.ui.phone.setup.createNotificationAccessSetupView
 
