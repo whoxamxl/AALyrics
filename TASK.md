@@ -134,6 +134,7 @@ Do not redesign unrelated Settings sections, change existing Support AALyrics vi
 Focused coverage is now present for:
 
 - Settings-local Back/root-reset navigation across every current subscreen;
+- Settings home scroll ownership is hoisted above subscreen composition so ordinary Back preserves the previous viewport while Settings-tab reselection still resets to the top;
 - exact Help & Feedback GitHub routing, including a guard that security reporting does not use public Issues or Discussions;
 - unchanged pass-through of bundled Terms of Use and third-party license Markdown into Settings presentation state.
 
@@ -150,4 +151,4 @@ The validation tests have been added but the full unit-test/build/CI pass is int
 
 ## Current stop point
 
-Implementation, focused coverage, Reset review, documentation, and deterministic Previews are aligned. Stop here before running architecture checks, unit tests, debug APK build, CI, and bounded review.
+Implementation, focused coverage, Reset review, documentation, deterministic Previews, and Settings home scroll restoration are aligned. The open Draft PR will re-run CI for this fix.

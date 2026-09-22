@@ -793,7 +793,9 @@ Both Storage and Reset explanations use the shared `SettingInfoTooltip`; explana
 
 The Advanced surface remains Settings-owned UI. It does not become a fifth primary destination.
 
-Reselecting the already-selected Settings bottom-navigation tab is a Settings-root reset. It dismisses any active Settings modal, discards uncommitted dialog-local draft state such as a Target-language selection, leaves Advanced, Changelog, Privacy Policy, Terms of Use, License, Help & Feedback, or Support AALyrics, returns directly to the main Settings surface, and scrolls the Settings home content back to the top.
+Ordinary child-screen navigation preserves the Settings home scroll position. Entering Advanced, Changelog, Privacy Policy, Terms of Use, License, Help & Feedback, or Support AALyrics and then using Header/System Back returns to the same Settings home viewport the user left.
+
+Reselecting the already-selected Settings bottom-navigation tab is a stronger Settings-root reset. It dismisses any active Settings modal, discards uncommitted dialog-local draft state such as a Target-language selection, leaves any Settings subscreen, returns directly to the main Settings surface, and scrolls the Settings home content back to the top.
 
 A suitable presentation interaction is conceptually:
 

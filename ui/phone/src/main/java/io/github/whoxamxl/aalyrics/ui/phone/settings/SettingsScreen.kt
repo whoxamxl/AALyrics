@@ -1,5 +1,6 @@
 package io.github.whoxamxl.aalyrics.ui.phone.settings
 
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -52,6 +53,7 @@ fun SettingsScreen(
     var activeSubscreen by rememberSaveable {
         mutableStateOf(SettingsSubscreen.MAIN)
     }
+    val mainScrollState = rememberScrollState()
 
     BackHandler(enabled = activeSubscreen != SettingsSubscreen.MAIN) {
         activeSubscreen = activeSubscreen.backDestination()
@@ -60,6 +62,7 @@ fun SettingsScreen(
     LaunchedEffect(rootResetKey) {
         targetLanguagePickerVisible = false
         activeSubscreen = settingsRootSubscreen()
+        mainScrollState.scrollTo(0)
     }
 
     LaunchedEffect(Unit) {
@@ -129,7 +132,7 @@ fun SettingsScreen(
 
         SettingsSubscreen.MAIN -> SettingsScreenContent(
             state = state,
-            rootResetKey = rootResetKey,
+            scrollState = mainScrollState,
             targetLanguagePickerVisible = targetLanguagePickerVisible,
             onTargetLanguagePickerVisibilityChanged = {
                 targetLanguagePickerVisible = it
@@ -167,7 +170,7 @@ fun SettingsScreen(
 @Composable
 internal fun SettingsScreenContent(
     state: SettingsScreenUiState,
-    rootResetKey: Int = 0,
+    scrollState: ScrollState,
     targetLanguagePickerVisible: Boolean,
     onTargetLanguagePickerVisibilityChanged: (Boolean) -> Unit,
     onPlainLyricsAutoScrollChanged: (Boolean) -> Unit,
@@ -194,11 +197,6 @@ internal fun SettingsScreenContent(
         targetLanguagePickerVisible,
     ) {
         mutableStateOf(state.translationTarget.id)
-    }
-    val scrollState = rememberScrollState()
-
-    LaunchedEffect(rootResetKey) {
-        scrollState.scrollTo(0)
     }
 
     Column(
