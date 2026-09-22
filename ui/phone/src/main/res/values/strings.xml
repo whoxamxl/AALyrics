@@ -146,6 +146,7 @@
     <string name="playback_source_disconnected">Disconnected</string>
     <string name="playback_source_unavailable">Unavailable</string>
     <string name="playback_source_error">Error</string>
+    <string name="playback_source_open_app_description">Open playback app</string>
     <string name="playback_source_error_details_description">Playback source error details</string>
     <string name="playback_source_error_notification_access_lost">Notification access was lost.</string>
     <string name="playback_source_error_session_query_failed">Could not read active media sessions.</string>

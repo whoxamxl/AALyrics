@@ -3,6 +3,7 @@ package io.github.whoxamxl.aalyrics.ui.phone.shell
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -32,8 +33,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.github.whoxamxl.aalyrics.ui.designsystem.icon.AALyricsBrandMark
@@ -55,7 +58,9 @@ fun PhoneTopBar(
     mediaSourceConnectionState: PlaybackSourceConnectionUiState =
         PlaybackSourceConnectionUiState.CONNECTING,
     mediaSourceErrorReason: PlaybackSourceErrorUiReason? = null,
+    mediaSourceCanOpenApp: Boolean = false,
     mediaSourceIconPainter: Painter? = null,
+    onOpenPlaybackApp: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     Surface(
@@ -86,7 +91,9 @@ fun PhoneTopBar(
                 mediaSourceLabel = mediaSourceLabel,
                 connectionState = mediaSourceConnectionState,
                 errorReason = mediaSourceErrorReason,
+                mediaSourceCanOpenApp = mediaSourceCanOpenApp,
                 mediaSourceIconPainter = mediaSourceIconPainter,
+                onOpenPlaybackApp = onOpenPlaybackApp,
             )
         }
     }
@@ -97,15 +104,28 @@ private fun PlaybackSourceStatusPill(
     mediaSourceLabel: String?,
     connectionState: PlaybackSourceConnectionUiState,
     errorReason: PlaybackSourceErrorUiReason?,
+    mediaSourceCanOpenApp: Boolean,
     mediaSourceIconPainter: Painter?,
+    onOpenPlaybackApp: () -> Unit,
 ) {
+    val palette = playbackSourceStatusPalette(connectionState)
+    val canOpenConnectedSource =
+        connectionState == PlaybackSourceConnectionUiState.CONNECTED &&
+            mediaSourceCanOpenApp
+
     Surface(
-        modifier = Modifier.widthIn(max = 220.dp),
+        modifier = Modifier
+            .widthIn(max = 220.dp)
+            .clickable(
+                enabled = canOpenConnectedSource,
+                role = Role.Button,
+                onClick = onOpenPlaybackApp,
+            ),
         shape = RoundedCornerShape(AALyricsRadius.Full),
-        color = AALyricsColors.OverlaySoft,
+        color = palette.background,
         border = BorderStroke(
             width = AALyricsStroke.Thin,
-            color = AALyricsColors.BorderSoft,
+            color = palette.border,
         ),
     ) {
         Row(
@@ -120,12 +140,12 @@ private fun PlaybackSourceStatusPill(
                 PlaybackSourceConnectionUiState.CONNECTING -> {
                     CircularProgressIndicator(
                         modifier = Modifier.size(14.dp),
-                        color = AALyricsColors.AccentCyan,
+                        color = palette.foreground,
                         strokeWidth = AALyricsStroke.Strong,
                     )
                     StatusText(
                         text = stringResource(R.string.playback_source_connecting),
-                        color = AALyricsColors.AccentCyan,
+                        color = palette.foreground,
                     )
                 }
 
@@ -137,20 +157,30 @@ private fun PlaybackSourceStatusPill(
                     StatusSeparator()
                     StatusText(
                         text = stringResource(R.string.playback_source_connected),
-                        color = AALyricsColors.AccentCyan,
+                        color = palette.foreground,
                     )
+                    if (canOpenConnectedSource) {
+                        Icon(
+                            imageVector = AALyricsIcons.ExternalLink,
+                            contentDescription = stringResource(
+                                R.string.playback_source_open_app_description,
+                            ),
+                            tint = palette.foreground,
+                            modifier = Modifier.size(AALyricsSpacing.Space16),
+                        )
+                    }
                 }
 
                 PlaybackSourceConnectionUiState.DISCONNECTED -> {
                     Icon(
                         imageVector = AALyricsIcons.Disconnected,
                         contentDescription = null,
-                        tint = AALyricsColors.TextSecondary,
+                        tint = palette.foreground,
                         modifier = Modifier.size(AALyricsSpacing.Space16),
                     )
                     StatusText(
                         text = stringResource(R.string.playback_source_disconnected),
-                        color = AALyricsColors.TextSecondary,
+                        color = palette.foreground,
                     )
                 }
 
@@ -165,13 +195,13 @@ private fun PlaybackSourceStatusPill(
                         Icon(
                             imageVector = AALyricsIcons.Unavailable,
                             contentDescription = null,
-                            tint = AALyricsColors.TextSecondary,
+                            tint = palette.foreground,
                             modifier = Modifier.size(AALyricsSpacing.Space16),
                         )
                     }
                     StatusText(
                         text = stringResource(R.string.playback_source_unavailable),
-                        color = AALyricsColors.TextSecondary,
+                        color = palette.foreground,
                     )
                 }
 
@@ -179,18 +209,63 @@ private fun PlaybackSourceStatusPill(
                     Icon(
                         imageVector = AALyricsIcons.Error,
                         contentDescription = null,
-                        tint = AALyricsColors.Error,
+                        tint = palette.foreground,
                         modifier = Modifier.size(AALyricsSpacing.Space16),
                     )
                     StatusText(
                         text = stringResource(R.string.playback_source_error),
-                        color = AALyricsColors.Error,
+                        color = palette.foreground,
                     )
-                    PlaybackSourceErrorTooltip(errorReason)
+                    PlaybackSourceErrorTooltip(
+                        reason = errorReason,
+                        tint = palette.foreground,
+                    )
                 }
             }
         }
     }
+}
+
+private data class PlaybackSourceStatusPalette(
+    val foreground: Color,
+    val background: Color,
+    val border: Color,
+)
+
+private fun playbackSourceStatusPalette(
+    state: PlaybackSourceConnectionUiState,
+): PlaybackSourceStatusPalette {
+    val foreground = when (state) {
+        PlaybackSourceConnectionUiState.CONNECTING -> AALyricsColors.TextSecondary
+        PlaybackSourceConnectionUiState.CONNECTED -> AALyricsColors.Success
+        PlaybackSourceConnectionUiState.DISCONNECTED -> AALyricsColors.TextTertiary
+        PlaybackSourceConnectionUiState.UNAVAILABLE -> AALyricsColors.Warning
+        PlaybackSourceConnectionUiState.ERROR -> AALyricsColors.Error
+    }
+    val backgroundBlend = when (state) {
+        PlaybackSourceConnectionUiState.CONNECTING -> 0f
+        PlaybackSourceConnectionUiState.DISCONNECTED -> 0.07f
+        else -> 0.10f
+    }
+    val borderBlend = when (state) {
+        PlaybackSourceConnectionUiState.CONNECTING -> 0f
+        PlaybackSourceConnectionUiState.DISCONNECTED -> 0.20f
+        else -> 0.42f
+    }
+
+    return PlaybackSourceStatusPalette(
+        foreground = foreground,
+        background = lerp(
+            AALyricsColors.OverlaySoft,
+            foreground,
+            backgroundBlend,
+        ),
+        border = lerp(
+            AALyricsColors.BorderSoft,
+            foreground,
+            borderBlend,
+        ),
+    )
 }
 
 @Composable
@@ -220,7 +295,7 @@ private fun RowScope.SourceIdentity(
     Text(
         text = label.orEmpty(),
         style = AALyricsTypography.Label,
-        color = AALyricsColors.AccentCyan,
+        color = AALyricsColors.TextPrimary,
         maxLines = 1,
         overflow = TextOverflow.Ellipsis,
         modifier = Modifier.weight(1f, fill = false),
@@ -253,6 +328,7 @@ private fun StatusText(
 @Composable
 private fun PlaybackSourceErrorTooltip(
     reason: PlaybackSourceErrorUiReason?,
+    tint: Color,
 ) {
     var expanded by remember { mutableStateOf(false) }
 
@@ -266,7 +342,7 @@ private fun PlaybackSourceErrorTooltip(
                 contentDescription = stringResource(
                     R.string.playback_source_error_details_description,
                 ),
-                tint = AALyricsColors.TextSecondary,
+                tint = tint,
                 modifier = Modifier.size(AALyricsSpacing.Space16),
             )
         }

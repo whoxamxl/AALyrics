@@ -54,7 +54,9 @@ fun PhoneAppShell(
                 mediaSourceLabel = state.mediaSourceLabel,
                 mediaSourceConnectionState = state.mediaSourceConnectionState,
                 mediaSourceErrorReason = state.mediaSourceErrorReason,
+                mediaSourceCanOpenApp = state.mediaSourceCanOpenApp,
                 mediaSourceIconPainter = mediaSourceIconPainter,
+                onOpenPlaybackApp = onOpenPlaybackApp,
             )
             Box(
                 modifier = Modifier

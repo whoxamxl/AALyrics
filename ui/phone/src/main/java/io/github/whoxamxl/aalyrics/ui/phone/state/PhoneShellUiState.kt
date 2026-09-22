@@ -26,6 +26,7 @@ data class PhoneShellUiState(
     val mediaSourceConnectionState: PlaybackSourceConnectionUiState =
         PlaybackSourceConnectionUiState.CONNECTING,
     val mediaSourceErrorReason: PlaybackSourceErrorUiReason? = null,
+    val mediaSourceCanOpenApp: Boolean = false,
     val playbackSurface: PlaybackSurfaceUiState? = null,
 )
 
