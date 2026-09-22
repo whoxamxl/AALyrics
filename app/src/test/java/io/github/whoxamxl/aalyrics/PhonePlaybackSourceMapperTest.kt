@@ -35,6 +35,28 @@ class PhonePlaybackSourceMapperTest {
     }
 
     @Test
+    fun `unavailable runtime package remains available for app identity resolution`() {
+        assertEquals(
+            "com.blocked.player",
+            playbackSourceAppInfoPackageName(
+                runtimeState = PlaybackSourceRuntimeState.Unavailable("com.blocked.player"),
+                playback = PlaybackSnapshot(),
+            ),
+        )
+    }
+
+    @Test
+    fun `unavailable runtime package falls back to current playback package`() {
+        assertEquals(
+            "com.spotify.music",
+            playbackSourceAppInfoPackageName(
+                runtimeState = PlaybackSourceRuntimeState.Unavailable(),
+                playback = playback("com.spotify.music"),
+            ),
+        )
+    }
+
+    @Test
     fun `disconnected and unavailable stay distinct`() {
         val disconnected = mapPhonePlaybackSourcePresentationState(
             runtimeState = PlaybackSourceRuntimeState.Disconnected,

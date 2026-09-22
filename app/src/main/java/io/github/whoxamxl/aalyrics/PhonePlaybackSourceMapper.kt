@@ -6,6 +6,19 @@ import io.github.whoxamxl.aalyrics.platform.media.PlaybackSourceRuntimeState
 import io.github.whoxamxl.aalyrics.ui.phone.state.PlaybackSourceConnectionUiState
 import io.github.whoxamxl.aalyrics.ui.phone.state.PlaybackSourceErrorUiReason
 
+internal fun playbackSourceAppInfoPackageName(
+    runtimeState: PlaybackSourceRuntimeState,
+    playback: PlaybackSnapshot,
+): String? =
+    when (runtimeState) {
+        is PlaybackSourceRuntimeState.Connected -> runtimeState.packageName
+        is PlaybackSourceRuntimeState.Unavailable ->
+            runtimeState.packageName ?: playback.source?.id
+        PlaybackSourceRuntimeState.Connecting -> playback.source?.id
+        PlaybackSourceRuntimeState.Disconnected,
+        is PlaybackSourceRuntimeState.Error -> null
+    }
+
 internal data class PhonePlaybackSourcePresentationState(
     val connectionState: PlaybackSourceConnectionUiState,
     val packageName: String? = null,

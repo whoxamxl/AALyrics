@@ -220,14 +220,10 @@ class AALyricsApplication : Application() {
             graph.playbackSourceRuntimeState,
             graph.playbackState,
         ) { runtimeState, playback ->
-            when (runtimeState) {
-                is PlaybackSourceRuntimeState.Connected -> runtimeState.packageName
-                is PlaybackSourceRuntimeState.Unavailable ->
-                    runtimeState.packageName ?: playback.source?.id
-                PlaybackSourceRuntimeState.Connecting -> playback.source?.id
-                PlaybackSourceRuntimeState.Disconnected,
-                is PlaybackSourceRuntimeState.Error -> null
-            }
+            playbackSourceAppInfoPackageName(
+                runtimeState = runtimeState,
+                playback = playback,
+            )
         }
             .distinctUntilChanged()
             .map(playbackSourceAppInfoResolver::resolve)
