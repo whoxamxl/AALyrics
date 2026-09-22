@@ -47,19 +47,6 @@ data class AppUpdateUiState(
     val failureReason: String? = null,
 )
 
-/**
- * Normalizes transient update results when the user enters Settings again.
- *
- * Active work survives destination changes. Completed/stale results do not.
- */
-fun AppUpdateUiState.normalizedForSettingsEntry(): AppUpdateUiState =
-    when (phase) {
-        AppUpdateUiPhase.UNAVAILABLE,
-        AppUpdateUiPhase.CHECKING,
-        AppUpdateUiPhase.DOWNLOADING -> this
-        else -> AppUpdateUiState()
-    }
-
 /** User acknowledgement shown for the legacy Android Auto compatibility setup. */
 enum class AndroidAutoCompatibilityUiStatus {
     NOT_REVIEWED,
