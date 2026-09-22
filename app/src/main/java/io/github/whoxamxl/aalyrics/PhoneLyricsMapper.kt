@@ -47,6 +47,7 @@ internal fun mapPhoneLyricsState(
                 ?.joinToString(separator = ", "),
             providerLabel = document?.attribution?.displayName,
             syncLabel = document?.let { sourceSyncType.label() },
+            lyricsLoading = matchingLyricsState is LyricsState.Loading,
         ),
         viewport = LyricsViewportUiState(
             lines = document

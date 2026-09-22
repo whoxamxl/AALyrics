@@ -10,6 +10,7 @@ data class TrackCardUiState(
     val artist: String? = null,
     val providerLabel: String? = null,
     val syncLabel: String? = null,
+    val lyricsLoading: Boolean = false,
 )
 
 /** Which owner currently controls the vertical position of the lyrics viewport. */

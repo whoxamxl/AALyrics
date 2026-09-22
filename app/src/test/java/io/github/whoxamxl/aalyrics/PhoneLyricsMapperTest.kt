@@ -37,6 +37,33 @@ class PhoneLyricsMapperTest {
     }
 
     @Test
+    fun `matching loading lookup maps Track Card loading state`() {
+        val track = track()
+        val playback = PlaybackSnapshot(
+            track = track,
+            source = PlaybackSource("com.spotify.music"),
+        )
+        val lookup = LyricsLookup(
+            id = LyricsLookupId(1L),
+            track = track,
+            playbackIdentity = requireNotNull(playback.trackIdentity),
+        )
+
+        val state = mapPhoneLyricsState(
+            playback = playback,
+            lyricsState = LyricsState.Loading(lookup),
+            plainLyricsAutoScrollEnabled = true,
+            interactionMode = LyricsViewportInteractionMode.FOLLOW,
+            currentMonotonicTimeMs = 1_000L,
+        )
+
+        assertTrue(state.trackCard.lyricsLoading)
+        assertNull(state.trackCard.providerLabel)
+        assertNull(state.trackCard.syncLabel)
+        assertTrue(state.viewport.lines.isEmpty())
+    }
+
+    @Test
     fun `line lyrics project current line from monotonic playback position`() {
         val track = track()
         val playback = PlaybackSnapshot(

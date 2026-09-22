@@ -12,13 +12,17 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import io.github.whoxamxl.aalyrics.ui.phone.R
 import io.github.whoxamxl.aalyrics.ui.designsystem.component.AALyricsArtworkFallback
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsColors
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsRadius
@@ -97,14 +101,35 @@ private fun TrackIdentity(
             title = state.title,
             artist = artist,
         )
-        if (metadata.isNotEmpty()) {
-            Text(
-                text = metadata,
-                style = AALyricsTypography.Label,
-                color = AALyricsColors.AccentCyan,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
+        when {
+            state.lyricsLoading -> {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(12.dp),
+                        color = AALyricsColors.AccentCyan,
+                        strokeWidth = 1.5.dp,
+                    )
+                    Spacer(Modifier.width(AALyricsSpacing.Space4))
+                    Text(
+                        text = stringResource(R.string.track_card_lyrics_loading),
+                        style = AALyricsTypography.Label,
+                        color = AALyricsColors.AccentCyan,
+                        maxLines = 1,
+                    )
+                }
+            }
+
+            metadata.isNotEmpty() -> {
+                Text(
+                    text = metadata,
+                    style = AALyricsTypography.Label,
+                    color = AALyricsColors.AccentCyan,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
         }
     }
 }

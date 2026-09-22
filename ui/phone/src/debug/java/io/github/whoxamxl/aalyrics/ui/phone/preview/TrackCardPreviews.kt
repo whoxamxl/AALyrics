@@ -54,6 +54,15 @@ private fun TrackCardLongTitleAndArtistPreview() {
     )
 }
 
+@Preview(name = "Loading lyrics", group = "TrackCard", widthDp = 412, showBackground = true)
+@Composable
+private fun TrackCardLoadingPreview() {
+    TrackCardPreview(
+        state = PhonePreviewFixtures.trackCardLoading,
+        showArtwork = true,
+    )
+}
+
 @Preview(name = "No provider or sync", group = "TrackCard", widthDp = 412, showBackground = true)
 @Composable
 private fun TrackCardNoMetadataPreview() {

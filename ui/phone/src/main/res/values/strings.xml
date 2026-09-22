@@ -125,6 +125,8 @@
     <string name="sync_title">Sync</string>
     <string name="sync_unavailable">Not available yet. Timing and calibration controls are still being redesigned.</string>
 
+    <string name="track_card_lyrics_loading">Loading...</string>
+
     <string name="details_title">Details</string>
     <string name="details_section_track">TRACK</string>
     <string name="details_track_title">Title</string>

@@ -56,6 +56,11 @@ internal object PhonePreviewFixtures {
         title = "Midnight Signals",
         artist = "The Northbound Lights",
     )
+    val trackCardLoading = TrackCardUiState(
+        title = "Midnight Signals",
+        artist = "The Northbound Lights",
+        lyricsLoading = true,
+    )
     val trackCardNoArtist = TrackCardUiState(
         title = "Untitled Session",
         providerLabel = "LRCLIB",
