@@ -91,7 +91,7 @@ internal class AndroidRuntimeMediaController(
                 canSkipToQueueItem = actions.supports(PlaybackState.ACTION_SKIP_TO_QUEUE_ITEM),
                 canSeek = actions.supports(PlaybackState.ACTION_SEEK_TO),
             ),
-            queue = controller.queue.orEmpty().mapNotNull { item ->
+            queue = controller.queue.orEmpty().take(MAX_QUEUE_ITEMS).mapNotNull { item ->
                 val description = item.description
                 val title = description.title?.toString()?.trim().orEmpty()
                 if (title.isEmpty()) {
@@ -214,6 +214,8 @@ internal fun pendingIntentBackgroundActivityStartModeForSdk(sdkInt: Int): Int? =
         sdkInt >= 34 -> ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOWED
         else -> null
     }
+
+private const val MAX_QUEUE_ITEMS = 20
 
 internal class HandlerMetadataTaskScheduler(
     private val handler: Handler,
