@@ -69,6 +69,8 @@ The Track Card is destination-specific rather than shell-level so non-Lyrics des
 
 The production `LyricsScreen` composes the Track Card above a flexible `LyricsViewport`. The Track Card uses compact 16dp destination-side/top insets; the viewport keeps its own internal 20dp lyric inset rather than inheriting another screen-level horizontal inset. A 12dp gap separates the card from the viewport, and the viewport receives the remaining destination height through flexible weight.
 
+The Track Card also reflects the current lyrics lifecycle in its metadata/status row: `Loading...` with a compact progress indicator while lookup is active, provider + sync type when lyrics are ready/degraded, `Lyrics not found` for a completed miss, and `Lyrics lookup failed` for a failed lookup. These states are mapped from the matching `LyricsState` for the current playback identity so stale lookup state is not presented for a new track.
+
 Artwork remains caller-owned. `LyricsScreen` forwards viewport interaction-mode changes but does not own media, provider, navigation, or playback-controller objects.
 
 Because the Playback Bar is a floating shell overlay, `PhoneAppShell` also exposes its required bottom overlay inset to destination content. `LyricsScreen` applies that inset only to the flexible LyricsViewport region, keeping the Track Card unchanged while preventing the viewport return-to-playback control and bottom lyric content from sitting under the transport surface. When playback controls are absent, the inset is zero.

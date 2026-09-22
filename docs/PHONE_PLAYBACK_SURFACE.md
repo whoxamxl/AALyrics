@@ -156,7 +156,7 @@ The expanded state contains:
    - Previous;
    - Play/Pause;
    - Next;
-   - Queue when supported, otherwise Open playback app when available.
+   - Queue whenever the selected session publishes a non-empty queue; otherwise Open playback app when available.
 
 The title and artist remain one line each and use the same overflow marquee contract as the collapsed bar / Track Card.
 
@@ -470,7 +470,7 @@ seekTo(positionMs)
 
 The long-press design deliberately composes on `seekTo()`; it does not require adding `rewind()` or `fastForward()`.
 
-Queue selection, if implemented, may require one additional framework-neutral transport command equivalent to `skipToQueueItem(id)`.
+Queue selection uses the framework-neutral `skipToQueueItem(id)` transport command. Queue presence, rather than `ACTION_SKIP_TO_QUEUE_ITEM`, is the presentation availability signal because Spotify has been verified to publish selectable queue IDs without advertising that action bit.
 
 Opening the source app is application/platform navigation behavior, not a transport command.
 
@@ -489,6 +489,18 @@ Playback-surface artwork is current-track presentation data.
 Artwork extraction remains outside the pure playback-surface composable. The selected-session Android boundary forwards `METADATA_KEY_ALBUM_ART`, then `METADATA_KEY_ART`, then `MediaDescription.iconBitmap` when available. The Phone UI still accepts caller-provided/renderable artwork rather than Android MediaSession objects.
 
 When no track artwork is available, the artwork slot uses the shared AALyrics foreground mark derived from `branding/android/AALyrics_foreground_android.svg` as the branded fallback.
+
+### Queue artwork
+
+Queue rows accept the three MediaSession artwork shapes independently:
+
+1. `MediaDescription.iconBitmap` — embedded bitmap, preferred when both bitmap and URI are present;
+2. `MediaDescription.iconUri` — URI-backed artwork; `content://`, `file://`, and `android.resource://` resolve through `ContentResolver`, while `http://` and `https://` use bounded remote loading;
+3. neither — render the queue-row music-note placeholder without starting artwork work.
+
+Queue artwork is decoded/scaled to the 36dp presentation target and retained in a bounded in-memory LRU cache. API 26–27 must downsample before retaining decoded bitmaps. Visible queue rows load on demand with bounded concurrency; closing the Queue cancels row-owned work, and cancellation must not poison future cache retries. The selected session exposes at most 20 normalized queue entries.
+
+Android `Bitmap` ownership remains outside `:ui:phone`. Embedded queue bitmaps travel through an Android-owned side channel to `:app`; presentation state carries only framework-neutral queue identity, URI strings, and an embedded-artwork availability marker.
 
 ## Accessibility and gesture safety
 
