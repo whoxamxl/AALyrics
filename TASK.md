@@ -124,13 +124,13 @@ Root reselection must remain stronger than hierarchical Back and must discard an
 
 - [x] Bundle `TERMS_OF_USE.md` and `THIRD_PARTY_LICENSES.md` as generated app assets.
 - [x] Expose both documents through the application-owned Settings presentation boundary.
-- [ ] Add `TermsOfUseSettingsScreen` using the shared Settings header and Markdown renderer.
-- [ ] Add `ThirdPartyLicensesSettingsScreen` using the shared Settings header and Markdown renderer.
-- [ ] Add the License -> Third-party licenses navigation row.
+- [x] Add `TermsOfUseSettingsScreen` using the shared Settings header and Markdown renderer.
+- [x] Add `ThirdPartyLicensesSettingsScreen` using the shared Settings header and Markdown renderer.
+- [x] Add the License -> Third-party licenses navigation row.
 - [ ] Add the native `Help & Feedback` routing hub.
 - [ ] Add application-owned external-link callbacks for the Help & Feedback destinations.
 - [ ] Preserve the existing `Support AALyrics` implementation and behavior.
-- [ ] Extend Settings navigation state so Third-party licenses Back returns to License while root reselection still returns directly to Settings home.
+- [x] Extend Settings navigation state so Third-party licenses Back returns to License while root reselection still returns directly to Settings home.
 - [ ] Add/update strings, deterministic Previews, presentation mapping coverage, and focused navigation tests.
 - [ ] Align `docs/PHONE_SETTINGS.md` with the implemented final state.
 - [ ] Re-evaluate `Reset AALyrics`; this slice is expected to add no persisted state, so no reset behavior change should be required unless implementation changes that assumption.
@@ -142,4 +142,4 @@ Do not redesign unrelated Settings sections, change existing Support AALyrics vi
 
 ## Current stop point
 
-The new Terms of Use and third-party license documents are bundled through the existing generated-assets path and exposed through the application-owned Settings presentation state. No new Settings UI or navigation has been added yet. Stop at this application-boundary checkpoint before implementing document screens.
+Terms of Use is now a Settings-level bundled-document screen. License now contains a dedicated THIRD-PARTY SOFTWARE section whose Third-party licenses row opens the bundled third-party license document as a child screen. Hierarchical Back returns that child to License, while Settings-tab reselection still resets directly to Settings home. Help & Feedback has not been implemented yet; stop at this legal-document UI checkpoint.

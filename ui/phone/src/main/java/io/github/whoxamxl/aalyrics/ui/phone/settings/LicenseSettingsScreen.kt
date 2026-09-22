@@ -25,6 +25,7 @@ import io.github.whoxamxl.aalyrics.ui.phone.component.PhoneMarkdownText
 internal fun LicenseSettingsScreen(
     noticeText: String,
     licenseText: String,
+    onThirdPartyLicensesRequested: () -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
     bottomOverlayInset: Dp = 0.dp,
@@ -83,6 +84,18 @@ internal fun LicenseSettingsScreen(
                     modifier = Modifier.padding(AALyricsSpacing.Space16),
                 )
             }
+        }
+
+        Spacer(Modifier.height(AALyricsSpacing.Space20))
+
+        SettingsSection(
+            title = stringResource(R.string.settings_section_third_party_software),
+        ) {
+            SettingsNavigationRow(
+                title = stringResource(R.string.settings_third_party_licenses),
+                value = null,
+                onClick = onThirdPartyLicensesRequested,
+            )
         }
     }
 }

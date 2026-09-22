@@ -290,6 +290,7 @@ private fun SettingsScreenContentPreview(
                 onDownloadUpdate = {},
                 onChangelogRequested = {},
                 onPrivacyPolicyRequested = {},
+                onTermsOfUseRequested = {},
                 onLicenseRequested = {},
                 onSupportAALyricsRequested = {},
                 onAdvancedRequested = {},

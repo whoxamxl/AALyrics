@@ -55,8 +55,9 @@ Terms of Use
 
 License
 ├─ repository NOTICE + LICENSE rendered as compact Markdown
-└─ Third-party licenses                       >
-   └─ repository THIRD_PARTY_LICENSES.md rendered as compact Markdown
+└─ THIRD-PARTY SOFTWARE
+   └─ Third-party licenses                    >
+      └─ repository THIRD_PARTY_LICENSES.md rendered as compact Markdown
 
 Help & Feedback
 ├─ Report a bug                               ↗
@@ -552,7 +553,7 @@ The repository-root `NOTICE` and `LICENSE` files remain the legal-content source
 - the display removes only the mechanical `Required Notice:` prefix while preserving the notice content itself;
 - the exact original `Required Notice:` line remains unchanged in the bundled `NOTICE` asset;
 - a separate `LICENSE TERMS` section renders the untouched repository `LICENSE` through the shared Phone-local `PhoneMarkdownText` wrapper;
-- a `Third-party licenses >` internal navigation row opens the bundled third-party OSS notices without mixing those notices into AALyrics' own license text.
+- a dedicated `THIRD-PARTY SOFTWARE` section contains a `Third-party licenses >` internal navigation row, keeping third-party OSS notices visibly subordinate to License without mixing them into AALyrics' own license text.
 
 The current required notice is `Required Notice: © 2026 Yuta Miura`. The `©` symbol is part of the canonical repository notice rather than a UI-only substitution.
 

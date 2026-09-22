@@ -53,7 +53,7 @@ fun SettingsScreen(
     }
 
     BackHandler(enabled = activeSubscreen != SettingsSubscreen.MAIN) {
-        activeSubscreen = SettingsSubscreen.MAIN
+        activeSubscreen = activeSubscreen.parentForBack()
     }
 
     LaunchedEffect(rootResetKey) {
@@ -96,10 +96,27 @@ fun SettingsScreen(
             bottomOverlayInset = bottomOverlayInset,
         )
 
+        SettingsSubscreen.TERMS_OF_USE -> TermsOfUseSettingsScreen(
+            termsOfUseText = state.termsOfUseText,
+            onBack = { activeSubscreen = SettingsSubscreen.MAIN },
+            modifier = modifier,
+            bottomOverlayInset = bottomOverlayInset,
+        )
+
         SettingsSubscreen.LICENSE -> LicenseSettingsScreen(
             noticeText = state.noticeText,
             licenseText = state.licenseText,
+            onThirdPartyLicensesRequested = {
+                activeSubscreen = SettingsSubscreen.THIRD_PARTY_LICENSES
+            },
             onBack = { activeSubscreen = SettingsSubscreen.MAIN },
+            modifier = modifier,
+            bottomOverlayInset = bottomOverlayInset,
+        )
+
+        SettingsSubscreen.THIRD_PARTY_LICENSES -> ThirdPartyLicensesSettingsScreen(
+            thirdPartyLicensesText = state.thirdPartyLicensesText,
+            onBack = { activeSubscreen = SettingsSubscreen.LICENSE },
             modifier = modifier,
             bottomOverlayInset = bottomOverlayInset,
         )
@@ -130,6 +147,9 @@ fun SettingsScreen(
             onPrivacyPolicyRequested = {
                 activeSubscreen = SettingsSubscreen.PRIVACY_POLICY
             },
+            onTermsOfUseRequested = {
+                activeSubscreen = SettingsSubscreen.TERMS_OF_USE
+            },
             onLicenseRequested = { activeSubscreen = SettingsSubscreen.LICENSE },
             onSupportAALyricsRequested = {
                 activeSubscreen = SettingsSubscreen.SUPPORT_AALYRICS
@@ -158,6 +178,7 @@ internal fun SettingsScreenContent(
     onDownloadUpdate: () -> Unit,
     onChangelogRequested: () -> Unit,
     onPrivacyPolicyRequested: () -> Unit,
+    onTermsOfUseRequested: () -> Unit,
     onLicenseRequested: () -> Unit,
     onSupportAALyricsRequested: () -> Unit,
     onAdvancedRequested: () -> Unit,
@@ -311,6 +332,14 @@ internal fun SettingsScreenContent(
             SettingsDivider()
 
             SettingsNavigationRow(
+                title = stringResource(R.string.settings_terms_of_use),
+                value = null,
+                onClick = onTermsOfUseRequested,
+            )
+
+            SettingsDivider()
+
+            SettingsNavigationRow(
                 title = stringResource(R.string.settings_license),
                 value = null,
                 onClick = onLicenseRequested,
@@ -404,6 +433,15 @@ private enum class SettingsSubscreen {
     ADVANCED,
     CHANGELOG,
     PRIVACY_POLICY,
+    TERMS_OF_USE,
     LICENSE,
+    THIRD_PARTY_LICENSES,
     SUPPORT_AALYRICS,
 }
+
+private fun SettingsSubscreen.parentForBack(): SettingsSubscreen =
+    when (this) {
+        SettingsSubscreen.THIRD_PARTY_LICENSES -> SettingsSubscreen.LICENSE
+        SettingsSubscreen.MAIN -> SettingsSubscreen.MAIN
+        else -> SettingsSubscreen.MAIN
+    }
