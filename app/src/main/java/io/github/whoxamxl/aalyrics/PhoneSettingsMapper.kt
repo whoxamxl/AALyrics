@@ -31,6 +31,7 @@ internal fun mapPhoneSettingsState(
     thirdPartyLicensesText: String = "",
     translationModelCleanupState: TranslationModelCleanupState =
         TranslationModelCleanupState.IDLE,
+    appUpdateCheckState: AppUpdateCheckState = AppUpdateCheckState.Idle,
     displayLocale: Locale = Locale.getDefault(),
 ): SettingsScreenUiState {
     val targets = TranslationLanguages.supportedTargets.map { languageTag ->
@@ -77,6 +78,20 @@ internal fun mapPhoneSettingsState(
         privacyPolicyText = privacyPolicyText,
         termsOfUseText = termsOfUseText,
         thirdPartyLicensesText = thirdPartyLicensesText,
-        appUpdate = AppUpdateUiState(phase = AppUpdateUiPhase.UNAVAILABLE),
+        appUpdate = when (appUpdateCheckState) {
+            AppUpdateCheckState.Idle ->
+                AppUpdateUiState(phase = AppUpdateUiPhase.IDLE)
+            AppUpdateCheckState.Checking ->
+                AppUpdateUiState(phase = AppUpdateUiPhase.CHECKING)
+            AppUpdateCheckState.UpToDate ->
+                AppUpdateUiState(phase = AppUpdateUiPhase.UP_TO_DATE)
+            is AppUpdateCheckState.UpdateAvailable ->
+                AppUpdateUiState(
+                    phase = AppUpdateUiPhase.UPDATE_AVAILABLE,
+                    availableVersionName = appUpdateCheckState.versionName,
+                )
+            AppUpdateCheckState.Failed ->
+                AppUpdateUiState(phase = AppUpdateUiPhase.CHECK_FAILED)
+        },
     )
 }

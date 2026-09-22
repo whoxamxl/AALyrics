@@ -85,6 +85,7 @@ internal fun PhoneRuntimeHost(
     val verboseDetailsEnabled by application.verboseDetailsEnabled.collectAsStateWithLifecycle()
     val ignoreNonAudioApps by application.ignoreNonAudioApps.collectAsStateWithLifecycle()
     val allowUnclassifiedApps by application.allowUnclassifiedApps.collectAsStateWithLifecycle()
+    val appUpdateCheckState by application.appUpdateCheckState.collectAsStateWithLifecycle()
 
     val queueArtworkCache = remember {
         QueueArtworkCache(maxEntries = QUEUE_ARTWORK_CACHE_ENTRIES)
@@ -167,6 +168,7 @@ internal fun PhoneRuntimeHost(
         termsOfUseText = application.termsOfUseText,
         thirdPartyLicensesText = application.thirdPartyLicensesText,
         translationModelCleanupState = translationModelCleanupState,
+        appUpdateCheckState = appUpdateCheckState,
     )
 
     PhoneAppShell(
@@ -258,9 +260,9 @@ internal fun PhoneRuntimeHost(
                     onResetAALyrics()
                 },
                 onAndroidAutoCompatibilitySetup = onAndroidAutoCompatibilitySetup,
-                onCheckForUpdates = {},
+                onCheckForUpdates = application::checkForUpdates,
                 onDownloadUpdate = {},
-                onSettingsEntered = {},
+                onSettingsEntered = application::onSettingsEntered,
                 onOpenGitHub = onOpenSourceCode,
                 onHelpFeedback = onOpenHelpFeedback,
                 onSupportAALyrics = onOpenSupportAALyrics,

@@ -1,154 +1,160 @@
-# Settings Legal & Help Integration
+# In-app Update Check
 
 ## Branch and baseline
 
-- Branch: `feature/settings-legal-help`
-- Base: `main` at `89906f2624f3cf9d7b5b833d31a88de28cffdedd`.
-- Classification: **SETTINGS / BUNDLED DOCUMENT / HELP ROUTING**.
-- Authoritative references: `AGENTS.md`, `docs/PHONE_SETTINGS.md`, repository-root `PRIVACY.md`, `TERMS_OF_USE.md`, `THIRD_PARTY_LICENSES.md`, `SUPPORT.md`, and the existing bundled-document Settings implementation.
+- Branch: `feature/check-for-updates`.
+- Base: `main` at `fefa59c3cc2bb22dda6d75f859172ad797357d34`.
+- Classification: **SETTINGS / RELEASE NETWORK / VERSION COMPARISON**.
+- Authoritative references: `AGENTS.md`, `docs/RELEASES.md`, `docs/PHONE_SETTINGS.md`, the current GitHub Release workflow, and the existing Settings update-state presentation.
 
 ## Goal
 
-Complete the lower Settings information architecture using the current main baseline without changing unrelated Settings, provider, playback, Translation, or Android Auto behavior.
+Make **Check for updates** functional without expanding this slice into APK download, checksum verification, Package Installer handoff, background update polling, or a user-configurable update channel.
 
-Target order:
+The slice owns exactly three runtime capabilities:
 
-```text
-ABOUT & SUPPORT
-  Privacy Policy                  >
-  Terms of Use                    >
-  License                         >
-  Help & Feedback                 >
-  Support AALyrics                >
-```
+1. parse and compare AALyrics release versions;
+2. read the public AALyrics GitHub Releases feed through an application-owned client;
+3. map an explicit user-triggered check into the existing Phone Settings presentation lifecycle.
 
-`Support AALyrics` keeps its existing Buy Me a Coffee purpose and visual treatment. `Help & Feedback` is a separate routing hub for users who need help, want to report a problem, or want to provide feedback.
+## Version contract
 
-## Approved ownership
-
-### Privacy Policy
-
-No ownership change. `PRIVACY.md` remains the repository source of truth and the existing bundled-document path remains intact.
-
-### Terms of Use
-
-`TERMS_OF_USE.md` follows the existing bundled-document model:
+Published AALyrics releases use only:
 
 ```text
-repository TERMS_OF_USE.md
-    -> app build asset
-    -> :app reads text
-    -> SettingsScreenUiState
-    -> TermsOfUseSettingsScreen
-    -> PhoneMarkdownText
+MAJOR.MINOR.PATCH
+MAJOR.MINOR.PATCH-alpha.N
+MAJOR.MINOR.PATCH-beta.N
+MAJOR.MINOR.PATCH-rc.N
 ```
 
-The document is available offline and is not fetched from GitHub at runtime.
+A leading `v` is accepted when parsing GitHub tag names and removed before comparison.
 
-### License and third-party licenses
-
-The existing `License` entry remains a second-level Settings screen.
-
-`LicenseSettingsScreen` presents all three legal/license blocks inline:
+Development builds additionally use:
 
 ```text
-License
-├─ REQUIRED NOTICE
-├─ LICENSE TERMS
-└─ THIRD-PARTY LICENSES
+<release-version>-dev+<short-sha>
+<release-version>-dev+<short-sha>.dirty
+<release-version>-dev
 ```
 
-`THIRD_PARTY_LICENSES.md` is bundled through the same application-owned document path and rendered directly inside the third License section through `PhoneMarkdownText`. It does not introduce another navigation level.
+The final form is the existing Git-metadata-unavailable fallback; it still compares as its embedded base release version.
 
-System Back from `License` returns directly to Settings home.
+The development suffix is build identity, not a release precedence level. For update comparison, a development build compares as its embedded base release version.
 
-### Help & Feedback
-
-`Help & Feedback` is a native routing hub rather than a Markdown dump of `SUPPORT.md`.
-
-The repository `SUPPORT.md` remains the canonical GitHub-facing support policy. The in-app surface exposes only end-user-relevant routes:
+Ordering is:
 
 ```text
-Help & Feedback
-├─ Report a bug                   ↗
-├─ Ask a question                 ↗
-├─ Suggest an idea                ↗
-├─ General discussion             ↗
-└─ Report a security issue        ↗
+alpha.N < beta.N < rc.N < stable
 ```
 
-External destinations remain application-owned browser actions. `:ui:phone` renders presentation state and emits callbacks only.
+after comparing `MAJOR`, `MINOR`, and `PATCH` numerically. Sequence numbers within alpha/beta/rc are also numeric.
 
-Security reporting must route to the repository's private vulnerability reporting surface rather than a public Issue or Discussion.
+Examples:
 
-### Support AALyrics
+```text
+0.2.0-alpha.1 < 0.2.0-alpha.2
+0.2.0-alpha.2 < 0.2.0-beta.1
+0.2.0-beta.1  < 0.2.0-rc.1
+0.2.0-rc.1    < 0.2.0
+0.2.0-alpha.1-dev+abcdef0 == 0.2.0-alpha.1 for update comparison
+```
 
-No product-purpose change. It remains the voluntary project-support surface and external Buy Me a Coffee handoff.
+Malformed installed versions are a check failure rather than being guessed into an ordering. Malformed or unrelated GitHub Release tags are ignored.
 
-Do not rename this screen to `Help & Feedback`, and do not combine support payments with technical help routing.
+## Release selection contract
 
-## Navigation contract
+GitHub Releases is the authoritative update-discovery source.
 
-Normal System Back follows the current hierarchy.
+The client reads the repository's public Release collection rather than relying on GitHub's single "latest release" concept, because AALyrics must also discover alpha/beta/RC releases.
 
-- Terms of Use -> Settings home
-- Help & Feedback -> Settings home
-- Support AALyrics -> Settings home
-- License -> Settings home
-- Settings-tab reselection from any Settings depth -> Settings home and scroll home content to top
+Candidate rules:
 
-Root reselection must remain stronger than hierarchical Back and must discard any transient Settings-local modal/draft state as it does today.
+- ignore Draft releases;
+- ignore tags outside the AALyrics version grammar;
+- select by parsed version precedence, not publication timestamp alone;
+- a stable installed build considers only stable releases eligible;
+- an alpha/beta/rc installed build considers prerelease and stable releases eligible;
+- a development build uses the channel of its embedded base version: stable-base dev builds consider stable only, prerelease-base dev builds consider prerelease and stable;
+- no GitHub token, repository secret, or other credential is embedded in the APK.
+
+A successful feed response with no newer eligible version maps to `UP_TO_DATE`. A transport/protocol failure, malformed installed version, or a feed from which no comparable AALyrics release can be established maps to `CHECK_FAILED`.
+
+## Phone presentation contract
+
+This slice makes only the check lifecycle production-reachable:
+
+```text
+IDLE
+CHECKING
+UP_TO_DATE
+UPDATE_AVAILABLE
+CHECK_FAILED
+```
+
+`DOWNLOADING`, `DOWNLOADED`, and `DOWNLOAD_FAILED` remain reserved for the follow-up download/integrity slice.
+
+Presentation:
+
+```text
+Version                v0.2.0-alpha.1-dev+abcdef0
+                              Check for updates
+
+Checking for updates…                         ◌
+
+Up to date                                    ✓
+
+Update available: v0.2.0-alpha.2
+
+Update check failed                 ⓘ   ↻ Retry
+```
+
+During this PR, `UPDATE_AVAILABLE` is informational only. Do **not** show an enabled Download action that still routes to a no-op callback.
+
+The check begins only from the explicit `Check for updates` / `Retry` action. Entering Settings, launching AALyrics, or returning to the foreground must not automatically contact GitHub.
+
+Only one check may be active at a time. Active work is application-owned and survives leaving Settings; completed results remain visit-local and normalize back to `IDLE` on the next Settings entry under the existing short-lived result contract.
+
+## Ownership
+
+- `:ui:phone` owns presentation only and emits callbacks.
+- `:app` owns the runtime orchestration and lifecycle.
+- Release HTTP access belongs behind an application-owned release client boundary.
+- Version parsing/comparison must remain Android-independent and directly unit-testable.
+- No provider, playback, Translation, Android Auto, Changelog, legal/help, or release-publishing behavior changes in this slice.
 
 ## Acceptance criteria
 
 ### Documentation / contract
 
-- [x] Create the topic branch from current `main`.
-- [x] Freeze the final About & Support order.
-- [x] Define Terms of Use bundled-document ownership.
-- [x] Define inline third-party license ownership inside the License screen.
-- [x] Define Help & Feedback routing ownership.
-- [x] Preserve Support AALyrics as the voluntary funding surface.
-- [x] Confirm all legal/help subscreens remain direct children of Settings home.
+- [x] Create `feature/check-for-updates` from current `main`.
+- [x] Replace the stale `TASK.md` with this slice's scope.
+- [x] Define release-version parsing and precedence.
+- [x] Define development-version comparison semantics.
+- [x] Define stable/prerelease eligibility.
+- [x] Define the explicit-user-action network policy.
+- [x] Define Check-only presentation and defer Download.
+- [x] Align `docs/RELEASES.md` and `docs/PHONE_SETTINGS.md`.
+- [x] Re-evaluate `Reset AALyrics`: this slice introduces no persisted preference or downloaded asset, so reset semantics remain unchanged.
 
 ### Implementation
 
-- [x] Bundle `TERMS_OF_USE.md` and `THIRD_PARTY_LICENSES.md` as generated app assets.
-- [x] Expose both documents through the application-owned Settings presentation boundary.
-- [x] Add `TermsOfUseSettingsScreen` using the shared Settings header and Markdown renderer.
-- [x] Render `THIRD_PARTY_LICENSES.md` inline as the third section of `LicenseSettingsScreen`.
-- [x] Add the native `Help & Feedback` routing hub.
-- [x] Add application-owned external-link callbacks for the Help & Feedback destinations.
-- [x] Preserve the existing `Support AALyrics` implementation and behavior.
-- [x] Add/update strings, deterministic Previews, presentation mapping coverage, and focused navigation tests.
-- [x] Align `docs/PHONE_SETTINGS.md` with the implemented final state.
-- [x] Re-evaluate `Reset AALyrics`; this slice adds no persisted state, so the reset implementation and user-facing reset scope remain unchanged.
-- [ ] Run architecture checks, unit tests, debug APK build, CI, and bounded review before merge.
+- [x] Add an Android-independent AALyrics version parser/comparator with focused tests.
+- [x] Add an application-owned GitHub Release client/model boundary.
+- [x] Select the highest eligible non-Draft AALyrics release.
+- [x] Wire `onCheckForUpdates` to application-owned check orchestration.
+- [x] Replace the production `UNAVAILABLE` update state with `IDLE`.
+- [x] Map checking, up-to-date, available, and failure results into `SettingsScreenUiState`.
+- [x] Keep `UPDATE_AVAILABLE` informational until download support exists.
+- [x] Add focused mapping/lifecycle/presentation tests and update deterministic Previews where required.
+- [x] Run architecture checks, unit tests, debug APK build, CI, and bounded review before merge.
 
 ## Scope guard
 
-Do not redesign unrelated Settings sections, change existing Support AALyrics visuals/payment behavior, add embedded WebViews, add runtime GitHub document fetching, change provider behavior, change Translation semantics, or introduce new persisted Settings state.
+Do not implement APK download, `.sha256` retrieval/verification, Package Installer integration, signing-certificate verification, background/periodic update checks, notifications, automatic checks on Settings entry, authentication/token storage, update-channel Settings, or persisted update results in this PR.
 
-## Validation checkpoint
-
-Focused coverage is now present for:
-
-- Settings-local Back/root-reset navigation across every current subscreen;
-- Settings home scroll ownership is hoisted above subscreen composition so ordinary Back preserves the previous viewport while Settings-tab reselection still resets to the top;
-- exact Help & Feedback GitHub routing, including a guard that security reporting does not use public Issues or Discussions;
-- unchanged pass-through of bundled Terms of Use and third-party license Markdown into Settings presentation state.
-
-Preview coverage is aligned with the implemented structure:
-
-- Terms of Use: typical, 320dp narrow, enlarged font;
-- License with inline THIRD-PARTY LICENSES: typical, 320dp narrow, enlarged font;
-- Help & Feedback: typical, 320dp narrow, enlarged font;
-- the main Settings previews consume the final About & Support ordering.
-
-Reset contract review found no new persisted key, durable preference, onboarding acknowledgement, cache, model, or downloaded asset in this slice. The new bundled documents are read-only build assets, Help & Feedback is callback-only routing, and Settings-local navigation remains transient presentation state. Existing `resetAppOwnedSettings()` ownership therefore remains correct with no reset behavior or copy change.
-
-The validation tests have been added but the full unit-test/build/CI pass is intentionally deferred to the next checkpoint.
+Those are separate implementation slices after Check for updates is proven stable.
 
 ## Current stop point
 
-Implementation, focused coverage, Reset review, documentation, deterministic Previews, and Settings home scroll restoration are aligned. The open Draft PR will re-run CI for this fix.
+The Check-only runtime is wired end to end and validated: version comparison, GitHub Release discovery, candidate selection, application-owned lifecycle, Settings mapping/callbacks, informational UPDATE_AVAILABLE presentation, focused tests, Preview alignment, synchronized-main CI, Codex review, and real-device verification are complete.

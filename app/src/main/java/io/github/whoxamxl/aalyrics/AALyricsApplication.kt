@@ -83,6 +83,7 @@ class AALyricsApplication : Application() {
     private lateinit var phonePlaybackSourceAppInfoStateFlow: StateFlow<PlaybackSourceAppInfo?>
     private lateinit var phonePlaybackSourceCanOpenAppStateFlow: StateFlow<Boolean>
     private lateinit var phoneDetailsStateFlow: StateFlow<DetailsScreenUiState>
+    private lateinit var appUpdateCheckRuntime: AppUpdateCheckRuntime
     private val mutablePlaybackArtworkState = MutableStateFlow<Bitmap?>(null)
     private val mutableQueueArtworkBitmapsState =
         MutableStateFlow<Map<Long, Bitmap>>(emptyMap())
@@ -184,6 +185,17 @@ class AALyricsApplication : Application() {
     internal val translationModelCleanupState: StateFlow<TranslationModelCleanupState> =
         mutableTranslationModelCleanupState.asStateFlow()
 
+    internal val appUpdateCheckState: StateFlow<AppUpdateCheckState>
+        get() = appUpdateCheckRuntime.state
+
+    internal fun checkForUpdates() {
+        appUpdateCheckRuntime.checkForUpdates()
+    }
+
+    internal fun onSettingsEntered() {
+        appUpdateCheckRuntime.onSettingsEntered()
+    }
+
     fun setTranslationEnabled(enabled: Boolean) {
         translationSettingsStore.setEnabled(enabled)
     }
@@ -258,6 +270,13 @@ class AALyricsApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        appUpdateCheckRuntime = AppUpdateCheckRuntime(
+            installedVersionName = BuildConfig.VERSION_NAME,
+            releaseClient = HttpGitHubReleaseClient(
+                userAgent = "AALyrics/${BuildConfig.VERSION_NAME}",
+            ),
+            applicationScope = applicationScope,
+        )
         translationSettingsStore = SharedPreferencesTranslationSettingsStore(this)
         phonePresentationSettingsStore = SharedPreferencesPhonePresentationSettingsStore(this)
         playbackAppLauncher = SelectedPlaybackAppLauncher(this)

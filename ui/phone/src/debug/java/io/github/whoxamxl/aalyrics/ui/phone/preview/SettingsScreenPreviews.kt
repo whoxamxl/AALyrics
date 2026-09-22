@@ -21,7 +21,6 @@ import io.github.whoxamxl.aalyrics.ui.phone.settings.SettingsScreenContent
 import io.github.whoxamxl.aalyrics.ui.phone.settings.SettingsScreenUiState
 import io.github.whoxamxl.aalyrics.ui.phone.settings.TranslationModelCleanupUiState
 import io.github.whoxamxl.aalyrics.ui.phone.settings.TranslationModelUiState
-import io.github.whoxamxl.aalyrics.ui.phone.settings.normalizedForSettingsEntry
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -216,29 +215,8 @@ internal fun SettingsScreenPreview(
                         )
                     }
                 },
-                onDownloadUpdate = {
-                    val version = state.appUpdate.availableVersionName ?: "0.1.2"
-                    state = state.copy(
-                        appUpdate = AppUpdateUiState(
-                            phase = AppUpdateUiPhase.DOWNLOADING,
-                            availableVersionName = version,
-                        ),
-                    )
-                    scope.launch {
-                        delay(1200)
-                        state = state.copy(
-                            appUpdate = AppUpdateUiState(
-                                phase = AppUpdateUiPhase.DOWNLOADED,
-                                availableVersionName = version,
-                            ),
-                        )
-                    }
-                },
-                onSettingsEntered = {
-                    state = state.copy(
-                        appUpdate = state.appUpdate.normalizedForSettingsEntry(),
-                    )
-                },
+                onDownloadUpdate = {},
+                onSettingsEntered = {},
                 onOpenGitHub = {},
                 onHelpFeedback = {},
                 onSupportAALyrics = {},

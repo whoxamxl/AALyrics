@@ -380,16 +380,16 @@ The `APP` section exposes app/distribution information without moving release-ne
 
 ### Version and update
 
-Current version and update actions share one grouped Settings row.
+Current version and update actions share one grouped Settings row. The installed version is supplied from `BuildConfig.VERSION_NAME`.
 
-Initial presentation:
+After the Check-for-updates runtime is wired, the production entry state is:
 
 ```text
-Version                         v0.1.0-dev
-                         [Check for updates]
+Version                v0.2.0-alpha.1-dev+abcdef0
+                              Check for updates
 ```
 
-The Settings state carries the installed version plus an update lifecycle:
+This slice makes the following lifecycle states production-reachable:
 
 ```text
 IDLE
@@ -397,68 +397,84 @@ CHECKING
 UP_TO_DATE
 UPDATE_AVAILABLE
 CHECK_FAILED
+```
+
+The existing download-oriented states remain reserved for a later slice:
+
+```text
 DOWNLOADING
 DOWNLOADED
 DOWNLOAD_FAILED
 ```
 
-Expected presentation:
+Expected Check-only presentation:
 
 ```text
-Version                         v0.1.0-dev
-                         Check for updates
+Version                v0.2.0-alpha.1-dev+abcdef0
+                              Check for updates
 
-Checking for updates…                    ◌
+Checking for updates…                         ◌
 
-Up to date                               ✓
+Up to date                                    ✓
 
-Update available: v0.1.2        ↓ Download
+Update available: v0.2.0-alpha.2
 
-Downloading v0.1.2                       ◌
-
-Downloaded v0.1.2                        ✓
-
-Update check failed            ⓘ   ↻ Retry
+Update check failed                 ⓘ   ↻ Retry
 ```
 
-Every update-state row uses the same trailing-edge alignment as the installed version value. Download and Retry are compact inline actions rather than filled buttons; Download uses the same leading-action-icon pattern as Retry. Spinner/check/action content therefore terminates on the same right-edge guide across all phases.
+Every check-state row keeps the same trailing-edge alignment used by the installed version value. Retry remains a compact inline action. `UPDATE_AVAILABLE` is informational in this slice: an enabled Download action must not be shown until APK download and integrity verification are actually implemented.
 
-The UI emits separate callbacks for checking and downloading. It does not perform GitHub HTTP requests or filesystem/download-manager work directly.
+The UI emits `onCheckForUpdates`; it does not perform GitHub HTTP requests or release comparison directly.
 
-Application/runtime wiring should:
+Application/runtime wiring owns the check:
 
-1. inspect the GitHub Releases distribution channel defined in `docs/RELEASES.md`;
-2. select the newest release eligible for the app's release channel;
-3. compare it against the installed `BuildConfig.VERSION_NAME` / `versionCode`;
-4. map the result into the update presentation lifecycle;
-5. when Download is pressed, download the release APK asset to the device;
-6. map download completion/failure back into presentation state.
+1. explicitly start work only when the user presses Check/Retry;
+2. query the public AALyrics GitHub Releases collection;
+3. ignore Draft releases and tags outside the AALyrics release grammar;
+4. parse the installed `BuildConfig.VERSION_NAME`;
+5. select the highest release eligible for the installed channel;
+6. compare the candidate against the installed/base development version;
+7. map the result to `UP_TO_DATE`, `UPDATE_AVAILABLE`, or `CHECK_FAILED`.
 
-Release APK assets follow the existing workflow naming contract:
+Do not use publication timestamp alone as version ordering. Stable installed builds consider stable releases only. Alpha/beta/RC builds consider prerelease and stable releases. Development builds inherit the channel and comparison base embedded in their generated version name.
+
+A development version such as:
 
 ```text
-AALyrics-vX.Y.Z[-suffix].apk
+0.2.0-alpha.1-dev+abcdef0
+0.2.0-alpha.1-dev+abcdef0.dirty
 ```
 
-The matching `.sha256` asset should be used by the runtime implementation to verify file integrity before a downloaded APK is treated as complete.
+compares as `0.2.0-alpha.1` for update discovery. Build identity metadata does not make the corresponding published `0.2.0-alpha.1` release an update.
+
+Within the same numeric version, release precedence is:
+
+```text
+alpha.N < beta.N < rc.N < stable
+```
+
+The version parser/comparator is Android-independent and directly unit-testable. The GitHub client and check orchestration remain application-owned; `:ui:phone` remains presentation-only.
+
+The check path is public and unauthenticated. Do not embed a GitHub token or repository secret in AALyrics.
 
 ### Update state lifetime
 
 Update results are intentionally short-lived so Settings does not keep presenting a stale GitHub Release result.
 
-When the Settings destination is entered, the UI emits `onSettingsEntered`. Application/presentation wiring normalizes the update state with one rule:
+When the Settings destination is entered, the UI emits `onSettingsEntered`. Application/presentation wiring keeps an active `CHECKING` operation but normalizes completed/stale check results back to `IDLE`:
 
 ```text
-CHECKING     -> keep
-DOWNLOADING  -> keep
+CHECKING        -> keep
 everything else -> IDLE
 ```
 
-Therefore `UP_TO_DATE`, `UPDATE_AVAILABLE`, `CHECK_FAILED`, `DOWNLOADED`, and `DOWNLOAD_FAILED` are results for the current Settings visit only. Leaving Settings and returning presents `Check for updates` again, forcing the next explicit check to query the current GitHub Releases state instead of reusing an old available-version result.
+Therefore `UP_TO_DATE`, `UPDATE_AVAILABLE`, and `CHECK_FAILED` are results for the current Settings visit only. Leaving Settings and returning presents `Check for updates` again, forcing the next explicit check to query current GitHub Releases rather than reusing an old result.
 
-Active checking/downloading work remains application-owned and continues across destination changes. If that work completes while Settings is away, its completed result is normalized back to `IDLE` on the next Settings entry.
+The active check is application-owned and continues across destination changes. If it completes while Settings is away, its completed result is normalized back to `IDLE` on the next Settings entry.
 
-The installed version shown in Settings should come from `BuildConfig.VERSION_NAME`; debug builds currently default to `0.1.0-dev` unless the build environment overrides it.
+Only one check may be active at a time. The checking presentation has no second Check/Retry action.
+
+No update result is persisted, so this slice does not change the `Reset AALyrics` contract.
 
 ### Changelog
 
@@ -899,7 +915,7 @@ PR #50 implements the Phone runtime-host application-composition boundary from `
 
 A durable Plain auto-scroll preference remains a separate ownership decision unless the runtime-host implementation has an already-approved backing seam.
 
-The host does not wire active no-op callbacks for unfinished Settings capabilities. Update remains an explicit `UNAVAILABLE` presentation state until its release-network runtime is implemented. Changelog is functional without release-network wiring: the application supplies the bundled repository `CHANGELOG.md` as presentation text. The About & Support implementation keeps bundled legal-document access application-owned, maps Help & Feedback semantic actions to GitHub destinations in `:app`, and keeps the existing Buy Me a Coffee handoff application-owned; none of these capabilities moves asset access or browser launching into `:ui:phone`.
+The Check-for-updates slice replaces the production `UNAVAILABLE` update state with an application-owned explicit-check runtime. Settings entry itself does not start network work: only `Check for updates` / `Retry` does. Download remains deferred and `UPDATE_AVAILABLE` stays informational until the later download/integrity slice. Changelog remains functional independently of release-network wiring: the application supplies the bundled repository `CHANGELOG.md` as presentation text. The About & Support implementation keeps bundled legal-document access application-owned, maps Help & Feedback semantic actions to GitHub destinations in `:app`, and keeps the existing Buy Me a Coffee handoff application-owned; none of these capabilities moves asset access or browser launching into `:ui:phone`.
 
 That wiring must preserve the existing capability ownership documented in the relevant architecture files.
 
