@@ -22,6 +22,7 @@ import io.github.whoxamxl.aalyrics.ui.phone.lyrics.LyricsScreen
 import io.github.whoxamxl.aalyrics.ui.phone.lyrics.LyricsViewportInteractionMode
 import io.github.whoxamxl.aalyrics.ui.phone.navigation.PhoneDestination
 import io.github.whoxamxl.aalyrics.ui.phone.settings.AndroidAutoCompatibilityUiStatus
+import io.github.whoxamxl.aalyrics.ui.phone.settings.HelpFeedbackDestination
 import io.github.whoxamxl.aalyrics.ui.phone.settings.SettingsScreen
 import io.github.whoxamxl.aalyrics.ui.phone.shell.PhoneAppShell
 import io.github.whoxamxl.aalyrics.ui.phone.state.PhoneShellUiState
@@ -37,6 +38,7 @@ internal fun PhoneRuntimeHost(
     onAndroidAutoCompatibilitySetup: () -> Unit,
     onResetAALyrics: () -> Unit,
     onOpenSourceCode: () -> Unit,
+    onOpenHelpFeedback: (HelpFeedbackDestination) -> Unit,
     onOpenSupportAALyrics: () -> Unit,
 ) {
     val playback by application.playbackState.collectAsStateWithLifecycle()
@@ -130,6 +132,8 @@ internal fun PhoneRuntimeHost(
         licenseText = application.licenseText,
         changelogText = application.changelogText,
         privacyPolicyText = application.privacyPolicyText,
+        termsOfUseText = application.termsOfUseText,
+        thirdPartyLicensesText = application.thirdPartyLicensesText,
         translationModelCleanupState = translationModelCleanupState,
     )
 
@@ -217,6 +221,7 @@ internal fun PhoneRuntimeHost(
                 onDownloadUpdate = {},
                 onSettingsEntered = {},
                 onOpenGitHub = onOpenSourceCode,
+                onHelpFeedback = onOpenHelpFeedback,
                 onSupportAALyrics = onOpenSupportAALyrics,
                 bottomOverlayInset = bottomOverlayInset,
             )

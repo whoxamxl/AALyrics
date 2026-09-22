@@ -2,6 +2,7 @@ package io.github.whoxamxl.aalyrics.ui.phone.preview
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -239,6 +240,7 @@ internal fun SettingsScreenPreview(
                     )
                 },
                 onOpenGitHub = {},
+                onHelpFeedback = {},
                 onSupportAALyrics = {},
                 modifier = Modifier.fillMaxSize(),
             )
@@ -264,6 +266,7 @@ private fun SettingsScreenContentPreview(
         ) {
             SettingsScreenContent(
                 state = state,
+                scrollState = rememberScrollState(),
                 targetLanguagePickerVisible = pickerVisible,
                 onTargetLanguagePickerVisibilityChanged = { pickerVisible = it },
                 onPlainLyricsAutoScrollChanged = {
@@ -290,7 +293,9 @@ private fun SettingsScreenContentPreview(
                 onDownloadUpdate = {},
                 onChangelogRequested = {},
                 onPrivacyPolicyRequested = {},
+                onTermsOfUseRequested = {},
                 onLicenseRequested = {},
+                onHelpFeedbackRequested = {},
                 onSupportAALyricsRequested = {},
                 onAdvancedRequested = {},
                 onOpenGitHub = {},

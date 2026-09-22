@@ -148,6 +148,18 @@ class AALyricsApplication : Application() {
             .use { it.readText() }
     }
 
+    val termsOfUseText: String by lazy(LazyThreadSafetyMode.NONE) {
+        assets.open(TERMS_OF_USE_ASSET_NAME)
+            .bufferedReader()
+            .use { it.readText() }
+    }
+
+    val thirdPartyLicensesText: String by lazy(LazyThreadSafetyMode.NONE) {
+        assets.open(THIRD_PARTY_LICENSES_ASSET_NAME)
+            .bufferedReader()
+            .use { it.readText() }
+    }
+
     val verboseDetailsEnabled: StateFlow<Boolean>
         get() = phonePresentationSettingsStore.verboseDetailsEnabled
 
@@ -413,6 +425,8 @@ class AALyricsApplication : Application() {
         const val NOTICE_ASSET_NAME = "aalyrics_notice.txt"
         const val CHANGELOG_ASSET_NAME = "aalyrics_changelog.md"
         const val PRIVACY_ASSET_NAME = "aalyrics_privacy.md"
+        const val TERMS_OF_USE_ASSET_NAME = "aalyrics_terms_of_use.md"
+        const val THIRD_PARTY_LICENSES_ASSET_NAME = "aalyrics_third_party_licenses.md"
     }
 }
 

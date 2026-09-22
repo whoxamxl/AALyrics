@@ -28,6 +28,8 @@ class PhoneSettingsMapperTest {
             licenseText = "demo license",
             changelogText = "demo changelog",
             privacyPolicyText = "demo privacy",
+            termsOfUseText = "demo terms",
+            thirdPartyLicensesText = "demo third-party licenses",
             displayLocale = Locale.ENGLISH,
         )
 
@@ -38,6 +40,44 @@ class PhoneSettingsMapperTest {
         assertEquals("demo license", state.licenseText)
         assertEquals("demo changelog", state.changelogText)
         assertEquals("demo privacy", state.privacyPolicyText)
+        assertEquals("demo terms", state.termsOfUseText)
+        assertEquals("demo third-party licenses", state.thirdPartyLicensesText)
+    }
+
+    @Test
+    fun `bundled legal documents pass through presentation unchanged`() {
+        val terms = """
+            # Terms of Use
+
+            Exact bundled terms content.
+        """.trimIndent()
+        val thirdParty = """
+            # Third-Party Licenses
+
+            Exact bundled third-party notice content.
+        """.trimIndent()
+
+        val state = mapPhoneSettingsState(
+            translationSettings = TranslationSettings(enabled = false),
+            translationModelStates = emptyMap(),
+            verboseDetailsEnabled = false,
+            plainLyricsAutoScrollEnabled = true,
+            ignoreNonAudioApps = true,
+            allowUnclassifiedApps = false,
+            androidAutoStatus = AndroidAutoCompatibilityUiStatus.ENABLED,
+            appVersionName = "0.1.0-dev",
+            currentYear = 2026,
+            noticeText = "Required Notice: © 2026 Yuta Miura",
+            licenseText = "license",
+            changelogText = "changelog",
+            privacyPolicyText = "privacy",
+            termsOfUseText = terms,
+            thirdPartyLicensesText = thirdParty,
+            displayLocale = Locale.ENGLISH,
+        )
+
+        assertEquals(terms, state.termsOfUseText)
+        assertEquals(thirdParty, state.thirdPartyLicensesText)
     }
 
     @Test

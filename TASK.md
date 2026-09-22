@@ -1,122 +1,154 @@
-# Settings About & Support
+# Settings Legal & Help Integration
 
 ## Branch and baseline
 
-- Branch: `feature/settings-about-support`
-- Base: `main` at `6c1b7f956feecb8a7c01cda9e039804079ea09c3` (PR #59 merged).
-- Classification: **SETTINGS / BUNDLED DOCUMENT / EXTERNAL SUPPORT HANDOFF**.
-- Authoritative references: `AGENTS.md`, `docs/PHONE_SETTINGS.md`, `docs/PHONE_UI_SPEC.md`, `docs/PHONE_RUNTIME_HOST.md`, `docs/UI_ARCHITECTURE.md`, and `.github/FUNDING.yml`.
+- Branch: `feature/settings-legal-help`
+- Base: `main` at `89906f2624f3cf9d7b5b833d31a88de28cffdedd`.
+- Classification: **SETTINGS / BUNDLED DOCUMENT / HELP ROUTING**.
+- Authoritative references: `AGENTS.md`, `docs/PHONE_SETTINGS.md`, repository-root `PRIVACY.md`, `TERMS_OF_USE.md`, `THIRD_PARTY_LICENSES.md`, `SUPPORT.md`, and the existing bundled-document Settings implementation.
 
 ## Goal
 
-Refine the lower Phone Settings information architecture and add privacy/support surfaces without moving document, browser, or payment ownership into `:ui:phone`.
+Complete the lower Settings information architecture using the current main baseline without changing unrelated Settings, provider, playback, Translation, or Android Auto behavior.
 
-Target Settings order:
+Target order:
 
 ```text
-APP
-  Version / Check for updates
-  Changelog                       >
-  Source code              GitHub ↗
-
 ABOUT & SUPPORT
   Privacy Policy                  >
+  Terms of Use                    >
   License                         >
+  Help & Feedback                 >
   Support AALyrics                >
-
-[standalone card]
-  Advanced                        >
-
-[AALyrics footer]
 ```
+
+`Support AALyrics` keeps its existing Buy Me a Coffee purpose and visual treatment. `Help & Feedback` is a separate routing hub for users who need help, want to report a problem, or want to provide feedback.
 
 ## Approved ownership
 
 ### Privacy Policy
 
-`PRIVACY.md` will be the repository source of truth and will follow the existing bundled-document path:
+No ownership change. `PRIVACY.md` remains the repository source of truth and the existing bundled-document path remains intact.
+
+### Terms of Use
+
+`TERMS_OF_USE.md` follows the existing bundled-document model:
 
 ```text
-repository PRIVACY.md
+repository TERMS_OF_USE.md
     -> app build asset
     -> :app reads text
     -> SettingsScreenUiState
-    -> PrivacyPolicySettingsScreen
+    -> TermsOfUseSettingsScreen
     -> PhoneMarkdownText
 ```
 
-The policy must describe actual AALyrics behavior; placeholder privacy claims are not acceptable.
+The document is available offline and is not fetched from GitHub at runtime.
+
+### License and third-party licenses
+
+The existing `License` entry remains a second-level Settings screen.
+
+`LicenseSettingsScreen` presents all three legal/license blocks inline:
+
+```text
+License
+├─ REQUIRED NOTICE
+├─ LICENSE TERMS
+└─ THIRD-PARTY LICENSES
+```
+
+`THIRD_PARTY_LICENSES.md` is bundled through the same application-owned document path and rendered directly inside the third License section through `PhoneMarkdownText`. It does not introduce another navigation level.
+
+System Back from `License` returns directly to Settings home.
+
+### Help & Feedback
+
+`Help & Feedback` is a native routing hub rather than a Markdown dump of `SUPPORT.md`.
+
+The repository `SUPPORT.md` remains the canonical GitHub-facing support policy. The in-app surface exposes only end-user-relevant routes:
+
+```text
+Help & Feedback
+├─ Report a bug                   ↗
+├─ Ask a question                 ↗
+├─ Suggest an idea                ↗
+├─ General discussion             ↗
+└─ Report a security issue        ↗
+```
+
+External destinations remain application-owned browser actions. `:ui:phone` renders presentation state and emits callbacks only.
+
+Security reporting must route to the repository's private vulnerability reporting surface rather than a public Issue or Discussion.
 
 ### Support AALyrics
 
-`Support AALyrics` is a native Settings subscreen with one external CTA: `Support on Buy Me a Coffee ↗`.
+No product-purpose change. It remains the voluntary project-support surface and external Buy Me a Coffee handoff.
 
-- `:ui:phone` renders the surface and emits a callback.
-- `:app` owns Custom Tabs / external-browser launching.
-- Buy Me a Coffee owns amount, message, authentication, payment, and completion.
-- Keep the destination aligned with `.github/FUNDING.yml` (currently `whoxamxi`).
-- No WebView checkout.
-- No payment credentials or transaction state in AALyrics.
-- No amount/message fields until an official supported prefill contract is intentionally adopted.
-- Supporting AALyrics must not unlock features, content, badges, or entitlements.
+Do not rename this screen to `Help & Feedback`, and do not combine support payments with technical help routing.
+
+## Navigation contract
+
+Normal System Back follows the current hierarchy.
+
+- Terms of Use -> Settings home
+- Help & Feedback -> Settings home
+- Support AALyrics -> Settings home
+- License -> Settings home
+- Settings-tab reselection from any Settings depth -> Settings home and scroll home content to top
+
+Root reselection must remain stronger than hierarchical Back and must discard any transient Settings-local modal/draft state as it does today.
 
 ## Acceptance criteria
 
-### Documentation stage
+### Documentation / contract
 
 - [x] Create the topic branch from current `main`.
-- [x] Freeze the Settings grouping/order in `docs/PHONE_SETTINGS.md`.
-- [x] Define Privacy Policy bundled-document ownership.
-- [x] Define the Support AALyrics external-handoff boundary.
-- [x] Align `docs/PHONE_UI_SPEC.md`, `docs/PHONE_RUNTIME_HOST.md`, `docs/UI_ARCHITECTURE.md`, and `docs/ROADMAP.md`.
-- [x] Preserve Advanced as a standalone card and the branding footer as the final Settings content.
-- [x] Preserve Settings subscreen Back and Settings-tab root-reset semantics in the target contract.
+- [x] Freeze the final About & Support order.
+- [x] Define Terms of Use bundled-document ownership.
+- [x] Define inline third-party license ownership inside the License screen.
+- [x] Define Help & Feedback routing ownership.
+- [x] Preserve Support AALyrics as the voluntary funding surface.
+- [x] Confirm all legal/help subscreens remain direct children of Settings home.
 
-### Implementation stage
+### Implementation
 
-- [x] Audit current data/privacy behavior and add repository-root `PRIVACY.md`.
-- [x] Bundle `PRIVACY.md` through the existing generated-asset path.
-- [x] Expose `privacyPolicyText` through application-owned Settings presentation mapping.
-- [x] Add `PrivacyPolicySettingsScreen` using `SettingsSubscreenHeader` + `PhoneMarkdownText`.
-- [x] Split the current lower Settings layout into `APP` and `ABOUT & SUPPORT` without changing unrelated sections.
-- [x] Move License visually under `ABOUT & SUPPORT` without changing its existing NOTICE/LICENSE behavior.
-- [x] Add `Support AALyrics` native subscreen.
-- [x] Refine the Support surface into one compact card using the Buy Me a Coffee SVG-derived VectorDrawable as the single CTA, with native Compose shimmer plus a 0.98↔1.02 pulse, no tilt/float, 32dp subtext-to-CTA spacing, and an explicit `Opens Buy Me a Coffee` affordance.
-- [x] Wire Buy Me a Coffee handoff through an app-owned Custom Tab / external-browser action.
-- [x] Keep `Advanced` in its own existing card and keep the branding footer last.
-- [x] Update deterministic Previews for Settings home, Privacy Policy, Support AALyrics, narrow width, and enlarged font.
-- [x] Add/update focused tests for presentation mapping and Settings root-reset/subscreen behavior as needed.
-- [x] Re-evaluate `Reset AALyrics`; document that no new persisted state is introduced by this slice unless implementation changes that assumption.
-- [x] Run architecture checks, unit tests, debug APK build, CI, and bounded review before merge.
+- [x] Bundle `TERMS_OF_USE.md` and `THIRD_PARTY_LICENSES.md` as generated app assets.
+- [x] Expose both documents through the application-owned Settings presentation boundary.
+- [x] Add `TermsOfUseSettingsScreen` using the shared Settings header and Markdown renderer.
+- [x] Render `THIRD_PARTY_LICENSES.md` inline as the third section of `LicenseSettingsScreen`.
+- [x] Add the native `Help & Feedback` routing hub.
+- [x] Add application-owned external-link callbacks for the Help & Feedback destinations.
+- [x] Preserve the existing `Support AALyrics` implementation and behavior.
+- [x] Add/update strings, deterministic Previews, presentation mapping coverage, and focused navigation tests.
+- [x] Align `docs/PHONE_SETTINGS.md` with the implemented final state.
+- [x] Re-evaluate `Reset AALyrics`; this slice adds no persisted state, so the reset implementation and user-facing reset scope remain unchanged.
+- [ ] Run architecture checks, unit tests, debug APK build, CI, and bounded review before merge.
 
 ## Scope guard
 
-Do not implement payment UI, embedded checkout, WebView payment flows, transaction tracking, donor entitlements, or undocumented Buy Me a Coffee URL-prefill behavior. Do not redesign unrelated Settings sections, Sync, provider behavior, Translation semantics, or Advanced functionality.
+Do not redesign unrelated Settings sections, change existing Support AALyrics visuals/payment behavior, add embedded WebViews, add runtime GitHub document fetching, change provider behavior, change Translation semantics, or introduce new persisted Settings state.
 
-## Validation status
+## Validation checkpoint
 
-Implementation is complete on `feature/settings-about-support` and PR #60 is open for review.
+Focused coverage is now present for:
 
-Completed locally/by repository inspection:
+- Settings-local Back/root-reset navigation across every current subscreen;
+- Settings home scroll ownership is hoisted above subscreen composition so ordinary Back preserves the previous viewport while Settings-tab reselection still resets to the top;
+- exact Help & Feedback GitHub routing, including a guard that security reporting does not use public Issues or Discussions;
+- unchanged pass-through of bundled Terms of Use and third-party license Markdown into Settings presentation state.
 
-- [x] Privacy behavior audited against current manifest, providers, persistence, and Translation implementation.
-- [x] No new app-owned persisted state was introduced; the existing `Reset AALyrics` contract therefore requires no behavior change.
-- [x] Branch-name, commit-message, and architecture checks passed in GitHub Actions.
+Preview coverage is aligned with the implemented structure:
 
-Pending before merge:
+- Terms of Use: typical, 320dp narrow, enlarged font;
+- License with inline THIRD-PARTY LICENSES: typical, 320dp narrow, enlarged font;
+- Help & Feedback: typical, 320dp narrow, enlarged font;
+- the main Settings previews consume the final About & Support ordering.
 
-- [x] Debug APK build passes.
-- [x] JVM/unit tests pass.
-- [x] Generated APK contains `aalyrics_privacy.md`.
-- [x] PR diff/Preview alignment review is complete.
-- [x] Replace the earlier GIF path with the final SVG-derived VectorDrawable CTA.
-- [x] Verify Preview and production render the same `SupportAALyricsSettingsScreen`; typical/narrow/enlarged previews use a deterministic frozen animation state, while the dedicated Interactive Preview exercises the real animation.
-- [x] Verify the finalized CTA on a physical device: 0.98↔1.02 pulse, diagonal shimmer, no tilt, no positional float.
-- [x] Sync the branch with current `main` after PR #62 and resolve the overlapping Settings/runtime/docs changes.
-- [x] Address Codex P1 review finding by restoring the bundled Privacy Policy production path through `AALyricsApplication` -> `mapPhoneSettingsState` -> `SettingsScreenUiState`, with focused mapper coverage.
-- [ ] Re-run CI on the post-review-fix head.
-- [ ] Re-run bounded Codex review on the post-review-fix head.
+Reset contract review found no new persisted key, durable preference, onboarding acknowledgement, cache, model, or downloaded asset in this slice. The new bundled documents are read-only build assets, Help & Feedback is callback-only routing, and Settings-local navigation remains transient presentation state. Existing `resetAppOwnedSettings()` ownership therefore remains correct with no reset behavior or copy change.
+
+The validation tests have been added but the full unit-test/build/CI pass is intentionally deferred to the next checkpoint.
 
 ## Current stop point
 
-The final SVG-derived VectorDrawable CTA is implemented and confirmed on a physical device. Preview, documentation, and production Phone UI are aligned. Current `main`, including PR #62, is merged into the topic branch with both Settings feature sets preserved. CI and bounded Codex review must run on the resulting head before PR #60 returns to the explicit pre-merge approval gate.
+Implementation, focused coverage, Reset review, documentation, deterministic Previews, and Settings home scroll restoration are aligned. The open Draft PR will re-run CI for this fix.

@@ -8,44 +8,42 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsColors
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsTheme
-import io.github.whoxamxl.aalyrics.ui.phone.settings.LicenseSettingsScreen
+import io.github.whoxamxl.aalyrics.ui.phone.settings.HelpFeedbackSettingsScreen
 
-@Preview(name = "Typical", group = "LicenseSettings", widthDp = 412, heightDp = 760)
+@Preview(name = "Typical", group = "HelpFeedbackSettings", widthDp = 412, heightDp = 760)
 @Composable
-private fun LicenseSettingsTypicalPreview() {
-    LicenseSettingsPreview()
+private fun HelpFeedbackSettingsTypicalPreview() {
+    HelpFeedbackSettingsPreview()
 }
 
-@Preview(name = "Narrow · 320dp", group = "LicenseSettings", widthDp = 320, heightDp = 700)
+@Preview(name = "Narrow · 320dp", group = "HelpFeedbackSettings", widthDp = 320, heightDp = 700)
 @Composable
-private fun LicenseSettingsNarrowPreview() {
-    LicenseSettingsPreview()
+private fun HelpFeedbackSettingsNarrowPreview() {
+    HelpFeedbackSettingsPreview()
 }
 
 @Preview(
     name = "Enlarged font",
-    group = "LicenseSettings",
+    group = "HelpFeedbackSettings",
     widthDp = 412,
     heightDp = 820,
     fontScale = 1.4f,
 )
 @Composable
-private fun LicenseSettingsLargeFontPreview() {
-    LicenseSettingsPreview()
+private fun HelpFeedbackSettingsLargeFontPreview() {
+    HelpFeedbackSettingsPreview()
 }
 
 @Composable
-private fun LicenseSettingsPreview() {
+private fun HelpFeedbackSettingsPreview() {
     AALyricsTheme {
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .background(AALyricsColors.BackgroundBase),
         ) {
-            LicenseSettingsScreen(
-                noticeText = PhonePreviewFixtures.noticeSample,
-                licenseText = PhonePreviewFixtures.licenseMarkdownSample,
-                thirdPartyLicensesText = PhonePreviewFixtures.thirdPartyLicensesMarkdownSample,
+            HelpFeedbackSettingsScreen(
+                onDestinationSelected = {},
                 onBack = {},
                 modifier = Modifier.fillMaxSize(),
             )

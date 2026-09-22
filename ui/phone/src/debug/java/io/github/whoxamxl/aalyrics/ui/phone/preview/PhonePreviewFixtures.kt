@@ -323,6 +323,41 @@ internal object PhonePreviewFixtures {
         Translation uses on-device ML Kit after required language models are available.
     """.trimIndent()
 
+    val termsOfUseMarkdownSample = """
+        # AALyrics Terms of Use
+
+        **Effective date:** September 22, 2026
+
+        These Terms govern use of AALyrics and do not replace the software license.
+
+        ## Third-party services
+
+        Lyrics providers and other external services remain subject to their own terms.
+
+        ## Android Auto and driving safety
+
+        Do not interact with AALyrics in a way that distracts you from driving.
+    """.trimIndent()
+
+    val thirdPartyLicensesMarkdownSample = """
+        # Third-Party Licenses
+
+        AALyrics uses third-party open-source software.
+
+        ## Apache License 2.0
+
+        - AndroidX / Jetpack
+        - Kotlin / kotlinx.coroutines
+        - OkHttp / Okio
+        - Gson
+        - Multiplatform Markdown Renderer
+        - JetBrains Markdown
+
+        ## MIT-licensed material
+
+        Portions of the Markdown renderer include MIT-licensed material.
+    """.trimIndent()
+
     val settingsTypical = SettingsScreenUiState(
         plainLyricsAutoScrollEnabled = true,
         translationEnabled = false,
@@ -335,6 +370,8 @@ internal object PhonePreviewFixtures {
         licenseText = licenseMarkdownSample,
         changelogText = changelogMarkdownSample,
         privacyPolicyText = privacyPolicyMarkdownSample,
+        termsOfUseText = termsOfUseMarkdownSample,
+        thirdPartyLicensesText = thirdPartyLicensesMarkdownSample,
     )
     val settingsCheckingUpdate = settingsTypical.copy(
         appUpdate = AppUpdateUiState(phase = AppUpdateUiPhase.CHECKING),

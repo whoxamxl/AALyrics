@@ -105,8 +105,11 @@ class MainActivity : ComponentActivity() {
                             onOpenSourceCode = {
                                 openUrl(SOURCE_CODE_URL)
                             },
+                            onOpenHelpFeedback = { destination ->
+                                openCustomTabUrl(destination.githubUrl())
+                            },
                             onOpenSupportAALyrics = {
-                                openSupportUrl(SUPPORT_URL)
+                                openCustomTabUrl(SUPPORT_URL)
                             },
                         )
                     }
@@ -140,7 +143,7 @@ class MainActivity : ComponentActivity() {
         )
     }
 
-    private fun openSupportUrl(url: String) {
+    private fun openCustomTabUrl(url: String) {
         val uri = Uri.parse(url)
         runCatching {
             CustomTabsIntent.Builder()

@@ -1,5 +1,6 @@
 package io.github.whoxamxl.aalyrics.ui.phone.settings
 
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -43,6 +44,7 @@ fun SettingsScreen(
     onDownloadUpdate: () -> Unit,
     onSettingsEntered: () -> Unit,
     onOpenGitHub: () -> Unit,
+    onHelpFeedback: (HelpFeedbackDestination) -> Unit,
     onSupportAALyrics: () -> Unit,
     modifier: Modifier = Modifier,
     bottomOverlayInset: Dp = 0.dp,
@@ -51,14 +53,16 @@ fun SettingsScreen(
     var activeSubscreen by rememberSaveable {
         mutableStateOf(SettingsSubscreen.MAIN)
     }
+    val mainScrollState = rememberScrollState()
 
     BackHandler(enabled = activeSubscreen != SettingsSubscreen.MAIN) {
-        activeSubscreen = SettingsSubscreen.MAIN
+        activeSubscreen = activeSubscreen.backDestination()
     }
 
     LaunchedEffect(rootResetKey) {
         targetLanguagePickerVisible = false
-        activeSubscreen = SettingsSubscreen.MAIN
+        activeSubscreen = settingsRootSubscreen()
+        mainScrollState.scrollTo(0)
     }
 
     LaunchedEffect(Unit) {
@@ -96,9 +100,24 @@ fun SettingsScreen(
             bottomOverlayInset = bottomOverlayInset,
         )
 
+        SettingsSubscreen.TERMS_OF_USE -> TermsOfUseSettingsScreen(
+            termsOfUseText = state.termsOfUseText,
+            onBack = { activeSubscreen = SettingsSubscreen.MAIN },
+            modifier = modifier,
+            bottomOverlayInset = bottomOverlayInset,
+        )
+
         SettingsSubscreen.LICENSE -> LicenseSettingsScreen(
             noticeText = state.noticeText,
             licenseText = state.licenseText,
+            thirdPartyLicensesText = state.thirdPartyLicensesText,
+            onBack = { activeSubscreen = SettingsSubscreen.MAIN },
+            modifier = modifier,
+            bottomOverlayInset = bottomOverlayInset,
+        )
+
+        SettingsSubscreen.HELP_FEEDBACK -> HelpFeedbackSettingsScreen(
+            onDestinationSelected = onHelpFeedback,
             onBack = { activeSubscreen = SettingsSubscreen.MAIN },
             modifier = modifier,
             bottomOverlayInset = bottomOverlayInset,
@@ -113,7 +132,7 @@ fun SettingsScreen(
 
         SettingsSubscreen.MAIN -> SettingsScreenContent(
             state = state,
-            rootResetKey = rootResetKey,
+            scrollState = mainScrollState,
             targetLanguagePickerVisible = targetLanguagePickerVisible,
             onTargetLanguagePickerVisibilityChanged = {
                 targetLanguagePickerVisible = it
@@ -130,7 +149,13 @@ fun SettingsScreen(
             onPrivacyPolicyRequested = {
                 activeSubscreen = SettingsSubscreen.PRIVACY_POLICY
             },
+            onTermsOfUseRequested = {
+                activeSubscreen = SettingsSubscreen.TERMS_OF_USE
+            },
             onLicenseRequested = { activeSubscreen = SettingsSubscreen.LICENSE },
+            onHelpFeedbackRequested = {
+                activeSubscreen = SettingsSubscreen.HELP_FEEDBACK
+            },
             onSupportAALyricsRequested = {
                 activeSubscreen = SettingsSubscreen.SUPPORT_AALYRICS
             },
@@ -145,7 +170,7 @@ fun SettingsScreen(
 @Composable
 internal fun SettingsScreenContent(
     state: SettingsScreenUiState,
-    rootResetKey: Int = 0,
+    scrollState: ScrollState,
     targetLanguagePickerVisible: Boolean,
     onTargetLanguagePickerVisibilityChanged: (Boolean) -> Unit,
     onPlainLyricsAutoScrollChanged: (Boolean) -> Unit,
@@ -158,7 +183,9 @@ internal fun SettingsScreenContent(
     onDownloadUpdate: () -> Unit,
     onChangelogRequested: () -> Unit,
     onPrivacyPolicyRequested: () -> Unit,
+    onTermsOfUseRequested: () -> Unit,
     onLicenseRequested: () -> Unit,
+    onHelpFeedbackRequested: () -> Unit,
     onSupportAALyricsRequested: () -> Unit,
     onAdvancedRequested: () -> Unit,
     onOpenGitHub: () -> Unit,
@@ -170,11 +197,6 @@ internal fun SettingsScreenContent(
         targetLanguagePickerVisible,
     ) {
         mutableStateOf(state.translationTarget.id)
-    }
-    val scrollState = rememberScrollState()
-
-    LaunchedEffect(rootResetKey) {
-        scrollState.scrollTo(0)
     }
 
     Column(
@@ -311,9 +333,25 @@ internal fun SettingsScreenContent(
             SettingsDivider()
 
             SettingsNavigationRow(
+                title = stringResource(R.string.settings_terms_of_use),
+                value = null,
+                onClick = onTermsOfUseRequested,
+            )
+
+            SettingsDivider()
+
+            SettingsNavigationRow(
                 title = stringResource(R.string.settings_license),
                 value = null,
                 onClick = onLicenseRequested,
+            )
+
+            SettingsDivider()
+
+            SettingsNavigationRow(
+                title = stringResource(R.string.settings_help_feedback),
+                value = null,
+                onClick = onHelpFeedbackRequested,
             )
 
             SettingsDivider()
@@ -398,12 +436,3 @@ private fun androidAutoStatusColor(
     AndroidAutoCompatibilityUiStatus.NOT_REVIEWED -> AALyricsColors.TextSecondary
 }
 
-
-private enum class SettingsSubscreen {
-    MAIN,
-    ADVANCED,
-    CHANGELOG,
-    PRIVACY_POLICY,
-    LICENSE,
-    SUPPORT_AALYRICS,
-}

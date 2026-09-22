@@ -27,6 +27,8 @@ internal fun mapPhoneSettingsState(
     licenseText: String,
     changelogText: String,
     privacyPolicyText: String,
+    termsOfUseText: String = "",
+    thirdPartyLicensesText: String = "",
     translationModelCleanupState: TranslationModelCleanupState =
         TranslationModelCleanupState.IDLE,
     displayLocale: Locale = Locale.getDefault(),
@@ -73,6 +75,8 @@ internal fun mapPhoneSettingsState(
         licenseText = licenseText,
         changelogText = changelogText,
         privacyPolicyText = privacyPolicyText,
+        termsOfUseText = termsOfUseText,
+        thirdPartyLicensesText = thirdPartyLicensesText,
         appUpdate = AppUpdateUiState(phase = AppUpdateUiPhase.UNAVAILABLE),
     )
 }

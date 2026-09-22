@@ -25,6 +25,7 @@ import io.github.whoxamxl.aalyrics.ui.phone.component.PhoneMarkdownText
 internal fun LicenseSettingsScreen(
     noticeText: String,
     licenseText: String,
+    thirdPartyLicensesText: String,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
     bottomOverlayInset: Dp = 0.dp,
@@ -80,6 +81,19 @@ internal fun LicenseSettingsScreen(
             SelectionContainer {
                 PhoneMarkdownText(
                     markdown = licenseText,
+                    modifier = Modifier.padding(AALyricsSpacing.Space16),
+                )
+            }
+        }
+
+        Spacer(Modifier.height(AALyricsSpacing.Space20))
+
+        SettingsSection(
+            title = stringResource(R.string.settings_section_third_party_licenses),
+        ) {
+            SelectionContainer {
+                PhoneMarkdownText(
+                    markdown = thirdPartyLicensesText,
                     modifier = Modifier.padding(AALyricsSpacing.Space16),
                 )
             }

@@ -2,7 +2,7 @@
 
 **Last reviewed:** September 22, 2026
 
-AALyrics uses third-party open-source software. AALyrics itself is licensed separately under [LICENSE](LICENSE) and [NOTICE](NOTICE).
+AALyrics uses third-party open-source software. AALyrics itself is licensed separately under the repository LICENSE and NOTICE.
 
 This file is intentionally limited to third-party software licensing and required attribution. External lyrics services, privacy terms, product-specific service terms, and brand assets are documented elsewhere where relevant.
 
