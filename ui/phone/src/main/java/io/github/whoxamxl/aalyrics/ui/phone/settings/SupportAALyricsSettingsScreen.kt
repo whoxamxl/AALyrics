@@ -1,11 +1,14 @@
 package io.github.whoxamxl.aalyrics.ui.phone.settings
 
-import android.graphics.ImageDecoder
-import android.graphics.Matrix
-import android.graphics.drawable.AnimatedImageDrawable
-import android.os.Build
-import android.widget.ImageView
-import androidx.compose.foundation.background
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -21,27 +24,28 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.viewinterop.AndroidView
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsColors
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsSpacing
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsTypography
 import io.github.whoxamxl.aalyrics.ui.phone.R
 
-private const val SUPPORT_STICKER_CONTENT_LEFT = 119f
-private const val SUPPORT_STICKER_CONTENT_TOP = 187f
-private const val SUPPORT_STICKER_CONTENT_WIDTH = 242f
-private const val SUPPORT_STICKER_CONTENT_HEIGHT = 101f
+private const val BMC_BUTTON_ASPECT_RATIO = 545f / 153f
 
 /** Native Settings landing surface for the external AALyrics support destination. */
 @Composable
@@ -116,108 +120,87 @@ internal fun SupportAALyricsSettingsScreen(
 private fun SupportStickerButton(
     onSupport: () -> Unit,
 ) {
-    val context = LocalContext.current
-    val contentDescription = stringResource(R.string.settings_support_button_description)
+    val transition = rememberInfiniteTransition(label = "supportBmcCta")
 
-    val animatedDrawable = remember(context) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            runCatching {
-                ImageDecoder.decodeDrawable(
-                    ImageDecoder.createSource(
-                        context.resources,
-                        R.drawable.bmc_support_sticker,
-                    ),
-                )
-            }.getOrNull()
-        } else {
-            null
-        }
-    }
+    val shimmerProgress by transition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(
+                durationMillis = 1_800,
+                easing = LinearEasing,
+            ),
+            repeatMode = RepeatMode.Restart,
+        ),
+        label = "supportBmcShimmer",
+    )
 
-    DisposableEffect(animatedDrawable) {
-        (animatedDrawable as? AnimatedImageDrawable)?.start()
-        onDispose {
-            (animatedDrawable as? AnimatedImageDrawable)?.stop()
-        }
-    }
+    val pulseScale by transition.animateFloat(
+        initialValue = 0.98f,
+        targetValue = 1.02f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(
+                durationMillis = 1_250,
+                easing = FastOutSlowInEasing,
+            ),
+            repeatMode = RepeatMode.Reverse,
+        ),
+        label = "supportBmcPulse",
+    )
 
-    if (animatedDrawable != null) {
-        AndroidView(
-            modifier = Modifier
-                .fillMaxWidth(0.58f)
-                .widthIn(max = 188.dp)
-                .aspectRatio(SUPPORT_STICKER_CONTENT_WIDTH / SUPPORT_STICKER_CONTENT_HEIGHT),
-            factory = { viewContext ->
-                ImageView(viewContext).apply {
-                    scaleType = ImageView.ScaleType.MATRIX
-                    isClickable = true
-                    isFocusable = true
-                    this.contentDescription = contentDescription
-                    setOnClickListener { onSupport() }
-                    setImageDrawable(animatedDrawable)
-                    addOnLayoutChangeListener { view, _, _, _, _, _, _, _, _ ->
-                        updateSupportStickerMatrix(view as ImageView)
-                    }
-                    (animatedDrawable as? AnimatedImageDrawable)?.start()
-                }
-            },
-            update = { imageView ->
-                imageView.contentDescription = contentDescription
-                imageView.setOnClickListener { onSupport() }
-                if (imageView.drawable !== animatedDrawable) {
-                    imageView.setImageDrawable(animatedDrawable)
-                }
-                updateSupportStickerMatrix(imageView)
-                (animatedDrawable as? AnimatedImageDrawable)?.start()
-            },
+    val shape = RoundedCornerShape(percent = 16)
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth(0.58f)
+            .widthIn(max = 188.dp)
+            .aspectRatio(BMC_BUTTON_ASPECT_RATIO)
+            .graphicsLayer {
+                scaleX = pulseScale
+                scaleY = pulseScale
+            }
+            .clip(shape)
+            .clickable(
+                role = Role.Button,
+                onClick = onSupport,
+            ),
+        contentAlignment = Alignment.Center,
+    ) {
+        Image(
+            painter = painterResource(R.drawable.bmc_button),
+            contentDescription = stringResource(R.string.settings_support_button_description),
+            contentScale = ContentScale.Fit,
+            modifier = Modifier.fillMaxSize(),
         )
-    } else {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth(0.58f)
-                .widthIn(max = 188.dp)
-                .aspectRatio(SUPPORT_STICKER_CONTENT_WIDTH / SUPPORT_STICKER_CONTENT_HEIGHT)
-                .background(
-                    color = Color(0xFFFFDD00),
-                    shape = RoundedCornerShape(percent = 50),
-                )
-                .clickable(
-                    role = Role.Button,
-                    onClick = onSupport,
+
+        Canvas(Modifier.matchParentSize()) {
+            val bandWidth = size.width * 0.30f
+            val travel = size.width + (bandWidth * 2f)
+            val leadingX = (travel * shimmerProgress) - bandWidth
+
+            drawRoundRect(
+                brush = Brush.linearGradient(
+                    colors = listOf(
+                        Color.Transparent,
+                        Color.White.copy(alpha = 0.05f),
+                        Color.White.copy(alpha = 0.38f),
+                        Color.White.copy(alpha = 0.05f),
+                        Color.Transparent,
+                    ),
+                    start = Offset(
+                        x = leadingX - bandWidth,
+                        y = size.height,
+                    ),
+                    end = Offset(
+                        x = leadingX + bandWidth,
+                        y = 0f,
+                    ),
                 ),
-            contentAlignment = Alignment.Center,
-        ) {
-            Text(
-                text = stringResource(R.string.settings_support_fallback_label),
-                style = AALyricsTypography.Label,
-                color = Color(0xFF0D0C22),
-                textAlign = TextAlign.Center,
-                modifier = Modifier.padding(horizontal = AALyricsSpacing.Space12),
+                cornerRadius = CornerRadius(
+                    x = size.height * 0.16f,
+                    y = size.height * 0.16f,
+                ),
             )
         }
-    }
-}
-
-private fun updateSupportStickerMatrix(
-    imageView: ImageView,
-) {
-    val viewWidth = imageView.width.toFloat()
-    val viewHeight = imageView.height.toFloat()
-    if (viewWidth <= 0f || viewHeight <= 0f) return
-
-    val scale = minOf(
-        viewWidth / SUPPORT_STICKER_CONTENT_WIDTH,
-        viewHeight / SUPPORT_STICKER_CONTENT_HEIGHT,
-    )
-    val translateX =
-        ((viewWidth - SUPPORT_STICKER_CONTENT_WIDTH * scale) / 2f) -
-            SUPPORT_STICKER_CONTENT_LEFT * scale
-    val translateY =
-        ((viewHeight - SUPPORT_STICKER_CONTENT_HEIGHT * scale) / 2f) -
-            SUPPORT_STICKER_CONTENT_TOP * scale
-
-    imageView.imageMatrix = Matrix().apply {
-        setScale(scale, scale)
-        postTranslate(translateX, translateY)
     }
 }

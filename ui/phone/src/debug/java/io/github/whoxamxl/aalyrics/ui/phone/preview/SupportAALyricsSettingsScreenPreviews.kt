@@ -16,6 +16,17 @@ private fun SupportAALyricsSettingsTypicalPreview() {
     SupportAALyricsSettingsPreview()
 }
 
+@Preview(
+    name = "Interactive animation",
+    group = "SupportAALyricsSettings",
+    widthDp = 412,
+    heightDp = 760,
+)
+@Composable
+private fun SupportAALyricsSettingsInteractivePreview() {
+    SupportAALyricsSettingsPreview()
+}
+
 @Preview(name = "Narrow · 320dp", group = "SupportAALyricsSettings", widthDp = 320, heightDp = 700)
 @Composable
 private fun SupportAALyricsSettingsNarrowPreview() {

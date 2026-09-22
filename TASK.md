@@ -81,7 +81,7 @@ The policy must describe actual AALyrics behavior; placeholder privacy claims ar
 - [x] Split the current lower Settings layout into `APP` and `ABOUT & SUPPORT` without changing unrelated sections.
 - [x] Move License visually under `ABOUT & SUPPORT` without changing its existing NOTICE/LICENSE behavior.
 - [x] Add `Support AALyrics` native subscreen.
-- [x] Refine the Support surface into one compact card using the original unmodified 480×480 / 122-frame Buy Me a Coffee GIF as the single CTA, with 32dp subtext-to-CTA spacing and an explicit `Opens Buy Me a Coffee` affordance.
+- [x] Refine the Support surface into one compact card using the Buy Me a Coffee SVG-derived VectorDrawable as the single CTA, with native Compose shimmer plus a 0.98↔1.02 pulse, no tilt/float, 32dp subtext-to-CTA spacing, and an explicit `Opens Buy Me a Coffee` affordance.
 - [x] Wire Buy Me a Coffee handoff through an app-owned Custom Tab / external-browser action.
 - [x] Keep `Advanced` in its own existing card and keep the branding footer last.
 - [x] Update deterministic Previews for Settings home, Privacy Policy, Support AALyrics, narrow width, and enlarged font.
@@ -112,7 +112,7 @@ Pending before merge:
 - [x] Remove the custom `bmc_logo.png` Compose animation that could crash when entering Support AALyrics.
 - [x] Add a defensive GIF decode path with a native fallback so GIF decode failure cannot crash the Settings surface.
 - [x] Verify the original GIF blob exactly before commit (444,819 bytes; Git blob SHA `0690854636c9edb495543adf24d576068a681410`; 480×480; 122 frames; 2.44s loop).
-- [ ] Re-run CI and bounded Codex review after replacing the reduced GIF with the exact original asset and presentation-time crop.
+- [ ] Re-run CI and bounded Codex review after replacing the GIF CTA with the SVG-derived VectorDrawable and native Compose animation.
 
 ## Current stop point
 
