@@ -1,7 +1,9 @@
 package io.github.whoxamxl.aalyrics.platform.media
 
+import android.app.ActivityOptions
 import android.app.PendingIntent
 import android.content.ComponentName
+import android.content.Context
 import android.media.MediaMetadata
 import android.media.session.MediaController
 import android.media.session.MediaSession
@@ -10,6 +12,7 @@ import android.media.session.PlaybackState
 import android.os.Handler
 
 internal class AndroidMediaSessionSource(
+    private val context: Context,
     private val manager: MediaSessionManager,
     private val listenerComponent: ComponentName,
     private val handler: Handler,
@@ -44,10 +47,15 @@ internal class AndroidMediaSessionSource(
         manager.getActiveSessions(listenerComponent).map(::wrap)
 
     private fun wrap(controller: MediaController): RuntimeMediaController<MediaSession.Token> =
-        AndroidRuntimeMediaController(controller, handler)
+        AndroidRuntimeMediaController(
+            context = context,
+            controller = controller,
+            handler = handler,
+        )
 }
 
 internal class AndroidRuntimeMediaController(
+    private val context: Context,
     private val controller: MediaController,
     private val handler: Handler,
 ) : RuntimeMediaController<MediaSession.Token> {
@@ -163,7 +171,24 @@ internal class AndroidRuntimeMediaController(
     override fun openSessionActivity(): Boolean {
         val sessionActivity = controller.sessionActivity ?: return false
         return try {
-            sessionActivity.send()
+            val backgroundStartMode =
+                pendingIntentBackgroundActivityStartModeForSdk(android.os.Build.VERSION.SDK_INT)
+            if (backgroundStartMode == null) {
+                sessionActivity.send()
+            } else {
+                val options = ActivityOptions.makeBasic()
+                    .setPendingIntentBackgroundActivityStartMode(backgroundStartMode)
+                    .toBundle()
+                sessionActivity.send(
+                    context,
+                    0,
+                    null,
+                    null,
+                    null,
+                    null,
+                    options,
+                )
+            }
             true
         } catch (_: PendingIntent.CanceledException) {
             false
@@ -178,6 +203,15 @@ internal class AndroidRuntimeMediaController(
         val frameworkCallback: MediaController.Callback,
     )
 }
+
+
+@Suppress("DEPRECATION")
+internal fun pendingIntentBackgroundActivityStartModeForSdk(sdkInt: Int): Int? =
+    when {
+        sdkInt >= 36 -> ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOW_IF_VISIBLE
+        sdkInt >= 34 -> ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOWED
+        else -> null
+    }
 
 internal class HandlerMetadataTaskScheduler(
     private val handler: Handler,

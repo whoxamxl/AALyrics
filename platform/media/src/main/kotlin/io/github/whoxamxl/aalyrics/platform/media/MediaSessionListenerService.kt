@@ -18,6 +18,7 @@ class MediaSessionListenerService : NotificationListenerService() {
         val handler = Handler(Looper.getMainLooper())
         val manager = getSystemService(MEDIA_SESSION_SERVICE) as MediaSessionManager
         val source = AndroidMediaSessionSource(
+            context = this,
             manager = manager,
             listenerComponent = ComponentName(this, MediaSessionListenerService::class.java),
             handler = handler,
