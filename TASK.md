@@ -137,7 +137,7 @@ The Verbose Details rows are diagnostic presentation. The underlying application
 - [x] Add focused tests for resolver/mapping fallback, category behavior, and SDK diagnostic mapping.
 - [x] Align deterministic Top Bar / shell / Details Previews for icon-present, icon-unavailable, all five runtime states, Unavailable generic fallback, known-category, and undefined-category cases where practical.
 - [x] Update relevant Phone/runtime/details documentation and keep implementation aligned with this task.
-- [ ] Run architecture checks, unit tests, debug APK build, CI, and bounded review before merge.
+- [x] Run architecture checks, unit tests, debug APK build, CI, and bounded review before merge.
 
 ## Reset contract
 
