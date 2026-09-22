@@ -36,6 +36,34 @@ if (releaseTaskRequested && !releaseSigningConfigured) {
     )
 }
 
+fun gitOutput(vararg args: String): String? {
+    val command = mutableListOf("git")
+    command.addAll(args.toList())
+    return runCatching {
+        val process = ProcessBuilder(command)
+            .directory(rootProject.projectDir)
+            .redirectErrorStream(true)
+            .start()
+        val output = process.inputStream.bufferedReader().use { it.readText() }.trim()
+        if (process.waitFor() == 0) output.takeIf { it.isNotBlank() } else null
+    }.getOrNull()
+}
+
+fun resolveDevelopmentVersionName(): String {
+    val fallbackBaseVersion = "0.1.0"
+    val tagVersion = gitOutput(
+        "describe",
+        "--tags",
+        "--abbrev=0",
+        "--match",
+        "v[0-9]*",
+    )?.removePrefix("v")?.takeIf { it.isNotBlank() }
+    val shortSha = gitOutput("rev-parse", "--short=7", "HEAD")
+        ?: return "$fallbackBaseVersion-dev"
+    val dirtySuffix = if (!gitOutput("status", "--porcelain").isNullOrEmpty()) ".dirty" else ""
+    return "${tagVersion ?: fallbackBaseVersion}-dev+$shortSha$dirtySuffix"
+}
+
 val configuredVersionCode = providers.environmentVariable("AALYRICS_VERSION_CODE")
     .orNull
     ?.toIntOrNull()
@@ -44,7 +72,7 @@ val configuredVersionCode = providers.environmentVariable("AALYRICS_VERSION_CODE
 val configuredVersionName = providers.environmentVariable("AALYRICS_VERSION_NAME")
     .orNull
     ?.takeIf { it.isNotBlank() }
-    ?: "0.1.0-dev"
+    ?: resolveDevelopmentVersionName()
 
 val generatedBundledDocumentsAssetsDir =
     layout.buildDirectory.dir("generated/bundledDocumentsAssets").get().asFile
