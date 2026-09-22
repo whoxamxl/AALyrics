@@ -54,6 +54,7 @@ internal fun SupportAALyricsSettingsScreen(
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
     bottomOverlayInset: Dp = 0.dp,
+    supportCtaAnimationEnabled: Boolean = true,
 ) {
     Column(
         modifier = modifier
@@ -101,7 +102,10 @@ internal fun SupportAALyricsSettingsScreen(
 
                 Spacer(Modifier.height(AALyricsSpacing.Space32))
 
-                SupportStickerButton(onSupport = onSupport)
+                SupportStickerButton(
+                    onSupport = onSupport,
+                    animationEnabled = supportCtaAnimationEnabled,
+                )
 
                 Spacer(Modifier.height(AALyricsSpacing.Space8))
 
@@ -119,6 +123,7 @@ internal fun SupportAALyricsSettingsScreen(
 @Composable
 private fun SupportStickerButton(
     onSupport: () -> Unit,
+    animationEnabled: Boolean,
 ) {
     val transition = rememberInfiniteTransition(label = "supportBmcCta")
 
@@ -148,6 +153,9 @@ private fun SupportStickerButton(
         label = "supportBmcPulse",
     )
 
+    val effectiveShimmerProgress = if (animationEnabled) shimmerProgress else 0.48f
+    val effectivePulseScale = if (animationEnabled) pulseScale else 1f
+
     val shape = RoundedCornerShape(percent = 16)
 
     Box(
@@ -156,8 +164,8 @@ private fun SupportStickerButton(
             .widthIn(max = 188.dp)
             .aspectRatio(BMC_BUTTON_ASPECT_RATIO)
             .graphicsLayer {
-                scaleX = pulseScale
-                scaleY = pulseScale
+                scaleX = effectivePulseScale
+                scaleY = effectivePulseScale
             }
             .clip(shape)
             .clickable(
@@ -176,7 +184,7 @@ private fun SupportStickerButton(
         Canvas(Modifier.matchParentSize()) {
             val bandWidth = size.width * 0.30f
             val travel = size.width + (bandWidth * 2f)
-            val leadingX = (travel * shimmerProgress) - bandWidth
+            val leadingX = (travel * effectiveShimmerProgress) - bandWidth
 
             drawRoundRect(
                 brush = Brush.linearGradient(

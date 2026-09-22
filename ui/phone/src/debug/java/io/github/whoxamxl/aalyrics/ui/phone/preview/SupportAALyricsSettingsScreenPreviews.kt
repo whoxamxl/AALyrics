@@ -13,7 +13,7 @@ import io.github.whoxamxl.aalyrics.ui.phone.settings.SupportAALyricsSettingsScre
 @Preview(name = "Typical", group = "SupportAALyricsSettings", widthDp = 412, heightDp = 760)
 @Composable
 private fun SupportAALyricsSettingsTypicalPreview() {
-    SupportAALyricsSettingsPreview()
+    SupportAALyricsSettingsPreview(animationEnabled = false)
 }
 
 @Preview(
@@ -24,13 +24,13 @@ private fun SupportAALyricsSettingsTypicalPreview() {
 )
 @Composable
 private fun SupportAALyricsSettingsInteractivePreview() {
-    SupportAALyricsSettingsPreview()
+    SupportAALyricsSettingsPreview(animationEnabled = true)
 }
 
 @Preview(name = "Narrow · 320dp", group = "SupportAALyricsSettings", widthDp = 320, heightDp = 700)
 @Composable
 private fun SupportAALyricsSettingsNarrowPreview() {
-    SupportAALyricsSettingsPreview()
+    SupportAALyricsSettingsPreview(animationEnabled = false)
 }
 
 @Preview(
@@ -42,11 +42,13 @@ private fun SupportAALyricsSettingsNarrowPreview() {
 )
 @Composable
 private fun SupportAALyricsSettingsLargeFontPreview() {
-    SupportAALyricsSettingsPreview()
+    SupportAALyricsSettingsPreview(animationEnabled = false)
 }
 
 @Composable
-private fun SupportAALyricsSettingsPreview() {
+private fun SupportAALyricsSettingsPreview(
+    animationEnabled: Boolean,
+) {
     AALyricsTheme {
         Box(
             modifier = Modifier
@@ -57,6 +59,7 @@ private fun SupportAALyricsSettingsPreview() {
                 onSupport = {},
                 onBack = {},
                 modifier = Modifier.fillMaxSize(),
+                supportCtaAnimationEnabled = animationEnabled,
             )
         }
     }

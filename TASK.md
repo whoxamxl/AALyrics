@@ -109,11 +109,11 @@ Pending before merge:
 - [x] JVM/unit tests pass.
 - [x] Generated APK contains `aalyrics_privacy.md`.
 - [x] PR diff/Preview alignment review is complete.
-- [x] Remove the custom `bmc_logo.png` Compose animation that could crash when entering Support AALyrics.
-- [x] Add a defensive GIF decode path with a native fallback so GIF decode failure cannot crash the Settings surface.
-- [x] Verify the original GIF blob exactly before commit (444,819 bytes; Git blob SHA `0690854636c9edb495543adf24d576068a681410`; 480×480; 122 frames; 2.44s loop).
-- [ ] Re-run CI and bounded Codex review after replacing the GIF CTA with the SVG-derived VectorDrawable and native Compose animation.
+- [x] Replace the earlier GIF path with the final SVG-derived VectorDrawable CTA.
+- [x] Verify Preview and production render the same `SupportAALyricsSettingsScreen`; typical/narrow/enlarged previews use a deterministic frozen animation state, while the dedicated Interactive Preview exercises the real animation.
+- [x] Verify the finalized CTA on a physical device: 0.98↔1.02 pulse, diagonal shimmer, no tilt, no positional float.
+- [ ] Re-run bounded Codex review on the finalized VectorDrawable/native-Compose implementation.
 
 ## Current stop point
 
-The exact original GIF replacement is implemented. Re-run repository validation and bounded review before returning PR #60 to the explicit pre-merge approval gate.
+The final SVG-derived VectorDrawable CTA is implemented and confirmed on a physical device. Preview, documentation, and production Phone UI are aligned; CI is green. Re-run bounded Codex review before returning PR #60 to the explicit pre-merge approval gate.
