@@ -26,6 +26,8 @@ The current production branch state now has:
 
 The debug APK now builds with the real Phone shell reachable after onboarding prerequisites are satisfied. Physical-device smoke testing remains the final empirical validation step; CI alone does not claim that device interaction has been observed.
 
+The next approved Settings extension in `docs/PHONE_SETTINGS.md` preserves this host boundary: `:app` will supply bundled `PRIVACY.md` text and own the external Buy Me a Coffee browser/Custom-Tab launch, while `:ui:phone` remains presentation-only.
+
 ## Goal
 
 Preserve the existing app-entry gates and replace only the READY-state placeholder with the real Phone Compose host:
@@ -231,7 +233,9 @@ Existing application/runtime seams should be wired where they already exist or c
 - app/build version facts;
 - other already-implemented application-owned Settings state.
 
-The runtime-host slice may add the minimal application-owned mapping required to assemble `SettingsScreenUiState`. This includes read-only build/repository document content such as `licenseText`: `:app` owns Android asset access and passes presentation-ready text into `:ui:phone`; the UI does not read assets or fetch GitHub directly.
+The runtime-host slice may add the minimal application-owned mapping required to assemble `SettingsScreenUiState`. This includes read-only build/repository document content such as `noticeText`, `licenseText`, `changelogText`, and the approved `privacyPolicyText`: `:app` owns Android asset access and passes presentation-ready text into `:ui:phone`; the UI does not read assets or fetch GitHub directly.
+
+For `Support AALyrics`, the UI emits an external-support callback only. `:app` owns opening the canonical Buy Me a Coffee destination, preferably through Android Custom Tabs with normal external-browser fallback. No payment state or credentials enter the Phone presentation model.
 
 ### Unsupported Settings actions
 
@@ -248,7 +252,7 @@ Do not expand this slice into implementation of those capabilities merely becaus
 The following may remain UI/host-local because they do not represent durable application policy:
 
 - currently selected Phone primary destination;
-- Settings sub-screen selection/visibility (currently Main / Advanced / Changelog / License);
+- Settings sub-screen selection/visibility (target contract: Main / Advanced / Changelog / Privacy Policy / License / Support AALyrics);
 - modal/picker visibility;
 - Lyrics viewport follow/browse interaction mode;
 - expanded/collapsed Playback Surface presentation state where already component-owned.

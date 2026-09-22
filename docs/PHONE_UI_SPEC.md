@@ -91,24 +91,28 @@ Candidate scores, raw provider payloads, log export, and deeper resolver diagnos
 
 Owns user-facing application configuration while persistence and capability policy remain outside `:ui:phone`.
 
-The production Settings contract is defined in `docs/PHONE_SETTINGS.md`. Its implemented settings remain deliberately focused; Advanced is limited to the approved Debug/Experimental rows plus explicit Translation storage cleanup and AALyrics-owned reset actions:
+The production Settings contract is defined in `docs/PHONE_SETTINGS.md`. The current implementation remains deliberately focused, and the next approved slice reorganizes its lower information architecture without changing capability ownership:
 
 - Plain lyrics auto-scroll;
 - Translation enabled/disabled;
 - Translation target language;
 - Android Auto compatibility acknowledgement/status and setup re-entry;
-- installed version plus explicit unavailable Update presentation until release-network runtime exists;
-- in-app Changelog entry backed by the repository-root `CHANGELOG.md`;
-- external Source code entry;
-- in-app License entry backed by repository-root `NOTICE` + `LICENSE`;
-- permanent AALyrics branding/GitHub footer;
-- an `Advanced` entry containing:
+- `APP`:
+  - installed version plus explicit unavailable Update presentation until release-network runtime exists;
+  - in-app Changelog backed by repository-root `CHANGELOG.md`;
+  - external Source code entry;
+- `ABOUT & SUPPORT`:
+  - in-app Privacy Policy backed by repository-root `PRIVACY.md`;
+  - in-app License backed by repository-root `NOTICE` + `LICENSE`;
+  - `Support AALyrics` native subscreen with external Buy Me a Coffee handoff only;
+- standalone `Advanced` card containing:
   - functional `Verbose details` presentation preference;
   - disabled/unwired `Karaoke mode` future affordance;
   - `Storage > Clear translation models`, which keeps built-in English, turns Translation off, and restores English as the target;
-  - `Reset > Reset AALyrics`, which resets AALyrics-owned settings/onboarding without deleting translation models or changing Android/system settings.
+  - `Reset > Reset AALyrics`, which resets AALyrics-owned settings/onboarding without deleting translation models or changing Android/system settings;
+- permanent AALyrics branding/GitHub footer after Advanced.
 
-Provider preferences, appearance/theme selection, log export, functional Karaoke wiring, and other future taxonomy remain deferred until separately approved.
+The approved support flow does not embed checkout, handle payment credentials/state, or unlock app functionality. Browser/Custom-Tab launching remains application-owned. Provider preferences, appearance/theme selection, log export, functional Karaoke wiring, and other future taxonomy remain deferred until separately approved.
 
 ## Persistent top status bar
 
@@ -307,7 +311,7 @@ Three current Phone patterns are now normative within `:ui:phone`:
 
 - **Anchored popup / tooltip surface** — use `PhonePopupMenu`. Its current Quick Controls-derived visual treatment is the standard: Radius16, `BackgroundSurfaceStrong`, `BorderSoft`, zero tonal elevation, and the shared shadow elevation. Do not introduce a default-styled `DropdownMenu` for an equivalent compact popup.
 - **Second-level Settings header** — use `SettingsSubscreenHeader`. Its standard back affordance is a Material rounded chevron-left at 32dp inside a 48dp touch target, paired with the subscreen title. This mirrors the chevron-right navigation affordance used when entering a Settings subscreen.
-- **Markdown documents** — use the Phone-local `PhoneMarkdownText` wrapper for bundled or presentation-provided Markdown such as the bundled repository `NOTICE`/`LICENSE` legal text and `CHANGELOG.md`. The wrapper delegates Markdown parsing/rendering to `mikepenz/multiplatform-markdown-renderer` Material 3 rather than implementing Markdown syntax in AALyrics. Keep the original document as the source of truth; rendering is presentation-only.
+- **Markdown documents** — use the Phone-local `PhoneMarkdownText` wrapper for bundled or presentation-provided Markdown such as repository `NOTICE`/`LICENSE`, `CHANGELOG.md`, and `PRIVACY.md`. The wrapper delegates Markdown parsing/rendering to `mikepenz/multiplatform-markdown-renderer` Material 3 rather than implementing Markdown syntax in AALyrics. Keep the original document as the source of truth; rendering is presentation-only.
 
 These are Phone-local standards. They should remain in `:ui:phone` until reuse outside the Phone surface justifies promotion to `:ui:designsystem`.
 
@@ -340,6 +344,8 @@ ui/phone/src/main/java/io/github/whoxamxl/aalyrics/ui/phone/
 │  ├─ AdvancedSettingsScreen.kt
 │  ├─ ChangelogSettingsScreen.kt
 │  ├─ LicenseSettingsScreen.kt
+│  ├─ PrivacyPolicySettingsScreen.kt
+│  ├─ SupportAALyricsSettingsScreen.kt
 │  ├─ SettingsScreen.kt
 │  └─ SettingsUiState.kt
 └─ state/
@@ -369,7 +375,9 @@ Preview coverage should eventually exercise at least:
 - Details normal and Verbose modes
 - Advanced Settings with Verbose details and disabled Karaoke mode
 - in-app Changelog subscreen with long scrollable bundled release history
+- in-app Privacy Policy subscreen with long scrollable bundled policy text
 - in-app License subscreen with long scrollable bundled legal text
+- native Support AALyrics subscreen with external-link presentation
 - narrow and typical phone widths
 - the shell-owned top-chrome tonal transition and Track Card boundary/spacing
 
