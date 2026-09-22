@@ -1,73 +1,92 @@
-# Bundled Changelog
+# Playback Source App Info
 
 ## Branch and baseline
 
-- Branch: `feature/bundled-changelog`
-- Base: `main` at `3eb5d07ea2675497ae10bfb4fa372b02936ffa0f` (PR #58 merged).
-- Classification: **SETTINGS / BUNDLED DOCUMENT / RELEASE PROCESS**.
-- Authoritative references: `AGENTS.md`, `docs/PHONE_SETTINGS.md`, `docs/RELEASES.md`, the existing bundled License/NOTICE implementation, and the current Settings root-reset contract.
+- Branch: `feature/playback-source-app-info`
+- Base: `main` at `f03469227116e066ab9267a1445027a79bfd4e8d`.
+- Classification: **PHONE UI / APPLICATION METADATA / DIAGNOSTICS**.
+- Authoritative references: `AGENTS.md`, `docs/PHONE_UI_SPEC.md`, `docs/PHONE_RUNTIME_HOST.md`, `docs/PHONE_DETAILS.md`, and the existing selected-MediaSession/runtime boundaries.
 
 ## Goal
 
-Make the repository-root `CHANGELOG.md` the canonical user-facing release history and display that exact document offline inside Settings.
+Replace the current label-only playback-source package resolution with one application-owned metadata resolver that derives the selected playback app's human-readable label, application icon, and Android application category from `ApplicationInfo`.
 
-The implementation should follow the existing bundled License/NOTICE ownership model:
+The selected MediaSession package remains the source identity:
 
 ```text
-repository CHANGELOG.md
-    -> app build copies generated asset
-    -> :app reads bundled text
-    -> SettingsScreenUiState
-    -> ChangelogSettingsScreen
-    -> PhoneMarkdownText
+MediaSession / MediaController
+        ↓
+packageName
+        ↓
+PlaybackSourceAppInfoResolver
+        ↓
+PlaybackSourceAppInfo
+├─ packageName
+├─ label
+├─ icon
+└─ category
+        ↓
+        ├─ persistent Phone Top Bar: icon + label
+        └─ Verbose Details: package + category
 ```
 
-GitHub Releases remain the signed distribution channel and PR-level change ledger. The app Changelog is a concise curated history, not a runtime GitHub API surface.
+This is a presentation/diagnostic enrichment only. It must not change media-session discovery, source selection, playback transport, lyrics lookup, provider behavior, or persistence.
+
+## Approved behavior
+
+### Resolution
+
+- Resolve from the selected playback package already exposed by `PlaybackSnapshot.source.id`.
+- Replace `PlaybackSourceLabelResolver` with an application-owned `PlaybackSourceAppInfoResolver`.
+- Perform one `ApplicationInfo` lookup per package and cache the resolved result rather than issuing separate label/icon/category lookups.
+- Keep the package identifier as the human-readable label fallback when application lookup or label resolution fails.
+- Treat the source icon as optional presentation data; failure to resolve an icon must not hide the playback source.
+- Normalize known `ApplicationInfo.category` constants into stable presentation labels such as `Audio`, `Video`, and `Game`.
+- Preserve an explicit `Undefined` category when Android reports `CATEGORY_UNDEFINED`; if application metadata itself cannot be resolved, the diagnostic category may be unavailable.
+
+### Top Bar
+
+- Keep the current playback-source pill and human-readable label behavior.
+- Show the selected playback application's icon in the pill when available.
+- Retain the existing cyan-dot treatment as the visual fallback when no app icon is available.
+- Do not pass `ApplicationInfo`, `PackageManager`, or Android `Drawable` objects into `:ui:phone`; platform icon ownership stays on the application side and the Phone UI receives renderable presentation content only.
+
+### Developer / Diagnostics
+
+When `Settings > Advanced > Verbose details` is enabled, keep the raw playback package and add the resolved Android app category:
+
+```text
+DEVELOPER / DIAGNOSTICS
+
+App package           com.spotify.music
+App category          Audio
+Provider ID           ...
+Source ID             ...
+Track references      ...
+```
+
+Category display is diagnostic metadata only. It must not influence playback-source eligibility, media-session selection, provider selection, or UI feature availability.
 
 ## Acceptance criteria
 
-- [x] Add repository-root `CHANGELOG.md` with the existing published releases in newest-first order.
-- [x] Generalize the current bundled License/NOTICE asset task and include `CHANGELOG.md`.
-- [x] Keep Android asset ownership in `:app`; `:ui:phone` receives presentation-ready Markdown text only.
-- [x] Replace the Changelog loading/network scaffold with a read-only second-level Settings screen.
-- [x] Reuse `SettingsSubscreenHeader` and `PhoneMarkdownText`.
-- [x] Preserve System Back and Settings-tab root reselection behavior.
-- [x] Remove obsolete Changelog loading/failure/retry presentation state and callbacks without changing Update behavior.
-- [x] Align deterministic Changelog Previews and Settings mapper coverage.
-- [x] Update `docs/PHONE_SETTINGS.md` and `docs/RELEASES.md`.
-- [x] Require each release tag's version to match the newest version heading in `CHANGELOG.md` before release build/publish.
-- [x] Keep GitHub Release `--generate-notes` behavior and the curated-summary-first / generated-notes-last policy unchanged.
-- [x] Run architecture checks, unit tests, debug APK build, CI, and bounded review before merge.
+- [ ] Replace the label-only resolver with `PlaybackSourceAppInfoResolver` and an immutable resolved app-info model.
+- [ ] Resolve and cache package name, label, icon, and category from the selected playback package.
+- [ ] Preserve package-name fallback semantics when application/label resolution fails.
+- [ ] Present the real playback app icon in the persistent Top Bar when available, with the current cyan dot as fallback.
+- [ ] Add app category to Verbose Details Developer / Diagnostics.
+- [ ] Keep Android package/application objects outside `:ui:phone`.
+- [ ] Keep normal Details user-facing playback-source labeling unchanged apart from sharing the new resolver.
+- [ ] Add focused tests for resolver/mapping fallback and category behavior.
+- [ ] Align deterministic Top Bar / shell / Details Previews for icon-present, icon-unavailable, known-category, and undefined-category cases where practical.
+- [ ] Update relevant Phone/runtime/details documentation and keep implementation aligned with this task.
+- [ ] Run architecture checks, unit tests, debug APK build, CI, and bounded review before merge.
 
-## Validation
+## Reset contract
 
-Completed before merge:
-
-- [x] Branch name and commit-message validation passed.
-- [x] Architecture boundary check passed.
-- [x] Debug APK build passed.
-- [x] JVM/unit tests passed.
-- [x] CodeQL passed for Actions and Java/Kotlin.
-- [x] Generated APK was inspected and contains `aalyrics_changelog.md`, `aalyrics_notice.txt`, and `aalyrics_license.txt`.
-- [x] Bundled notice was verified as `Required Notice: © 2026 Yuta Miura`.
-- [x] Codex review on the implementation head reported no major issues.
-- [x] Release changelog guard was exercised directly with the workflow's extraction logic:
-  - matching version `0.2.0-alpha.1` -> pass / exit 0;
-  - mismatching version `0.3.0-alpha.1` -> fail / non-zero exit.
-
-## Release contract
-
-Before creating a release tag:
-
-1. add the new release entry to `CHANGELOG.md`;
-2. merge that change into `main`;
-3. tag that exact `main` revision;
-4. release CI verifies the newest changelog version matches the tag;
-5. the signed APK bundles the same checked-in changelog;
-6. GitHub Release generation continues independently with generated PR notes retained at the bottom.
-
-The release workflow must fail rather than publish an APK whose bundled Changelog does not contain the tagged version as its newest release entry.
+This slice adds no persisted setting, onboarding acknowledgement, downloaded asset, or durable user state. `Reset AALyrics` semantics are unchanged.
 
 ## Scope guard
 
-Do not implement the unfinished in-app update/download runtime in this slice. Do not add GitHub API access to `:ui:phone`, change the Markdown renderer, alter release signing, or redesign unrelated Settings behavior.
+Do not add playback-app allowlists, category-based filtering, media-session selection changes, provider behavior, package-version diagnostics, SDK-version diagnostics, permission inspection, signature inspection, install-source inspection, or new persistence in this slice.
+
+Do not expose raw `ApplicationInfo`, `PackageManager`, `Drawable`, `MediaController`, or other Android framework objects through the Phone presentation model.

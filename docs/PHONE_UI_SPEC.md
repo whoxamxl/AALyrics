@@ -6,7 +6,7 @@ The Phone information architecture and persistent Compose shell are established.
 
 PR #49 implements the approved Details contract from `docs/PHONE_DETAILS.md` together with the narrow `Settings > Advanced` extension from `docs/PHONE_SETTINGS.md`. Details remains read-only, Verbose Details is presentation-only, and Karaoke mode remains disabled/unwired. Sync remains intentionally deferred while its timing/calibration interaction model is reconsidered.
 
-PR #50 implements the application-composition slice defined in `docs/PHONE_RUNTIME_HOST.md`. `MainActivity` preserves the existing entry gates and now hosts the production `PhoneAppShell` for READY. Live app-owned state drives Lyrics, Playback Surface, Details, and Settings; Sync remains an explicit non-functional placeholder. Physical-device iteration on this branch also established selected-session artwork with branded fallback, Translation opt-in defaults, human-readable playback-source labeling with package fallback, in-app License presentation, and shared Phone popup/subscreen/Markdown primitives. The generated debug APK is suitable for continued physical-device Phone UI validation.
+PR #50 implements the application-composition slice defined in `docs/PHONE_RUNTIME_HOST.md`. `MainActivity` preserves the existing entry gates and now hosts the production `PhoneAppShell` for READY. Live app-owned state drives Lyrics, Playback Surface, Details, and Settings; Sync remains an explicit non-functional placeholder. Physical-device iteration on this branch also established selected-session artwork with branded fallback, Translation opt-in defaults, human-readable playback-source labeling with package fallback, in-app License presentation, and shared Phone popup/subscreen/Markdown primitives. The playback-source metadata contract now extends that application-owned package resolution to the selected app icon for the persistent Top Bar and Android application category for Verbose Details diagnostics. The generated debug APK is suitable for continued physical-device Phone UI validation.
 
 ## Product intent
 
@@ -83,7 +83,7 @@ The approved first Details contract is defined in `docs/PHONE_DETAILS.md`.
 
 Normal Details is read-only and user-facing, covering current track metadata plus resolved lyrics metadata such as provider display name, sync type, language, and line count.
 
-When `Settings > Advanced > Verbose details` is enabled, Details keeps its existing Duration and Lines rows in place but expands them to live `current / total` presentation (`Duration (verbose)` and `Lines (verbose)`). The synchronized line number is one-based; PLAIN lyrics show an unavailable current-line marker rather than inventing timing. Details also exposes a `Developer / Diagnostics` section for machine-facing framework-neutral facts such as the playback app package name, provider ID, provider source ID, and normalized track references. Verbose Details changes presentation only; it must not trigger new lookups or alter provider selection, timing, Translation, playback, or rendering behavior.
+When `Settings > Advanced > Verbose details` is enabled, Details keeps its existing Duration and Lines rows in place but expands them to live `current / total` presentation (`Duration (verbose)` and `Lines (verbose)`). The synchronized line number is one-based; PLAIN lyrics show an unavailable current-line marker rather than inventing timing. Details also exposes a `Developer / Diagnostics` section for machine-facing framework-neutral facts such as the playback app package name, Android application category, provider ID, provider source ID, and normalized track references. Verbose Details changes presentation only; it must not trigger new lookups or alter provider selection, timing, Translation, playback, or rendering behavior.
 
 Candidate scores, raw provider payloads, log export, and deeper resolver diagnostics remain deferred until separately justified.
 
@@ -121,9 +121,9 @@ Purpose:
 
 Examples include `Spotify`, `YouTube Music`, or `Poweramp`. The top bar does not show lyrics format, provider/sync status, track metadata, or playback state; those belong to destination content, the Lyrics Track Card, or playback controls.
 
-The application/runtime boundary resolves the selected playback package to a human-readable application label where possible. If label resolution fails, the package identifier (for example `com.spotify.music`) is the final presentation fallback rather than hiding the source. The raw package remains explicitly available in Verbose Details regardless of label resolution.
+The application/runtime boundary resolves the selected playback package through an application-owned `PlaybackSourceAppInfoResolver`. One resolved metadata record supplies the human-readable application label, application icon, and Android application category for that package. If application lookup or label resolution fails, the package identifier (for example `com.spotify.music`) remains the final label fallback rather than hiding the source. The raw package remains explicitly available in Verbose Details regardless of metadata resolution; Android `CATEGORY_UNDEFINED` is represented as an explicit undefined diagnostic category rather than guessed from app behavior.
 
-The UI receives the resolved media-source label as presentation data only; media-session discovery, package-label resolution, and source selection remain outside `:ui:phone`. The persistent visual treatment uses the shared AALyrics brand mark on the left and a compact outlined source pill with a cyan dot on the right.
+The Phone UI receives presentation-ready source information only; media-session discovery, package/application lookup, `ApplicationInfo`, `PackageManager`, Android `Drawable` ownership, and source selection remain outside `:ui:phone`. The persistent visual treatment uses the shared AALyrics brand mark on the left and a compact outlined source pill on the right. The pill shows the selected playback app's icon when available and retains the existing cyan dot as the fallback when no icon can be resolved. Application category is diagnostic-only and must not affect source selection or feature availability.
 
 The shell chrome uses the dedicated `BackgroundChrome` tone. The visual transition from the top bar into destination content is owned by `PhoneAppShell`, not `PhoneTopBar`: a 24dp multi-stop navy tonal fade is shifted 5dp upward and drawn behind destination content. This preserves the Lyrics Track Card's existing 16dp top inset without covering its rounded top edge. `PhoneTopBar` therefore remains a flat chrome component in isolation; the full transition is validated in shell Preview/device rendering.
 
@@ -357,6 +357,7 @@ Production shell composables live in `src/main`, while deterministic shell Previ
 Preview coverage should eventually exercise at least:
 
 - active media / no media
+- playback-source app icon present / icon unavailable fallback in the persistent Top Bar
 - Track Card / Expanded Player title-only overflow, artist-only overflow, and both-overflow synchronized auto marquee + manual horizontal drag
 - Collapsed Playback Bar title/artist ellipsis without marquee
 - no artwork
