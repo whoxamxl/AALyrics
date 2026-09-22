@@ -26,7 +26,7 @@ internal class PlaybackSourceAppInfoResolver(
 
     fun resolve(packageName: String?): PlaybackSourceAppInfo? {
         packageName ?: return null
-        return appInfoByPackage.getOrPut(packageName) {
+        return appInfoByPackage.computeIfAbsent(packageName) {
             loader.load(packageName) ?: fallbackFor(packageName)
         }
     }
