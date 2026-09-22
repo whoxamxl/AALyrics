@@ -77,6 +77,7 @@ class AALyricsApplication : Application() {
     private lateinit var playbackSourceAppInfoResolver: PlaybackSourceAppInfoResolver
     private lateinit var phonePlaybackSurfaceStateFlow: StateFlow<PlaybackSurfaceUiState?>
     private lateinit var phonePlaybackSourceAppInfoStateFlow: StateFlow<PlaybackSourceAppInfo?>
+    private lateinit var phonePlaybackSourceCanOpenAppStateFlow: StateFlow<Boolean>
     private lateinit var phoneDetailsStateFlow: StateFlow<DetailsScreenUiState>
     private val mutablePlaybackArtworkState = MutableStateFlow<Bitmap?>(null)
     private val mutableTranslationModelCleanupState =
@@ -111,6 +112,9 @@ class AALyricsApplication : Application() {
 
     internal val phonePlaybackSourceAppInfo: StateFlow<PlaybackSourceAppInfo?>
         get() = phonePlaybackSourceAppInfoStateFlow
+
+    internal val phonePlaybackSourceCanOpenApp: StateFlow<Boolean>
+        get() = phonePlaybackSourceCanOpenAppStateFlow
 
     val phoneDetailsState: StateFlow<DetailsScreenUiState>
         get() = phoneDetailsStateFlow
@@ -221,16 +225,25 @@ class AALyricsApplication : Application() {
                 started = SharingStarted.Eagerly,
                 initialValue = null,
             )
+        phonePlaybackSourceCanOpenAppStateFlow = graph.playbackControlState
+            .map(playbackAppLauncher::canOpen)
+            .distinctUntilChanged()
+            .stateIn(
+                scope = applicationScope,
+                started = SharingStarted.Eagerly,
+                initialValue = false,
+            )
         phonePlaybackSurfaceStateFlow = combine(
             graph.playbackState,
             graph.playbackControlState,
             translationSettingsStore.settings,
-        ) { playback, controlState, translationSettings ->
+            phonePlaybackSourceCanOpenAppStateFlow,
+        ) { playback, controlState, translationSettings, canOpenPlaybackApp ->
             mapPhonePlaybackSurfaceState(
                 playback = playback,
                 controlState = controlState,
                 translationEnabled = translationSettings.enabled,
-                canOpenPlaybackApp = playbackAppLauncher.canOpen(controlState),
+                canOpenPlaybackApp = canOpenPlaybackApp,
             )
         }.stateIn(
             scope = applicationScope,

@@ -45,6 +45,8 @@ internal fun PhoneRuntimeHost(
     val playbackSurface by application.phonePlaybackSurfaceState.collectAsStateWithLifecycle()
     val playbackSourceAppInfo by
         application.phonePlaybackSourceAppInfo.collectAsStateWithLifecycle()
+    val playbackSourceCanOpenApp by
+        application.phonePlaybackSourceCanOpenApp.collectAsStateWithLifecycle()
     val detailsState by application.phoneDetailsState.collectAsStateWithLifecycle()
     val playbackArtwork by application.playbackArtworkState.collectAsStateWithLifecycle()
     val translationSettings by application.translationSettings.collectAsStateWithLifecycle()
@@ -131,7 +133,7 @@ internal fun PhoneRuntimeHost(
             mediaSourceLabel = displayedPlaybackSourceAppInfo?.label,
             mediaSourceConnectionState = playbackSourcePresentation.connectionState,
             mediaSourceErrorReason = playbackSourcePresentation.errorReason,
-            mediaSourceCanOpenApp = playbackSurface?.canOpenPlaybackApp == true,
+            mediaSourceCanOpenApp = playbackSourceCanOpenApp,
             playbackSurface = playbackSurface,
         ),
         onDestinationSelected = { selectedDestination = it },
