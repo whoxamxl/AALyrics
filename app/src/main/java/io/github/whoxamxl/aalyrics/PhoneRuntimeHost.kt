@@ -37,6 +37,7 @@ internal fun PhoneRuntimeHost(
     onAndroidAutoCompatibilitySetup: () -> Unit,
     onResetAALyrics: () -> Unit,
     onOpenSourceCode: () -> Unit,
+    onOpenSupportAALyrics: () -> Unit,
 ) {
     val playback by application.playbackState.collectAsStateWithLifecycle()
     val playbackSourceRuntimeState by
@@ -128,6 +129,7 @@ internal fun PhoneRuntimeHost(
         noticeText = application.noticeText,
         licenseText = application.licenseText,
         changelogText = application.changelogText,
+        privacyPolicyText = application.privacyPolicyText,
         translationModelCleanupState = translationModelCleanupState,
     )
 
@@ -215,6 +217,7 @@ internal fun PhoneRuntimeHost(
                 onDownloadUpdate = {},
                 onSettingsEntered = {},
                 onOpenGitHub = onOpenSourceCode,
+                onSupportAALyrics = onOpenSupportAALyrics,
                 bottomOverlayInset = bottomOverlayInset,
             )
         }

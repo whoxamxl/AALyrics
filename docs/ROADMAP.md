@@ -157,6 +157,8 @@ PR #49 implements the approved read-only Details destination plus the Settings-o
 
 PR #50 implements the **Phone runtime host / device-test enablement** slice documented in `docs/PHONE_RUNTIME_HOST.md`. `MainActivity` preserves onboarding and now hosts `PhoneAppShell` for READY, with live application-owned Lyrics/Playback/Details/Settings wiring. Physical-device follow-up on the branch connected selected-session artwork with branded fallback, made Translation opt-in by default, separated human-readable playback-source labels from raw package diagnostics, standardized Phone tooltip/subscreen primitives, and moved License to an in-app Markdown surface backed by repository-root `NOTICE` + `LICENSE`. Changelog now follows the same bundled-document model using repository-root `CHANGELOG.md`; Sync remains a deliberate placeholder, Karaoke remains disabled/unwired, and Update remains unfinished/unavailable.
 
+`feature/settings-about-support` implements the next Settings slice on its topic branch: Version/Changelog/Source code stay under `APP`; `ABOUT & SUPPORT` adds the bundled in-app Privacy Policy, existing License, and a native `Support AALyrics` subscreen; Advanced remains a standalone card; and the branding footer remains last. Support hands off externally to the already-configured Buy Me a Coffee account; AALyrics does not embed checkout, process payment state, or unlock functionality. The slice remains outside `main` until PR validation and merge.
+
 ### Phase 9 — Live MediaSession runtime ✅
 
 Merged in PR #29.

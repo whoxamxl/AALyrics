@@ -305,6 +305,24 @@ internal object PhonePreviewFixtures {
         - Initial AALyrics foundation and signed release distribution.
     """.trimIndent()
 
+    val privacyPolicyMarkdownSample = """
+        # Privacy Policy
+
+        **Effective date:** September 22, 2026
+
+        AALyrics uses Android media-session information to identify the currently playing track.
+        Track metadata may be sent to lyrics providers to find synchronized lyrics.
+
+        ## Local data
+
+        Settings are stored on the device. AALyrics does not include analytics or advertising SDKs.
+
+        ## External services
+
+        Lyrics lookup may contact LRCLIB, PetitLyrics, Musixmatch, and SyncLRC.
+        Translation uses on-device ML Kit after required language models are available.
+    """.trimIndent()
+
     val settingsTypical = SettingsScreenUiState(
         plainLyricsAutoScrollEnabled = true,
         translationEnabled = false,
@@ -316,6 +334,7 @@ internal object PhonePreviewFixtures {
         noticeText = noticeSample,
         licenseText = licenseMarkdownSample,
         changelogText = changelogMarkdownSample,
+        privacyPolicyText = privacyPolicyMarkdownSample,
     )
     val settingsCheckingUpdate = settingsTypical.copy(
         appUpdate = AppUpdateUiState(phase = AppUpdateUiPhase.CHECKING),

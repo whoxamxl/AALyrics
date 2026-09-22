@@ -5,6 +5,7 @@ import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.browser.customtabs.CustomTabsIntent
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsTheme
 import io.github.whoxamxl.aalyrics.ui.phone.settings.AndroidAutoCompatibilityUiStatus
 import io.github.whoxamxl.aalyrics.ui.phone.setup.createAndroidAutoCompatibilitySetupView
@@ -104,6 +105,9 @@ class MainActivity : ComponentActivity() {
                             onOpenSourceCode = {
                                 openUrl(SOURCE_CODE_URL)
                             },
+                            onOpenSupportAALyrics = {
+                                openSupportUrl(SUPPORT_URL)
+                            },
                         )
                     }
                 }
@@ -136,6 +140,17 @@ class MainActivity : ComponentActivity() {
         )
     }
 
+    private fun openSupportUrl(url: String) {
+        val uri = Uri.parse(url)
+        runCatching {
+            CustomTabsIntent.Builder()
+                .build()
+                .launchUrl(this, uri)
+        }.onFailure {
+            openUrl(url)
+        }
+    }
+
     private fun AndroidAutoCompatibilitySetupStatus.toUiStatus():
         AndroidAutoCompatibilityUiStatus = when (this) {
         AndroidAutoCompatibilitySetupStatus.NOT_REVIEWED ->
@@ -156,5 +171,6 @@ class MainActivity : ComponentActivity() {
         const val ENTRY_PREFERENCES_NAME = "app_entry_setup"
         const val ANDROID_AUTO_COMPATIBILITY_KEY = "android_auto_compatibility"
         const val SOURCE_CODE_URL = "https://github.com/whoxamxl/AALyrics"
+        const val SUPPORT_URL = "https://buymeacoffee.com/whoxamxi"
     }
 }

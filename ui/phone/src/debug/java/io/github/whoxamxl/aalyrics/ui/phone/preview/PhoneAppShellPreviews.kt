@@ -296,6 +296,7 @@ internal fun PreviewSettingsDestination(
             )
         },
         onOpenGitHub = {},
+        onSupportAALyrics = {},
         modifier = Modifier.fillMaxSize(),
         bottomOverlayInset = bottomOverlayInset,
     )
