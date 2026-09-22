@@ -106,10 +106,10 @@ Root reselection must remain stronger than hierarchical Back and must discard an
 - [x] Create the topic branch from current `main`.
 - [x] Freeze the final About & Support order.
 - [x] Define Terms of Use bundled-document ownership.
-- [x] Define License -> Third-party licenses navigation.
+- [x] Define inline third-party license ownership inside the License screen.
 - [x] Define Help & Feedback routing ownership.
 - [x] Preserve Support AALyrics as the voluntary funding surface.
-- [x] Define Back and Settings-root reset semantics for the new third-level License child.
+- [x] Confirm all legal/help subscreens remain direct children of Settings home.
 
 ### Implementation
 
@@ -120,15 +120,34 @@ Root reselection must remain stronger than hierarchical Back and must discard an
 - [x] Add the native `Help & Feedback` routing hub.
 - [x] Add application-owned external-link callbacks for the Help & Feedback destinations.
 - [x] Preserve the existing `Support AALyrics` implementation and behavior.
-- [ ] Add/update strings, deterministic Previews, presentation mapping coverage, and focused navigation tests.
-- [ ] Align `docs/PHONE_SETTINGS.md` with the implemented final state.
-- [ ] Re-evaluate `Reset AALyrics`; this slice is expected to add no persisted state, so no reset behavior change should be required unless implementation changes that assumption.
+- [x] Add/update strings, deterministic Previews, presentation mapping coverage, and focused navigation tests.
+- [x] Align `docs/PHONE_SETTINGS.md` with the implemented final state.
+- [x] Re-evaluate `Reset AALyrics`; this slice adds no persisted state, so the reset implementation and user-facing reset scope remain unchanged.
 - [ ] Run architecture checks, unit tests, debug APK build, CI, and bounded review before merge.
 
 ## Scope guard
 
 Do not redesign unrelated Settings sections, change existing Support AALyrics visuals/payment behavior, add embedded WebViews, add runtime GitHub document fetching, change provider behavior, change Translation semantics, or introduce new persisted Settings state.
 
+## Validation checkpoint
+
+Focused coverage is now present for:
+
+- Settings-local Back/root-reset navigation across every current subscreen;
+- exact Help & Feedback GitHub routing, including a guard that security reporting does not use public Issues or Discussions;
+- unchanged pass-through of bundled Terms of Use and third-party license Markdown into Settings presentation state.
+
+Preview coverage is aligned with the implemented structure:
+
+- Terms of Use: typical, 320dp narrow, enlarged font;
+- License with inline THIRD-PARTY LICENSES: typical, 320dp narrow, enlarged font;
+- Help & Feedback: typical, 320dp narrow, enlarged font;
+- the main Settings previews consume the final About & Support ordering.
+
+Reset contract review found no new persisted key, durable preference, onboarding acknowledgement, cache, model, or downloaded asset in this slice. The new bundled documents are read-only build assets, Help & Feedback is callback-only routing, and Settings-local navigation remains transient presentation state. Existing `resetAppOwnedSettings()` ownership therefore remains correct with no reset behavior or copy change.
+
+The validation tests have been added but the full unit-test/build/CI pass is intentionally deferred to the next checkpoint.
+
 ## Current stop point
 
-Terms of Use and the inline License sections are implemented. Help & Feedback is now a native second-level routing hub whose semantic actions are emitted by :ui:phone and mapped by :app to GitHub Issues, Discussion categories, and private vulnerability reporting via Custom Tabs with browser fallback. Support AALyrics remains unchanged in purpose and behavior. Stop at this Help & Feedback checkpoint before final tests/cleanup.
+Implementation, focused coverage, Reset review, documentation, and deterministic Previews are aligned. Stop here before running architecture checks, unit tests, debug APK build, CI, and bounded review.

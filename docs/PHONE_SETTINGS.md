@@ -14,7 +14,7 @@ PR #60 integrated the lower Settings information architecture into `main`: `APP`
 
 Settings should expose stable user configuration without turning the Phone UI into an owner of application state.
 
-The production Settings surface remains intentionally focused. Lyrics owns the user-facing playback-source eligibility toggle alongside Plain auto-scroll. Advanced contains the narrow unclassified-source override, one debug presentation preference, one explicitly unavailable experimental affordance, one Translation storage-management action, and one app-owned reset action. It does not become a general developer-settings surface. Changelog, Privacy Policy, Terms of Use, License, and Third-party licenses are read-only bundled-document surfaces and do not create networking ownership. `Help & Feedback` is a native routing hub for end-user help and feedback destinations. `Support AALyrics` remains a separate voluntary project-support surface; payment interaction remains entirely outside AALyrics.
+The production Settings surface remains intentionally focused. Lyrics owns the user-facing playback-source eligibility toggle alongside Plain auto-scroll. Advanced contains the narrow unclassified-source override, one debug presentation preference, one explicitly unavailable experimental affordance, one Translation storage-management action, and one app-owned reset action. It does not become a general developer-settings surface. Changelog, Privacy Policy, Terms of Use, and License are read-only bundled-document surfaces and do not create networking ownership; License includes the bundled third-party license notices inline as its third section. `Help & Feedback` is a native routing hub for end-user help and feedback destinations. `Support AALyrics` remains a separate voluntary project-support surface; payment interaction remains entirely outside AALyrics.
 
 Settings subscreens use the shared `SettingsSubscreenHeader` rather than implementing their own header. The standard back affordance is the Material rounded chevron-left used by the current Advanced screen: 32dp icon inside a 48dp touch target, followed by the screen title. This intentionally mirrors the chevron-right affordance used to enter `Advanced`. Text-only `Back` actions and alternate arrow shapes are not used for normal Settings hierarchy navigation. Legal content remains at one Settings depth: License renders its required notice, AALyrics license terms, and third-party licenses inline on one scrollable screen.
 
@@ -784,6 +784,8 @@ For every new state item, the implementing PR must do one of the following:
 Do not use a blanket SharedPreferences/DataStore clear as a shortcut. External/system-owned state remains outside the reset boundary. Newly introduced caches, downloaded assets, or model files must also make an explicit keep/delete decision; the default is to preserve them unless a dedicated storage action or an explicit product decision says otherwise.
 
 When the reset scope changes, update this document, the reset tooltip/dialog copy when user-visible semantics changed, relevant Preview fixtures, and reset tests in the same PR.
+
+Bundled legal-document text, Settings-local subscreen selection, and `HelpFeedbackDestination` routing are not durable application preferences and are not reset targets. Adding or changing those read-only/transient presentation surfaces alone does not expand the `Reset AALyrics` scope.
 
 Both Storage and Reset explanations use the shared `SettingInfoTooltip`; explanatory subtitle text is not permanently rendered in the rows.
 
