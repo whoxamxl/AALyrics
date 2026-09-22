@@ -22,6 +22,8 @@ import io.github.whoxamxl.aalyrics.platform.media.PlaybackArtworkSink
 import io.github.whoxamxl.aalyrics.platform.media.PlaybackControlState
 import io.github.whoxamxl.aalyrics.platform.media.PlaybackControlStateSink
 import io.github.whoxamxl.aalyrics.platform.media.PlaybackSnapshotSink
+import io.github.whoxamxl.aalyrics.platform.media.PlaybackSourceRuntimeState
+import io.github.whoxamxl.aalyrics.platform.media.PlaybackSourceRuntimeStateSink
 import io.github.whoxamxl.aalyrics.ui.automotive.AutomotiveBrowserClientTrust
 import io.github.whoxamxl.aalyrics.ui.automotive.AutomotiveRuntimeBinding
 import io.github.whoxamxl.aalyrics.ui.automotive.AutomotiveRuntimeHost
@@ -94,6 +96,9 @@ class AALyricsApplication : Application() {
 
     val playbackControlState: StateFlow<PlaybackControlState>
         get() = graph.playbackControlState
+
+    internal val playbackSourceRuntimeState: StateFlow<PlaybackSourceRuntimeState>
+        get() = graph.playbackSourceRuntimeState
 
     val translationState: StateFlow<TranslationState>
         get() = translationCoordinator.state
@@ -275,6 +280,7 @@ class AALyricsApplication : Application() {
         MediaSessionRuntimeHost.attach(graph.playbackSnapshotSink)
         MediaSessionRuntimeHost.attachControlState(graph.playbackControlStateSink)
         MediaSessionRuntimeHost.attachArtwork(playbackArtworkSink)
+        MediaSessionRuntimeHost.attachSourceRuntimeState(graph.playbackSourceRuntimeStateSink)
         automotiveBinding = AutomotiveRuntimeBinding(
             playback = graph.playbackState,
             lyrics = graph.lyricsState,
@@ -305,6 +311,7 @@ class AALyricsApplication : Application() {
         translationSettingsStore.close()
         demandLifecycle.stop()
         AutomotiveRuntimeHost.detach(automotiveBinding)
+        MediaSessionRuntimeHost.detachSourceRuntimeState(graph.playbackSourceRuntimeStateSink)
         MediaSessionRuntimeHost.detachArtwork(playbackArtworkSink)
         MediaSessionRuntimeHost.detachControlState(graph.playbackControlStateSink)
         MediaSessionRuntimeHost.detach(graph.playbackSnapshotSink)
@@ -329,6 +336,8 @@ internal class ApplicationGraph(
     internal val coordinator = LyricsCoordinator(this.providers, selector, applicationScope)
     private val mutablePlaybackState = MutableStateFlow(PlaybackSnapshot())
     private val mutablePlaybackControlState = MutableStateFlow(PlaybackControlState())
+    private val mutablePlaybackSourceRuntimeState =
+        MutableStateFlow<PlaybackSourceRuntimeState>(PlaybackSourceRuntimeState.Connecting)
 
     val playbackLyricsController = PlaybackLyricsController(
         lookupLifecycle = coordinator,
@@ -342,9 +351,14 @@ internal class ApplicationGraph(
     val playbackControlStateSink = PlaybackControlStateSink { state ->
         mutablePlaybackControlState.value = state
     }
+    val playbackSourceRuntimeStateSink = PlaybackSourceRuntimeStateSink { state ->
+        mutablePlaybackSourceRuntimeState.value = state
+    }
     val playbackState: StateFlow<PlaybackSnapshot> = mutablePlaybackState.asStateFlow()
     val playbackControlState: StateFlow<PlaybackControlState> =
         mutablePlaybackControlState.asStateFlow()
+    val playbackSourceRuntimeState: StateFlow<PlaybackSourceRuntimeState> =
+        mutablePlaybackSourceRuntimeState.asStateFlow()
     val lyricsState: StateFlow<LyricsState> = coordinator.state
 }
 

@@ -3,12 +3,29 @@ package io.github.whoxamxl.aalyrics.ui.phone.state
 import androidx.compose.runtime.Immutable
 import io.github.whoxamxl.aalyrics.ui.phone.navigation.PhoneDestination
 
+enum class PlaybackSourceConnectionUiState {
+    CONNECTING,
+    CONNECTED,
+    DISCONNECTED,
+    UNAVAILABLE,
+    ERROR,
+}
+
+enum class PlaybackSourceErrorUiReason {
+    NOTIFICATION_ACCESS_LOST,
+    SESSION_QUERY_FAILED,
+    SESSION_ATTACH_FAILED,
+    UNKNOWN,
+}
+
 /** Presentation-only state for persistent Phone shell chrome. */
 @Immutable
 data class PhoneShellUiState(
     val selectedDestination: PhoneDestination = PhoneDestination.Home,
     val mediaSourceLabel: String? = null,
-    val mediaSourceConnected: Boolean = false,
+    val mediaSourceConnectionState: PlaybackSourceConnectionUiState =
+        PlaybackSourceConnectionUiState.CONNECTING,
+    val mediaSourceErrorReason: PlaybackSourceErrorUiReason? = null,
     val playbackSurface: PlaybackSurfaceUiState? = null,
 )
 

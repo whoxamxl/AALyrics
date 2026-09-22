@@ -39,7 +39,8 @@ internal fun PhoneRuntimeHost(
     onOpenSourceCode: () -> Unit,
 ) {
     val playback by application.playbackState.collectAsStateWithLifecycle()
-    val playbackControlState by application.playbackControlState.collectAsStateWithLifecycle()
+    val playbackSourceRuntimeState by
+        application.playbackSourceRuntimeState.collectAsStateWithLifecycle()
     val lyricsState by application.lyricsState.collectAsStateWithLifecycle()
     val playbackSurface by application.phonePlaybackSurfaceState.collectAsStateWithLifecycle()
     val playbackSourceAppInfo by
@@ -96,8 +97,15 @@ internal fun PhoneRuntimeHost(
     val playbackArtworkImage = remember(playbackArtwork) {
         playbackArtwork?.asImageBitmap()
     }
-    val playbackSourceIconPainter = remember(playbackSourceAppInfo?.icon) {
-        playbackSourceAppInfo
+    val playbackSourcePresentation = mapPhonePlaybackSourcePresentationState(
+        runtimeState = playbackSourceRuntimeState,
+        playback = playback,
+        playbackSourceAppInfo = playbackSourceAppInfo,
+    )
+    val displayedPlaybackSourceAppInfo = playbackSourceAppInfo
+        ?.takeIf { appInfo -> appInfo.packageName == playbackSourcePresentation.packageName }
+    val playbackSourceIconPainter = remember(displayedPlaybackSourceAppInfo?.icon) {
+        displayedPlaybackSourceAppInfo
             ?.icon
             ?.toImageBitmapOrNull()
             ?.let(::BitmapPainter)
@@ -120,12 +128,9 @@ internal fun PhoneRuntimeHost(
     PhoneAppShell(
         state = PhoneShellUiState(
             selectedDestination = selectedDestination,
-            mediaSourceLabel = playbackSourceAppInfo?.label,
-            mediaSourceConnected = isPlaybackSourceConnected(
-                playback = playback,
-                controlState = playbackControlState,
-                playbackSourceAppInfo = playbackSourceAppInfo,
-            ),
+            mediaSourceLabel = displayedPlaybackSourceAppInfo?.label,
+            mediaSourceConnectionState = playbackSourcePresentation.connectionState,
+            mediaSourceErrorReason = playbackSourcePresentation.errorReason,
             playbackSurface = playbackSurface,
         ),
         onDestinationSelected = { selectedDestination = it },

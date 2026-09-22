@@ -1,18 +1,72 @@
 package io.github.whoxamxl.aalyrics
 
 import io.github.whoxamxl.aalyrics.core.model.PlaybackSnapshot
-import io.github.whoxamxl.aalyrics.platform.media.PlaybackControlState
+import io.github.whoxamxl.aalyrics.platform.media.PlaybackSourceErrorReason
+import io.github.whoxamxl.aalyrics.platform.media.PlaybackSourceRuntimeState
+import io.github.whoxamxl.aalyrics.ui.phone.state.PlaybackSourceConnectionUiState
+import io.github.whoxamxl.aalyrics.ui.phone.state.PlaybackSourceErrorUiReason
 
-/**
- * Returns true only when playback, selected-session control state, and resolved app metadata all
- * identify the same currently selected media-session package.
- */
-internal fun isPlaybackSourceConnected(
+internal data class PhonePlaybackSourcePresentationState(
+    val connectionState: PlaybackSourceConnectionUiState,
+    val packageName: String? = null,
+    val errorReason: PlaybackSourceErrorUiReason? = null,
+)
+
+internal fun mapPhonePlaybackSourcePresentationState(
+    runtimeState: PlaybackSourceRuntimeState,
     playback: PlaybackSnapshot,
-    controlState: PlaybackControlState,
     playbackSourceAppInfo: PlaybackSourceAppInfo?,
-): Boolean {
-    val playbackPackageName = playback.source?.id ?: return false
-    return controlState.sourcePackageName == playbackPackageName &&
-        playbackSourceAppInfo?.packageName == playbackPackageName
-}
+): PhonePlaybackSourcePresentationState =
+    when (runtimeState) {
+        PlaybackSourceRuntimeState.Connecting ->
+            PhonePlaybackSourcePresentationState(
+                connectionState = PlaybackSourceConnectionUiState.CONNECTING,
+            )
+
+        is PlaybackSourceRuntimeState.Connected -> {
+            val packageName = runtimeState.packageName
+            if (
+                playback.source?.id == packageName &&
+                playbackSourceAppInfo?.packageName == packageName
+            ) {
+                PhonePlaybackSourcePresentationState(
+                    connectionState = PlaybackSourceConnectionUiState.CONNECTED,
+                    packageName = packageName,
+                )
+            } else {
+                PhonePlaybackSourcePresentationState(
+                    connectionState = PlaybackSourceConnectionUiState.CONNECTING,
+                    packageName = packageName,
+                )
+            }
+        }
+
+        PlaybackSourceRuntimeState.Disconnected ->
+            PhonePlaybackSourcePresentationState(
+                connectionState = PlaybackSourceConnectionUiState.DISCONNECTED,
+            )
+
+        is PlaybackSourceRuntimeState.Unavailable ->
+            PhonePlaybackSourcePresentationState(
+                connectionState = PlaybackSourceConnectionUiState.UNAVAILABLE,
+                packageName = runtimeState.packageName,
+            )
+
+        is PlaybackSourceRuntimeState.Error ->
+            PhonePlaybackSourcePresentationState(
+                connectionState = PlaybackSourceConnectionUiState.ERROR,
+                errorReason = runtimeState.reason.toUiReason(),
+            )
+    }
+
+private fun PlaybackSourceErrorReason.toUiReason(): PlaybackSourceErrorUiReason =
+    when (this) {
+        PlaybackSourceErrorReason.NOTIFICATION_ACCESS_LOST ->
+            PlaybackSourceErrorUiReason.NOTIFICATION_ACCESS_LOST
+        PlaybackSourceErrorReason.SESSION_QUERY_FAILED ->
+            PlaybackSourceErrorUiReason.SESSION_QUERY_FAILED
+        PlaybackSourceErrorReason.SESSION_ATTACH_FAILED ->
+            PlaybackSourceErrorUiReason.SESSION_ATTACH_FAILED
+        PlaybackSourceErrorReason.UNKNOWN ->
+            PlaybackSourceErrorUiReason.UNKNOWN
+    }
