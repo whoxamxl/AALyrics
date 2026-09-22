@@ -22,6 +22,7 @@ private fun PhoneTopBarConnectedPreview() {
     PhoneTopBarPreview(
         mediaSourceLabel = "Spotify",
         connectionState = PlaybackSourceConnectionUiState.CONNECTED,
+        mediaSourceCanOpenApp = true,
         mediaSourceIconPainter = ColorPainter(AALyricsColors.AccentCyan),
     )
 }
@@ -37,6 +38,7 @@ private fun PhoneTopBarConnectedIconUnavailablePreview() {
     PhoneTopBarPreview(
         mediaSourceLabel = "Spotify",
         connectionState = PlaybackSourceConnectionUiState.CONNECTED,
+        mediaSourceCanOpenApp = true,
     )
 }
 
@@ -75,6 +77,7 @@ private fun PhoneTopBarLongMediaSourcePreview() {
     PhoneTopBarPreview(
         mediaSourceLabel = "Very Long Music Player Application",
         connectionState = PlaybackSourceConnectionUiState.CONNECTED,
+        mediaSourceCanOpenApp = true,
     )
 }
 
@@ -83,6 +86,7 @@ private fun PhoneTopBarPreview(
     mediaSourceLabel: String? = null,
     connectionState: PlaybackSourceConnectionUiState,
     errorReason: PlaybackSourceErrorUiReason? = null,
+    mediaSourceCanOpenApp: Boolean = false,
     mediaSourceIconPainter: Painter? = null,
 ) {
     AALyricsTheme {
@@ -90,6 +94,7 @@ private fun PhoneTopBarPreview(
             mediaSourceLabel = mediaSourceLabel,
             mediaSourceConnectionState = connectionState,
             mediaSourceErrorReason = errorReason,
+            mediaSourceCanOpenApp = mediaSourceCanOpenApp,
             mediaSourceIconPainter = mediaSourceIconPainter,
         )
     }
