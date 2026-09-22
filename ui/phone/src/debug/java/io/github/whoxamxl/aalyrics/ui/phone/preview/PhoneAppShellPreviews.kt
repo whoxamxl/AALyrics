@@ -264,6 +264,12 @@ internal fun PreviewSettingsDestination(
         onPlainLyricsAutoScrollChanged = {
             state = state.copy(plainLyricsAutoScrollEnabled = it)
         },
+        onIgnoreNonAudioAppsChanged = {
+            state = state.copy(ignoreNonAudioApps = it)
+        },
+        onAllowUnclassifiedAppsChanged = {
+            state = state.copy(allowUnclassifiedApps = it)
+        },
         onVerboseDetailsChanged = {
             state = state.copy(verboseDetailsEnabled = it)
         },

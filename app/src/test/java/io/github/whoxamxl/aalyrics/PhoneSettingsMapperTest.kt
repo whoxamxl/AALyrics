@@ -19,6 +19,8 @@ class PhoneSettingsMapperTest {
             translationModelStates = emptyMap(),
             verboseDetailsEnabled = false,
             plainLyricsAutoScrollEnabled = true,
+            ignoreNonAudioApps = true,
+            allowUnclassifiedApps = false,
             androidAutoStatus = AndroidAutoCompatibilityUiStatus.ENABLED,
             appVersionName = "0.1.0-dev",
             currentYear = 2026,
@@ -51,6 +53,8 @@ class PhoneSettingsMapperTest {
             ),
             verboseDetailsEnabled = false,
             plainLyricsAutoScrollEnabled = true,
+            ignoreNonAudioApps = true,
+            allowUnclassifiedApps = false,
             androidAutoStatus = AndroidAutoCompatibilityUiStatus.ENABLED,
             appVersionName = "0.1.0-dev",
             currentYear = 2026,
@@ -74,6 +78,8 @@ class PhoneSettingsMapperTest {
             translationModelStates = emptyMap(),
             verboseDetailsEnabled = false,
             plainLyricsAutoScrollEnabled = true,
+            ignoreNonAudioApps = true,
+            allowUnclassifiedApps = false,
             androidAutoStatus = AndroidAutoCompatibilityUiStatus.ENABLED,
             appVersionName = "0.1.0-dev",
             currentYear = 2026,
@@ -110,6 +116,8 @@ class PhoneSettingsMapperTest {
             ),
             verboseDetailsEnabled = true,
             plainLyricsAutoScrollEnabled = false,
+            ignoreNonAudioApps = false,
+            allowUnclassifiedApps = true,
             androidAutoStatus = AndroidAutoCompatibilityUiStatus.ENABLED,
             appVersionName = "0.1.0-dev",
             currentYear = 2026,
@@ -131,6 +139,8 @@ class PhoneSettingsMapperTest {
         )
         assertEquals(true, state.verboseDetailsEnabled)
         assertEquals(false, state.plainLyricsAutoScrollEnabled)
+        assertEquals(false, state.ignoreNonAudioApps)
+        assertEquals(true, state.allowUnclassifiedApps)
         assertEquals(AppUpdateUiPhase.UNAVAILABLE, state.appUpdate.phase)
         assertEquals("demo changelog", state.changelogText)
     }

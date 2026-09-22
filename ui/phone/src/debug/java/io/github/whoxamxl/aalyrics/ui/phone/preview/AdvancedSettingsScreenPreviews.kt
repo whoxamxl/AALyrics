@@ -16,6 +16,36 @@ import io.github.whoxamxl.aalyrics.ui.phone.settings.AdvancedSettingsScreen
 import io.github.whoxamxl.aalyrics.ui.phone.settings.SettingsConfirmationDialog
 import io.github.whoxamxl.aalyrics.ui.phone.settings.TranslationModelCleanupUiState
 
+@Preview(name = "Playback source · strict defaults", group = "AdvancedSettings", widthDp = 412, heightDp = 760)
+@Composable
+private fun AdvancedPlaybackSourceStrictPreview() {
+    AdvancedSettingsPreview(
+        initialVerboseDetailsEnabled = false,
+        initialIgnoreNonAudioApps = true,
+        initialAllowUnclassifiedApps = false,
+    )
+}
+
+@Preview(name = "Playback source · allow unclassified", group = "AdvancedSettings", widthDp = 412, heightDp = 760)
+@Composable
+private fun AdvancedPlaybackSourceAllowUnclassifiedPreview() {
+    AdvancedSettingsPreview(
+        initialVerboseDetailsEnabled = false,
+        initialIgnoreNonAudioApps = true,
+        initialAllowUnclassifiedApps = true,
+    )
+}
+
+@Preview(name = "Playback source · filter disabled", group = "AdvancedSettings", widthDp = 412, heightDp = 760)
+@Composable
+private fun AdvancedPlaybackSourceFilterDisabledPreview() {
+    AdvancedSettingsPreview(
+        initialVerboseDetailsEnabled = false,
+        initialIgnoreNonAudioApps = false,
+        initialAllowUnclassifiedApps = true,
+    )
+}
+
 @Preview(name = "Verbose off", group = "AdvancedSettings", widthDp = 412, heightDp = 760)
 @Composable
 private fun AdvancedVerboseOffPreview() {
@@ -98,11 +128,16 @@ private fun AdvancedResetDialogPreview() {
 @Composable
 private fun AdvancedSettingsPreview(
     initialVerboseDetailsEnabled: Boolean,
+    initialIgnoreNonAudioApps: Boolean = true,
+    initialAllowUnclassifiedApps: Boolean = false,
     cleanupState: TranslationModelCleanupUiState = TranslationModelCleanupUiState.IDLE,
 ) {
     AALyricsTheme {
         var verboseDetailsEnabled by remember(initialVerboseDetailsEnabled) {
             mutableStateOf(initialVerboseDetailsEnabled)
+        }
+        var allowUnclassifiedApps by remember(initialAllowUnclassifiedApps) {
+            mutableStateOf(initialAllowUnclassifiedApps)
         }
 
         Box(
@@ -111,8 +146,11 @@ private fun AdvancedSettingsPreview(
                 .background(AALyricsColors.BackgroundBase),
         ) {
             AdvancedSettingsScreen(
+                ignoreNonAudioApps = initialIgnoreNonAudioApps,
+                allowUnclassifiedApps = allowUnclassifiedApps,
                 verboseDetailsEnabled = verboseDetailsEnabled,
                 cleanupState = cleanupState,
+                onAllowUnclassifiedAppsChanged = { allowUnclassifiedApps = it },
                 onVerboseDetailsChanged = { verboseDetailsEnabled = it },
                 onClearTranslationModels = {},
                 onDismissTranslationModelCleanupFailure = {},
