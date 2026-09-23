@@ -104,8 +104,7 @@ internal class AppUpdateCheckRuntime(
         mutableState.value = when (val current = mutableState.value) {
             AppUpdateCheckState.Checking,
             is AppUpdateCheckState.Downloading,
-            is AppUpdateCheckState.Downloaded,
-            -> current
+            is AppUpdateCheckState.Downloaded -> current
             else -> AppUpdateCheckState.Idle
         }
     }
