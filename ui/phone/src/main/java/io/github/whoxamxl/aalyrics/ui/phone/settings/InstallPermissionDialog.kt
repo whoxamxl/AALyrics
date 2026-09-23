@@ -40,7 +40,7 @@ import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsTypography
 import io.github.whoxamxl.aalyrics.ui.phone.R
 
 @Composable
-internal fun InstallPermissionDialog(
+fun InstallPermissionDialog(
     state: InstallPermissionDialogUiState,
     onDismissRequest: () -> Unit,
     onGrantPermission: () -> Unit,
