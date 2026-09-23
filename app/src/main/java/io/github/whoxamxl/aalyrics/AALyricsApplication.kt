@@ -84,6 +84,8 @@ class AALyricsApplication : Application() {
     private lateinit var phonePlaybackSourceCanOpenAppStateFlow: StateFlow<Boolean>
     private lateinit var phoneDetailsStateFlow: StateFlow<DetailsScreenUiState>
     private lateinit var appUpdateCheckRuntime: AppUpdateCheckRuntime
+    private lateinit var updateRecoveryStore: UpdateRecoveryStore
+    private lateinit var updateSuccessFeedbackRuntime: UpdateSuccessFeedbackRuntime
     private val installPermissionPromptRuntime = UpdateInstallPermissionPromptRuntime()
     private val mutablePlaybackArtworkState = MutableStateFlow<Bitmap?>(null)
     private val mutableQueueArtworkBitmapsState =
@@ -192,6 +194,9 @@ class AALyricsApplication : Application() {
     internal val installPermissionPrompt: StateFlow<UpdateInstallPermissionPrompt?>
         get() = installPermissionPromptRuntime.prompt
 
+    internal val successfulUpdate: StateFlow<SuccessfulUpdate?>
+        get() = updateSuccessFeedbackRuntime.successfulUpdate
+
     internal fun checkForUpdates() {
         appUpdateCheckRuntime.checkForUpdates()
     }
@@ -211,6 +216,22 @@ class AALyricsApplication : Application() {
 
     internal fun dismissInstallPermissionPrompt() {
         installPermissionPromptRuntime.dismiss()
+    }
+
+    internal fun dismissSuccessfulUpdate() {
+        updateSuccessFeedbackRuntime.dismiss()
+    }
+
+    internal fun reconcilePackageReplacement() {
+        val result = UpdatePackageReplacementHandler(
+            recoveryStore = updateRecoveryStore,
+        ).reconcile(
+            installedVersion = BuildConfig.VERSION_NAME,
+            installedVersionCode = BuildConfig.VERSION_CODE.toLong(),
+        )
+        if (result is UpdateReplacementReconciliation.Succeeded) {
+            updateSuccessFeedbackRuntime.refresh()
+        }
     }
 
     internal fun onSettingsEntered() {
@@ -276,6 +297,7 @@ class AALyricsApplication : Application() {
     fun resetAppOwnedSettings() {
         installPermissionPromptRuntime.dismiss()
         appUpdateCheckRuntime.reset()
+        updateSuccessFeedbackRuntime.refresh()
         translationSettingsStore.resetToDefaults()
         phonePresentationSettingsStore.resetToDefaults()
         applyCurrentPlaybackSourceEligibility()
@@ -311,7 +333,8 @@ class AALyricsApplication : Application() {
                 installedPackageName = packageName,
             ),
         )
-        val updateRecoveryStore = SharedPreferencesUpdateRecoveryStore(this)
+        updateRecoveryStore = SharedPreferencesUpdateRecoveryStore(this)
+        updateSuccessFeedbackRuntime = UpdateSuccessFeedbackRuntime(updateRecoveryStore)
         appUpdateCheckRuntime = AppUpdateCheckRuntime(
             installedVersionName = BuildConfig.VERSION_NAME,
             releaseClient = updateReleaseClient,
