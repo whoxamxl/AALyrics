@@ -305,8 +305,11 @@ internal fun SettingsScreenContent(
                 ),
                 checked = state.automaticallyCheckForUpdates,
                 onCheckedChange = onAutomaticallyCheckForUpdatesChanged,
-                supportingText = stringResource(
-                    R.string.settings_automatically_check_for_updates_supporting,
+                infoText = stringResource(
+                    R.string.settings_automatically_check_for_updates_info,
+                ),
+                infoContentDescription = stringResource(
+                    R.string.settings_automatically_check_for_updates_info_description,
                 ),
             )
 
