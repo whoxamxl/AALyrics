@@ -138,6 +138,23 @@ jobs:
             exit 1
           fi
 
+      - name: Validate release signing secrets for update-test APK
+        if: github.event_name == 'workflow_dispatch' && inputs.update_test_release_signed
+        shell: bash
+        env:
+          RELEASE_KEYSTORE_BASE64: ${{ secrets.AALYRICS_RELEASE_KEYSTORE_BASE64 }}
+          RELEASE_STORE_PASSWORD: ${{ secrets.AALYRICS_RELEASE_STORE_PASSWORD }}
+          RELEASE_KEY_ALIAS: ${{ secrets.AALYRICS_RELEASE_KEY_ALIAS }}
+          RELEASE_KEY_PASSWORD: ${{ secrets.AALYRICS_RELEASE_KEY_PASSWORD }}
+        run: |
+          for key in             RELEASE_KEYSTORE_BASE64             RELEASE_STORE_PASSWORD             RELEASE_KEY_ALIAS             RELEASE_KEY_PASSWORD
+          do
+            if [[ -z "${!key}" ]]; then
+              echo "Missing required release signing secret: $key"
+              exit 1
+            fi
+          done
+
       - name: Build update-test debug APK
         if: github.event_name == 'workflow_dispatch' && inputs.update_test_version != ''
         env:
