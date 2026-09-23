@@ -389,7 +389,7 @@ Version                v0.2.0-alpha.1-dev+abcdef0
                               Check for updates
 ```
 
-The production lifecycle covers explicit update discovery, verified download, and user-triggered install handoff:
+The production lifecycle keeps the internal download/install boundaries but presents them through one user-facing `Update` action:
 
 ```text
 IDLE
@@ -399,6 +399,7 @@ UPDATE_AVAILABLE
 CHECK_FAILED
 PREPARING_DOWNLOAD
 DOWNLOADING
+VERIFYING
 DOWNLOADED
 DOWNLOAD_FAILED
 PREPARING_INSTALL
@@ -417,20 +418,21 @@ Checking for updates…                         ◌
 
 Up to date                                    ✓
 
-Update available: v0.2.0-alpha.2         Download
+Update available: v0.2.0-alpha.2           Update
 
-Preparing download…
+Preparing update…
 [indeterminate linear progress]
 
-Downloading v0.2.0-alpha.2                  64%
+Downloading update…                         64%
 [determinate 0–100% linear progress]
 
-Update downloaded v0.2.0-alpha.2             Install
-
-Preparing installation…
+Verifying update…
 [indeterminate linear progress]
 
-Installation permission required      Install
+Preparing update…
+[indeterminate linear progress]
+
+Installation permission required           Update
 
 Installing update…
 [indeterminate linear progress / system confirmation handoff]
@@ -442,15 +444,21 @@ Download failed                       ⓘ   ↻ Retry
 Update check failed                   ⓘ   ↻ Retry
 ```
 
-Every update-state row keeps the same trailing-edge alignment used by the installed version value. Retry, Download, Install, and Open settings remain compact inline actions. A download Retry re-enters `PREPARING_DOWNLOAD` before APK transfer. `UPDATE_AVAILABLE` exposes Download because APK download and SHA-256 verification are application-owned and functional.
+Every update-state row keeps the same trailing-edge alignment used by the installed version value. Once an update is available, the ordinary user-facing action is `Update`; recoverable failures use `Retry`. Separate Download and Install buttons are no longer exposed.
 
-After the user presses Download, `PREPARING_DOWNLOAD` uses an indeterminate horizontal progress bar while the runtime resolves assets, fetches/parses the checksum, and prepares app-private staging. Immediately before APK bytes are transferred, the runtime moves to `DOWNLOADING`. GitHub Release asset metadata supplies the expected APK byte size, and the download client reports received bytes so Settings renders determinate 0–100% progress. A size mismatch fails closed.
+Pressing `Update` from `UPDATE_AVAILABLE` enters `PREPARING_DOWNLOAD`. The runtime resolves release assets, fetches/parses the published checksum, and prepares app-private staging before moving to `DOWNLOADING`. GitHub Release asset metadata supplies the expected APK byte size, and the download client reports received bytes so Settings renders determinate 0–100% progress. A size mismatch fails closed.
 
-`DOWNLOADED` now exposes an explicit Install action. Install first enters `PREPARING_INSTALL`; application/runtime wiring refreshes the latest eligible GitHub Release and validates the retained APK package/version/signing identity before any PackageInstaller session is committed. If a newer eligible release has appeared, AALyrics returns to the ordinary newer-release download path instead of intentionally installing the retained older release first.
+After transfer completes, the runtime enters `VERIFYING` while SHA-256 verification runs. Only a verified APK is promoted into app-private no-backup persistent storage. In the normal one-step path, the resulting internal `DOWNLOADED` state immediately advances to install preparation and is not presented as a second Install decision.
 
-If Android does not trust AALyrics as an install source, presentation moves to `INSTALL_PERMISSION_REQUIRED`. The update row exposes `Install` as the explicit re-entry action for the explanation dialog rather than jumping directly to Android Settings. `Grant permission` from that dialog emits a semantic callback only; `:app` opens Android's per-app unknown-source settings and re-checks `PackageManager.canRequestPackageInstalls()` when control returns. The UI never reads or changes that system setting directly.
+`DOWNLOADED` remains a real internal/recovery state because a verified APK may survive process death. When restored on a later process start, Settings presents `Ready to update v…` with the same `Update` action. Pressing Update continues from the retained artifact without repeating download or SHA-256 verification.
 
-`INSTALLING` represents PackageInstaller session handoff and any required system confirmation. The system confirmation UI remains Android-owned. Installer cancellation or terminal failure maps to `INSTALL_FAILED` while preserving an otherwise-valid verified APK so Retry does not require a second download. Successful self-update may replace the current process; next-launch installed-version reconciliation remains the durable cleanup path.
+Install preparation refreshes the latest eligible GitHub Release and validates the retained APK package/version/signing identity before any PackageInstaller session is committed. If a newer eligible release has appeared, the active one-step intent follows that newer release through a fresh download/verification pass instead of intentionally installing the older retained release first.
+
+If Android does not trust AALyrics as an install source, runtime state moves to `INSTALL_PERMISSION_REQUIRED`. The update row continues to expose `Update` as the explicit way to reopen the explanation after dismissal. The permission dialog is hosted globally by the Phone runtime, not by Settings, so updates started from the automatic release dialog on Lyrics use the same flow without destination routing. `Grant permission` dismisses the prompt, opens Android's per-app unknown-source settings, and re-checks `PackageManager.canRequestPackageInstalls()` when control returns. The UI never reads or changes that system setting directly.
+
+Changing primary tabs dismisses the transient permission prompt but does not clear `INSTALL_PERMISSION_REQUIRED` or the retained verified APK. Activity stop/background, Phone composition disposal, Reset, and return from Android source-trust Settings keep their documented lifecycle semantics. If source trust remains denied on return, the prompt stays dismissed until Update is explicitly invoked again. If trust is granted, installation resumes automatically from the retained APK without redownloading.
+
+`INSTALLING` represents PackageInstaller session handoff and any required system confirmation. The system confirmation UI remains Android-owned. Installer cancellation or terminal failure maps to `INSTALL_FAILED` while preserving an otherwise-valid verified APK so Retry can re-enter install preparation without a second download. Successful self-update may replace the current process; durable replacement reconciliation and one-time success feedback remain authoritative.
 
 If the AALyrics process dies during installer handoff, startup abandons any AALyrics-owned PackageInstaller session that was never committed. A committed/sealed self-update session is preserved. When Android later returns `STATUS_PENDING_USER_ACTION`, the receiver can resume the system confirmation even without the previous process's in-memory callback registration, but only after revalidating that the sealed session is owned by AALyrics and targets the AALyrics package.
 
