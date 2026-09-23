@@ -264,6 +264,7 @@ internal class AppUpdateCheckRuntime(
             installedVersion == null ||
             apkFile.length() <= 0L ||
             apkFile.name != "AALyrics-${releaseVersion.toCanonicalReleaseTag()}.apk" ||
+            (installedVersion.isStable && !releaseVersion.isStable) ||
             releaseVersion.compareReleasePrecedenceTo(installedVersion) <= 0
         ) {
             fileStore.clearVerified()
