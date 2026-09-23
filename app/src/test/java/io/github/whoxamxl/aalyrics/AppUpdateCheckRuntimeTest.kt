@@ -131,6 +131,43 @@ class AppUpdateCheckRuntimeTest {
     }
 
     @Test
+    fun `successful release query reports manual origin`() = runTest {
+        val origins = mutableListOf<UpdateCheckOrigin>()
+        val runtime = runtime(
+            installedVersionName = "0.2.0-alpha.1",
+            releases = listOf(
+                release("v0.2.0-alpha.1", prerelease = true),
+            ),
+            onReleaseQuerySucceeded = origins::add,
+        )
+
+        runtime.checkForUpdates()
+        runCurrent()
+
+        assertEquals(listOf(UpdateCheckOrigin.MANUAL), origins)
+        assertEquals(AppUpdateCheckState.UpToDate, runtime.state.value)
+    }
+
+    @Test
+    fun `release query failure does not report successful cadence event`() = runTest {
+        val origins = mutableListOf<UpdateCheckOrigin>()
+        val runtime = AppUpdateCheckRuntime(
+            installedVersionName = "0.2.0-alpha.1",
+            releaseClient = GitHubReleaseClient {
+                Result.failure(IllegalStateException("network unavailable"))
+            },
+            applicationScope = this,
+            onReleaseQuerySucceeded = origins::add,
+        )
+
+        runtime.checkForUpdates()
+        runCurrent()
+
+        assertEquals(emptyList(), origins)
+        assertEquals(AppUpdateCheckState.Failed, runtime.state.value)
+    }
+
+    @Test
     fun `transport failure becomes check failed`() = runTest {
         val runtime = AppUpdateCheckRuntime(
             installedVersionName = "0.2.0-alpha.1",
@@ -1428,6 +1465,7 @@ class AppUpdateCheckRuntimeTest {
         installSourceTrustChecker: InstallSourceTrustChecker? = null,
         packageInstaller: UpdatePackageInstaller? = null,
         updateRecoveryStore: UpdateRecoveryStore? = FakeUpdateRecoveryStore(),
+        onReleaseQuerySucceeded: (UpdateCheckOrigin) -> Unit = {},
         onInstallPermissionRequired: (String) -> Unit = {},
     ) = AppUpdateCheckRuntime(
         installedVersionName = installedVersionName,
@@ -1439,6 +1477,7 @@ class AppUpdateCheckRuntimeTest {
         installSourceTrustChecker = installSourceTrustChecker,
         packageInstaller = packageInstaller,
         updateRecoveryStore = updateRecoveryStore,
+        onReleaseQuerySucceeded = onReleaseQuerySucceeded,
         onInstallPermissionRequired = onInstallPermissionRequired,
     )
 
