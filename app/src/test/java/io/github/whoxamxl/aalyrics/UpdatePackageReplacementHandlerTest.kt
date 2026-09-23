@@ -11,6 +11,7 @@ class UpdatePackageReplacementHandlerTest {
             pending = PendingUpdate(
                 targetVersion = "0.3.0-alpha.1",
                 targetVersionCode = 3L,
+                installerSessionId = 77,
                 resumeAfterUpdate = true,
             ),
         )
@@ -39,6 +40,7 @@ class UpdatePackageReplacementHandlerTest {
         val pending = PendingUpdate(
             targetVersion = "0.3.0-alpha.2",
             targetVersionCode = 4L,
+            installerSessionId = 78,
             resumeAfterUpdate = true,
         )
         val store = FakeRecoveryStore(pending = pending)
