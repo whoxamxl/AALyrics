@@ -428,7 +428,10 @@ class AppUpdateCheckRuntimeTest {
     @Test
     fun `one step update follows newer release found during install refresh`() = runTest {
         val betaBytes = "newer signed apk bytes".encodeToByteArray()
-        val betaRelease = downloadableRelease("v0.2.0-beta.1")
+        val betaRelease = downloadableRelease(
+            tagName = "v0.2.0-beta.1",
+            apkSizeBytes = betaBytes.size.toLong(),
+        )
         val alphaRelease = release("v0.2.0-alpha.2", prerelease = true)
         val downloadClient = FakeUpdateAssetDownloadClient(
             checksumPayload = checksumPayload(
