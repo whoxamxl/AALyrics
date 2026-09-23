@@ -238,7 +238,7 @@ The Phone Settings surface exposes one combined version/update row. GitHub Relea
 
 ### Check for updates
 
-The first functional update slice is intentionally **check-only**. An update check begins only when the user explicitly presses `Check for updates` or `Retry`. AALyrics must not contact GitHub merely because the app launched, resumed, or Settings was opened.
+Update discovery remains explicitly user-triggered. An update check begins only when the user presses `Check for updates` or `Retry`. AALyrics must not contact GitHub merely because the app launched, resumed, or Settings was opened.
 
 The application-owned release client reads the repository's public Release collection. It must not rely on GitHub's single "latest release" concept because AALyrics prerelease channels (alpha/beta/RC) are valid update candidates.
 
@@ -271,18 +271,26 @@ The installed version shown in Settings comes from `BuildConfig.VERSION_NAME`; n
 
 The public client must not embed a GitHub token or repository secret in the APK.
 
-### Deferred download and installation
+### Verified in-app download
 
-The Check-only slice does **not** download an APK. While `UPDATE_AVAILABLE` is shown, the row is informational and must not expose an enabled Download action backed by a no-op callback.
-
-A later slice may activate the already-modeled download lifecycle. That implementation must resolve the signed release asset named:
+When a newer eligible release is available, Settings exposes an explicit `Download` action. AALyrics resolves exactly one matching APK and checksum asset:
 
 ```text
 AALyrics-vX.Y.Z[-suffix].apk
 AALyrics-vX.Y.Z[-suffix].apk.sha256
 ```
 
-and verify the published SHA-256 before reporting a completed download. Package Installer handoff and signing-identity validation remain separate concerns from release discovery.
+The download runtime is application-owned. It accepts only HTTPS asset URLs, follows only HTTPS redirects, bounds downloaded content, stages the APK under the app-private cache, parses the Release workflow's single-line `sha256sum` output for the exact APK filename, and calculates SHA-256 over the downloaded APK before accepting it.
+
+The APK is written first as a partial artifact and is promoted to its final cached filename only after the published digest matches. Missing/duplicate assets, malformed checksum content, transport/I/O failure, oversize content, or digest mismatch map to `DOWNLOAD_FAILED`; a failed or partial APK must not remain as a verified artifact.
+
+Active downloads survive destination changes and Activity recreation because the runtime is application-owned. A verified `DOWNLOADED` result also remains available within the current application process. Process death does not restore download state; stale app-private update artifacts are cleared when the runtime initializes. `Reset AALyrics` cancels update work and clears partial/verified update artifacts.
+
+### Deferred installation
+
+`DOWNLOADED` means that the signed-release APK bytes match the Release-published SHA-256. It does **not** install or launch the APK in this slice.
+
+Package Installer handoff, install-permission handling, and installed/signing-identity validation remain separate follow-up concerns.
 
 The Settings `Changelog` entry is independent of the update-network path. It renders the repository `CHANGELOG.md` bundled into the installed APK; it does not fetch GitHub Release notes at runtime. GitHub Releases remain authoritative for signed update distribution, while `CHANGELOG.md` is authoritative for the in-app release history.
 
