@@ -4,6 +4,13 @@ on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch:
+    inputs:
+      update_test_version:
+        description: "Optional VERSION_NAME override for an update-flow test APK"
+        required: false
+        default: ""
+        type: string
 
 permissions:
   contents: read
@@ -90,3 +97,45 @@ jobs:
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 14
+
+      - name: Prepare direct debug APK
+        run: cp app/build/outputs/apk/debug/app-debug.apk app/build/outputs/apk/debug/aalyrics-debug.apk
+
+      - name: Upload direct debug APK
+        uses: actions/upload-artifact@v7
+        with:
+          path: app/build/outputs/apk/debug/aalyrics-debug.apk
+          archive: false
+          if-no-files-found: error
+          retention-days: 14
+
+
+      # Manual, reusable update-flow fixture. From Actions -> Build -> Run workflow,
+      # choose the branch/ref under test and supply an older published version name.
+      - name: Build update-test debug APK
+        if: github.event_name == 'workflow_dispatch' && inputs.update_test_version != ''
+        env:
+          AALYRICS_VERSION_NAME: ${{ inputs.update_test_version }}
+        run: |
+          ./gradlew :app:clean :app:assembleDebug --stacktrace
+          mkdir -p update-test
+          cp app/build/outputs/apk/debug/app-debug.apk update-test/aalyrics-update-test.apk
+          cp app/build/outputs/apk/debug/app-debug.apk "update-test/aalyrics-update-test-${AALYRICS_VERSION_NAME}.apk"
+
+      - name: Upload update-test debug APK
+        if: github.event_name == 'workflow_dispatch' && inputs.update_test_version != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: aalyrics-update-test-apk-${{ inputs.update_test_version }}
+          path: update-test/aalyrics-update-test.apk
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Upload direct update-test APK
+        if: github.event_name == 'workflow_dispatch' && inputs.update_test_version != ''
+        uses: actions/upload-artifact@v7
+        with:
+          path: update-test/aalyrics-update-test-${{ inputs.update_test_version }}.apk
+          archive: false
+          if-no-files-found: error
+          retention-days: 7

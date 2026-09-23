@@ -35,6 +35,7 @@ enum class AppUpdateUiPhase {
     UP_TO_DATE,
     UPDATE_AVAILABLE,
     CHECK_FAILED,
+    PREPARING_DOWNLOAD,
     DOWNLOADING,
     DOWNLOADED,
     DOWNLOAD_FAILED,
@@ -44,6 +45,7 @@ enum class AppUpdateUiPhase {
 data class AppUpdateUiState(
     val phase: AppUpdateUiPhase = AppUpdateUiPhase.IDLE,
     val availableVersionName: String? = null,
+    val downloadProgress: Float? = null,
     val failureReason: String? = null,
 )
 

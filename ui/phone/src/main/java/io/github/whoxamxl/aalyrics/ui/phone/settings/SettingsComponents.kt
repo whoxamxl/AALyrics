@@ -33,6 +33,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
@@ -55,6 +56,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import kotlin.math.roundToInt
 import io.github.whoxamxl.aalyrics.ui.designsystem.icon.AALyricsIcons
 import io.github.whoxamxl.aalyrics.ui.phone.component.PhonePopupMenu
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsColors
@@ -378,6 +380,7 @@ internal fun AppUpdateRow(
     upToDateLabel: String,
     updateAvailableLabel: String,
     downloadLabel: String,
+    preparingDownloadLabel: String,
     downloadingLabel: String,
     downloadedLabel: String,
     retryLabel: String,
@@ -444,10 +447,12 @@ internal fun AppUpdateRow(
             }
 
             AppUpdateUiPhase.UPDATE_AVAILABLE -> {
-                AppUpdateStatusTextRow(
-                    label = "${updateAvailableLabel} ${
+                AppUpdateActionRow(
+                    status = "${updateAvailableLabel} ${
                         state.availableVersionName?.asVersionLabel().orEmpty()
                     }".trim(),
+                    actionLabel = downloadLabel,
+                    onAction = onDownloadUpdate,
                 )
             }
 
@@ -461,13 +466,18 @@ internal fun AppUpdateRow(
                 )
             }
 
+            AppUpdateUiPhase.PREPARING_DOWNLOAD -> {
+                AppUpdateIndeterminateBarRow(label = preparingDownloadLabel)
+            }
+
             AppUpdateUiPhase.DOWNLOADING -> {
-                AppUpdateProgressRow(
+                AppUpdateDownloadProgressRow(
                     label = if (state.availableVersionName.isNullOrBlank()) {
                         downloadingLabel
                     } else {
                         "${downloadingLabel} ${state.availableVersionName.asVersionLabel()}"
                     },
+                    progress = state.downloadProgress ?: 0f,
                 )
             }
 
@@ -585,6 +595,72 @@ private fun AppUpdateProgressRow(
             modifier = Modifier.size(AALyricsSpacing.Space20),
             color = AALyricsColors.AccentCyan,
             strokeWidth = AALyricsStroke.Strong,
+        )
+    }
+}
+
+@Composable
+private fun AppUpdateIndeterminateBarRow(
+    label: String,
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = AALyricsSpacing.Space48),
+        verticalArrangement = Arrangement.Center,
+    ) {
+        Text(
+            text = label,
+            style = AALyricsTypography.TrackArtist,
+            color = AALyricsColors.TextSecondary,
+        )
+
+        Spacer(Modifier.height(AALyricsSpacing.Space8))
+
+        LinearProgressIndicator(
+            modifier = Modifier.fillMaxWidth(),
+            color = AALyricsColors.AccentCyan,
+            trackColor = AALyricsColors.OverlaySoft,
+        )
+    }
+}
+
+@Composable
+private fun AppUpdateDownloadProgressRow(
+    label: String,
+    progress: Float,
+) {
+    val boundedProgress = progress.coerceIn(0f, 1f)
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = AALyricsSpacing.Space48),
+        verticalArrangement = Arrangement.Center,
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = label,
+                style = AALyricsTypography.TrackArtist,
+                color = AALyricsColors.TextSecondary,
+                modifier = Modifier.weight(1f),
+            )
+            Text(
+                text = "${(boundedProgress * 100f).roundToInt()}%",
+                style = AALyricsTypography.TrackArtist,
+                color = AALyricsColors.TextSecondary,
+            )
+        }
+
+        Spacer(Modifier.height(AALyricsSpacing.Space8))
+
+        LinearProgressIndicator(
+            progress = { boundedProgress },
+            modifier = Modifier.fillMaxWidth(),
+            color = AALyricsColors.AccentCyan,
+            trackColor = AALyricsColors.OverlaySoft,
         )
     }
 }

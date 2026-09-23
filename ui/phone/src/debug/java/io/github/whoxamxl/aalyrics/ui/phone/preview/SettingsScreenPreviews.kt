@@ -65,6 +65,18 @@ private fun SettingsTargetLanguagePickerPreview() {
     )
 }
 
+@Preview(name = "Update · idle", group = "SettingsScreen", widthDp = 412, heightDp = 900)
+@Composable
+private fun SettingsUpdateIdlePreview() {
+    SettingsScreenPreview(PhonePreviewFixtures.settingsIdleUpdate)
+}
+
+@Preview(name = "Update · unavailable", group = "SettingsScreen", widthDp = 412, heightDp = 900)
+@Composable
+private fun SettingsUpdateUnavailablePreview() {
+    SettingsScreenPreview(PhonePreviewFixtures.settingsUnavailableUpdate)
+}
+
 @Preview(name = "Update · checking", group = "SettingsScreen", widthDp = 412, heightDp = 900)
 @Composable
 private fun SettingsUpdateCheckingPreview() {
@@ -89,6 +101,12 @@ private fun SettingsUpdateFailedPreview() {
     SettingsScreenPreview(PhonePreviewFixtures.settingsUpdateFailed)
 }
 
+@Preview(name = "Update · preparing download", group = "SettingsScreen", widthDp = 412, heightDp = 900)
+@Composable
+private fun SettingsUpdatePreparingDownloadPreview() {
+    SettingsScreenPreview(PhonePreviewFixtures.settingsPreparingUpdateDownload)
+}
+
 @Preview(name = "Update · downloading", group = "SettingsScreen", widthDp = 412, heightDp = 900)
 @Composable
 private fun SettingsUpdateDownloadingPreview() {
@@ -99,6 +117,12 @@ private fun SettingsUpdateDownloadingPreview() {
 @Composable
 private fun SettingsUpdateDownloadedPreview() {
     SettingsScreenPreview(PhonePreviewFixtures.settingsDownloadedUpdate)
+}
+
+@Preview(name = "Update · download failed", group = "SettingsScreen", widthDp = 412, heightDp = 900)
+@Composable
+private fun SettingsUpdateDownloadFailedPreview() {
+    SettingsScreenPreview(PhonePreviewFixtures.settingsDownloadFailed)
 }
 
 
@@ -198,6 +222,7 @@ internal fun SettingsScreenPreview(
                         translationTarget = english,
                         androidAutoCompatibilityStatus =
                             io.github.whoxamxl.aalyrics.ui.phone.settings.AndroidAutoCompatibilityUiStatus.NOT_REVIEWED,
+                        appUpdate = AppUpdateUiState(phase = AppUpdateUiPhase.IDLE),
                     )
                 },
                 onAndroidAutoCompatibilitySetup = {},
@@ -215,7 +240,41 @@ internal fun SettingsScreenPreview(
                         )
                     }
                 },
-                onDownloadUpdate = {},
+                onDownloadUpdate = {
+                    val version = state.appUpdate.availableVersionName ?: "0.1.2"
+                    state = state.copy(
+                        appUpdate = AppUpdateUiState(
+                            phase = AppUpdateUiPhase.PREPARING_DOWNLOAD,
+                            availableVersionName = version,
+                        ),
+                    )
+                    scope.launch {
+                        delay(500)
+                        state = state.copy(
+                            appUpdate = AppUpdateUiState(
+                                phase = AppUpdateUiPhase.DOWNLOADING,
+                                availableVersionName = version,
+                                downloadProgress = 0f,
+                            ),
+                        )
+                        listOf(0.18f, 0.43f, 0.71f, 1f).forEach { progress ->
+                            delay(300)
+                            state = state.copy(
+                                appUpdate = AppUpdateUiState(
+                                    phase = AppUpdateUiPhase.DOWNLOADING,
+                                    availableVersionName = version,
+                                    downloadProgress = progress,
+                                ),
+                            )
+                        }
+                        state = state.copy(
+                            appUpdate = AppUpdateUiState(
+                                phase = AppUpdateUiPhase.DOWNLOADED,
+                                availableVersionName = version,
+                            ),
+                        )
+                    }
+                },
                 onOpenGitHub = {},
                 onHelpFeedback = {},
                 onSupportAALyrics = {},

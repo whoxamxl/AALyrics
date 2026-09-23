@@ -92,6 +92,36 @@ internal fun mapPhoneSettingsState(
                 )
             AppUpdateCheckState.Failed ->
                 AppUpdateUiState(phase = AppUpdateUiPhase.CHECK_FAILED)
+            is AppUpdateCheckState.PreparingDownload ->
+                AppUpdateUiState(
+                    phase = AppUpdateUiPhase.PREPARING_DOWNLOAD,
+                    availableVersionName = appUpdateCheckState.versionName,
+                )
+            is AppUpdateCheckState.Downloading ->
+                AppUpdateUiState(
+                    phase = AppUpdateUiPhase.DOWNLOADING,
+                    availableVersionName = appUpdateCheckState.versionName,
+                    downloadProgress = if (appUpdateCheckState.totalBytes > 0L) {
+                        (
+                            appUpdateCheckState.downloadedBytes.toDouble() /
+                                appUpdateCheckState.totalBytes.toDouble()
+                            )
+                            .coerceIn(0.0, 1.0)
+                            .toFloat()
+                    } else {
+                        0f
+                    },
+                )
+            is AppUpdateCheckState.Downloaded ->
+                AppUpdateUiState(
+                    phase = AppUpdateUiPhase.DOWNLOADED,
+                    availableVersionName = appUpdateCheckState.versionName,
+                )
+            is AppUpdateCheckState.DownloadFailed ->
+                AppUpdateUiState(
+                    phase = AppUpdateUiPhase.DOWNLOAD_FAILED,
+                    availableVersionName = appUpdateCheckState.versionName,
+                )
         },
     )
 }

@@ -266,7 +266,7 @@ internal fun PhoneRuntimeHost(
                 },
                 onAndroidAutoCompatibilitySetup = onAndroidAutoCompatibilitySetup,
                 onCheckForUpdates = application::checkForUpdates,
-                onDownloadUpdate = {},
+                onDownloadUpdate = application::downloadUpdate,
                 onOpenGitHub = onOpenSourceCode,
                 onHelpFeedback = onOpenHelpFeedback,
                 onSupportAALyrics = onOpenSupportAALyrics,

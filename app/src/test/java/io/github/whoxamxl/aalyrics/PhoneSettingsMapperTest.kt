@@ -168,6 +168,34 @@ class PhoneSettingsMapperTest {
         val available = mapped(AppUpdateCheckState.UpdateAvailable("0.2.0-alpha.2"))
         assertEquals(AppUpdateUiPhase.UPDATE_AVAILABLE, available.phase)
         assertEquals("0.2.0-alpha.2", available.availableVersionName)
+
+        val preparing = mapped(AppUpdateCheckState.PreparingDownload("0.2.0-alpha.2"))
+        assertEquals(AppUpdateUiPhase.PREPARING_DOWNLOAD, preparing.phase)
+        assertEquals("0.2.0-alpha.2", preparing.availableVersionName)
+
+        val downloading = mapped(
+            AppUpdateCheckState.Downloading(
+                versionName = "0.2.0-alpha.2",
+                downloadedBytes = 25L,
+                totalBytes = 100L,
+            ),
+        )
+        assertEquals(AppUpdateUiPhase.DOWNLOADING, downloading.phase)
+        assertEquals("0.2.0-alpha.2", downloading.availableVersionName)
+        assertEquals(0.25f, downloading.downloadProgress)
+
+        val downloaded = mapped(
+            AppUpdateCheckState.Downloaded(
+                versionName = "0.2.0-alpha.2",
+                apkFile = java.io.File("verified.apk"),
+            ),
+        )
+        assertEquals(AppUpdateUiPhase.DOWNLOADED, downloaded.phase)
+        assertEquals("0.2.0-alpha.2", downloaded.availableVersionName)
+
+        val downloadFailed = mapped(AppUpdateCheckState.DownloadFailed("0.2.0-alpha.2"))
+        assertEquals(AppUpdateUiPhase.DOWNLOAD_FAILED, downloadFailed.phase)
+        assertEquals("0.2.0-alpha.2", downloadFailed.availableVersionName)
     }
 
     @Test

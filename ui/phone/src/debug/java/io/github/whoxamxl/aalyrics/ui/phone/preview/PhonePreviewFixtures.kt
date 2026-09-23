@@ -390,6 +390,12 @@ internal object PhonePreviewFixtures {
         termsOfUseText = termsOfUseMarkdownSample,
         thirdPartyLicensesText = thirdPartyLicensesMarkdownSample,
     )
+    val settingsIdleUpdate = settingsTypical.copy(
+        appUpdate = AppUpdateUiState(phase = AppUpdateUiPhase.IDLE),
+    )
+    val settingsUnavailableUpdate = settingsTypical.copy(
+        appUpdate = AppUpdateUiState(phase = AppUpdateUiPhase.UNAVAILABLE),
+    )
     val settingsCheckingUpdate = settingsTypical.copy(
         appUpdate = AppUpdateUiState(phase = AppUpdateUiPhase.CHECKING),
     )
@@ -408,16 +414,30 @@ internal object PhonePreviewFixtures {
             failureReason = "GitHub Releases could not be reached.",
         ),
     )
+    val settingsPreparingUpdateDownload = settingsTypical.copy(
+        appUpdate = AppUpdateUiState(
+            phase = AppUpdateUiPhase.PREPARING_DOWNLOAD,
+            availableVersionName = "0.1.2",
+        ),
+    )
     val settingsDownloadingUpdate = settingsTypical.copy(
         appUpdate = AppUpdateUiState(
             phase = AppUpdateUiPhase.DOWNLOADING,
             availableVersionName = "0.1.2",
+            downloadProgress = 0.64f,
         ),
     )
     val settingsDownloadedUpdate = settingsTypical.copy(
         appUpdate = AppUpdateUiState(
             phase = AppUpdateUiPhase.DOWNLOADED,
             availableVersionName = "0.1.2",
+        ),
+    )
+    val settingsDownloadFailed = settingsTypical.copy(
+        appUpdate = AppUpdateUiState(
+            phase = AppUpdateUiPhase.DOWNLOAD_FAILED,
+            availableVersionName = "0.1.2",
+            failureReason = "The APK could not be downloaded or verified.",
         ),
     )
     val settingsTranslationOn = settingsTypical.copy(translationEnabled = true)

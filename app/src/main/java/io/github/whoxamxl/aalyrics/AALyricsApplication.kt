@@ -192,6 +192,10 @@ class AALyricsApplication : Application() {
         appUpdateCheckRuntime.checkForUpdates()
     }
 
+    internal fun downloadUpdate() {
+        appUpdateCheckRuntime.downloadUpdate()
+    }
+
     internal fun onSettingsEntered() {
         appUpdateCheckRuntime.onSettingsEntered()
     }
@@ -253,6 +257,7 @@ class AALyricsApplication : Application() {
     }
 
     fun resetAppOwnedSettings() {
+        appUpdateCheckRuntime.reset()
         translationSettingsStore.resetToDefaults()
         phonePresentationSettingsStore.resetToDefaults()
         applyCurrentPlaybackSourceEligibility()
@@ -270,12 +275,21 @@ class AALyricsApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        val updateUserAgent = "AALyrics/${BuildConfig.VERSION_NAME}"
         appUpdateCheckRuntime = AppUpdateCheckRuntime(
             installedVersionName = BuildConfig.VERSION_NAME,
             releaseClient = HttpGitHubReleaseClient(
-                userAgent = "AALyrics/${BuildConfig.VERSION_NAME}",
+                userAgent = updateUserAgent,
             ),
             applicationScope = applicationScope,
+            assetDownloadClient = HttpUpdateAssetDownloadClient(
+                userAgent = updateUserAgent,
+            ),
+            downloadFileStore = UpdateDownloadFileStore(
+                stagingDirectory = cacheDir.resolve(UPDATE_STAGING_DIRECTORY_NAME),
+                verifiedDirectory = noBackupFilesDir.resolve(UPDATE_VERIFIED_DIRECTORY_NAME),
+                legacyVerifiedDirectory = filesDir.resolve(UPDATE_VERIFIED_DIRECTORY_NAME),
+            ),
         )
         translationSettingsStore = SharedPreferencesTranslationSettingsStore(this)
         phonePresentationSettingsStore = SharedPreferencesPhonePresentationSettingsStore(this)
@@ -457,6 +471,8 @@ class AALyricsApplication : Application() {
         const val PRIVACY_ASSET_NAME = "aalyrics_privacy.md"
         const val TERMS_OF_USE_ASSET_NAME = "aalyrics_terms_of_use.md"
         const val THIRD_PARTY_LICENSES_ASSET_NAME = "aalyrics_third_party_licenses.md"
+        const val UPDATE_STAGING_DIRECTORY_NAME = "updates"
+        const val UPDATE_VERIFIED_DIRECTORY_NAME = "updates"
     }
 }
 

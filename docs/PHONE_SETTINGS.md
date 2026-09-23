@@ -389,7 +389,7 @@ Version                v0.2.0-alpha.1-dev+abcdef0
                               Check for updates
 ```
 
-This slice makes the following lifecycle states production-reachable:
+The production lifecycle now includes both explicit update discovery and verified download:
 
 ```text
 IDLE
@@ -397,17 +397,13 @@ CHECKING
 UP_TO_DATE
 UPDATE_AVAILABLE
 CHECK_FAILED
-```
-
-The existing download-oriented states remain reserved for a later slice:
-
-```text
+PREPARING_DOWNLOAD
 DOWNLOADING
 DOWNLOADED
 DOWNLOAD_FAILED
 ```
 
-Expected Check-only presentation:
+Expected presentation:
 
 ```text
 Version                v0.2.0-alpha.1-dev+abcdef0
@@ -417,14 +413,24 @@ Checking for updates…                         ◌
 
 Up to date                                    ✓
 
-Update available: v0.2.0-alpha.2
+Update available: v0.2.0-alpha.2         Download
 
-Update check failed                 ⓘ   ↻ Retry
+Preparing download…
+[indeterminate linear progress]
+
+Downloading v0.2.0-alpha.2                  64%
+[determinate 0–100% linear progress]
+
+Update downloaded v0.2.0-alpha.2                ✓
+
+Download failed                       ⓘ   ↻ Retry
+
+Update check failed                   ⓘ   ↻ Retry
 ```
 
-Every check-state row keeps the same trailing-edge alignment used by the installed version value. Retry remains a compact inline action. `UPDATE_AVAILABLE` is informational in this slice: an enabled Download action must not be shown until APK download and integrity verification are actually implemented.
+Every update-state row keeps the same trailing-edge alignment used by the installed version value. Retry and Download remain compact inline actions. A download Retry re-enters `PREPARING_DOWNLOAD` before any APK byte transfer begins. `UPDATE_AVAILABLE` exposes Download only because APK download and SHA-256 verification are now application-owned and functional. After the user presses Download, `PREPARING_DOWNLOAD` uses an indeterminate horizontal progress bar while the runtime resolves assets, fetches/parses the checksum, and prepares app-private staging. Immediately before APK bytes are transferred, the runtime moves to `DOWNLOADING`. GitHub Release asset metadata supplies the expected APK byte size, and the download client reports received bytes so Settings renders a determinate 0–100% horizontal progress bar and percentage. If the received byte count does not match the published asset size, the transfer fails closed. `DOWNLOADED` remains informational; Install is intentionally absent until Package Installer handoff is implemented.
 
-The UI emits `onCheckForUpdates`; it does not perform GitHub HTTP requests or release comparison directly.
+The UI emits `onCheckForUpdates` and `onDownloadUpdate`; it does not perform GitHub HTTP requests, release comparison, file I/O, or checksum verification directly.
 
 Application/runtime wiring owns the check:
 
@@ -459,24 +465,29 @@ The check path is public and unauthenticated. Do not embed a GitHub token or rep
 
 ### Update state lifetime
 
-Update results are intentionally short-lived so Settings does not keep presenting a stale GitHub Release result.
+Completed check results and recoverable download failures are intentionally visit-local so Settings does not keep presenting stale GitHub Release information. A successfully verified `DOWNLOADED` artifact is the exception: it represents an actual retained APK and remains present while that artifact is still valid for the installed update channel.
 
 The Phone navigation host owns Settings-visit entry detection. A transition from any non-Settings destination into Settings starts a new Settings visit. The presentation `SettingsScreen` itself does not emit an entry callback from composition.
 
-On an actual Settings navigation entry, application/runtime wiring keeps an active `CHECKING` operation but normalizes completed/stale check results back to `IDLE`:
+On an actual Settings navigation entry, application/runtime wiring applies these lifetime rules:
 
 ```text
 CHECKING        -> keep
-everything else -> IDLE
+PREPARING_DOWNLOAD -> keep
+DOWNLOADING     -> keep
+DOWNLOADED      -> keep
+other completed check/download states -> IDLE
 ```
 
-Therefore `UP_TO_DATE`, `UPDATE_AVAILABLE`, and `CHECK_FAILED` are results for the current Settings visit only. Leaving Settings and returning presents `Check for updates` again, forcing the next explicit check to query current GitHub Releases rather than reusing an old result.
+Therefore `UP_TO_DATE`, `UPDATE_AVAILABLE`, `CHECK_FAILED`, and `DOWNLOAD_FAILED` remain visit-local. Leaving Settings and returning presents `Check for updates` again for those states. Active preparation/download work is retained while the process is alive, and a successfully verified `DOWNLOADED` artifact is retained beyond the current Settings visit.
 
-Configuration changes, Activity recreation, recomposition, Settings subscreen navigation, and Settings-tab reselection while already in Settings remain the same visit and must not clear a completed result. The active check is application-owned and continues across destination changes. If it completes while Settings is away, its completed result is normalized back to `IDLE` on the next actual Settings navigation entry.
+Configuration changes, Activity recreation, recomposition, Settings subscreen navigation, and Settings-tab reselection while already in Settings remain the same visit and must not clear update state. Check/download jobs are application-owned and continue across destination changes.
 
-Only one check may be active at a time. The checking presentation has no second Check/Retry action.
+Only one check or download may be active at a time. The active presentation exposes no duplicate action.
 
-No update result is persisted, so this slice does not change the `Reset AALyrics` contract.
+Partial APK bytes live only in app-private cache storage. A SHA-256-verified APK is promoted into app-private no-backup persistent storage and becomes the source of truth for `DOWNLOADED`. On process restart, the runtime removes transient staging/promotion files and restores `DOWNLOADED` only when the retained APK has a canonical AALyrics release filename, remains eligible for the installed update channel, and is still newer than the installed version. Stable installed builds therefore do not restore a retained prerelease APK. Once the installed app reaches or passes that retained release, or the retained release is no longer channel-eligible, the stale verified APK is deleted and update state returns to `IDLE`.
+
+`Reset AALyrics` cancels active update work, deletes both transient and verified update artifacts, clears the selected release, and restores update presentation to `IDLE`.
 
 ### Changelog
 

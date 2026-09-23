@@ -238,7 +238,7 @@ The Phone Settings surface exposes one combined version/update row. GitHub Relea
 
 ### Check for updates
 
-The first functional update slice is intentionally **check-only**. An update check begins only when the user explicitly presses `Check for updates` or `Retry`. AALyrics must not contact GitHub merely because the app launched, resumed, or Settings was opened.
+Update discovery remains explicitly user-triggered. An update check begins only when the user presses `Check for updates` or `Retry`. AALyrics must not contact GitHub merely because the app launched, resumed, or Settings was opened.
 
 The application-owned release client reads the repository's public Release collection. It must not rely on GitHub's single "latest release" concept because AALyrics prerelease channels (alpha/beta/RC) are valid update candidates.
 
@@ -271,18 +271,30 @@ The installed version shown in Settings comes from `BuildConfig.VERSION_NAME`; n
 
 The public client must not embed a GitHub token or repository secret in the APK.
 
-### Deferred download and installation
+### Verified in-app download
 
-The Check-only slice does **not** download an APK. While `UPDATE_AVAILABLE` is shown, the row is informational and must not expose an enabled Download action backed by a no-op callback.
-
-A later slice may activate the already-modeled download lifecycle. That implementation must resolve the signed release asset named:
+When a newer eligible release is available, Settings exposes an explicit `Download` action. AALyrics resolves exactly one matching APK and checksum asset:
 
 ```text
 AALyrics-vX.Y.Z[-suffix].apk
 AALyrics-vX.Y.Z[-suffix].apk.sha256
 ```
 
-and verify the published SHA-256 before reporting a completed download. Package Installer handoff and signing-identity validation remain separate concerns from release discovery.
+The download runtime is application-owned. It accepts only HTTPS asset URLs, follows only HTTPS redirects, bounds downloaded content, stages the APK under the app-private cache, parses the Release workflow's single-line `sha256sum` output for the exact APK filename, and calculates SHA-256 over the downloaded APK before accepting it.
+
+The Phone presentation distinguishes preparation from transfer. `PREPARING_DOWNLOAD` covers asset resolution, checksum retrieval/parsing, and staging-file preparation and uses an indeterminate linear progress bar. The runtime enters `DOWNLOADING` immediately before the APK body transfer starts. GitHub Release asset `size` is the expected total byte count, while the download boundary reports bytes received; Settings therefore renders determinate 0–100% progress. The completed transfer byte count must equal the Release-published asset size before checksum verification continues.
+
+The APK is written first as an operation-owned partial artifact under app-private cache storage. Each reset generation uses a distinct staging filename, so a stale transport can only delete its own destination. Only after the published digest matches is it promoted into app-private no-backup persistent storage. Promotion uses an operation-owned temporary persistent `.promoting` file. Canonical verified-APK commit and Reset cleanup are serialized by the same file-store mutation lock, and commit revalidates operation ownership inside that critical section. Therefore Reset either runs after a completed commit and removes it, or invalidates ownership before commit so the canonical APK is never published. Missing/duplicate assets, malformed checksum content, transport/I/O failure, oversize content, or digest mismatch map to `DOWNLOAD_FAILED`; a failed or partial APK must not remain as a verified artifact.
+
+Active downloads survive destination changes and Activity recreation because the runtime is application-owned. A verified `DOWNLOADED` artifact survives process restart: runtime initialization removes transient `.part` / `.promoting` artifacts, then restores `DOWNLOADED` when exactly one canonical verified APK exists, remains eligible for the installed update channel, and is still newer than the installed app. Stable installed builds never restore a retained prerelease APK. If the installed version has caught up, the retained release is no longer channel-eligible, or the APK is malformed/invalid for restoration, the persistent update artifact is removed and update state returns to `IDLE`.
+
+`Reset AALyrics` cancels update work and clears both staging and verified update artifacts.
+
+### Deferred installation
+
+`DOWNLOADED` means that the signed-release APK bytes match the Release-published SHA-256. It does **not** install or launch the APK in this slice.
+
+Package Installer handoff, install-permission handling, and installed/signing-identity validation remain separate follow-up concerns. The future explicit Install action must refresh eligible GitHub Releases before handing the retained APK to Package Installer. If a newer eligible release exists than the retained verified APK, AALyrics must offer/download that newer release instead of intentionally installing the stale retained APK first; this avoids a needless two-step update.
 
 The Settings `Changelog` entry is independent of the update-network path. It renders the repository `CHANGELOG.md` bundled into the installed APK; it does not fetch GitHub Release notes at runtime. GitHub Releases remain authoritative for signed update distribution, while `CHANGELOG.md` is authoritative for the in-app release history.
 
