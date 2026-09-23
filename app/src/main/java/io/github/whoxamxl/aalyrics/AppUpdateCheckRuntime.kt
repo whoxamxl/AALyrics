@@ -48,6 +48,10 @@ internal class AppUpdateCheckRuntime(
     private var downloadJob: Job? = null
     private var availableCandidate: AALyricsReleaseCandidate? = null
 
+    init {
+        downloadFileStore?.clearAll()
+    }
+
     fun checkForUpdates() {
         if (
             checkJob?.isActive == true ||
@@ -98,6 +102,16 @@ internal class AppUpdateCheckRuntime(
                 AppUpdateCheckState.DownloadFailed(versionName)
             }
         }
+    }
+
+    fun reset() {
+        checkJob?.cancel()
+        downloadJob?.cancel()
+        checkJob = null
+        downloadJob = null
+        availableCandidate = null
+        downloadFileStore?.clearAll()
+        mutableState.value = AppUpdateCheckState.Idle
     }
 
     fun onSettingsEntered() {
