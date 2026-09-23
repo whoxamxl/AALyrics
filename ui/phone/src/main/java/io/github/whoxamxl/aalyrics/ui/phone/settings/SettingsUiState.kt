@@ -90,5 +90,4 @@ data class SettingsScreenUiState(
     val termsOfUseText: String = "",
     val thirdPartyLicensesText: String = "",
     val appUpdate: AppUpdateUiState = AppUpdateUiState(),
-    val installPermissionDialog: InstallPermissionDialogUiState? = null,
 )
