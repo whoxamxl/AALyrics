@@ -112,9 +112,25 @@ PendingUpdate
 
 The marker is stored in dedicated app-owned SharedPreferences using synchronous persistence. The write happens after the PackageInstaller session has received and fsynced the APK and immediately before `PackageInstaller.Session.commit()`. If the durable write fails, AALyrics fails closed and does not commit the installer session.
 
-The old binary must not clear this marker merely because PackageInstaller reports success. Successful package replacement may terminate that process, so the new binary owns final reconciliation. Terminal installer failure and `Reset AALyrics` clear the pending marker. Reset does not change Android-owned install-source trust.
+The old binary must not clear this marker merely because PackageInstaller reports success. Successful package replacement may terminate that process, so the new binary owns final reconciliation. Terminal installer failure clears only the pending marker; `Reset AALyrics` clears all app-owned update recovery state. Reset does not change Android-owned install-source trust.
 
-This checkpoint does **not** yet convert a pending marker into durable `updateSucceeded` state and does not register `ACTION_MY_PACKAGE_REPLACED`; those belong to the next checkpoint.
+The new binary now registers a non-exported `ACTION_MY_PACKAGE_REPLACED` receiver. The receiver does not start an Activity. It compares the durable pending target with the version actually running after replacement:
+
+- installed `versionCode` greater than the target is treated as target reached;
+- equal `versionCode` requires an exact `versionName` match;
+- an older code or same-code/name mismatch leaves the pending marker untouched;
+- no pending marker is a no-op.
+
+When the target is reached, the store atomically promotes pending state into:
+
+```text
+SuccessfulUpdate
+  installedVersion
+  installedVersionCode
+  resumeAfterUpdate
+```
+
+The success marker stores the new binary's actual version and carries forward the pending resume intent. Promotion removes the pending keys in the same synchronous SharedPreferences commit. A receiver/persistence failure does not attempt to launch presentation and leaves recovery for a later valid path.
 
 A successful package replacement may terminate the old process. The new binary therefore owns durable success reconciliation.
 
@@ -164,7 +180,7 @@ If permission is missing after the APK has already been verified, dismissing the
 
 Every durable state introduced by this UX follow-up must explicitly re-evaluate `Reset AALyrics`.
 
-The implemented `PendingUpdate` marker is app-owned and is deleted by `Reset AALyrics`, together with active app-owned update work and retained update artifacts. Future success markers and automatic-check preferences must make the same explicit keep/delete/default decision when introduced. Android's per-source install trust remains system-owned and must not be revoked by Reset.
+Both implemented recovery markers — `PendingUpdate` and `SuccessfulUpdate` — are app-owned and are deleted by `Reset AALyrics`, together with active app-owned update work and retained update artifacts. Future automatic-check preferences must make the same explicit keep/delete/default decision when introduced. Android's per-source install trust remains system-owned and must not be revoked by Reset.
 
 ## Implementation order
 
