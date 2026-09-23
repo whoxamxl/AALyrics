@@ -2,7 +2,7 @@
 
 ## Branch and baseline
 
-- Branch: `feature/update-ux`.
+- Branch: `feature/update-recovery-ux`.
 - Base: `feature/package-installer` at `df1e394f8dce87b87cc25e6c57cbaa071e40e29d`.
 - Parent installer PR: #72.
 - Classification: SETTINGS / UPDATE UX / ANDROID PACKAGE INSTALLER.
@@ -55,7 +55,7 @@ This is the safe checkpoint for the UX follow-up. Do not remove or weaken the in
 
 Polish the user-facing update experience while preserving the validated update pipeline and Android-owned security/confirmation boundaries.
 
-Approved follow-up direction:
+Approved update-UX stack direction (this branch implements items 1–4; later items live in dependent PRs):
 
 1. replace the compact install-permission-required presentation with a large explanatory modal dialog;
 2. separate durable permission-required state from transient dialog visibility and dismissal;
@@ -84,9 +84,9 @@ Approved follow-up direction:
 - [x] Reconcile `ACTION_MY_PACKAGE_REPLACED` into durable update-success state.
 - [x] Show one-time Update successful feedback on the next valid app entry.
 - [x] Add best-effort resume-after-update behavior.
-- [ ] Add automatic update checking preference and new-release dialog.
-- [ ] Compose Download + Install into one user-facing Update action.
-- [ ] Align Previews, Reset behavior, docs, tests, CI, and real-device regression validation.
+- [ ] Add automatic update checking preference and new-release dialog. *(deferred to dependent PR #75; out of scope for #74)*
+- [ ] Compose Download + Install into one user-facing Update action. *(deferred to dependent PR #76; out of scope for #74)*
+- [x] Align #74 Previews, Reset behavior, docs, focused tests, and CI.
 
 ## Current checkpoint
 
@@ -108,4 +108,4 @@ Completed in this checkpoint:
 
 No notification fallback, automatic update checking, release-available dialog, or one-step Update composition has been implemented yet.
 
-Next checkpoint: **add `Automatically check for updates` as a durable Settings preference and wire automatic release checking without changing manual `Check for updates` behavior**. Do not begin it until explicitly requested.
+PR #74 stops at this recovery/resume checkpoint. Automatic update discovery is intentionally deferred to dependent PR #75, and one-step Update composition to dependent PR #76. Do not implement either on `feature/update-recovery-ux`.
