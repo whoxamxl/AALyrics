@@ -283,6 +283,8 @@ internal fun SettingsScreenContent(
                 upToDateLabel = stringResource(R.string.settings_up_to_date),
                 updateAvailableLabel = stringResource(R.string.settings_update_available),
                 downloadLabel = stringResource(R.string.settings_download_update),
+                preparingDownloadLabel =
+                    stringResource(R.string.settings_preparing_update_download),
                 downloadingLabel = stringResource(R.string.settings_downloading_update),
                 downloadedLabel = stringResource(R.string.settings_update_downloaded),
                 retryLabel = stringResource(R.string.settings_retry),
