@@ -287,7 +287,7 @@ class AALyricsApplication : Application() {
             ),
             downloadFileStore = UpdateDownloadFileStore(
                 stagingDirectory = cacheDir.resolve(UPDATE_STAGING_DIRECTORY_NAME),
-                verifiedDirectory = filesDir.resolve(UPDATE_VERIFIED_DIRECTORY_NAME),
+                verifiedDirectory = noBackupFilesDir.resolve(UPDATE_VERIFIED_DIRECTORY_NAME),
             ),
         )
         translationSettingsStore = SharedPreferencesTranslationSettingsStore(this)
