@@ -65,6 +65,40 @@ class AppUpdateCheckRuntimeTest {
     }
 
     @Test
+    fun `automatic check does not replace retained downloaded state`() = runTest {
+        val root = createTempDirectory("aalyrics-update-runtime").toFile()
+        try {
+            retainedUpdate(root, "0.2.0-alpha.2")
+            var fetchCount = 0
+            val runtime = AppUpdateCheckRuntime(
+                installedVersionName = "0.2.0-alpha.1",
+                releaseClient = GitHubReleaseClient {
+                    fetchCount += 1
+                    Result.success(
+                        listOf(
+                            release("v0.2.0-alpha.3", prerelease = true),
+                        ),
+                    )
+                },
+                applicationScope = this,
+                downloadFileStore = updateStore(root),
+            )
+
+            assertTrue(runtime.state.value is AppUpdateCheckState.Downloaded)
+            assertFalse(
+                runtime.checkForUpdates(
+                    origin = UpdateCheckOrigin.AUTOMATIC,
+                ),
+            )
+
+            assertTrue(runtime.state.value is AppUpdateCheckState.Downloaded)
+            assertEquals(0, fetchCount)
+        } finally {
+            root.deleteRecursively()
+        }
+    }
+
+    @Test
     fun `same base development release is up to date`() = runTest {
         val runtime = runtime(
             installedVersionName = "0.2.0-alpha.1-dev+abcdef0.dirty",
