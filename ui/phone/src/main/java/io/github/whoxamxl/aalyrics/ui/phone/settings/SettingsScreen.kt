@@ -32,7 +32,7 @@ fun SettingsScreen(
     onPlainLyricsAutoScrollChanged: (Boolean) -> Unit,
     onIgnoreNonAudioAppsChanged: (Boolean) -> Unit,
     onAllowUnclassifiedAppsChanged: (Boolean) -> Unit,
-    onAutomaticallyCheckForUpdatesChanged: (Boolean) -> Unit,
+    onAutomaticallyCheckForUpdatesChanged: (Boolean) -> Unit = {},
     onVerboseDetailsChanged: (Boolean) -> Unit,
     onTranslationEnabledChanged: (Boolean) -> Unit,
     onTranslationTargetSelected: (String) -> Unit,
