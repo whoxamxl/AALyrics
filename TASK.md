@@ -79,7 +79,7 @@ Approved follow-up direction:
 
 - [x] Freeze the validated Package Installer baseline in TASK/update documentation.
 - [x] Separate install-permission runtime state from transient dialog visibility.
-- [ ] Implement the large install-permission explanation dialog and lifecycle behavior.
+- [x] Implement the large install-permission explanation dialog and lifecycle behavior.
 - [ ] Add durable pending/success update reconciliation and one-time success feedback.
 - [ ] Add best-effort resume-after-update behavior.
 - [ ] Add automatic update checking preference and new-release dialog.
@@ -88,18 +88,23 @@ Approved follow-up direction:
 
 ## Current checkpoint
 
-Install-permission state ownership is now separated from transient presentation visibility.
+The install-permission explanation UX is implemented on top of the separated prompt state.
 
 Completed in this checkpoint:
 
-- `InstallPermissionRequired` remains the update-runtime fact and is not cleared when the explanation is dismissed;
-- a process-local `UpdateInstallPermissionPromptRuntime` owns prompt visibility/request state separately;
-- entering permission-required requests the prompt once;
-- explicitly invoking Install/Update again while still permission-required re-requests the prompt without repeating download/preflight;
-- Phone presentation maps the prompt separately from `AppUpdateUiPhase.INSTALL_PERMISSION_REQUIRED`;
-- leaving Settings, Settings root reset, Activity/composition disposal, Reset, and Android source-trust Settings return dismiss only the transient prompt;
-- focused runtime/controller/mapper tests cover the separation and explicit re-request contract.
+- large modal explanation surface with responsive scrollable content;
+- explicit copy explaining sideload distribution, Android per-source permission, and the continued Android-owned final install confirmation;
+- top-right close button;
+- system Back dismissal with the same transient-only behavior;
+- outside-tap dismissal intentionally disabled;
+- primary `Grant permission` action that dismisses the prompt before opening Android's per-app source-trust Settings;
+- secondary `Download from GitHub` action with external-link icon that dismisses the prompt and opens the matching GitHub Release page;
+- permission-required Settings row now exposes `Install` as the explicit dialog re-entry action rather than jumping directly to system Settings;
+- prompt dismissal still preserves `INSTALL_PERMISSION_REQUIRED` and the retained verified APK;
+- leaving Settings, Settings root reset, Activity/composition disposal, Reset, and Android source-trust Settings return continue to clear only the transient prompt;
+- typical, narrow-phone, and enlarged-font dialog Previews;
+- Phone/Update UX docs aligned with the implemented behavior.
 
-The existing compact `Installation permission required / Open settings` row is intentionally still rendered. The large explanatory dialog has **not** been implemented yet.
+No durable update-success marker, post-update feedback, automatic update check, or one-step Download/Install composition has been started.
 
-Next checkpoint: **implement the large install-permission explanation dialog and its UI dismissal/actions**. Do not begin it until explicitly requested.
+Next checkpoint: **add durable pending/success update reconciliation and one-time Update successful feedback**. Do not begin it until explicitly requested.
