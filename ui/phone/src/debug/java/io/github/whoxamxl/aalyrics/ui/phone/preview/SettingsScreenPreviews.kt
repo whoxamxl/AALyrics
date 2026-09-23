@@ -211,6 +211,9 @@ internal fun SettingsScreenPreview(
                 onAllowUnclassifiedAppsChanged = {
                     state = state.copy(allowUnclassifiedApps = it)
                 },
+                onAutomaticallyCheckForUpdatesChanged = {
+                    state = state.copy(automaticallyCheckForUpdates = it)
+                },
                 onVerboseDetailsChanged = {
                     state = state.copy(verboseDetailsEnabled = it)
                 },
@@ -259,6 +262,7 @@ internal fun SettingsScreenPreview(
                         plainLyricsAutoScrollEnabled = true,
                         ignoreNonAudioApps = true,
                         allowUnclassifiedApps = false,
+                        automaticallyCheckForUpdates = true,
                         verboseDetailsEnabled = false,
                         translationEnabled = false,
                         translationTarget = english,
