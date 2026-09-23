@@ -222,7 +222,7 @@ class AALyricsApplication : Application() {
         updateSuccessFeedbackRuntime.dismiss()
     }
 
-    internal fun reconcilePackageReplacement() {
+    internal fun reconcilePackageReplacement(): UpdateReplacementReconciliation {
         val result = UpdatePackageReplacementHandler(
             recoveryStore = updateRecoveryStore,
         ).reconcile(
@@ -232,6 +232,7 @@ class AALyricsApplication : Application() {
         if (result is UpdateReplacementReconciliation.Succeeded) {
             updateSuccessFeedbackRuntime.refresh()
         }
+        return result
     }
 
     internal fun onSettingsEntered() {
