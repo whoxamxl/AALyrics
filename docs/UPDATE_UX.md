@@ -60,7 +60,7 @@ Download from GitHub  ↗
 
 The dialog has an explicit close affordance. System Back has the same dismissal semantics. Leaving the current primary tab dismisses it. Moving AALyrics to the background or stopping/replacing the Activity also dismisses the transient prompt. Returning to the foreground, recreating the Activity, or surviving process loss must not make a dismissed dialog automatically reappear.
 
-The durable/runtime fact that install-source trust is missing must remain separate from transient dialog visibility. If the user dismisses the explanation, it stays dismissed until the user explicitly invokes Update/Install again while permission is still missing.
+The durable/runtime fact that install-source trust is missing must remain separate from transient dialog visibility. If the user dismisses the explanation, it stays dismissed until the user explicitly invokes Update again while permission is still missing.
 
 ### State ownership checkpoint
 
@@ -88,7 +88,7 @@ Required behavior:
 - foreground return does not recreate the prompt merely because `INSTALL_PERMISSION_REQUIRED` is still true;
 - returning from Android source-trust Settings re-checks platform trust only: refusal keeps `INSTALL_PERMISSION_REQUIRED` with the prompt dismissed, while granted trust resumes the retained-APK install without reopening the explanation;
 - dismissing the dialog does not clear `INSTALL_PERMISSION_REQUIRED` or the retained verified APK;
-- the compact Settings update row remains in the permission-required phase and exposes `Install` as the explicit way to reopen the explanation;
+- the compact Settings update row remains in the permission-required phase and exposes `Update` as the explicit way to reopen the explanation;
 - `Grant permission` dismisses the explanation and opens Android's per-app source-trust Settings;
 - `Download from GitHub` dismisses the explanation and opens the matching GitHub Release page externally;
 - neither action bypasses Android's final installation confirmation.
@@ -204,7 +204,7 @@ The dialog also has a top-right close action. System Back, close, and `Not now` 
 
 Dismissal records the target version in process-local suppression state. The same version is not prompted again during that app-process session, including after ordinary navigation, recomposition, or Activity recreation. A different automatically discovered version remains eligible. `Reset AALyrics` clears this process-local suppression together with the transient prompt.
 
-`Update` consumes the prompt, suppresses the same version against transient re-presentation, and starts the existing verified download pipeline. This checkpoint intentionally does **not** auto-chain download completion into install; composing Download + Install into a single end-to-end action remains the next implementation checkpoint.
+`Update` consumes the prompt, suppresses the same version against transient re-presentation, and enters the one-step update runtime. The user makes no separate Download or Install choice: the runtime chains download, SHA-256 verification, retained-APK promotion, install-time latest-release refresh, APK preflight, source-trust handling, and PackageInstaller handoff while preserving those boundaries internally.
 
 The durable 7-day cadence and process-local prompt suppression solve different problems: cadence limits network frequency across process restarts, while suppression prevents repeated presentation of an already-handled version inside the current process session.
 
@@ -214,23 +214,33 @@ Typical, narrow-phone, and enlarged-font Previews cover the new-release dialog.
 
 ## One-step user update action
 
-The final user-facing flow should not require users to understand the distinction between downloading and installing an APK.
-
-The preferred UX is:
+The user-facing update flow is now composed behind one `Update` action:
 
 ```text
 New release available / manual check result
     -> Update
+    -> Preparing update...
     -> Downloading update...
-    -> Verifying / preparing...
+    -> Verifying update...
+    -> Preparing update...
     -> permission explanation only if required
     -> Android confirmation
     -> Update successful
 ```
 
-Internally, download, verification, retained-artifact ownership, install refresh, APK preflight, source trust, and PackageInstaller remain separate states and boundaries.
+Internally, download, SHA-256 verification, retained-artifact ownership, install-time latest-release refresh, APK package/version/signing preflight, Android source trust, durable pending-update persistence, and PackageInstaller remain separate states and safety boundaries.
 
-If permission is missing after the APK has already been verified, dismissing the permission explanation must preserve the verified APK. Invoking Update again should continue from the retained artifact rather than force a second download while that artifact remains valid.
+`requestUpdate()` carries one user intent across those internal states. A normal successful download is not exposed as a second `Install` decision; once the verified APK is retained, install preparation begins automatically.
+
+The internal `DOWNLOADED` state remains because a verified APK may survive process death. When such an artifact is restored on a later process start, Settings presents it as `Ready to update v…` with the same `Update` action. Pressing Update continues directly from the retained APK without redownloading.
+
+If install-time latest-release refresh discovers a newer eligible release than the retained APK, the one-step intent follows that newer release through a fresh download/verification pass before continuing to install. The older retained artifact is never intentionally installed first.
+
+If source trust is missing after the APK has already been verified, the global install-permission explanation interrupts the one-step flow without discarding the retained APK. Dismissing the explanation leaves the runtime in `INSTALL_PERMISSION_REQUIRED`. Pressing `Update` again reopens the explanation without redownloading. Granting trust and returning from Android Settings resumes installation from the retained APK automatically.
+
+The install-permission dialog is hosted by the Phone runtime rather than by Settings, so a one-step update started from the automatic release dialog on Lyrics can reach the same permission explanation without destination routing. Changing primary tabs, Activity stop/background, Phone composition disposal, Reset, and source-trust Settings return dismiss only the transient prompt; the permission-required runtime fact and retained APK remain until the install flow advances or Reset clears them.
+
+Download or verification failure ends the current one-step attempt in `DOWNLOAD_FAILED`; `Retry` starts the same one-step path again. Installer/preflight failure ends in `INSTALL_FAILED`; `Retry` re-enters install preparation from the retained APK when available. Android still owns the final installation confirmation and AALyrics does not perform silent installation.
 
 ## Reset contract
 
@@ -251,6 +261,6 @@ Implement in bounded checkpoints:
 7. add the durable automatic update-check preference and bounded automatic checking;
 8. add the automatic-discovery-only release-available dialog and session suppression;
 9. compose Download + Install into one user-facing Update action while preserving the existing internal state machine;
-10. align Previews, Reset behavior, docs, tests, CI, and real-device regression validation.
+10. run final Preview/Reset/docs/test/CI/real-device regression validation.
 
 Do not combine these checkpoints into one large implementation change.
