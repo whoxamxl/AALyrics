@@ -97,9 +97,24 @@ The dialog explains why sideload-distributed AALyrics needs the per-source permi
 
 ## Successful-update feedback
 
-Before PackageInstaller handoff, AALyrics may persist an app-owned pending-update marker containing enough information to reconcile the requested target after package replacement.
+Before PackageInstaller commit, AALyrics persists an app-owned pending-update marker containing enough information to reconcile the requested target after package replacement.
 
-The marker should include the target version/versionCode and whether AALyrics should attempt to resume the user-facing update flow after replacement.
+The implemented pending marker is:
+
+```text
+PendingUpdate
+  targetVersion
+  targetVersionCode
+  resumeAfterUpdate = true
+```
+
+`targetVersionCode` comes from the APK package metadata that already passed package/version/signing preflight; it is not inferred from the release tag or filename.
+
+The marker is stored in dedicated app-owned SharedPreferences using synchronous persistence. The write happens after the PackageInstaller session has received and fsynced the APK and immediately before `PackageInstaller.Session.commit()`. If the durable write fails, AALyrics fails closed and does not commit the installer session.
+
+The old binary must not clear this marker merely because PackageInstaller reports success. Successful package replacement may terminate that process, so the new binary owns final reconciliation. Terminal installer failure and `Reset AALyrics` clear the pending marker. Reset does not change Android-owned install-source trust.
+
+This checkpoint does **not** yet convert a pending marker into durable `updateSucceeded` state and does not register `ACTION_MY_PACKAGE_REPLACED`; those belong to the next checkpoint.
 
 A successful package replacement may terminate the old process. The new binary therefore owns durable success reconciliation.
 
@@ -149,7 +164,7 @@ If permission is missing after the APK has already been verified, dismissing the
 
 Every durable state introduced by this UX follow-up must explicitly re-evaluate `Reset AALyrics`.
 
-At minimum, pending-update/success markers and automatic-check preferences require an explicit reset keep/delete/default decision and focused test coverage. Android's per-source install trust remains system-owned and must not be revoked by Reset.
+The implemented `PendingUpdate` marker is app-owned and is deleted by `Reset AALyrics`, together with active app-owned update work and retained update artifacts. Future success markers and automatic-check preferences must make the same explicit keep/delete/default decision when introduced. Android's per-source install trust remains system-owned and must not be revoked by Reset.
 
 ## Implementation order
 
@@ -157,10 +172,12 @@ Implement in bounded checkpoints:
 
 1. separate install-permission runtime state from transient dialog visibility;
 2. add the large install-permission explanation dialog and lifecycle behavior;
-3. add durable pending/success update reconciliation and one-time success feedback;
-4. add best-effort resume-after-update behavior without relying on it for correctness;
-5. add the automatic update-check preference and release-available dialog;
-6. compose Download + Install into one user-facing Update action while preserving the existing internal state machine;
-7. align Previews, Reset behavior, docs, tests, CI, and real-device regression validation.
+3. persist durable `PendingUpdate` immediately before PackageInstaller commit;
+4. reconcile `ACTION_MY_PACKAGE_REPLACED` into durable update-success state;
+5. present one-time `Update successful` feedback on the next valid app entry;
+6. add best-effort resume-after-update behavior without relying on it for correctness;
+7. add the automatic update-check preference and release-available dialog;
+8. compose Download + Install into one user-facing Update action while preserving the existing internal state machine;
+9. align Previews, Reset behavior, docs, tests, CI, and real-device regression validation.
 
 Do not combine these checkpoints into one large implementation change.
