@@ -545,7 +545,9 @@ Only one check, download, or install preparation/session handoff may be active a
 
 Partial APK bytes live only in app-private cache storage. A SHA-256-verified APK is promoted into app-private no-backup persistent storage and becomes the source of truth for `DOWNLOADED`. On process restart, the runtime removes transient staging/promotion files and restores `DOWNLOADED` only when the retained APK has a canonical AALyrics release filename, remains eligible for the installed update channel, and is still newer than the installed version. Stable installed builds therefore do not restore a retained prerelease APK. Once the installed app reaches or passes that retained release, or the retained release is no longer channel-eligible, the stale verified APK is deleted and update state returns to `IDLE`.
 
-`Reset AALyrics` cancels app-owned update/install preparation, abandons any PackageInstaller session still under AALyrics control when practical, deletes transient and verified update artifacts, clears the selected release, and restores presentation to `IDLE`. Reset does not revoke Android's per-source install trust and does not undo a package already installed by Android.
+Immediately before a PackageInstaller session is committed, application-owned update recovery persistence records `PendingUpdate(targetVersion, targetVersionCode, resumeAfterUpdate=true)`. The versionCode is the value already validated from APK package metadata during install preflight. Persistence is synchronous and happens only after the APK has been written/fsynced into the session. If that durable write fails, the installer session is not committed. The old binary does not clear the marker on PackageInstaller success; terminal installer failure clears it. Package-replacement reconciliation is a later checkpoint.
+
+`Reset AALyrics` cancels app-owned update/install preparation, abandons any PackageInstaller session still under AALyrics control when practical, deletes transient and verified update artifacts, clears the selected release and pending update recovery marker, and restores presentation to `IDLE`. Reset does not revoke Android's per-source install trust and does not undo a package already installed by Android.
 
 ### Changelog
 
@@ -848,7 +850,8 @@ After confirmation, reset restores:
 - Plain lyrics auto-scroll -> its Phone default;
 - Ignore non-audio apps -> ON;
 - Allow unclassified apps -> OFF;
-- Android Auto compatibility acknowledgement -> Not reviewed.
+- Android Auto compatibility acknowledgement -> Not reviewed;
+- pending update recovery marker -> cleared.
 
 Reset does **not**:
 
