@@ -66,7 +66,7 @@ The application-owned runtime must:
 3. parse exactly one SHA-256 digest from the checksum payload;
 4. calculate SHA-256 for the downloaded APK;
 5. compare expected and actual digests case-insensitively;
-6. move the verified APK into its final app-private cache location only after the digest matches;
+6. promote the verified APK from app-private cache staging into app-private persistent files storage only after the digest matches;
 7. enter `DOWNLOADED` only after successful verification.
 
 Transport/protocol failures, asset-contract failures, malformed checksum content, I/O failures, and digest mismatch map to `DOWNLOAD_FAILED`.
@@ -75,15 +75,18 @@ A partial or checksum-failed APK must not remain as an accepted final artifact.
 
 ## File ownership and lifecycle
 
-Update artifacts are application-owned temporary distribution files, not user documents.
+Update artifacts are application-owned distribution files, not user documents.
 
-- use an app-private cache subdirectory; do not request shared-storage permission;
-- partial files use temporary names and are cleaned on failure/cancellation;
-- retain at most the currently verified update APK for the active application process/slice;
+- use app-private storage only; do not request shared-storage permission;
+- partial `.part` files live under cache staging and are cleaned on failure/cancellation/restart;
+- verified APKs live under app-private persistent files storage;
+- promotion uses a transient persistent `.promoting` file so interrupted promotion cannot become a completed APK;
+- retain at most one verified update APK;
 - an active download is application-owned and continues if the user leaves Settings;
 - configuration change / Activity recreation must not cancel or restart the download;
-- `DOWNLOADING` and a completed `DOWNLOADED` result survive Settings navigation within the same application process;
-- process death does not require restoring download state in this slice; stale update-cache artifacts may be cleaned when the update runtime initializes;
+- `DOWNLOADING` and a completed `DOWNLOADED` result survive Settings navigation;
+- process restart restores `DOWNLOADED` from the retained canonical verified APK when it is still newer than the installed version;
+- once the installed version catches up, the retained verified APK is stale and must be deleted;
 - no APK download starts automatically on launch, resume, Settings entry, or successful update check.
 
 ## Reset AALyrics
@@ -177,10 +180,12 @@ Completed:
 
 The asset-resolution, checksum/file-boundary, and runtime-orchestration checkpoints passed build/test validation before final production wiring.
 
-Production wiring is now complete: `AALyricsApplication` owns the download client/file store, Settings Download/Retry is connected, Reset cancels update work and clears update cache, and Preview/docs are aligned.
+Production wiring is now complete: `AALyricsApplication` owns separate cache staging and persistent verified-update storage, Settings Download/Retry is connected, Reset cancels update work and clears both storage areas, and Preview/docs are aligned.
 
 The download presentation now separates preparation from transfer: `PREPARING_DOWNLOAD` retains the compact circular activity indicator while assets/checksum/staging are prepared, then `DOWNLOADING` switches to an indeterminate linear progress bar when APK transfer begins.
 
-Remaining work is final architecture/build/unit/CI validation, real-device verified-download testing, bounded review, and merge readiness. Package Installer remains deferred.
+Verified APK retention now survives process restart without persisting a separate state record: runtime startup derives `DOWNLOADED` from the retained canonical APK and removes it once the installed version catches up.
+
+Remaining work is final architecture/build/unit/CI validation, real-device verified-download/restart testing, bounded review, and merge readiness. Package Installer remains deferred.
 
 For real-device validation only, PR #71 temporarily builds an additional debug APK with `AALYRICS_VERSION_NAME=0.1.0-alpha.1` so the public `v0.2.0-alpha.1` Release is discoverable as a newer update. This CI-only scaffolding must be removed after device validation and before merge.
