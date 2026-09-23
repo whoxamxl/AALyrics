@@ -95,6 +95,8 @@ Required behavior:
 
 The dialog explains why sideload-distributed AALyrics needs the per-source permission and explicitly states that the permission does not grant silent-install capability. Typical, narrow-width, and enlarged-font Previews cover the shared dialog content. Settings Previews also pin the permission-return outcomes: denied returns to the permission-required row with no modal, while granted proceeds to the installing presentation. Runtime tests independently cover the denied and granted source-trust return paths.
 
+The permission dialog is content-height driven rather than reserving a fixed percentage of the Phone viewport. Normal content therefore ends shortly after the secondary GitHub action instead of leaving unused lower-panel space. The surrounding dialog viewport still constrains oversized content, and the content remains vertically scrollable for narrow or enlarged-font configurations. The close action shares the top header row with the `INSTALL UPDATES` eyebrow, while the target version is presented immediately below with normal secondary-text contrast.
+
 Install preparation failures remain distinct from missing source trust. The runtime carries a typed install-failure reason through Phone mapping, and the `Installation failed` info tooltip presents a reason-specific explanation for release refresh, retained APK/preflight, package/version/signing, durable recovery persistence, PackageInstaller handoff, and installer rejection/cancellation failures. A failure that occurs before source-trust evaluation must not show the permission dialog. For example, a downloaded APK whose signing identity differs from the installed AALyrics app fails at preflight and reports that signing mismatch explicitly.
 
 ## Successful-update feedback
