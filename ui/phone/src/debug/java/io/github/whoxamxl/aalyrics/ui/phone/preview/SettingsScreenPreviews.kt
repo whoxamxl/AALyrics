@@ -299,8 +299,42 @@ internal fun SettingsScreenPreview(
                         )
                     }
                 },
-                onInstallUpdate = {},
-                onOpenInstallSettings = {},
+                onInstallUpdate = {
+                    val version = state.appUpdate.availableVersionName ?: "0.1.2"
+                    state = state.copy(
+                        appUpdate = AppUpdateUiState(
+                            phase = AppUpdateUiPhase.PREPARING_INSTALL,
+                            availableVersionName = version,
+                        ),
+                    )
+                    scope.launch {
+                        delay(600)
+                        state = state.copy(
+                            appUpdate = AppUpdateUiState(
+                                phase = AppUpdateUiPhase.INSTALL_PERMISSION_REQUIRED,
+                                availableVersionName = version,
+                            ),
+                        )
+                    }
+                },
+                onOpenInstallSettings = {
+                    val version = state.appUpdate.availableVersionName ?: "0.1.2"
+                    state = state.copy(
+                        appUpdate = AppUpdateUiState(
+                            phase = AppUpdateUiPhase.PREPARING_INSTALL,
+                            availableVersionName = version,
+                        ),
+                    )
+                    scope.launch {
+                        delay(350)
+                        state = state.copy(
+                            appUpdate = AppUpdateUiState(
+                                phase = AppUpdateUiPhase.INSTALLING,
+                                availableVersionName = version,
+                            ),
+                        )
+                    }
+                },
                 onOpenGitHub = {},
                 onHelpFeedback = {},
                 onSupportAALyrics = {},
