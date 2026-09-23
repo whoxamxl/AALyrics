@@ -8,6 +8,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertFails
+import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
@@ -70,7 +71,7 @@ class UpdateDownloadFileStoreTest {
         files.partialApk.writeText("verified bytes")
 
         val promoting = store.stageVerified(files, operationId = 7L)
-        val verified = store.commitVerified(files, promoting)
+        val verified = assertNotNull(store.commitVerified(files, promoting))
 
         assertEquals("verified bytes", verified.readText())
         assertFalse(files.partialApk.exists())
@@ -185,7 +186,7 @@ class UpdateDownloadFileStoreTest {
 
         files.partialApk.writeText("new")
         val promoting = store.stageVerified(files, operationId = 7L)
-        val verified = store.commitVerified(files, promoting)
+        val verified = assertNotNull(store.commitVerified(files, promoting))
 
         assertFalse(oldVerified.exists())
         assertEquals("new", verified.readText())
@@ -202,7 +203,7 @@ class UpdateDownloadFileStoreTest {
         files.partialApk.writeText("new")
 
         val promoting = store.stageVerified(files, operationId = 7L)
-        val verified = store.commitVerified(files, promoting)
+        val verified = assertNotNull(store.commitVerified(files, promoting))
 
         assertEquals(retained.canonicalFile, verified.canonicalFile)
         assertEquals("new", verified.readText())
