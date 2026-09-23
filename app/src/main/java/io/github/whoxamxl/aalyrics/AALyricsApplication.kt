@@ -311,6 +311,7 @@ class AALyricsApplication : Application() {
                 installedPackageName = packageName,
             ),
         )
+        val updateRecoveryStore = SharedPreferencesUpdateRecoveryStore(this)
         appUpdateCheckRuntime = AppUpdateCheckRuntime(
             installedVersionName = BuildConfig.VERSION_NAME,
             releaseClient = updateReleaseClient,
@@ -328,6 +329,7 @@ class AALyricsApplication : Application() {
                 packageManager = packageManager,
             ),
             packageInstaller = AndroidUpdatePackageInstaller(this),
+            updateRecoveryStore = updateRecoveryStore,
             onInstallPermissionRequired = installPermissionPromptRuntime::request,
         )
         translationSettingsStore = SharedPreferencesTranslationSettingsStore(this)
