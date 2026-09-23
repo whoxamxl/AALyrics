@@ -48,7 +48,7 @@ class UpdateApkPreflightTest {
     fun `same or older android version code fails closed`() {
         assertRejected(
             reason = UpdateApkPreflightRejection.VERSION_NOT_NEWER,
-            facts = validFacts().copy(archiveVersionCode = 41L),
+            facts = validFacts().copy(archiveVersionCode = 39L),
         )
         assertRejected(
             reason = UpdateApkPreflightRejection.VERSION_NOT_NEWER,
