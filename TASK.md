@@ -111,6 +111,7 @@ Completed in this checkpoint:
 - install preparation and PackageInstaller failures now retain typed reasons through Phone presentation; the failure tooltip explains the specific boundary, including signing identity mismatch before source-trust evaluation;
 - permission and successful-update dialogs now share `PhoneDialogHeader`, fixing the X at one standard trailing header position and documenting that contract in the Phone UI spec;
 - Codex review identified a valid process-death recovery gap; `PendingUpdate` now persists the PackageInstaller session ID, startup abandonment clears only its matching marker, and terminal failure clears the matching marker even when the original process-local status sink is gone;
+- second Codex review identified a valid Reset/commit-boundary race; the installer now revalidates operation generation immediately after the synchronous pending-marker write, clears the matching session marker when Reset won the race, and aborts before `Session.commit()`;
 - Update UX and Phone Settings documentation are aligned.
 
 No notification fallback, automatic update checking, release-available dialog, or one-step Update composition has been implemented yet.
