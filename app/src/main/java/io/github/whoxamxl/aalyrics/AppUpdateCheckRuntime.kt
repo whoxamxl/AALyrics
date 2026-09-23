@@ -10,6 +10,7 @@ import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
 internal sealed interface AppUpdateCheckState {
@@ -220,28 +221,39 @@ internal class AppUpdateCheckRuntime(
             totalBytes = totalBytes,
         )
         var lastReportedPercent = 0
-        val downloadResult = client.downloadTo(
-            asset = assets.apk,
-            destination = files.partialApk,
-            maxBytes = MAX_APK_BYTES,
-            onProgress = { receivedBytes ->
-                val boundedBytes = receivedBytes.coerceIn(0L, totalBytes)
-                val percent = ((boundedBytes * 100L) / totalBytes).toInt()
-                if (
-                    operationGeneration.get() == generation &&
-                    downloadJob?.isActive == true &&
-                    percent != lastReportedPercent
-                ) {
-                    lastReportedPercent = percent
-                    mutableState.value = AppUpdateCheckState.Downloading(
-                        versionName = versionName,
-                        downloadedBytes = boundedBytes,
-                        totalBytes = totalBytes,
-                    )
-                }
-            },
-        )
-        ensureCurrentOperation(generation)
+        val downloadResult = try {
+            client.downloadTo(
+                asset = assets.apk,
+                destination = files.partialApk,
+                maxBytes = MAX_APK_BYTES,
+                onProgress = { receivedBytes ->
+                    val boundedBytes = receivedBytes.coerceIn(0L, totalBytes)
+                    val percent = ((boundedBytes * 100L) / totalBytes).toInt()
+                    if (
+                        operationGeneration.get() == generation &&
+                        downloadJob?.isActive == true &&
+                        percent != lastReportedPercent
+                    ) {
+                        lastReportedPercent = percent
+                        mutableState.value = AppUpdateCheckState.Downloading(
+                            versionName = versionName,
+                            downloadedBytes = boundedBytes,
+                            totalBytes = totalBytes,
+                        )
+                    }
+                },
+            )
+        } catch (error: CancellationException) {
+            fileStore.discardPartial(files)
+            throw error
+        }
+        if (
+            operationGeneration.get() != generation ||
+            !currentCoroutineContext().isActive
+        ) {
+            fileStore.discardPartial(files)
+            throw CancellationException("Update operation is stale")
+        }
         val downloadedBytes = downloadResult.getOrElse {
             discardPartialIfCurrent(
                 generation = generation,
