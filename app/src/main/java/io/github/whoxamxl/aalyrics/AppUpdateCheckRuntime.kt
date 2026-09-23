@@ -285,12 +285,29 @@ internal class AppUpdateCheckRuntime(
         }
 
         ensureCurrentOperation(generation)
-        val apkFile = fileStore.promoteVerified(files)
-        ensureCurrentOperation(generation)
-        return AppUpdateCheckState.Downloaded(
-            versionName = candidate.release.tagName.removePrefix("v"),
-            apkFile = apkFile,
+        val promotingApk = fileStore.stageVerified(
+            files = files,
+            operationId = generation,
         )
+        return try {
+            ensureCurrentOperation(generation)
+            val apkFile = fileStore.commitVerified(
+                files = files,
+                promotingApk = promotingApk,
+            )
+            ensureCurrentOperation(generation)
+            AppUpdateCheckState.Downloaded(
+                versionName = candidate.release.tagName.removePrefix("v"),
+                apkFile = apkFile,
+            )
+        } catch (error: CancellationException) {
+            fileStore.discardPromotion(promotingApk)
+            fileStore.discardPartial(files)
+            throw error
+        } catch (error: Exception) {
+            fileStore.discardPromotion(promotingApk)
+            throw error
+        }
     }
 
     private fun restoreVerifiedDownload(): AppUpdateCheckState {
