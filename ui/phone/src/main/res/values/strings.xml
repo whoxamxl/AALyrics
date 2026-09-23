@@ -69,6 +69,12 @@
     <string name="settings_install_permission_dialog_download_github">Download from GitHub</string>
     <string name="settings_install_permission_dialog_close">Close update permission dialog</string>
     <string name="settings_installing_update">Installing update…</string>
+    <string name="update_release_available_eyebrow">UPDATE AVAILABLE</string>
+    <string name="update_release_available_title">New release available</string>
+    <string name="update_release_available_body">AALyrics v%1$s is available.</string>
+    <string name="update_release_available_update">Update</string>
+    <string name="update_release_available_not_now">Not now</string>
+    <string name="update_release_available_close">Close new release dialog</string>
     <string name="update_successful_eyebrow">UPDATE COMPLETE</string>
     <string name="update_successful_title">AALyrics updated</string>
     <string name="update_successful_body">You’re now running v%1$s.</string>
