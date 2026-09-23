@@ -286,7 +286,8 @@ class AALyricsApplication : Application() {
                 userAgent = updateUserAgent,
             ),
             downloadFileStore = UpdateDownloadFileStore(
-                rootDirectory = cacheDir.resolve(UPDATE_CACHE_DIRECTORY_NAME),
+                stagingDirectory = cacheDir.resolve(UPDATE_STAGING_DIRECTORY_NAME),
+                verifiedDirectory = filesDir.resolve(UPDATE_VERIFIED_DIRECTORY_NAME),
             ),
         )
         translationSettingsStore = SharedPreferencesTranslationSettingsStore(this)
@@ -469,7 +470,8 @@ class AALyricsApplication : Application() {
         const val PRIVACY_ASSET_NAME = "aalyrics_privacy.md"
         const val TERMS_OF_USE_ASSET_NAME = "aalyrics_terms_of_use.md"
         const val THIRD_PARTY_LICENSES_ASSET_NAME = "aalyrics_third_party_licenses.md"
-        const val UPDATE_CACHE_DIRECTORY_NAME = "updates"
+        const val UPDATE_STAGING_DIRECTORY_NAME = "updates"
+        const val UPDATE_VERIFIED_DIRECTORY_NAME = "updates"
     }
 }
 
