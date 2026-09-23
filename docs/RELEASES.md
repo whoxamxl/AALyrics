@@ -284,9 +284,11 @@ The download runtime is application-owned. It accepts only HTTPS asset URLs, fol
 
 The Phone presentation distinguishes preparation from transfer. `PREPARING_DOWNLOAD` covers asset resolution, checksum retrieval/parsing, and staging-file preparation and uses a compact circular activity indicator. The runtime enters `DOWNLOADING` immediately before the APK body transfer starts; that phase uses an indeterminate linear progress bar until byte-level progress reporting is implemented.
 
-The APK is written first as a partial artifact and is promoted to its final cached filename only after the published digest matches. Missing/duplicate assets, malformed checksum content, transport/I/O failure, oversize content, or digest mismatch map to `DOWNLOAD_FAILED`; a failed or partial APK must not remain as a verified artifact.
+The APK is written first as a partial artifact under app-private cache storage. Only after the published digest matches is it promoted into app-private persistent files storage. Promotion uses a temporary persistent `.promoting` file so an interrupted promotion cannot appear as a completed verified APK. Missing/duplicate assets, malformed checksum content, transport/I/O failure, oversize content, or digest mismatch map to `DOWNLOAD_FAILED`; a failed or partial APK must not remain as a verified artifact.
 
-Active downloads survive destination changes and Activity recreation because the runtime is application-owned. A verified `DOWNLOADED` result also remains available within the current application process. Process death does not restore download state; stale app-private update artifacts are cleared when the runtime initializes. `Reset AALyrics` cancels update work and clears partial/verified update artifacts.
+Active downloads survive destination changes and Activity recreation because the runtime is application-owned. A verified `DOWNLOADED` artifact survives process restart: runtime initialization removes transient `.part` / `.promoting` artifacts, then restores `DOWNLOADED` when exactly one canonical verified APK exists and its release version is still newer than the installed app. If the installed version has caught up, or the retained APK is malformed/invalid for restoration, the persistent update artifact is removed and update state returns to `IDLE`.
+
+`Reset AALyrics` cancels update work and clears both staging and verified update artifacts.
 
 ### Deferred installation
 
