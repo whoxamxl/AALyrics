@@ -465,7 +465,7 @@ The check path is public and unauthenticated. Do not embed a GitHub token or rep
 
 ### Update state lifetime
 
-Update results are intentionally short-lived so Settings does not keep presenting a stale GitHub Release result.
+Completed check results and recoverable download failures are intentionally visit-local so Settings does not keep presenting stale GitHub Release information. A successfully verified `DOWNLOADED` artifact is the exception: it represents an actual retained APK and remains present while that artifact is still valid for the installed update channel.
 
 The Phone navigation host owns Settings-visit entry detection. A transition from any non-Settings destination into Settings starts a new Settings visit. The presentation `SettingsScreen` itself does not emit an entry callback from composition.
 
@@ -485,7 +485,7 @@ Configuration changes, Activity recreation, recomposition, Settings subscreen na
 
 Only one check or download may be active at a time. The active presentation exposes no duplicate action.
 
-Partial APK bytes live only in app-private cache storage. A SHA-256-verified APK is promoted into app-private no-backup persistent storage and becomes the source of truth for `DOWNLOADED`. On process restart, the runtime removes transient staging/promotion files and restores `DOWNLOADED` when the retained APK has a canonical AALyrics release filename and is still newer than the installed version. Once the installed app reaches or passes that retained release, the stale verified APK is deleted and update state returns to `IDLE`.
+Partial APK bytes live only in app-private cache storage. A SHA-256-verified APK is promoted into app-private no-backup persistent storage and becomes the source of truth for `DOWNLOADED`. On process restart, the runtime removes transient staging/promotion files and restores `DOWNLOADED` only when the retained APK has a canonical AALyrics release filename, remains eligible for the installed update channel, and is still newer than the installed version. Stable installed builds therefore do not restore a retained prerelease APK. Once the installed app reaches or passes that retained release, or the retained release is no longer channel-eligible, the stale verified APK is deleted and update state returns to `IDLE`.
 
 `Reset AALyrics` cancels active update work, deletes both transient and verified update artifacts, clears the selected release, and restores update presentation to `IDLE`.
 
