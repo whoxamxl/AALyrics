@@ -187,9 +187,30 @@ Automatic checking is deliberately low-frequency and bounded:
 
 The existing `Check for updates` action remains available as the explicit manual path regardless of the preference and retains its existing behavior.
 
-Check results now carry an internal origin: `MANUAL`, `AUTOMATIC`, or `INSTALL_REFRESH`. Presentation of ordinary Settings update state does not depend on that origin yet. The distinction is reserved so the next checkpoint can show a `New release available` dialog **only** for automatic discovery without accidentally prompting for manual checks or install-time latest-release refreshes.
+Check results carry an internal origin: `MANUAL`, `AUTOMATIC`, or `INSTALL_REFRESH`. The Phone runtime now uses that origin to create a transient release prompt **only** for `AUTOMATIC` `UPDATE_AVAILABLE` results. Manual checks and install-time latest-release refreshes never create this dialog.
 
-This checkpoint does not yet show the new-release dialog.
+Automatic discovery presents:
+
+```text
+New release available
+
+AALyrics v0.x.x is available.
+
+Update
+Not now
+```
+
+The dialog also has a top-right close action. System Back, close, and `Not now` share the same dismissal semantics. Outside-tap dismissal is disabled.
+
+Dismissal records the target version in process-local suppression state. The same version is not prompted again during that app-process session, including after ordinary navigation, recomposition, or Activity recreation. A different automatically discovered version remains eligible. `Reset AALyrics` clears this process-local suppression together with the transient prompt.
+
+`Update` consumes the prompt, suppresses the same version against transient re-presentation, and starts the existing verified download pipeline. This checkpoint intentionally does **not** auto-chain download completion into install; composing Download + Install into a single end-to-end action remains the next implementation checkpoint.
+
+The durable 7-day cadence and process-local prompt suppression solve different problems: cadence limits network frequency across process restarts, while suppression prevents repeated presentation of an already-handled version inside the current process session.
+
+If durable `SuccessfulUpdate` feedback and an automatic release prompt were ever both present, successful-update acknowledgement has presentation priority and dialogs are not stacked. A valid update-success marker also prevents starting the automatic check on that Phone entry.
+
+Typical, narrow-phone, and enlarged-font Previews cover the new-release dialog.
 
 ## One-step user update action
 
