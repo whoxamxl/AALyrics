@@ -46,6 +46,24 @@ class UpdatePackageInstallerStatusRegistryTest {
     }
 
     @Test
+    fun `unregistered session cannot run owned callback action`() {
+        val sessionId = 903
+        var actionCount = 0
+        UpdatePackageInstallerStatusRegistry.register(
+            sessionId = sessionId,
+            sink = UpdatePackageInstallerStatusSink {},
+        )
+        UpdatePackageInstallerStatusRegistry.unregister(sessionId)
+
+        val owned = UpdatePackageInstallerStatusRegistry.withRegisteredSession(sessionId) {
+            actionCount += 1
+        }
+
+        assertFalse(owned)
+        assertEquals(0, actionCount)
+    }
+
+    @Test
     fun `unregister drops future status delivery`() {
         val sessionId = 902
         val statuses = mutableListOf<UpdatePackageInstallerStatus>()
