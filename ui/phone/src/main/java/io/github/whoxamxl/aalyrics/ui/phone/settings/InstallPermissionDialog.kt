@@ -18,7 +18,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -37,6 +36,7 @@ import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsSpacing
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsStroke
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsTypography
 import io.github.whoxamxl.aalyrics.ui.phone.R
+import io.github.whoxamxl.aalyrics.ui.phone.component.PhoneDialogHeader
 
 @Composable
 internal fun InstallPermissionDialog(
@@ -98,33 +98,15 @@ internal fun InstallPermissionDialogContent(
                 .verticalScroll(rememberScrollState())
                 .padding(AALyricsSpacing.Space24),
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    text = stringResource(
-                        R.string.settings_install_permission_dialog_eyebrow,
-                    ),
-                    style = AALyricsTypography.Label,
-                    color = AALyricsColors.AccentCyan,
-                    modifier = Modifier.weight(1f),
-                )
-
-                IconButton(
-                    onClick = onDismissRequest,
-                    modifier = Modifier.size(AALyricsSpacing.Space48),
-                ) {
-                    Icon(
-                        imageVector = AALyricsIcons.Close,
-                        contentDescription = stringResource(
-                            R.string.settings_install_permission_dialog_close,
-                        ),
-                        tint = AALyricsColors.TextSecondary,
-                        modifier = Modifier.size(AALyricsSpacing.Space24),
-                    )
-                }
-            }
+            PhoneDialogHeader(
+                eyebrow = stringResource(
+                    R.string.settings_install_permission_dialog_eyebrow,
+                ),
+                closeContentDescription = stringResource(
+                    R.string.settings_install_permission_dialog_close,
+                ),
+                onClose = onDismissRequest,
+            )
 
             Text(
                 text = stringResource(
