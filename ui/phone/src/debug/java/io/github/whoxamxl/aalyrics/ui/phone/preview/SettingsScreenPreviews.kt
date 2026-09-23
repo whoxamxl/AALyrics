@@ -137,16 +137,28 @@ private fun SettingsUpdateInstallPermissionPreview() {
     SettingsScreenPreview(PhonePreviewFixtures.settingsInstallPermissionRequired)
 }
 
+@Preview(name = "Permission return · denied", group = "SettingsScreen", widthDp = 412, heightDp = 900)
+@Composable
+private fun SettingsPermissionReturnDeniedPreview() {
+    SettingsScreenPreview(PhonePreviewFixtures.settingsInstallPermissionRequired)
+}
+
+@Preview(name = "Permission return · granted", group = "SettingsScreen", widthDp = 412, heightDp = 900)
+@Composable
+private fun SettingsPermissionReturnGrantedPreview() {
+    SettingsScreenPreview(PhonePreviewFixtures.settingsInstallingUpdate)
+}
+
 @Preview(name = "Update · installing", group = "SettingsScreen", widthDp = 412, heightDp = 900)
 @Composable
 private fun SettingsUpdateInstallingPreview() {
     SettingsScreenPreview(PhonePreviewFixtures.settingsInstallingUpdate)
 }
 
-@Preview(name = "Update · install failed", group = "SettingsScreen", widthDp = 412, heightDp = 900)
+@Preview(name = "Update · install failed · signing mismatch", group = "SettingsScreen", widthDp = 412, heightDp = 900)
 @Composable
-private fun SettingsUpdateInstallFailedPreview() {
-    SettingsScreenPreview(PhonePreviewFixtures.settingsInstallFailed)
+private fun SettingsUpdateInstallFailedSigningMismatchPreview() {
+    SettingsScreenPreview(PhonePreviewFixtures.settingsInstallFailedSigningMismatch)
 }
 
 
@@ -388,7 +400,6 @@ private fun SettingsScreenContentPreview(
                 onCheckForUpdates = {},
                 onDownloadUpdate = {},
                 onInstallUpdate = {},
-                onOpenInstallSettings = {},
                 onChangelogRequested = {},
                 onPrivacyPolicyRequested = {},
                 onTermsOfUseRequested = {},

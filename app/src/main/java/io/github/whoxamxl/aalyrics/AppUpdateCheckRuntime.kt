@@ -57,7 +57,30 @@ internal sealed interface AppUpdateCheckState {
 
     data class InstallFailed(
         val versionName: String,
+        val reason: AppUpdateInstallFailureReason,
     ) : AppUpdateCheckState
+}
+
+internal enum class AppUpdateInstallFailureReason {
+    DEPENDENCIES_UNAVAILABLE,
+    RELEASE_REFRESH_FAILED,
+    INSTALLED_VERSION_INVALID,
+    RETAINED_VERSION_INVALID,
+    RETAINED_RELEASE_NOT_ELIGIBLE,
+    RETAINED_RELEASE_NOT_NEWER,
+    NO_ELIGIBLE_RELEASE,
+    RETAINED_RELEASE_NO_LONGER_CURRENT,
+    APK_FILE_MISSING,
+    APK_NOT_CANONICAL,
+    APK_UNREADABLE,
+    PACKAGE_MISMATCH,
+    VERSION_NOT_NEWER,
+    VERSION_NAME_MISMATCH,
+    SIGNING_IDENTITY_UNAVAILABLE,
+    SIGNING_IDENTITY_MISMATCH,
+    RECOVERY_STATE_PERSISTENCE_FAILED,
+    INSTALLER_HANDOFF_FAILED,
+    INSTALLER_REJECTED,
 }
 
 internal class AppUpdateCheckRuntime(
@@ -69,6 +92,8 @@ internal class AppUpdateCheckRuntime(
     private val installPreparation: UpdateInstallPreparation? = null,
     private val installSourceTrustChecker: InstallSourceTrustChecker? = null,
     private val packageInstaller: UpdatePackageInstaller? = null,
+    private val updateRecoveryStore: UpdateRecoveryStore? = null,
+    private val onInstallPermissionRequired: (String) -> Unit = {},
 ) {
     private val mutableState = MutableStateFlow<AppUpdateCheckState>(AppUpdateCheckState.Idle)
     val state: StateFlow<AppUpdateCheckState> = mutableState.asStateFlow()
@@ -178,6 +203,11 @@ internal class AppUpdateCheckRuntime(
             is AppUpdateCheckState.InstallFailed ->
                 installTarget
 
+            is AppUpdateCheckState.InstallPermissionRequired -> {
+                onInstallPermissionRequired(current.versionName)
+                return
+            }
+
             else -> null
         } ?: return
 
@@ -208,13 +238,18 @@ internal class AppUpdateCheckRuntime(
         val preparation = installPreparation
         val trustChecker = installSourceTrustChecker
         val installer = packageInstaller
+        val recoveryStore = updateRecoveryStore
         if (
             preparation == null ||
             trustChecker == null ||
-            installer == null
+            installer == null ||
+            recoveryStore == null
         ) {
             installTarget = target
-            mutableState.value = AppUpdateCheckState.InstallFailed(target.versionName)
+            mutableState.value = AppUpdateCheckState.InstallFailed(
+                versionName = target.versionName,
+                reason = AppUpdateInstallFailureReason.DEPENDENCIES_UNAVAILABLE,
+            )
             return
         }
 
@@ -234,8 +269,9 @@ internal class AppUpdateCheckRuntime(
             }
 
             ensureCurrentOperation(generation)
-            when (preparationResult) {
-                UpdateInstallPreparationResult.Ready -> Unit
+            val targetVersionCode = when (preparationResult) {
+                is UpdateInstallPreparationResult.Ready ->
+                    preparationResult.targetVersionCode
 
                 is UpdateInstallPreparationResult.NewerReleaseAvailable -> {
                     availableCandidate = preparationResult.candidate
@@ -246,10 +282,27 @@ internal class AppUpdateCheckRuntime(
                     return@launch
                 }
 
-                is UpdateInstallPreparationResult.ReleaseRefreshRejected,
-                UpdateInstallPreparationResult.ReleaseRefreshFailed,
+                is UpdateInstallPreparationResult.ReleaseRefreshRejected -> {
+                    mutableState.value = AppUpdateCheckState.InstallFailed(
+                        versionName = target.versionName,
+                        reason = preparationResult.reason.toInstallFailureReason(),
+                    )
+                    return@launch
+                }
+
+                UpdateInstallPreparationResult.ReleaseRefreshFailed -> {
+                    mutableState.value = AppUpdateCheckState.InstallFailed(
+                        versionName = target.versionName,
+                        reason = AppUpdateInstallFailureReason.RELEASE_REFRESH_FAILED,
+                    )
+                    return@launch
+                }
+
                 is UpdateInstallPreparationResult.ApkPreflightRejected -> {
-                    mutableState.value = AppUpdateCheckState.InstallFailed(target.versionName)
+                    mutableState.value = AppUpdateCheckState.InstallFailed(
+                        versionName = target.versionName,
+                        reason = preparationResult.reason.toInstallFailureReason(),
+                    )
                     return@launch
                 }
             }
@@ -257,6 +310,7 @@ internal class AppUpdateCheckRuntime(
             if (!trustChecker.canRequestPackageInstalls()) {
                 mutableState.value =
                     AppUpdateCheckState.InstallPermissionRequired(target.versionName)
+                onInstallPermissionRequired(target.versionName)
                 return@launch
             }
 
@@ -277,13 +331,22 @@ internal class AppUpdateCheckRuntime(
                     }
 
                     is UpdatePackageInstallerStatus.Failure -> {
+                        val failedSessionId = activeInstallSessionId
                         activeInstallSessionId = null
-                        mutableState.value =
-                            AppUpdateCheckState.InstallFailed(target.versionName)
+                        failedSessionId?.let { sessionId ->
+                            runCatching {
+                                recoveryStore.clearPendingUpdateForSession(sessionId)
+                            }
+                        }
+                        mutableState.value = AppUpdateCheckState.InstallFailed(
+                            versionName = target.versionName,
+                            reason = AppUpdateInstallFailureReason.INSTALLER_REJECTED,
+                        )
                     }
                 }
             }
 
+            var recoveryPersistenceFailed = false
             val installResult = installer.install(
                 apkFile = target.apkFile,
                 statusSink = statusSink,
@@ -292,6 +355,30 @@ internal class AppUpdateCheckRuntime(
                         activeInstallSessionId = sessionId
                     } else {
                         installer.abandon(sessionId)
+                    }
+                },
+                onBeforeCommit = { sessionId ->
+                    if (operationGeneration.get() != generation) {
+                        throw CancellationException("Update operation is stale")
+                    }
+                    try {
+                        recoveryStore.recordPendingUpdate(
+                            PendingUpdate(
+                                targetVersion = target.versionName,
+                                targetVersionCode = targetVersionCode,
+                                installerSessionId = sessionId,
+                                resumeAfterUpdate = true,
+                            ),
+                        )
+                    } catch (error: Exception) {
+                        recoveryPersistenceFailed = true
+                        throw error
+                    }
+                    if (operationGeneration.get() != generation) {
+                        runCatching {
+                            recoveryStore.clearPendingUpdateForSession(sessionId)
+                        }
+                        throw CancellationException("Update operation became stale during recovery write")
                     }
                 },
             )
@@ -305,9 +392,21 @@ internal class AppUpdateCheckRuntime(
                     }
                 },
                 onFailure = {
+                    val failedSessionId = activeInstallSessionId
                     activeInstallSessionId = null
-                    mutableState.value =
-                        AppUpdateCheckState.InstallFailed(target.versionName)
+                    failedSessionId?.let { sessionId ->
+                        runCatching {
+                            recoveryStore.clearPendingUpdateForSession(sessionId)
+                        }
+                    }
+                    mutableState.value = AppUpdateCheckState.InstallFailed(
+                        versionName = target.versionName,
+                        reason = if (recoveryPersistenceFailed) {
+                            AppUpdateInstallFailureReason.RECOVERY_STATE_PERSISTENCE_FAILED
+                        } else {
+                            AppUpdateInstallFailureReason.INSTALLER_HANDOFF_FAILED
+                        },
+                    )
                 },
             )
         }
@@ -328,6 +427,7 @@ internal class AppUpdateCheckRuntime(
         installTarget = null
         availableCandidate = null
         downloadFileStore?.clearAll()
+        updateRecoveryStore?.clearAll()
         mutableState.value = AppUpdateCheckState.Idle
     }
 
@@ -597,3 +697,40 @@ internal class AppUpdateCheckRuntime(
         const val MAX_APK_BYTES = 512L * 1024L * 1024L
     }
 }
+
+
+private fun InstallReleaseRefreshRejection.toInstallFailureReason(): AppUpdateInstallFailureReason =
+    when (this) {
+        InstallReleaseRefreshRejection.INSTALLED_VERSION_INVALID ->
+            AppUpdateInstallFailureReason.INSTALLED_VERSION_INVALID
+        InstallReleaseRefreshRejection.RETAINED_VERSION_INVALID ->
+            AppUpdateInstallFailureReason.RETAINED_VERSION_INVALID
+        InstallReleaseRefreshRejection.RETAINED_RELEASE_NOT_ELIGIBLE ->
+            AppUpdateInstallFailureReason.RETAINED_RELEASE_NOT_ELIGIBLE
+        InstallReleaseRefreshRejection.RETAINED_RELEASE_NOT_NEWER ->
+            AppUpdateInstallFailureReason.RETAINED_RELEASE_NOT_NEWER
+        InstallReleaseRefreshRejection.NO_ELIGIBLE_RELEASE ->
+            AppUpdateInstallFailureReason.NO_ELIGIBLE_RELEASE
+        InstallReleaseRefreshRejection.RETAINED_RELEASE_NO_LONGER_CURRENT ->
+            AppUpdateInstallFailureReason.RETAINED_RELEASE_NO_LONGER_CURRENT
+    }
+
+private fun UpdateApkPreflightRejection.toInstallFailureReason(): AppUpdateInstallFailureReason =
+    when (this) {
+        UpdateApkPreflightRejection.FILE_MISSING ->
+            AppUpdateInstallFailureReason.APK_FILE_MISSING
+        UpdateApkPreflightRejection.NOT_CANONICAL_RETAINED_ARTIFACT ->
+            AppUpdateInstallFailureReason.APK_NOT_CANONICAL
+        UpdateApkPreflightRejection.ARCHIVE_UNREADABLE ->
+            AppUpdateInstallFailureReason.APK_UNREADABLE
+        UpdateApkPreflightRejection.PACKAGE_MISMATCH ->
+            AppUpdateInstallFailureReason.PACKAGE_MISMATCH
+        UpdateApkPreflightRejection.VERSION_NOT_NEWER ->
+            AppUpdateInstallFailureReason.VERSION_NOT_NEWER
+        UpdateApkPreflightRejection.VERSION_NAME_MISMATCH ->
+            AppUpdateInstallFailureReason.VERSION_NAME_MISMATCH
+        UpdateApkPreflightRejection.SIGNING_IDENTITY_UNAVAILABLE ->
+            AppUpdateInstallFailureReason.SIGNING_IDENTITY_UNAVAILABLE
+        UpdateApkPreflightRejection.SIGNING_IDENTITY_MISMATCH ->
+            AppUpdateInstallFailureReason.SIGNING_IDENTITY_MISMATCH
+    }

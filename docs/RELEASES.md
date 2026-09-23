@@ -304,9 +304,17 @@ Installation uses `android.content.pm.PackageInstaller.Session`, not the depreca
 
 PackageInstaller session recovery is process-safe. On application-process startup, AALyrics inspects the install sessions still owned by its installer package and best-effort abandons unsealed sessions left behind before `commit()`. Sealed sessions are preserved because sealing occurs when `commit()` is called. If `STATUS_PENDING_USER_ACTION` arrives after the original process died and the in-memory callback registry is therefore empty, the receiver revalidates the Android session itself and resumes the system confirmation only when that session is sealed, owned by AALyrics, and targets the AALyrics package.
 
-Installer cancellation or terminal install failure preserves an otherwise-valid verified APK so the user can retry without downloading it again. A successful self-update may replace or terminate the current AALyrics process before an in-process terminal state is durable, so next-launch installed-version reconciliation remains authoritative: once the installed package version reaches or passes the retained release, the old verified APK is removed and update state returns to `IDLE`.
+Immediately before `PackageInstaller.Session.commit()`, after the APK has been written and fsynced into the session, AALyrics synchronously persists `PendingUpdate(targetVersion, targetVersionCode, installerSessionId, resumeAfterUpdate=true)`. The target versionCode comes from the APK metadata that already passed package/version/signing preflight. If this durable write fails, the installer commit is not performed.
 
-Reset AALyrics invalidates app-owned install preparation, abandons any installer session still under AALyrics control when practical, and clears the existing app-owned update artifacts. Reset does not revoke Android's per-source install trust and does not undo an already installed package.
+Installer cancellation or terminal install failure preserves an otherwise-valid verified APK so the user can retry without downloading it again. The pending marker is bound to the exact PackageInstaller session: terminal failure clears it only when that session ID matches, including after process loss when the in-memory status sink no longer exists. Startup recovery also clears the matching marker after it successfully abandons an owned unsealed session left behind before commit. PackageInstaller success alone does not clear the marker because successful package replacement may terminate the old process before an in-process terminal state can become authoritative.
+
+After Android replaces AALyrics, a non-exported `ACTION_MY_PACKAGE_REPLACED` receiver reconciles the pending target against the version running in the new binary. An exact target versionCode/versionName match succeeds, and any strictly newer installed versionCode also satisfies the pending target. Successful reconciliation atomically promotes the pending marker to durable `SuccessfulUpdate(installedVersion, installedVersionCode, resumeAfterUpdate)` state.
+
+The durable success marker drives one-time Phone feedback on the next valid READY entry. Dismissing that feedback clears the marker first; if the clear fails, the feedback remains eligible. When `resumeAfterUpdate=true`, the replacement receiver also makes one separate best-effort request to open `MainActivity`. That request is not evidence of update success, may be suppressed by Android background-launch policy, does not alter the Phone destination model, and never clears the durable success marker.
+
+Next-launch installed-version reconciliation remains authoritative for stale retained-APK cleanup: once the installed package version reaches or passes the retained release, the old verified APK is removed and update state returns to `IDLE`.
+
+Reset AALyrics invalidates app-owned install preparation, abandons any installer session still under AALyrics control when practical, clears transient and verified update artifacts, and clears both pending and successful app-owned update recovery markers. Reset does not revoke Android's per-source install trust and does not undo an already installed package.
 
 The Settings `Changelog` entry remains independent of the update-network path. It renders the repository `CHANGELOG.md` bundled into the installed APK; it does not fetch GitHub Release notes at runtime. GitHub Releases remain authoritative for signed update distribution, while `CHANGELOG.md` is authoritative for the in-app release history.
 
@@ -334,6 +342,16 @@ install older same-release-signed fixture
 ```
 
 The debug-signed fixture remains unsuitable for proving successful replacement because Android update compatibility requires the same signing identity.
+
+#### Validated Package Installer baseline
+
+The same-release-signing fixture path has now been exercised on a real device. The validated baseline covers explicit update discovery/download, SHA-256 verification, Android per-source install trust, Android-owned confirmation, cancellation/retry without requiring a second download of an otherwise-valid retained APK, and successful replacement of the older release-signed fixture by the newer published release.
+
+This validation establishes the current split `Download -> Install` flow as a functional checkpoint. A later Phone UX slice may compose those two user-visible actions into a single `Update` action, but the underlying download, verification, retained-artifact, install-time Release refresh, package/version/signing preflight, source-trust, and PackageInstaller boundaries remain required.
+
+The published target used for this device pass predates the current update/installer runtime. It therefore proves Android's same-signing replacement path but cannot fully prove the new binary's next-launch retained-APK cleanup end to end. That cleanup remains part of the runtime/test contract until a release containing the current update runtime can be used as the update target.
+
+The approved follow-up UX contract is documented in `docs/UPDATE_UX.md`.
 
 AALyrics is intentionally distributed outside Google Play. For Android Auto, non-Play media apps still require Android Auto developer mode and **Developer settings → Unknown sources** on the test/user device. APK signing does not remove that Android Auto trust-source requirement.
 

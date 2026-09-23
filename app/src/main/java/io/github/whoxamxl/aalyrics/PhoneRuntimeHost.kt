@@ -13,6 +13,7 @@ import android.os.SystemClock
 import android.util.Log
 import android.util.LruCache
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -38,6 +39,8 @@ import io.github.whoxamxl.aalyrics.ui.phone.shell.PhoneAppShell
 import io.github.whoxamxl.aalyrics.ui.phone.state.PhoneShellUiState
 import io.github.whoxamxl.aalyrics.ui.phone.state.PlaybackQueueItemUiState
 import io.github.whoxamxl.aalyrics.ui.phone.sync.SyncScreen
+import io.github.whoxamxl.aalyrics.ui.phone.update.UpdateSuccessfulDialog
+import io.github.whoxamxl.aalyrics.ui.phone.update.UpdateSuccessfulDialogUiState
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
@@ -66,6 +69,7 @@ internal fun PhoneRuntimeHost(
     onOpenSourceCode: () -> Unit,
     onOpenHelpFeedback: (HelpFeedbackDestination) -> Unit,
     onOpenSupportAALyrics: () -> Unit,
+    onOpenUpdateRelease: (String) -> Unit = {},
 ) {
     val playback by application.playbackState.collectAsStateWithLifecycle()
     val playbackSourceRuntimeState by
@@ -87,6 +91,16 @@ internal fun PhoneRuntimeHost(
     val ignoreNonAudioApps by application.ignoreNonAudioApps.collectAsStateWithLifecycle()
     val allowUnclassifiedApps by application.allowUnclassifiedApps.collectAsStateWithLifecycle()
     val appUpdateCheckState by application.appUpdateCheckState.collectAsStateWithLifecycle()
+    val installPermissionPrompt by
+        application.installPermissionPrompt.collectAsStateWithLifecycle()
+    val successfulUpdate by
+        application.successfulUpdate.collectAsStateWithLifecycle()
+
+    DisposableEffect(application) {
+        onDispose {
+            application.dismissInstallPermissionPrompt()
+        }
+    }
 
     val queueArtworkCache = remember {
         QueueArtworkCache(maxEntries = QUEUE_ARTWORK_CACHE_ENTRIES)
@@ -170,6 +184,7 @@ internal fun PhoneRuntimeHost(
         thirdPartyLicensesText = application.thirdPartyLicensesText,
         translationModelCleanupState = translationModelCleanupState,
         appUpdateCheckState = appUpdateCheckState,
+        installPermissionPrompt = installPermissionPrompt,
     )
 
     PhoneAppShell(
@@ -183,12 +198,18 @@ internal fun PhoneRuntimeHost(
             playbackSurface = playbackSurface,
         ),
         onDestinationSelected = { destination ->
+            if (destination != PhoneDestination.Settings) {
+                application.dismissInstallPermissionPrompt()
+            }
             if (isSettingsNavigationEntry(selectedDestination, destination)) {
                 application.onSettingsEntered()
             }
             selectedDestination = destination
         },
         onDestinationReselected = { destination ->
+            if (destination == PhoneDestination.Settings) {
+                application.dismissInstallPermissionPrompt()
+            }
             destinationRootResetKey += 1
             if (destination == PhoneDestination.Lyrics) {
                 lyricsInteractionMode = LyricsViewportInteractionMode.FOLLOW
@@ -270,12 +291,24 @@ internal fun PhoneRuntimeHost(
                 onDownloadUpdate = application::downloadUpdate,
                 onInstallUpdate = application::installUpdate,
                 onOpenInstallSettings = onOpenInstallSettings,
+                onDismissInstallPermissionDialog =
+                    application::dismissInstallPermissionPrompt,
+                onDownloadUpdateFromGitHub = onOpenUpdateRelease,
                 onOpenGitHub = onOpenSourceCode,
                 onHelpFeedback = onOpenHelpFeedback,
                 onSupportAALyrics = onOpenSupportAALyrics,
                 bottomOverlayInset = bottomOverlayInset,
             )
         }
+    }
+
+    successfulUpdate?.let { update ->
+        UpdateSuccessfulDialog(
+            state = UpdateSuccessfulDialogUiState(
+                versionName = update.installedVersion,
+            ),
+            onDismissRequest = application::dismissSuccessfulUpdate,
+        )
     }
 }
 

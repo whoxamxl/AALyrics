@@ -13,6 +13,7 @@ internal class AndroidUpdateInstallerSessionRecovery(
     private val context: Context,
     private val packageInstaller: PackageInstaller =
         context.packageManager.packageInstaller,
+    private val onSessionAbandoned: (Int) -> Unit = {},
 ) : UpdateInstallerSessionRecovery {
     override fun cleanupInterruptedSessions() {
         val sessions = runCatching {
@@ -29,8 +30,11 @@ internal class AndroidUpdateInstallerSessionRecovery(
                     installerPackageName = context.packageName,
                 )
             ) {
-                runCatching {
+                val abandoned = runCatching {
                     packageInstaller.abandonSession(snapshot.sessionId)
+                }.isSuccess
+                if (abandoned) {
+                    onSessionAbandoned(snapshot.sessionId)
                 }
             }
         }

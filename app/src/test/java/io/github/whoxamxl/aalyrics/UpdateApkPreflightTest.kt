@@ -7,7 +7,7 @@ class UpdateApkPreflightTest {
     @Test
     fun `matching newer signed archive is ready`() {
         assertEquals(
-            UpdateApkPreflightResult.Ready,
+            UpdateApkPreflightResult.Ready(targetVersionCode = 41L),
             UpdateApkPreflight.evaluate(validFacts()),
         )
     }

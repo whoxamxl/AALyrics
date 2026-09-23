@@ -15,12 +15,12 @@ class UpdateInstallPreparationTest {
             ),
             preflight = {
                 preflightCount += 1
-                UpdateApkPreflightResult.Ready
+                UpdateApkPreflightResult.Ready(targetVersionCode = 41L)
             },
         )
 
         assertEquals(
-            UpdateInstallPreparationResult.Ready,
+            UpdateInstallPreparationResult.Ready(targetVersionCode = 41L),
             preparation.prepare(
                 retainedApk = File("retained.apk"),
                 retainedVersionName = "0.2.0-alpha.2",
@@ -41,7 +41,7 @@ class UpdateInstallPreparationTest {
             ),
             preflight = {
                 preflightCount += 1
-                UpdateApkPreflightResult.Ready
+                UpdateApkPreflightResult.Ready(targetVersionCode = 41L)
             },
         )
 
@@ -80,7 +80,7 @@ class UpdateInstallPreparationTest {
             ),
             preflight = {
                 preflightCount += 1
-                UpdateApkPreflightResult.Ready
+                UpdateApkPreflightResult.Ready(targetVersionCode = 41L)
             },
         )
 
@@ -124,7 +124,7 @@ class UpdateInstallPreparationTest {
         installedVersionName: String = "0.2.0-alpha.1",
         releases: Result<List<GitHubRelease>>,
         preflight: (File) -> UpdateApkPreflightResult = {
-            UpdateApkPreflightResult.Ready
+            UpdateApkPreflightResult.Ready(targetVersionCode = 41L)
         },
     ) = UpdateInstallPreparation(
         installedVersionName = installedVersionName,
