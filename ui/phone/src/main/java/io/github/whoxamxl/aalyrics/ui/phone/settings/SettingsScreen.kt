@@ -42,11 +42,7 @@ fun SettingsScreen(
     onResetAALyrics: () -> Unit,
     onAndroidAutoCompatibilitySetup: () -> Unit,
     onCheckForUpdates: () -> Unit,
-    onDownloadUpdate: () -> Unit,
-    onInstallUpdate: () -> Unit,
-    onOpenInstallSettings: () -> Unit,
-    onDismissInstallPermissionDialog: () -> Unit = {},
-    onDownloadUpdateFromGitHub: (String) -> Unit = {},
+    onUpdate: () -> Unit,
     onOpenGitHub: () -> Unit,
     onHelpFeedback: (HelpFeedbackDestination) -> Unit,
     onSupportAALyrics: () -> Unit,
@@ -146,8 +142,7 @@ fun SettingsScreen(
             onTranslationModelDownloadRequested = onTranslationModelDownloadRequested,
             onAndroidAutoCompatibilitySetup = onAndroidAutoCompatibilitySetup,
             onCheckForUpdates = onCheckForUpdates,
-            onDownloadUpdate = onDownloadUpdate,
-            onInstallUpdate = onInstallUpdate,
+            onUpdate = onUpdate,
             onChangelogRequested = { activeSubscreen = SettingsSubscreen.CHANGELOG },
             onPrivacyPolicyRequested = {
                 activeSubscreen = SettingsSubscreen.PRIVACY_POLICY
@@ -169,20 +164,6 @@ fun SettingsScreen(
         )
     }
 
-    state.installPermissionDialog?.let { dialogState ->
-        InstallPermissionDialog(
-            state = dialogState,
-            onDismissRequest = onDismissInstallPermissionDialog,
-            onGrantPermission = {
-                onDismissInstallPermissionDialog()
-                onOpenInstallSettings()
-            },
-            onDownloadFromGitHub = {
-                onDismissInstallPermissionDialog()
-                onDownloadUpdateFromGitHub(dialogState.versionName)
-            },
-        )
-    }
 }
 
 @Composable
@@ -199,8 +180,7 @@ internal fun SettingsScreenContent(
     onTranslationModelDownloadRequested: (String) -> Unit,
     onAndroidAutoCompatibilitySetup: () -> Unit,
     onCheckForUpdates: () -> Unit,
-    onDownloadUpdate: () -> Unit,
-    onInstallUpdate: () -> Unit,
+    onUpdate: () -> Unit,
     onChangelogRequested: () -> Unit,
     onPrivacyPolicyRequested: () -> Unit,
     onTermsOfUseRequested: () -> Unit,
@@ -323,14 +303,11 @@ internal fun SettingsScreenContent(
                 checkingLabel = stringResource(R.string.settings_checking_for_updates),
                 upToDateLabel = stringResource(R.string.settings_up_to_date),
                 updateAvailableLabel = stringResource(R.string.settings_update_available),
-                downloadLabel = stringResource(R.string.settings_download_update),
-                preparingDownloadLabel =
-                    stringResource(R.string.settings_preparing_update_download),
+                updateLabel = stringResource(R.string.settings_update_action),
+                preparingLabel = stringResource(R.string.settings_preparing_update),
                 downloadingLabel = stringResource(R.string.settings_downloading_update),
-                downloadedLabel = stringResource(R.string.settings_update_downloaded),
-                installLabel = stringResource(R.string.settings_install_update),
-                preparingInstallLabel =
-                    stringResource(R.string.settings_preparing_update_install),
+                verifyingLabel = stringResource(R.string.settings_verifying_update),
+                readyLabel = stringResource(R.string.settings_ready_to_update),
                 installPermissionRequiredLabel =
                     stringResource(R.string.settings_install_permission_required),
                 installingLabel = stringResource(R.string.settings_installing_update),
@@ -347,8 +324,7 @@ internal fun SettingsScreenContent(
                     stringResource(R.string.settings_update_install_failure_generic),
                 unavailableLabel = stringResource(R.string.settings_not_available_yet),
                 onCheckForUpdates = onCheckForUpdates,
-                onDownloadUpdate = onDownloadUpdate,
-                onInstallUpdate = onInstallUpdate,
+                onUpdate = onUpdate,
             )
 
             SettingsDivider()
