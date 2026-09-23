@@ -15,6 +15,7 @@ import io.github.whoxamxl.aalyrics.ui.phone.lyrics.TrackCardLyricsStatus
 import io.github.whoxamxl.aalyrics.ui.phone.lyrics.TrackCardUiState
 import io.github.whoxamxl.aalyrics.ui.phone.navigation.PhoneDestination
 import io.github.whoxamxl.aalyrics.ui.phone.settings.AndroidAutoCompatibilityUiStatus
+import io.github.whoxamxl.aalyrics.ui.phone.settings.AppUpdateInstallFailureUiReason
 import io.github.whoxamxl.aalyrics.ui.phone.settings.AppUpdateUiPhase
 import io.github.whoxamxl.aalyrics.ui.phone.settings.AppUpdateUiState
 import io.github.whoxamxl.aalyrics.ui.phone.settings.SettingsLanguageOptionUiState
@@ -462,7 +463,7 @@ internal object PhonePreviewFixtures {
         appUpdate = AppUpdateUiState(
             phase = AppUpdateUiPhase.INSTALL_FAILED,
             availableVersionName = "0.1.2",
-            failureReason = "Android Package Installer did not complete the update.",
+            installFailureReason = AppUpdateInstallFailureUiReason.SIGNING_IDENTITY_MISMATCH,
         ),
     )
     val settingsTranslationOn = settingsTypical.copy(translationEnabled = true)
