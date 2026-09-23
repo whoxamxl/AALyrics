@@ -472,9 +472,18 @@ The follow-up UX may replace the compact install-permission-required row treatme
 
 The approved follow-up contract is defined in `docs/UPDATE_UX.md`. Merely adding that contract does not change current runtime or Phone behavior.
 
-The first Update UX checkpoint now separates the platform/runtime permission fact from modal visibility. `INSTALL_PERMISSION_REQUIRED` remains the update phase, while a separate process-local prompt request determines whether the future explanation dialog should currently be shown. Dismissing that prompt does not alter the update phase or retained APK. Re-invoking Install/Update while permission is still missing re-requests the prompt without repeating the download. Navigation away from Settings, Settings root reset, Activity/composition disposal, Reset, and return from Android source-trust Settings clear only the transient prompt.
+The first Update UX checkpoint separates the platform/runtime permission fact from modal visibility. `INSTALL_PERMISSION_REQUIRED` remains the update phase, while a separate process-local prompt request determines whether the explanation dialog should currently be shown. Dismissing that prompt does not alter the update phase or retained APK. Re-invoking Install/Update while permission is still missing re-requests the prompt without repeating the download. Navigation away from Settings, Settings root reset, Activity/composition disposal, Reset, and return from Android source-trust Settings clear only the transient prompt.
 
-The explanatory modal itself is not part of this checkpoint; the existing compact permission-required row remains rendered until the next Phone UI change.
+When that transient request is active, Phone Settings shows a large modal explanation modeled on the information hierarchy of the Notification Access setup surface, but not as a full-screen destination. It presents an update-permission eyebrow, the target update version, a concise explanation of why sideloaded AALyrics needs Android's per-source install permission, and a separate note that Android still owns the final install confirmation.
+
+Dialog actions are:
+
+```text
+Grant permission
+Download from GitHub  ↗
+```
+
+The top-right close button and system Back dismiss only the dialog. Outside-tap dismissal is disabled. `Grant permission` dismisses the prompt and hands off to Android's per-app unknown-source Settings. `Download from GitHub` dismisses the prompt and opens the matching GitHub Release page externally. The compact update row stays in `INSTALL_PERMISSION_REQUIRED` after dismissal and shows `Install` as the explicit re-entry action; it no longer bypasses the explanation by jumping directly to Android Settings.
 
 The UI emits `onCheckForUpdates`, `onDownloadUpdate`, `onInstallUpdate`, and an install-permission-settings callback. It does not perform GitHub HTTP requests, APK/package inspection, file I/O, signing checks, Android settings navigation, or PackageInstaller session work directly.
 
@@ -943,6 +952,7 @@ Deterministic debug Previews should cover at least:
 - app up-to-date state;
 - app update available state;
 - app update failure/retry state;
+- install-permission explanation dialog at typical, narrow, and enlarged-font configurations;
 - Changelog screen at typical, narrow, and enlarged-font configurations;
 - Privacy Policy screen at typical, narrow, and enlarged-font configurations;
 - Terms of Use screen at typical, narrow, and enlarged-font configurations;
