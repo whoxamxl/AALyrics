@@ -119,6 +119,12 @@ private fun SettingsUpdateDownloadingPreview() {
     SettingsScreenPreview(PhonePreviewFixtures.settingsDownloadingUpdate)
 }
 
+@Preview(name = "Update · verifying", group = "SettingsScreen", widthDp = 412, heightDp = 900)
+@Composable
+private fun SettingsUpdateVerifyingPreview() {
+    SettingsScreenPreview(PhonePreviewFixtures.settingsVerifyingUpdate)
+}
+
 @Preview(name = "Update · downloaded", group = "SettingsScreen", widthDp = 412, heightDp = 900)
 @Composable
 private fun SettingsUpdateDownloadedPreview() {
