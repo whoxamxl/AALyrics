@@ -383,14 +383,23 @@ internal fun AppUpdateRow(
     preparingDownloadLabel: String,
     downloadingLabel: String,
     downloadedLabel: String,
+    installLabel: String,
+    preparingInstallLabel: String,
+    installPermissionRequiredLabel: String,
+    openInstallSettingsLabel: String,
+    installingLabel: String,
     retryLabel: String,
     checkFailedLabel: String,
     downloadFailedLabel: String,
+    installFailedLabel: String,
     failureInfoContentDescription: String,
     genericFailureReason: String,
+    installFailureReason: String,
     unavailableLabel: String,
     onCheckForUpdates: () -> Unit,
     onDownloadUpdate: () -> Unit,
+    onInstallUpdate: () -> Unit,
+    onOpenInstallSettings: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -482,14 +491,14 @@ internal fun AppUpdateRow(
             }
 
             AppUpdateUiPhase.DOWNLOADED -> {
-                AppUpdateStatusRow(
-                    label = if (state.availableVersionName.isNullOrBlank()) {
+                AppUpdateActionRow(
+                    status = if (state.availableVersionName.isNullOrBlank()) {
                         downloadedLabel
                     } else {
                         "${downloadedLabel} ${state.availableVersionName.asVersionLabel()}"
                     },
-                    icon = AALyricsIcons.Check,
-                    iconTint = AALyricsColors.Success,
+                    actionLabel = installLabel,
+                    onAction = onInstallUpdate,
                 )
             }
 
@@ -500,6 +509,32 @@ internal fun AppUpdateRow(
                     failureInfoContentDescription = failureInfoContentDescription,
                     retryLabel = retryLabel,
                     onRetry = onDownloadUpdate,
+                )
+            }
+
+            AppUpdateUiPhase.PREPARING_INSTALL -> {
+                AppUpdateIndeterminateBarRow(label = preparingInstallLabel)
+            }
+
+            AppUpdateUiPhase.INSTALL_PERMISSION_REQUIRED -> {
+                AppUpdateActionRow(
+                    status = installPermissionRequiredLabel,
+                    actionLabel = openInstallSettingsLabel,
+                    onAction = onOpenInstallSettings,
+                )
+            }
+
+            AppUpdateUiPhase.INSTALLING -> {
+                AppUpdateIndeterminateBarRow(label = installingLabel)
+            }
+
+            AppUpdateUiPhase.INSTALL_FAILED -> {
+                AppUpdateFailureRow(
+                    label = installFailedLabel,
+                    reason = state.failureReason ?: installFailureReason,
+                    failureInfoContentDescription = failureInfoContentDescription,
+                    retryLabel = retryLabel,
+                    onRetry = onInstallUpdate,
                 )
             }
         }
