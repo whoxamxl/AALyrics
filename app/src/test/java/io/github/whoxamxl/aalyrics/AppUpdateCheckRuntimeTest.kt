@@ -1229,6 +1229,7 @@ class AppUpdateCheckRuntimeTest {
     private class FakeUpdatePackageInstaller(
         private val sessionId: Int = 77,
         private var installFailure: Throwable? = null,
+        private val statusDuringInstall: UpdatePackageInstallerStatus? = null,
     ) : UpdatePackageInstaller {
         var installCount: Int = 0
             private set
@@ -1243,6 +1244,7 @@ class AppUpdateCheckRuntimeTest {
             installCount += 1
             this.statusSink = statusSink
             onSessionCreated(sessionId)
+            statusDuringInstall?.let(statusSink::onStatus)
             return installFailure
                 ?.let { error -> Result.failure<Int>(error) }
                 ?: Result.success(sessionId)
