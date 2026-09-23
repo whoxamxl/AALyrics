@@ -609,6 +609,47 @@ class AppUpdateCheckRuntimeTest {
     }
 
     @Test
+    fun `reset racing pending marker write leaves no recovery state`() = runTest {
+        val root = createTempDirectory("aalyrics-install-runtime").toFile()
+        retainedUpdate(root, "0.2.0-alpha.2")
+        val installer = FakeUpdatePackageInstaller()
+        lateinit var runtime: AppUpdateCheckRuntime
+        val recoveryStore = FakeUpdateRecoveryStore(
+            beforeRecord = {
+                runtime.reset()
+            },
+        )
+        try {
+            runtime = runtime(
+                installedVersionName = "0.2.0-alpha.1",
+                releases = emptyList(),
+                downloadFileStore = updateStore(root),
+                installPreparation = installPreparation(
+                    installedVersionName = "0.2.0-alpha.1",
+                    releases = listOf(
+                        release("v0.2.0-alpha.2", prerelease = true),
+                    ),
+                    preflightResult =
+                        UpdateApkPreflightResult.Ready(targetVersionCode = 42L),
+                ),
+                installSourceTrustChecker = InstallSourceTrustChecker { true },
+                packageInstaller = installer,
+                updateRecoveryStore = recoveryStore,
+            )
+
+            runtime.installUpdate()
+            runCurrent()
+
+            assertEquals(AppUpdateCheckState.Idle, runtime.state.value)
+            assertNull(recoveryStore.pendingUpdate())
+            assertEquals(listOf(77), installer.abandonedSessions)
+            assertEquals(0, installer.beforeCommitCount)
+        } finally {
+            root.deleteRecursively()
+        }
+    }
+
+    @Test
     fun `pending update persistence failure prevents installer commit`() = runTest {
         val root = createTempDirectory("aalyrics-install-runtime").toFile()
         retainedUpdate(root, "0.2.0-alpha.2")
@@ -1529,6 +1570,7 @@ class AppUpdateCheckRuntimeTest {
 
     private class FakeUpdateRecoveryStore(
         private val recordFailure: Throwable? = null,
+        private val beforeRecord: (() -> Unit)? = null,
         initialSuccessful: SuccessfulUpdate? = null,
     ) : UpdateRecoveryStore {
         private var pending: PendingUpdate? = null
@@ -1544,6 +1586,7 @@ class AppUpdateCheckRuntimeTest {
 
         override fun recordPendingUpdate(pendingUpdate: PendingUpdate) {
             recordFailure?.let { throw it }
+            beforeRecord?.invoke()
             recordCount += 1
             pending = pendingUpdate
         }
