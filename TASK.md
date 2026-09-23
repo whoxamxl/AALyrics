@@ -2,7 +2,7 @@
 
 ## Branch and baseline
 
-- Branch: `feature/update-recovery-ux`.
+- Branch: `feature/update-ux`.
 - Base: `feature/package-installer` at `df1e394f8dce87b87cc25e6c57cbaa071e40e29d`.
 - Parent installer PR: #72.
 - Classification: SETTINGS / UPDATE UX / ANDROID PACKAGE INSTALLER.
@@ -55,7 +55,7 @@ This is the safe checkpoint for the UX follow-up. Do not remove or weaken the in
 
 Polish the user-facing update experience while preserving the validated update pipeline and Android-owned security/confirmation boundaries.
 
-Approved update-UX stack direction (this branch implements items 1–4; later items live in dependent PRs):
+Approved follow-up direction:
 
 1. replace the compact install-permission-required presentation with a large explanatory modal dialog;
 2. separate durable permission-required state from transient dialog visibility and dismissal;
@@ -87,35 +87,35 @@ Approved update-UX stack direction (this branch implements items 1–4; later it
 - [x] Preserve typed install-failure reasons through Settings and explain them in the failure tooltip.
 - [x] Standardize dismissible custom update-dialog X placement through shared `PhoneDialogHeader`.
 - [x] Bind durable pending-update recovery to the exact PackageInstaller session and clear matching stale markers on abandoned/failed-session recovery.
-- [ ] Complete same-release-signing device E2E from a #74 recovery-capable OLD APK to a newer #74 recovery-capable APK, confirming `ACTION_MY_PACKAGE_REPLACED` reconciliation and one-time Successful dialog. *(explicitly deferred device validation; best-effort automatic resume is not required to occur)*
-- [ ] Add automatic update checking preference and new-release dialog. *(deferred to dependent PR #75; out of scope for #74)*
-- [ ] Compose Download + Install into one user-facing Update action. *(deferred to dependent PR #76; out of scope for #74)*
-- [x] Align #74 Previews, Reset behavior, docs, focused tests, and CI.
+- [ ] Complete same-release-signing device E2E from a recovery-capable OLD APK to a newer recovery-capable APK, confirming `ACTION_MY_PACKAGE_REPLACED` reconciliation and one-time Successful dialog. *(explicitly deferred device validation; best-effort automatic resume is not required to occur)*
+- [x] Add durable automatic update checking preference and bounded automatic discovery.
+- [x] Add automatic-discovery new-release dialog and session suppression.
+- [ ] Compose Download + Install into one user-facing Update action.
+- [ ] Align #75 Previews, Reset behavior, docs, tests, CI, and real-device regression validation.
 
 ## Current checkpoint
 
-Successful package replacement now makes a bounded best-effort request to return to AALyrics when the persisted resume intent allows it.
+Automatic discovery now surfaces a process-local `New release available` dialog without changing manual update discovery or install-refresh behavior.
 
 Completed in this checkpoint:
 
-- added an `UpdatePostReplacementResume` boundary that only considers reconciled `SuccessfulUpdate` state;
-- `resumeAfterUpdate=true` requests one launch; false, no pending update, or unreconciled replacement performs no launch;
-- the Android launcher uses an explicit `MainActivity` intent with `NEW_TASK`, `CLEAR_TOP`, and `SINGLE_TOP` flags;
-- the receiver attempts resume only after durable pending-to-success promotion has completed;
-- a thrown launch failure is contained and does not alter update recovery state;
-- an accepted `startActivity()` request is treated only as a request, not proof that Android displayed the Activity;
-- `SuccessfulUpdate` is never cleared or modified by the resume attempt;
-- automatic return uses normal app entry handling and does not add Main/Lyrics destination routing;
-- if Android blocks or suppresses background Activity launch, the next ordinary app launch still surfaces the durable success dialog;
-- focused tests cover resume requested, resume disabled, unreconciled replacement, and launch-request failure;
-- install preparation and PackageInstaller failures now retain typed reasons through Phone presentation; the failure tooltip explains the specific boundary, including signing identity mismatch before source-trust evaluation;
-- permission and successful-update dialogs now share `PhoneDialogHeader`, fixing the X at one standard trailing header position and documenting that contract in the Phone UI spec;
-- Codex review identified a valid process-death recovery gap; `PendingUpdate` now persists the PackageInstaller session ID, startup abandonment clears only its matching marker, and terminal failure clears the matching marker even when the original process-local status sink is gone;
-- second Codex review identified a valid Reset/commit-boundary race; the installer now revalidates operation generation immediately after the synchronous pending-marker write, clears the matching session marker when Reset won the race, and aborts before `Session.commit()`;
+- added `AutomaticUpdateReleasePromptRuntime` as the application-owned transient prompt/suppression owner;
+- only `AppUpdateCheckState.UpdateAvailable` with `origin=AUTOMATIC` can request the prompt;
+- `MANUAL` and `INSTALL_REFRESH` update availability never create the automatic dialog;
+- the dialog shows the discovered version with `Update`, `Not now`, a top-right close action, and system-Back dismissal;
+- outside-tap dismissal is disabled;
+- `Not now`, close, and Back share the same dismissal path and suppress that exact version for the rest of the current app-process session;
+- a different automatically discovered version remains eligible for presentation;
+- `Update` closes the prompt, suppresses transient re-presentation of the same version, and starts the existing download/verification pipeline;
+- this checkpoint does not auto-chain a completed download into install; that remains the next one-step Update checkpoint;
+- prompt and same-session suppression survive ordinary navigation/recomposition/Activity recreation because ownership is process-level;
+- `Reset AALyrics` clears the transient prompt and process-local suppression;
+- durable `SuccessfulUpdate` feedback has presentation priority, dialogs are not stacked, and an unconsumed success marker prevents automatic checking on that Phone entry;
+- focused prompt-runtime tests cover automatic-only eligibility, manual/install-refresh exclusion, same-version suppression, different-version eligibility, Update consumption, and Reset;
+- typical, narrow-phone, and enlarged-font new-release dialog Previews were added;
 - Update UX and Phone Settings documentation are aligned.
+- inherited #74 recovery hardening remains preserved: process-death cleanup is session-bound and Reset cannot race a stale pending marker past the PackageInstaller commit boundary.
 
-No notification fallback, automatic update checking, release-available dialog, or one-step Update composition has been implemented yet.
+No end-to-end one-step Download + Install composition has been implemented yet. The `Update` action currently enters the already-validated download/verification state machine and leaves installation as the existing explicit follow-up.
 
-Remaining device-only validation is intentionally limited to a controlled same-signing replacement where both the OLD and NEW binaries contain this #74 recovery implementation. The previously exercised update into published `v0.2.0-alpha.1` cannot validate replacement reconciliation or Successful dialog because that target binary predates the #74 receiver/recovery code.
-
-PR #74 stops at this recovery/resume checkpoint. Automatic update discovery is intentionally deferred to dependent PR #75, and one-step Update composition to dependent PR #76. Do not implement either on `feature/update-recovery-ux`.
+Next checkpoint: **compose Download + Install into one user-facing `Update` action while preserving download, checksum verification, retained-artifact ownership, install refresh, APK preflight, source trust, PackageInstaller, and Android confirmation as separate internal boundaries**. Do not begin it until explicitly requested.

@@ -391,6 +391,9 @@ internal object PhonePreviewFixtures {
         termsOfUseText = termsOfUseMarkdownSample,
         thirdPartyLicensesText = thirdPartyLicensesMarkdownSample,
     )
+    val settingsAutomaticUpdateOff = settingsTypical.copy(
+        automaticallyCheckForUpdates = false,
+    )
     val settingsIdleUpdate = settingsTypical.copy(
         appUpdate = AppUpdateUiState(phase = AppUpdateUiPhase.IDLE),
     )

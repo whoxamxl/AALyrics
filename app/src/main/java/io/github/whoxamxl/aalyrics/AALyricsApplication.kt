@@ -51,6 +51,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
@@ -84,6 +85,10 @@ class AALyricsApplication : Application() {
     private lateinit var phonePlaybackSourceCanOpenAppStateFlow: StateFlow<Boolean>
     private lateinit var phoneDetailsStateFlow: StateFlow<DetailsScreenUiState>
     private lateinit var appUpdateCheckRuntime: AppUpdateCheckRuntime
+    private lateinit var automaticUpdateCheckRuntime: AutomaticUpdateCheckRuntime
+    private val automaticUpdateReleasePromptRuntime =
+        AutomaticUpdateReleasePromptRuntime()
+    private lateinit var updateCheckCadenceStore: UpdateCheckCadenceStore
     private lateinit var updateRecoveryStore: UpdateRecoveryStore
     private lateinit var updateSuccessFeedbackRuntime: UpdateSuccessFeedbackRuntime
     private val installPermissionPromptRuntime = UpdateInstallPermissionPromptRuntime()
@@ -182,6 +187,9 @@ class AALyricsApplication : Application() {
     internal val allowUnclassifiedApps: StateFlow<Boolean>
         get() = phonePresentationSettingsStore.allowUnclassifiedApps
 
+    internal val automaticallyCheckForUpdates: StateFlow<Boolean>
+        get() = phonePresentationSettingsStore.automaticallyCheckForUpdates
+
     val translationModelStates: StateFlow<Map<String, TranslationModelState>>
         get() = translationModelManager.states
 
@@ -197,11 +205,36 @@ class AALyricsApplication : Application() {
     internal val successfulUpdate: StateFlow<SuccessfulUpdate?>
         get() = updateSuccessFeedbackRuntime.successfulUpdate
 
+    internal val automaticUpdateReleasePrompt:
+        StateFlow<AutomaticUpdateReleasePrompt?>
+        get() = automaticUpdateReleasePromptRuntime.prompt
+
     internal fun checkForUpdates() {
-        appUpdateCheckRuntime.checkForUpdates()
+        appUpdateCheckRuntime.checkForUpdates(
+            origin = UpdateCheckOrigin.MANUAL,
+        )
+    }
+
+    internal fun onPhoneReadyForAutomaticUpdateCheck() {
+        if (updateSuccessFeedbackRuntime.successfulUpdate.value != null) {
+            return
+        }
+        automaticUpdateCheckRuntime.requestIfEnabled(
+            phonePresentationSettingsStore.automaticallyCheckForUpdates.value,
+        )
     }
 
     internal fun downloadUpdate() {
+        appUpdateCheckRuntime.downloadUpdate()
+    }
+
+    internal fun dismissAutomaticUpdateReleasePrompt() {
+        automaticUpdateReleasePromptRuntime.dismiss()
+    }
+
+    internal fun acceptAutomaticUpdateReleasePrompt() {
+        automaticUpdateReleasePromptRuntime.consumeForUpdate()
+            ?: return
         appUpdateCheckRuntime.downloadUpdate()
     }
 
@@ -272,6 +305,11 @@ class AALyricsApplication : Application() {
         applyCurrentPlaybackSourceEligibility()
     }
 
+    internal fun setAutomaticallyCheckForUpdates(enabled: Boolean) {
+        phonePresentationSettingsStore.setAutomaticallyCheckForUpdates(enabled)
+        automaticUpdateCheckRuntime.requestIfEnabled(enabled)
+    }
+
     fun clearDownloadedTranslationModels() {
         if (mutableTranslationModelCleanupState.value == TranslationModelCleanupState.RUNNING) {
             return
@@ -297,10 +335,12 @@ class AALyricsApplication : Application() {
 
     fun resetAppOwnedSettings() {
         installPermissionPromptRuntime.dismiss()
+        automaticUpdateReleasePromptRuntime.reset()
         appUpdateCheckRuntime.reset()
         updateSuccessFeedbackRuntime.refresh()
         translationSettingsStore.resetToDefaults()
         phonePresentationSettingsStore.resetToDefaults()
+        automaticUpdateCheckRuntime.resetCadence()
         applyCurrentPlaybackSourceEligibility()
     }
 
@@ -318,6 +358,7 @@ class AALyricsApplication : Application() {
         super.onCreate()
         val updateUserAgent = "AALyrics/${BuildConfig.VERSION_NAME}"
         updateRecoveryStore = SharedPreferencesUpdateRecoveryStore(this)
+        updateCheckCadenceStore = SharedPreferencesUpdateCheckCadenceStore(this)
         AndroidUpdateInstallerSessionRecovery(
             context = this,
             onSessionAbandoned = { sessionId ->
@@ -360,10 +401,26 @@ class AALyricsApplication : Application() {
             ),
             packageInstaller = AndroidUpdatePackageInstaller(this),
             updateRecoveryStore = updateRecoveryStore,
+            onReleaseQuerySucceeded = {
+                automaticUpdateCheckRuntime.recordSuccessfulReleaseQuery()
+            },
             onInstallPermissionRequired = installPermissionPromptRuntime::request,
         )
         translationSettingsStore = SharedPreferencesTranslationSettingsStore(this)
         phonePresentationSettingsStore = SharedPreferencesPhonePresentationSettingsStore(this)
+        automaticUpdateCheckRuntime = AutomaticUpdateCheckRuntime(
+            cadenceStore = updateCheckCadenceStore,
+            requestAutomaticCheck = {
+                appUpdateCheckRuntime.checkForUpdates(
+                    origin = UpdateCheckOrigin.AUTOMATIC,
+                )
+            },
+        )
+        applicationScope.launch {
+            appUpdateCheckRuntime.state.collect(
+                automaticUpdateReleasePromptRuntime::onUpdateState,
+            )
+        }
         playbackAppLauncher = SelectedPlaybackAppLauncher(this)
         playbackSourceAppInfoResolver = PlaybackSourceAppInfoResolver(this)
         graph = createProductionApplicationGraph(applicationScope)

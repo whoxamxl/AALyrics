@@ -32,6 +32,7 @@ fun SettingsScreen(
     onPlainLyricsAutoScrollChanged: (Boolean) -> Unit,
     onIgnoreNonAudioAppsChanged: (Boolean) -> Unit,
     onAllowUnclassifiedAppsChanged: (Boolean) -> Unit,
+    onAutomaticallyCheckForUpdatesChanged: (Boolean) -> Unit = {},
     onVerboseDetailsChanged: (Boolean) -> Unit,
     onTranslationEnabledChanged: (Boolean) -> Unit,
     onTranslationTargetSelected: (String) -> Unit,
@@ -138,6 +139,8 @@ fun SettingsScreen(
             },
             onPlainLyricsAutoScrollChanged = onPlainLyricsAutoScrollChanged,
             onIgnoreNonAudioAppsChanged = onIgnoreNonAudioAppsChanged,
+            onAutomaticallyCheckForUpdatesChanged =
+                onAutomaticallyCheckForUpdatesChanged,
             onTranslationEnabledChanged = onTranslationEnabledChanged,
             onTranslationTargetSelected = onTranslationTargetSelected,
             onTranslationModelDownloadRequested = onTranslationModelDownloadRequested,
@@ -190,6 +193,7 @@ internal fun SettingsScreenContent(
     onTargetLanguagePickerVisibilityChanged: (Boolean) -> Unit,
     onPlainLyricsAutoScrollChanged: (Boolean) -> Unit,
     onIgnoreNonAudioAppsChanged: (Boolean) -> Unit,
+    onAutomaticallyCheckForUpdatesChanged: (Boolean) -> Unit,
     onTranslationEnabledChanged: (Boolean) -> Unit,
     onTranslationTargetSelected: (String) -> Unit,
     onTranslationModelDownloadRequested: (String) -> Unit,
@@ -295,6 +299,22 @@ internal fun SettingsScreenContent(
         SettingsSection(
             title = stringResource(R.string.settings_section_app),
         ) {
+            SettingsSwitchRow(
+                title = stringResource(
+                    R.string.settings_automatically_check_for_updates,
+                ),
+                checked = state.automaticallyCheckForUpdates,
+                onCheckedChange = onAutomaticallyCheckForUpdatesChanged,
+                infoText = stringResource(
+                    R.string.settings_automatically_check_for_updates_info,
+                ),
+                infoContentDescription = stringResource(
+                    R.string.settings_automatically_check_for_updates_info_description,
+                ),
+            )
+
+            SettingsDivider()
+
             AppUpdateRow(
                 versionLabel = stringResource(R.string.settings_version),
                 currentVersionName = state.appVersionName,

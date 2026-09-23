@@ -163,17 +163,59 @@ If automatic return succeeds, normal entry handling still decides what is displa
 
 ## Automatic update checks
 
-Settings should expose an opt-in product control named for what it actually does, for example:
+Settings now exposes a compact switch aligned with the rest of Phone Settings:
 
 ```text
-Automatically check for updates        [toggle]
+Automatically check for updates   [i]   [ON/OFF]
 ```
 
-It checks for a newer eligible release and may notify/prompt the user. It does not silently install an update.
+The shared info tooltip contains:
 
-The existing `Check for updates` action remains available as the explicit manual path regardless of the automatic-check setting.
+```text
+Check for new releases and notify you when one is available.
+Updates are never installed without your confirmation.
+```
 
-When an automatic check discovers a newer eligible release, Phone UI may show a `New release available` dialog with an Update action and a dismiss/not-now action. Dismissing a release prompt must not cause the same prompt to reappear repeatedly during ordinary navigation in the same app session.
+The preference is app-owned and durable. Its default is **ON**, including users whose existing preferences do not yet contain the key. `Reset AALyrics` restores it to ON.
+
+Automatic checking is deliberately low-frequency and bounded:
+
+- no automatic network check occurs before the normal Phone entry gates reach `READY`;
+- automatic discovery is eligible only when at least **7 full days** have elapsed since the durable cadence timestamp, or when no cadence timestamp exists yet;
+- starting an automatic check records the cadence timestamp immediately, so a failed network request does not cause repeated automatic retries after process restarts during the same 7-day window;
+- a successful manual GitHub Releases query also refreshes the same cadence timestamp, so manually checking today suppresses redundant automatic discovery for the next 7 days;
+- manual `Check for updates` is never blocked by the automatic cadence;
+- if the setting was OFF at entry and is switched ON later, an automatic check is requested only if the durable 7-day cadence is due;
+- a process-local attempt guard remains as secondary duplicate protection against recomposition, Activity recreation, navigation, or repeated READY rendering;
+- an automatic check starts only from the update runtime's idle state and does not overwrite a retained verified APK or active download/install state;
+- `Reset AALyrics` clears both the durable cadence timestamp and the process-local attempt guard, so the restored ON default is eligible for a fresh check at the next valid READY entry.
+
+The existing `Check for updates` action remains available as the explicit manual path regardless of the preference and retains its existing behavior.
+
+Check results carry an internal origin: `MANUAL`, `AUTOMATIC`, or `INSTALL_REFRESH`. The Phone runtime now uses that origin to create a transient release prompt **only** for `AUTOMATIC` `UPDATE_AVAILABLE` results. Manual checks and install-time latest-release refreshes never create this dialog.
+
+Automatic discovery presents:
+
+```text
+New release available
+
+AALyrics v0.x.x is available.
+
+Update
+Not now
+```
+
+The dialog also has a top-right close action. System Back, close, and `Not now` share the same dismissal semantics. Outside-tap dismissal is disabled.
+
+Dismissal records the target version in process-local suppression state. The same version is not prompted again during that app-process session, including after ordinary navigation, recomposition, or Activity recreation. A different automatically discovered version remains eligible. `Reset AALyrics` clears this process-local suppression together with the transient prompt.
+
+`Update` consumes the prompt, suppresses the same version against transient re-presentation, and starts the existing verified download pipeline. This checkpoint intentionally does **not** auto-chain download completion into install; composing Download + Install into a single end-to-end action remains the next implementation checkpoint.
+
+The durable 7-day cadence and process-local prompt suppression solve different problems: cadence limits network frequency across process restarts, while suppression prevents repeated presentation of an already-handled version inside the current process session.
+
+If durable `SuccessfulUpdate` feedback and an automatic release prompt were ever both present, successful-update acknowledgement has presentation priority and dialogs are not stacked. A valid update-success marker also prevents starting the automatic check on that Phone entry.
+
+Typical, narrow-phone, and enlarged-font Previews cover the new-release dialog.
 
 ## One-step user update action
 
@@ -199,7 +241,7 @@ If permission is missing after the APK has already been verified, dismissing the
 
 Every durable state introduced by this UX follow-up must explicitly re-evaluate `Reset AALyrics`.
 
-Both implemented recovery markers — `PendingUpdate` and `SuccessfulUpdate` — are app-owned and are deleted by `Reset AALyrics`, together with active app-owned update work and retained update artifacts. Future automatic-check preferences must make the same explicit keep/delete/default decision when introduced. Android's per-source install trust remains system-owned and must not be revoked by Reset.
+Both implemented recovery markers — `PendingUpdate` and `SuccessfulUpdate` — are app-owned and are deleted by `Reset AALyrics`, together with active app-owned update work and retained update artifacts. The durable automatic-update-check preference is app-owned and resets to its default value, ON. Its durable 7-day cadence timestamp and process-local attempt guard are also cleared so reset returns automatic discovery to a fresh state. Android's per-source install trust remains system-owned and must not be revoked by Reset.
 
 ## Implementation order
 
@@ -211,8 +253,9 @@ Implement in bounded checkpoints:
 4. reconcile `ACTION_MY_PACKAGE_REPLACED` into durable update-success state;
 5. present one-time `Update successful` feedback on the next valid app entry;
 6. add best-effort resume-after-update behavior without relying on it for correctness;
-7. add the automatic update-check preference and release-available dialog;
-8. compose Download + Install into one user-facing Update action while preserving the existing internal state machine;
-9. align Previews, Reset behavior, docs, tests, CI, and real-device regression validation.
+7. add the durable automatic update-check preference and bounded automatic checking;
+8. add the automatic-discovery-only release-available dialog and session suppression;
+9. compose Download + Install into one user-facing Update action while preserving the existing internal state machine;
+10. align Previews, Reset behavior, docs, tests, CI, and real-device regression validation.
 
 Do not combine these checkpoints into one large implementation change.

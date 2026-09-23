@@ -13,6 +13,12 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
+internal enum class UpdateCheckOrigin {
+    MANUAL,
+    AUTOMATIC,
+    INSTALL_REFRESH,
+}
+
 internal sealed interface AppUpdateCheckState {
     data object Idle : AppUpdateCheckState
     data object Checking : AppUpdateCheckState
@@ -20,6 +26,7 @@ internal sealed interface AppUpdateCheckState {
 
     data class UpdateAvailable(
         val versionName: String,
+        val origin: UpdateCheckOrigin = UpdateCheckOrigin.MANUAL,
     ) : AppUpdateCheckState
 
     data object Failed : AppUpdateCheckState
@@ -93,6 +100,7 @@ internal class AppUpdateCheckRuntime(
     private val installSourceTrustChecker: InstallSourceTrustChecker? = null,
     private val packageInstaller: UpdatePackageInstaller? = null,
     private val updateRecoveryStore: UpdateRecoveryStore? = null,
+    private val onReleaseQuerySucceeded: (UpdateCheckOrigin) -> Unit = {},
     private val onInstallPermissionRequired: (String) -> Unit = {},
 ) {
     private val mutableState = MutableStateFlow<AppUpdateCheckState>(AppUpdateCheckState.Idle)
@@ -111,7 +119,9 @@ internal class AppUpdateCheckRuntime(
         mutableState.value = restoreVerifiedDownload()
     }
 
-    fun checkForUpdates() {
+    fun checkForUpdates(
+        origin: UpdateCheckOrigin = UpdateCheckOrigin.MANUAL,
+    ): Boolean {
         if (
             checkJob?.isActive == true ||
             downloadJob?.isActive == true ||
@@ -122,16 +132,23 @@ internal class AppUpdateCheckRuntime(
             mutableState.value is AppUpdateCheckState.Downloading ||
             mutableState.value is AppUpdateCheckState.PreparingInstall ||
             mutableState.value is AppUpdateCheckState.InstallPermissionRequired ||
-            mutableState.value is AppUpdateCheckState.Installing
+            mutableState.value is AppUpdateCheckState.Installing ||
+            (
+                origin == UpdateCheckOrigin.AUTOMATIC &&
+                    mutableState.value != AppUpdateCheckState.Idle
+                )
         ) {
-            return
+            return false
         }
 
         val generation = operationGeneration.get()
         mutableState.value = AppUpdateCheckState.Checking
         checkJob = applicationScope.launch {
             val nextState = try {
-                resolveCheckState(generation)
+                resolveCheckState(
+                    generation = generation,
+                    origin = origin,
+                )
             } catch (error: CancellationException) {
                 throw error
             } catch (_: Exception) {
@@ -141,6 +158,7 @@ internal class AppUpdateCheckRuntime(
             ensureCurrentOperation(generation)
             mutableState.value = nextState
         }
+        return true
     }
 
     fun downloadUpdate() {
@@ -278,6 +296,7 @@ internal class AppUpdateCheckRuntime(
                     installTarget = null
                     mutableState.value = AppUpdateCheckState.UpdateAvailable(
                         versionName = preparationResult.candidate.release.tagName.removePrefix("v"),
+                        origin = UpdateCheckOrigin.INSTALL_REFRESH,
                     )
                     return@launch
                 }
@@ -448,12 +467,17 @@ internal class AppUpdateCheckRuntime(
 
     private suspend fun resolveCheckState(
         generation: Long,
+        origin: UpdateCheckOrigin,
     ): AppUpdateCheckState {
         val installedVersion = AALyricsVersionParser.parseInstalledVersion(installedVersionName)
             ?: return checkFailed(generation)
 
         val releases = releaseClient.fetchReleases().getOrElse {
             return checkFailed(generation)
+        }
+        ensureCurrentOperation(generation)
+        runCatching {
+            onReleaseQuerySucceeded(origin)
         }
         val candidate = AALyricsReleaseSelector.selectLatestEligible(
             installedVersion = installedVersion,
@@ -467,6 +491,7 @@ internal class AppUpdateCheckRuntime(
             }
             AppUpdateCheckState.UpdateAvailable(
                 versionName = candidate.release.tagName.removePrefix("v"),
+                origin = origin,
             )
         } else {
             clearCandidateIfCurrent(generation)

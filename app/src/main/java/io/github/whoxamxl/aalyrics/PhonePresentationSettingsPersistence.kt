@@ -4,6 +4,7 @@ internal data class PhonePresentationSettingsSnapshot(
     val verboseDetailsEnabled: Boolean = false,
     val ignoreNonAudioApps: Boolean = true,
     val allowUnclassifiedApps: Boolean = false,
+    val automaticallyCheckForUpdates: Boolean = true,
 )
 
 internal class PhonePresentationSettingsPersistence(
@@ -24,6 +25,10 @@ internal class PhonePresentationSettingsPersistence(
                 ALLOW_UNCLASSIFIED_APPS_KEY,
                 DEFAULT_ALLOW_UNCLASSIFIED_APPS,
             ),
+            automaticallyCheckForUpdates = readBoolean(
+                AUTOMATICALLY_CHECK_FOR_UPDATES_KEY,
+                DEFAULT_AUTOMATICALLY_CHECK_FOR_UPDATES,
+            ),
         )
 
     fun setVerboseDetailsEnabled(enabled: Boolean) {
@@ -38,12 +43,18 @@ internal class PhonePresentationSettingsPersistence(
         writeBooleans(mapOf(ALLOW_UNCLASSIFIED_APPS_KEY to enabled))
     }
 
+    fun setAutomaticallyCheckForUpdates(enabled: Boolean) {
+        writeBooleans(mapOf(AUTOMATICALLY_CHECK_FOR_UPDATES_KEY to enabled))
+    }
+
     fun resetToDefaults() {
         writeBooleans(
             mapOf(
                 VERBOSE_DETAILS_ENABLED_KEY to DEFAULT_VERBOSE_DETAILS_ENABLED,
                 IGNORE_NON_AUDIO_APPS_KEY to DEFAULT_IGNORE_NON_AUDIO_APPS,
                 ALLOW_UNCLASSIFIED_APPS_KEY to DEFAULT_ALLOW_UNCLASSIFIED_APPS,
+                AUTOMATICALLY_CHECK_FOR_UPDATES_KEY to
+                    DEFAULT_AUTOMATICALLY_CHECK_FOR_UPDATES,
             ),
         )
     }
@@ -52,9 +63,12 @@ internal class PhonePresentationSettingsPersistence(
         const val VERBOSE_DETAILS_ENABLED_KEY = "phone_verbose_details_enabled"
         const val IGNORE_NON_AUDIO_APPS_KEY = "phone_ignore_non_audio_apps"
         const val ALLOW_UNCLASSIFIED_APPS_KEY = "phone_allow_unclassified_apps"
+        const val AUTOMATICALLY_CHECK_FOR_UPDATES_KEY =
+            "phone_automatically_check_for_updates"
 
         const val DEFAULT_VERBOSE_DETAILS_ENABLED = false
         const val DEFAULT_IGNORE_NON_AUDIO_APPS = true
         const val DEFAULT_ALLOW_UNCLASSIFIED_APPS = false
+        const val DEFAULT_AUTOMATICALLY_CHECK_FOR_UPDATES = true
     }
 }

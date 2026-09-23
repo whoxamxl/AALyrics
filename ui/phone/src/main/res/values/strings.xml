@@ -46,6 +46,9 @@
 
     <string name="settings_section_app">APP</string>
     <string name="settings_version">Version</string>
+    <string name="settings_automatically_check_for_updates">Automatically check for updates</string>
+    <string name="settings_automatically_check_for_updates_info">Check for new releases and notify you when one is available. Updates are never installed without your confirmation.</string>
+    <string name="settings_automatically_check_for_updates_info_description">About automatic update checks</string>
     <string name="settings_check_for_updates">Check for updates</string>
     <string name="settings_checking_for_updates">Checking for updates…</string>
     <string name="settings_up_to_date">Up to date</string>
@@ -66,6 +69,12 @@
     <string name="settings_install_permission_dialog_download_github">Download from GitHub</string>
     <string name="settings_install_permission_dialog_close">Close update permission dialog</string>
     <string name="settings_installing_update">Installing update…</string>
+    <string name="update_release_available_eyebrow">UPDATE AVAILABLE</string>
+    <string name="update_release_available_title">New release available</string>
+    <string name="update_release_available_body">AALyrics v%1$s is available.</string>
+    <string name="update_release_available_update">Update</string>
+    <string name="update_release_available_not_now">Not now</string>
+    <string name="update_release_available_close">Close new release dialog</string>
     <string name="update_successful_eyebrow">UPDATE COMPLETE</string>
     <string name="update_successful_title">AALyrics updated</string>
     <string name="update_successful_body">You’re now running v%1$s.</string>

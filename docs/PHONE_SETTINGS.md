@@ -468,7 +468,7 @@ Check for updates
 
 Cancellation/retry preserves the retained verified APK, and successful replacement is handled by Android's installer boundary. This split flow is now the regression baseline for subsequent UX work.
 
-The Update UX follow-up now replaces the direct install-permission Settings handoff with an explanatory modal while retaining the compact permission-required row as an explicit `Install` re-entry affordance. Durable post-update success feedback and best-effort post-replacement resume are implemented in this recovery slice. Automatic update discovery and one-step Download + Install remain deferred to dependent PRs. Every presentation change must preserve the existing application-owned states and safety boundaries until its replacement behavior is implemented and tested.
+The Update UX follow-up replaces the direct install-permission Settings handoff with an explanatory modal while retaining the compact permission-required row as an explicit `Install` re-entry affordance. Durable post-update success feedback, best-effort post-replacement resume, durable automatic update discovery, and the automatic-discovery release dialog are implemented. One-step Download + Install remains deferred to the dependent follow-up. Every presentation change must preserve the existing application-owned states and safety boundaries until its replacement behavior is implemented and tested.
 
 The implemented recovery-slice contract and the deferred follow-up direction are defined in `docs/UPDATE_UX.md`.
 
@@ -487,17 +487,36 @@ The top-right close button and system Back dismiss only the dialog. Outside-tap 
 
 The modal uses content-driven height instead of filling a fixed percentage of the Phone viewport. Normal content ends after the secondary GitHub action with standard bottom padding; oversized content remains scrollable within the available dialog viewport. The `INSTALL UPDATES` eyebrow and close action use the shared `PhoneDialogHeader`: the eyebrow and X share one vertically centered full-width header row, the X is the standard 24dp icon inside a 48dp touch target at the trailing edge, and the target version sits immediately below using secondary-text contrast.
 
-The UI emits `onCheckForUpdates`, `onDownloadUpdate`, `onInstallUpdate`, and an install-permission-settings callback. It does not perform GitHub HTTP requests, APK/package inspection, file I/O, signing checks, Android settings navigation, or PackageInstaller session work directly.
+The UI emits `onCheckForUpdates`, `onDownloadUpdate`, `onInstallUpdate`, an automatic-update-preference callback, and an install-permission-settings callback. It does not perform GitHub HTTP requests, APK/package inspection, file I/O, signing checks, Android settings navigation, or PackageInstaller session work directly.
 
-Application/runtime wiring owns the check:
+The APP section places a durable `Automatically check for updates` switch above the Version/update row. It uses the shared `SettingInfoTooltip` pattern rather than permanently rendering subtitle text. The tooltip explains:
 
-1. explicitly start work only when the user presses Check/Retry;
-2. query the public AALyrics GitHub Releases collection;
-3. ignore Draft releases and tags outside the AALyrics release grammar;
-4. parse the installed `BuildConfig.VERSION_NAME`;
-5. select the highest release eligible for the installed channel;
-6. compare the candidate against the installed/base development version;
-7. map the result to `UP_TO_DATE`, `UPDATE_AVAILABLE`, or `CHECK_FAILED`.
+```text
+Check for new releases and notify you when one is available.
+Updates are never installed without your confirmation.
+```
+
+The default is ON. Manual `Check for updates` remains directly available below it regardless of toggle state.
+
+Application/runtime wiring owns both manual and automatic discovery:
+
+1. manual Check/Retry explicitly requests a `MANUAL` check and remains available at all times;
+2. automatic discovery uses a durable **7-day cadence** rather than app-launch frequency;
+3. after normal entry gates reach `READY`, an enabled preference may request an `AUTOMATIC` check only when no cadence timestamp exists or at least seven full days have elapsed;
+4. starting an automatic check records the cadence timestamp immediately, so network failure does not create repeated automatic retries after process restarts during the same seven-day window;
+5. a successful manual GitHub Releases query refreshes the same timestamp and therefore suppresses redundant automatic discovery for seven days;
+6. enabling the preference later in a process requests automatic discovery only when that durable cadence is due;
+7. a process-local attempt guard remains as secondary duplicate protection against recomposition, Activity recreation, destination changes, or repeated READY rendering;
+8. automatic discovery only starts from update-runtime `IDLE` and never displaces a retained verified APK or active download/install flow;
+9. install-time latest-release refresh is tagged separately as `INSTALL_REFRESH`;
+10. all origins use the same public AALyrics GitHub Releases query, release grammar, channel eligibility, and version comparison;
+11. only `AUTOMATIC` `UPDATE_AVAILABLE` results request the global `New release available` dialog; manual and install-refresh results never do.
+
+The automatic release dialog shows the discovered version with `Update` and `Not now` actions plus a close affordance. System Back, close, and `Not now` share one dismissal path; outside-tap dismissal is disabled. Dismissal stores the version in process-local suppression so the same release is not prompted again during ordinary navigation, recomposition, or Activity recreation in that process. A different automatically discovered version remains eligible.
+
+`Update` also suppresses transient re-presentation of that version and starts the existing download/verification pipeline. It does not yet auto-chain a completed download into installation; the one-step Download + Install composition remains the next checkpoint.
+
+`Reset AALyrics` clears the durable cadence timestamp, process-local automatic-check attempt guard, automatic-release prompt, and same-session suppression in addition to restoring the automatic-check toggle to ON. Durable `SuccessfulUpdate` feedback has dialog priority over automatic release prompting, and an unconsumed success marker prevents automatic checking on that Phone entry.
 
 Do not use publication timestamp alone as version ordering. Stable installed builds consider stable releases only. Alpha/beta/RC builds consider prerelease and stable releases. Development builds inherit the channel and comparison base embedded in their generated version name.
 
@@ -859,6 +878,8 @@ After confirmation, reset restores:
 - Ignore non-audio apps -> ON;
 - Allow unclassified apps -> OFF;
 - Android Auto compatibility acknowledgement -> Not reviewed;
+- Automatically check for updates -> ON;
+- automatic update-check 7-day cadence -> cleared;
 - pending/success update recovery state -> cleared.
 
 Reset does **not**:
@@ -964,6 +985,8 @@ Deterministic debug Previews should cover at least:
 - app update available state;
 - app update failure/retry state;
 - install failure with signing-identity mismatch plus the expanded reason tooltip at typical, narrow, and enlarged-font configurations;
+- automatic update checking ON and OFF;
+- new-release dialog at typical, narrow, and enlarged-font configurations;
 - install-permission explanation dialog at typical, narrow, and enlarged-font configurations;
 - install-permission Settings return with trust denied and trust granted;
 - update-success dialog at typical, narrow, and enlarged-font configurations;
@@ -1001,7 +1024,7 @@ PR #50 implements the Phone runtime-host application-composition boundary from `
 
 A durable Plain auto-scroll preference remains a separate ownership decision unless the runtime-host implementation has an already-approved backing seam.
 
-The update runtime is application-owned. Settings entry itself does not start ordinary release-network work: explicit `Check for updates` / `Retry` drives discovery, `Download` drives the verified download path, and `Install` drives install-time Release refresh, APK preflight, source-trust handling, and PackageInstaller handoff. Active work survives ordinary destination changes because it is process-owned rather than composable-owned. This recovery slice additionally owns transient permission prompting, durable pending/success replacement markers, one-time success feedback, and best-effort post-replacement resume. Automatic update discovery and one-step Update composition are intentionally deferred to dependent PRs. Changelog remains functional independently of release-network wiring: the application supplies the bundled repository `CHANGELOG.md` as presentation text. The About & Support implementation keeps bundled legal-document access application-owned, maps Help & Feedback semantic actions to GitHub destinations in `:app`, and keeps the existing Buy Me a Coffee handoff application-owned; none of these capabilities moves asset access or browser launching into `:ui:phone`.
+The update runtime is application-owned. Manual `Check for updates` / `Retry` remains explicit and always available, while an enabled durable preference may request a cadence-eligible automatic check after normal Phone entry reaches `READY`. `Download` drives the verified download path, and `Install` drives install-time Release refresh, APK preflight, source-trust handling, and PackageInstaller handoff. Active work survives ordinary destination changes because it is process-owned rather than composable-owned. The runtime also owns transient permission prompting, session-bound durable pending/success replacement markers, one-time success feedback, best-effort post-replacement resume, automatic-check cadence/attempt state, and automatic-release prompting. One-step Update composition remains deferred. Changelog remains functional independently of release-network wiring: the application supplies the bundled repository `CHANGELOG.md` as presentation text. The About & Support implementation keeps bundled legal-document access application-owned, maps Help & Feedback semantic actions to GitHub destinations in `:app`, and keeps the existing Buy Me a Coffee handoff application-owned; none of these capabilities moves asset access or browser launching into `:ui:phone`.
 
 That wiring must preserve the existing capability ownership documented in the relevant architecture files.
 

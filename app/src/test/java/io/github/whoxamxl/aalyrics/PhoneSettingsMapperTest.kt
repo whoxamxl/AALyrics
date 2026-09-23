@@ -48,6 +48,29 @@ class PhoneSettingsMapperTest {
     }
 
     @Test
+    fun `automatic update preference passes through presentation`() {
+        val state = mapPhoneSettingsState(
+            translationSettings = TranslationSettings(enabled = false),
+            translationModelStates = emptyMap(),
+            verboseDetailsEnabled = false,
+            plainLyricsAutoScrollEnabled = true,
+            ignoreNonAudioApps = true,
+            allowUnclassifiedApps = false,
+            automaticallyCheckForUpdates = false,
+            androidAutoStatus = AndroidAutoCompatibilityUiStatus.ENABLED,
+            appVersionName = "0.1.0-dev",
+            currentYear = 2026,
+            noticeText = "",
+            licenseText = "",
+            changelogText = "",
+            privacyPolicyText = "",
+            displayLocale = Locale.ENGLISH,
+        )
+
+        assertEquals(false, state.automaticallyCheckForUpdates)
+    }
+
+    @Test
     fun `bundled legal documents pass through presentation unchanged`() {
         val terms = """
             # Terms of Use

@@ -40,6 +40,65 @@ class AppUpdateCheckRuntimeTest {
     }
 
     @Test
+    fun `automatic check tags discovered release with automatic origin`() = runTest {
+        val runtime = runtime(
+            installedVersionName = "0.2.0-alpha.1",
+            releases = listOf(
+                release("v0.2.0-alpha.2", prerelease = true),
+            ),
+        )
+
+        assertTrue(
+            runtime.checkForUpdates(
+                origin = UpdateCheckOrigin.AUTOMATIC,
+            ),
+        )
+        runCurrent()
+
+        assertEquals(
+            AppUpdateCheckState.UpdateAvailable(
+                versionName = "0.2.0-alpha.2",
+                origin = UpdateCheckOrigin.AUTOMATIC,
+            ),
+            runtime.state.value,
+        )
+    }
+
+    @Test
+    fun `automatic check does not replace retained downloaded state`() = runTest {
+        val root = createTempDirectory("aalyrics-update-runtime").toFile()
+        try {
+            retainedUpdate(root, "0.2.0-alpha.2")
+            var fetchCount = 0
+            val runtime = AppUpdateCheckRuntime(
+                installedVersionName = "0.2.0-alpha.1",
+                releaseClient = GitHubReleaseClient {
+                    fetchCount += 1
+                    Result.success(
+                        listOf(
+                            release("v0.2.0-alpha.3", prerelease = true),
+                        ),
+                    )
+                },
+                applicationScope = this,
+                downloadFileStore = updateStore(root),
+            )
+
+            assertTrue(runtime.state.value is AppUpdateCheckState.Downloaded)
+            assertFalse(
+                runtime.checkForUpdates(
+                    origin = UpdateCheckOrigin.AUTOMATIC,
+                ),
+            )
+
+            assertTrue(runtime.state.value is AppUpdateCheckState.Downloaded)
+            assertEquals(0, fetchCount)
+        } finally {
+            root.deleteRecursively()
+        }
+    }
+
+    @Test
     fun `same base development release is up to date`() = runTest {
         val runtime = runtime(
             installedVersionName = "0.2.0-alpha.1-dev+abcdef0.dirty",
@@ -69,6 +128,43 @@ class AppUpdateCheckRuntimeTest {
         runCurrent()
 
         assertEquals(AppUpdateCheckState.UpToDate, runtime.state.value)
+    }
+
+    @Test
+    fun `successful release query reports manual origin`() = runTest {
+        val origins = mutableListOf<UpdateCheckOrigin>()
+        val runtime = runtime(
+            installedVersionName = "0.2.0-alpha.1",
+            releases = listOf(
+                release("v0.2.0-alpha.1", prerelease = true),
+            ),
+            onReleaseQuerySucceeded = origins::add,
+        )
+
+        runtime.checkForUpdates()
+        runCurrent()
+
+        assertEquals(listOf(UpdateCheckOrigin.MANUAL), origins)
+        assertEquals(AppUpdateCheckState.UpToDate, runtime.state.value)
+    }
+
+    @Test
+    fun `release query failure does not report successful cadence event`() = runTest {
+        val origins = mutableListOf<UpdateCheckOrigin>()
+        val runtime = AppUpdateCheckRuntime(
+            installedVersionName = "0.2.0-alpha.1",
+            releaseClient = GitHubReleaseClient {
+                Result.failure(IllegalStateException("network unavailable"))
+            },
+            applicationScope = this,
+            onReleaseQuerySucceeded = origins::add,
+        )
+
+        runtime.checkForUpdates()
+        runCurrent()
+
+        assertEquals(emptyList(), origins)
+        assertEquals(AppUpdateCheckState.Failed, runtime.state.value)
     }
 
     @Test
@@ -805,7 +901,10 @@ class AppUpdateCheckRuntimeTest {
             runCurrent()
 
             assertEquals(
-                AppUpdateCheckState.UpdateAvailable("0.2.0-beta.1"),
+                AppUpdateCheckState.UpdateAvailable(
+                    versionName = "0.2.0-beta.1",
+                    origin = UpdateCheckOrigin.INSTALL_REFRESH,
+                ),
                 runtime.state.value,
             )
             assertEquals(0, installer.installCount)
@@ -1455,6 +1554,7 @@ class AppUpdateCheckRuntimeTest {
         installSourceTrustChecker: InstallSourceTrustChecker? = null,
         packageInstaller: UpdatePackageInstaller? = null,
         updateRecoveryStore: UpdateRecoveryStore? = FakeUpdateRecoveryStore(),
+        onReleaseQuerySucceeded: (UpdateCheckOrigin) -> Unit = {},
         onInstallPermissionRequired: (String) -> Unit = {},
     ) = AppUpdateCheckRuntime(
         installedVersionName = installedVersionName,
@@ -1466,6 +1566,7 @@ class AppUpdateCheckRuntimeTest {
         installSourceTrustChecker = installSourceTrustChecker,
         packageInstaller = packageInstaller,
         updateRecoveryStore = updateRecoveryStore,
+        onReleaseQuerySucceeded = onReleaseQuerySucceeded,
         onInstallPermissionRequired = onInstallPermissionRequired,
     )
 
