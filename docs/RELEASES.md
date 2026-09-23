@@ -282,6 +282,8 @@ AALyrics-vX.Y.Z[-suffix].apk.sha256
 
 The download runtime is application-owned. It accepts only HTTPS asset URLs, follows only HTTPS redirects, bounds downloaded content, stages the APK under the app-private cache, parses the Release workflow's single-line `sha256sum` output for the exact APK filename, and calculates SHA-256 over the downloaded APK before accepting it.
 
+The Phone presentation distinguishes preparation from transfer. `PREPARING_DOWNLOAD` covers asset resolution, checksum retrieval/parsing, and staging-file preparation and uses a compact circular activity indicator. The runtime enters `DOWNLOADING` immediately before the APK body transfer starts; that phase uses an indeterminate linear progress bar until byte-level progress reporting is implemented.
+
 The APK is written first as a partial artifact and is promoted to its final cached filename only after the published digest matches. Missing/duplicate assets, malformed checksum content, transport/I/O failure, oversize content, or digest mismatch map to `DOWNLOAD_FAILED`; a failed or partial APK must not remain as a verified artifact.
 
 Active downloads survive destination changes and Activity recreation because the runtime is application-owned. A verified `DOWNLOADED` result also remains available within the current application process. Process death does not restore download state; stale app-private update artifacts are cleared when the runtime initializes. `Reset AALyrics` cancels update work and clears partial/verified update artifacts.
