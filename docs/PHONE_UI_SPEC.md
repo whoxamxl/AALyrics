@@ -315,10 +315,11 @@ This follows the project rule: screen needs demonstrate reusable design-system A
 
 ### Adopted Phone UI primitives
 
-Three current Phone patterns are now normative within `:ui:phone`:
+Four current Phone patterns are now normative within `:ui:phone`:
 
 - **Anchored popup / tooltip surface** — use `PhonePopupMenu`. Its current Quick Controls-derived visual treatment is the standard: Radius16, `BackgroundSurfaceStrong`, `BorderSoft`, zero tonal elevation, and the shared shadow elevation. Do not introduce a default-styled `DropdownMenu` for an equivalent compact popup.
 - **Second-level Settings header** — use `SettingsSubscreenHeader`. Its standard back affordance is a Material rounded chevron-left at 32dp inside a 48dp touch target, paired with the subscreen title. This mirrors the chevron-right navigation affordance used when entering a Settings subscreen.
+- **Dismissible custom-dialog header** — use `PhoneDialogHeader` whenever a Phone custom dialog requires an explicit X close affordance. The eyebrow and close action share one full-width header row and are vertically centered. The X is always a 24dp close icon inside the standard 48dp touch target at the trailing edge; dialog implementations must not add per-dialog offsets or alternate close-icon sizing. Supporting metadata such as a target version belongs below the header rather than inside the close-action row. Action-oriented Material `AlertDialog` surfaces that already provide explicit Confirm/Cancel or Done/Cancel controls do not gain an X merely for visual consistency.
 - **Markdown documents** — use the Phone-local `PhoneMarkdownText` wrapper for bundled or presentation-provided Markdown such as repository `NOTICE`/`LICENSE`, `CHANGELOG.md`, and `PRIVACY.md`. The wrapper delegates Markdown parsing/rendering to `mikepenz/multiplatform-markdown-renderer` Material 3 rather than implementing Markdown syntax in AALyrics. Keep the original document as the source of truth; rendering is presentation-only.
 
 These are Phone-local standards. They should remain in `:ui:phone` until reuse outside the Phone surface justifies promotion to `:ui:designsystem`.
