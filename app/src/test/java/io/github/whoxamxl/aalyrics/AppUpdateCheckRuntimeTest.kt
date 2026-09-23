@@ -3,6 +3,7 @@ package io.github.whoxamxl.aalyrics
 import java.io.ByteArrayInputStream
 import java.io.File
 import kotlin.io.path.createTempDirectory
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runCurrent
@@ -553,6 +554,84 @@ class AppUpdateCheckRuntimeTest {
         } finally {
             checksumGate.complete(Unit)
             downloadGate.complete(Unit)
+            root.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun `reset suppresses check result when client converts cancellation to failure`() = runTest {
+        val gate = CompletableDeferred<Unit>()
+        val runtime = AppUpdateCheckRuntime(
+            installedVersionName = "0.2.0-alpha.1",
+            releaseClient = GitHubReleaseClient {
+                try {
+                    gate.await()
+                    Result.success(listOf(release("v0.2.0-alpha.2", prerelease = true)))
+                } catch (_: CancellationException) {
+                    Result.failure(IllegalStateException("cancelled transport"))
+                }
+            },
+            applicationScope = this,
+        )
+
+        runtime.checkForUpdates()
+        runCurrent()
+        runtime.reset()
+        runCurrent()
+
+        assertEquals(AppUpdateCheckState.Idle, runtime.state.value)
+    }
+
+    @Test
+    fun `reset suppresses download result when client converts cancellation to failure`() = runTest {
+        val apkBytes = "signed apk bytes".encodeToByteArray()
+        val release = downloadableRelease("v0.2.0-alpha.2")
+        val gate = CompletableDeferred<Unit>()
+        val root = createTempDirectory("aalyrics-update-runtime").toFile()
+        val client = object : UpdateAssetDownloadClient {
+            override suspend fun fetchText(
+                asset: GitHubReleaseAsset,
+                maxBytes: Long,
+            ): Result<String> = Result.success(
+                checksumPayload(apkBytes, release.assets.first().name),
+            )
+
+            override suspend fun downloadTo(
+                asset: GitHubReleaseAsset,
+                destination: File,
+                maxBytes: Long,
+                onProgress: (downloadedBytes: Long) -> Unit,
+            ): Result<Long> {
+                return try {
+                    gate.await()
+                    Result.success(0L)
+                } catch (_: CancellationException) {
+                    Result.failure(IllegalStateException("cancelled transport"))
+                }
+            }
+        }
+        try {
+            val runtime = runtime(
+                installedVersionName = "0.2.0-alpha.1",
+                releases = listOf(release),
+                assetDownloadClient = client,
+                downloadFileStore = updateStore(root),
+            )
+
+            runtime.checkForUpdates()
+            runCurrent()
+            runtime.downloadUpdate()
+            runCurrent()
+            assertTrue(runtime.state.value is AppUpdateCheckState.Downloading)
+
+            runtime.reset()
+            runCurrent()
+
+            assertEquals(AppUpdateCheckState.Idle, runtime.state.value)
+            assertFalse(stagingRoot(root).exists())
+            assertFalse(verifiedRoot(root).exists())
+        } finally {
+            gate.complete(Unit)
             root.deleteRecursively()
         }
     }
