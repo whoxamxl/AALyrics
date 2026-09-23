@@ -508,9 +508,13 @@ Application/runtime wiring owns both manual and automatic discovery:
 8. automatic discovery only starts from update-runtime `IDLE` and never displaces a retained verified APK or active download/install flow;
 9. install-time latest-release refresh is tagged separately as `INSTALL_REFRESH`;
 10. all origins use the same public AALyrics GitHub Releases query, release grammar, channel eligibility, and version comparison;
-11. results still map to the existing update states; origin is retained internally for the later automatic-discovery dialog.
+11. only `AUTOMATIC` `UPDATE_AVAILABLE` results request the global `New release available` dialog; manual and install-refresh results never do.
 
-`Reset AALyrics` clears the durable cadence timestamp and process-local attempt guard in addition to restoring the automatic-check toggle to ON. This checkpoint does not yet present `New release available`; that dialog consumes only `AUTOMATIC` discovery in the next checkpoint.
+The automatic release dialog shows the discovered version with `Update` and `Not now` actions plus a close affordance. System Back, close, and `Not now` share one dismissal path; outside-tap dismissal is disabled. Dismissal stores the version in process-local suppression so the same release is not prompted again during ordinary navigation, recomposition, or Activity recreation in that process. A different automatically discovered version remains eligible.
+
+`Update` also suppresses transient re-presentation of that version and starts the existing download/verification pipeline. It does not yet auto-chain a completed download into installation; the one-step Download + Install composition remains the next checkpoint.
+
+`Reset AALyrics` clears the durable cadence timestamp, process-local automatic-check attempt guard, automatic-release prompt, and same-session suppression in addition to restoring the automatic-check toggle to ON. Durable `SuccessfulUpdate` feedback has dialog priority over automatic release prompting, and an unconsumed success marker prevents automatic checking on that Phone entry.
 
 Do not use publication timestamp alone as version ordering. Stable installed builds consider stable releases only. Alpha/beta/RC builds consider prerelease and stable releases. Development builds inherit the channel and comparison base embedded in their generated version name.
 
@@ -979,6 +983,7 @@ Deterministic debug Previews should cover at least:
 - app update available state;
 - app update failure/retry state;
 - automatic update checking ON and OFF;
+- new-release dialog at typical, narrow, and enlarged-font configurations;
 - install-permission explanation dialog at typical, narrow, and enlarged-font configurations;
 - install-permission Settings return with trust denied and trust granted;
 - update-success dialog at typical, narrow, and enlarged-font configurations;
