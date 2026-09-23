@@ -18,6 +18,7 @@ internal interface UpdateAssetDownloadClient {
         asset: GitHubReleaseAsset,
         destination: File,
         maxBytes: Long,
+        onProgress: (downloadedBytes: Long) -> Unit = {},
     ): Result<Long>
 }
 
@@ -42,6 +43,7 @@ internal class HttpUpdateAssetDownloadClient(
         asset: GitHubReleaseAsset,
         destination: File,
         maxBytes: Long,
+        onProgress: (downloadedBytes: Long) -> Unit,
     ): Result<Long> = withContext(Dispatchers.IO) {
         runCatching {
             require(maxBytes > 0L)
@@ -49,7 +51,11 @@ internal class HttpUpdateAssetDownloadClient(
             openFollowingHttpsRedirects(asset.downloadUrl).useConnection { connection ->
                 connection.inputStream.use { input ->
                     destination.outputStream().buffered().use { output ->
-                        input.copyBoundedTo(output, maxBytes)
+                        input.copyBoundedTo(
+                            output = output,
+                            maxBytes = maxBytes,
+                            onProgress = onProgress,
+                        )
                     }
                 }
             }
@@ -114,6 +120,7 @@ internal class HttpUpdateAssetDownloadClient(
     private fun java.io.InputStream.copyBoundedTo(
         output: java.io.OutputStream,
         maxBytes: Long,
+        onProgress: (downloadedBytes: Long) -> Unit = {},
     ): Long {
         val buffer = ByteArray(BUFFER_SIZE)
         var total = 0L
@@ -126,6 +133,7 @@ internal class HttpUpdateAssetDownloadClient(
                 throw IOException("Update asset exceeds maximum size")
             }
             output.write(buffer, 0, count)
+            onProgress(total)
         }
         return total
     }
