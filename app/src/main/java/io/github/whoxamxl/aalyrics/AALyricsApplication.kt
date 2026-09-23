@@ -84,6 +84,7 @@ class AALyricsApplication : Application() {
     private lateinit var phonePlaybackSourceCanOpenAppStateFlow: StateFlow<Boolean>
     private lateinit var phoneDetailsStateFlow: StateFlow<DetailsScreenUiState>
     private lateinit var appUpdateCheckRuntime: AppUpdateCheckRuntime
+    private lateinit var updateApkPreflightBoundary: UpdateApkPreflightBoundary
     private val mutablePlaybackArtworkState = MutableStateFlow<Bitmap?>(null)
     private val mutableQueueArtworkBitmapsState =
         MutableStateFlow<Map<Long, Bitmap>>(emptyMap())
@@ -276,6 +277,11 @@ class AALyricsApplication : Application() {
     override fun onCreate() {
         super.onCreate()
         val updateUserAgent = "AALyrics/${BuildConfig.VERSION_NAME}"
+        val updateFileStore = UpdateDownloadFileStore(
+            stagingDirectory = cacheDir.resolve(UPDATE_STAGING_DIRECTORY_NAME),
+            verifiedDirectory = noBackupFilesDir.resolve(UPDATE_VERIFIED_DIRECTORY_NAME),
+            legacyVerifiedDirectory = filesDir.resolve(UPDATE_VERIFIED_DIRECTORY_NAME),
+        )
         appUpdateCheckRuntime = AppUpdateCheckRuntime(
             installedVersionName = BuildConfig.VERSION_NAME,
             releaseClient = HttpGitHubReleaseClient(
@@ -285,10 +291,13 @@ class AALyricsApplication : Application() {
             assetDownloadClient = HttpUpdateAssetDownloadClient(
                 userAgent = updateUserAgent,
             ),
-            downloadFileStore = UpdateDownloadFileStore(
-                stagingDirectory = cacheDir.resolve(UPDATE_STAGING_DIRECTORY_NAME),
-                verifiedDirectory = noBackupFilesDir.resolve(UPDATE_VERIFIED_DIRECTORY_NAME),
-                legacyVerifiedDirectory = filesDir.resolve(UPDATE_VERIFIED_DIRECTORY_NAME),
+            downloadFileStore = updateFileStore,
+        )
+        updateApkPreflightBoundary = UpdateApkPreflightBoundary(
+            fileStore = updateFileStore,
+            packageInspector = AndroidUpdateApkPackageInspector(
+                packageManager = packageManager,
+                installedPackageName = packageName,
             ),
         )
         translationSettingsStore = SharedPreferencesTranslationSettingsStore(this)
