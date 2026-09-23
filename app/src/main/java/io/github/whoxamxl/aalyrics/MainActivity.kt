@@ -5,6 +5,7 @@ import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.browser.customtabs.CustomTabsIntent
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsTheme
 import io.github.whoxamxl.aalyrics.ui.phone.settings.AndroidAutoCompatibilityUiStatus
@@ -17,6 +18,11 @@ class MainActivity : ComponentActivity() {
     private lateinit var androidAutoCompatibilityOnboarding: AndroidAutoCompatibilityOnboarding
     private var renderedEntryState: AppEntryState? = null
     private var compatibilitySetupRequested = false
+    private val installSourceTrustSettingsLauncher =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+            (application as? AALyricsApplication)
+                ?.onInstallSourceTrustReturned()
+        }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -101,6 +107,12 @@ class MainActivity : ComponentActivity() {
                                 compatibilitySetupRequested = false
                                 renderedEntryState = null
                                 renderEntryState()
+                            },
+                            onOpenInstallSettings = {
+                                val intent = InstallSourceTrustSettingsIntent.create(packageName)
+                                if (intent.resolveActivity(packageManager) != null) {
+                                    installSourceTrustSettingsLauncher.launch(intent)
+                                }
                             },
                             onOpenSourceCode = {
                                 openUrl(SOURCE_CODE_URL)
