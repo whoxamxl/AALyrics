@@ -233,7 +233,7 @@ class AALyricsApplication : Application() {
     }
 
     internal fun acceptAutomaticUpdateReleasePrompt() {
-        val prompt = automaticUpdateReleasePromptRuntime.consumeForUpdate()
+        automaticUpdateReleasePromptRuntime.consumeForUpdate()
             ?: return
         appUpdateCheckRuntime.downloadUpdate()
     }
