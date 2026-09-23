@@ -357,7 +357,7 @@ internal class AppUpdateCheckRuntime(
         installTarget = null
         availableCandidate = null
         downloadFileStore?.clearAll()
-        updateRecoveryStore?.clear()
+        updateRecoveryStore?.clearAll()
         mutableState.value = AppUpdateCheckState.Idle
     }
 
