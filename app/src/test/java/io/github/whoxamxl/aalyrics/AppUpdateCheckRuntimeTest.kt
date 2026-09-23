@@ -9,6 +9,7 @@ import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -407,6 +408,79 @@ class AppUpdateCheckRuntimeTest {
 
             runtime.onSettingsEntered()
             assertTrue(runtime.state.value is AppUpdateCheckState.Downloaded)
+        } finally {
+            root.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun `reset cancels active download clears cache and returns idle`() = runTest {
+        val apkBytes = "signed apk bytes".encodeToByteArray()
+        val release = downloadableRelease("v0.2.0-alpha.2")
+        val gate = CompletableDeferred<Unit>()
+        val root = createTempDirectory("aalyrics-update-runtime").toFile()
+        val store = UpdateDownloadFileStore(root)
+        try {
+            val runtime = runtime(
+                installedVersionName = "0.2.0-alpha.1",
+                releases = listOf(release),
+                assetDownloadClient = FakeUpdateAssetDownloadClient(
+                    checksumPayload = checksumPayload(apkBytes, release.assets.first().name),
+                    apkBytes = apkBytes,
+                    downloadGate = gate,
+                ),
+                downloadFileStore = store,
+            )
+
+            runtime.checkForUpdates()
+            runCurrent()
+            runtime.downloadUpdate()
+            runCurrent()
+            assertEquals(
+                AppUpdateCheckState.Downloading("0.2.0-alpha.2"),
+                runtime.state.value,
+            )
+
+            runtime.reset()
+            runCurrent()
+
+            assertEquals(AppUpdateCheckState.Idle, runtime.state.value)
+            assertFalse(root.exists())
+        } finally {
+            gate.complete(Unit)
+            root.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun `reset removes completed verified apk and clears selected release`() = runTest {
+        val apkBytes = "signed apk bytes".encodeToByteArray()
+        val release = downloadableRelease("v0.2.0-alpha.2")
+        val root = createTempDirectory("aalyrics-update-runtime").toFile()
+        try {
+            val runtime = runtime(
+                installedVersionName = "0.2.0-alpha.1",
+                releases = listOf(release),
+                assetDownloadClient = FakeUpdateAssetDownloadClient(
+                    checksumPayload = checksumPayload(apkBytes, release.assets.first().name),
+                    apkBytes = apkBytes,
+                ),
+                downloadFileStore = UpdateDownloadFileStore(root),
+            )
+
+            runtime.checkForUpdates()
+            runCurrent()
+            runtime.downloadUpdate()
+            runCurrent()
+            assertTrue(runtime.state.value is AppUpdateCheckState.Downloaded)
+            assertTrue(root.exists())
+
+            runtime.reset()
+            runtime.downloadUpdate()
+            runCurrent()
+
+            assertEquals(AppUpdateCheckState.Idle, runtime.state.value)
+            assertFalse(root.exists())
         } finally {
             root.deleteRecursively()
         }
