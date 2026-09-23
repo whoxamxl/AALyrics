@@ -66,6 +66,11 @@
     <string name="settings_install_permission_dialog_download_github">Download from GitHub</string>
     <string name="settings_install_permission_dialog_close">Close update permission dialog</string>
     <string name="settings_installing_update">Installing update…</string>
+    <string name="update_successful_eyebrow">UPDATE COMPLETE</string>
+    <string name="update_successful_title">AALyrics updated</string>
+    <string name="update_successful_body">You’re now running v%1$s.</string>
+    <string name="update_successful_done">Done</string>
+    <string name="update_successful_close">Close update successful dialog</string>
     <string name="settings_update_install_failed">Installation failed</string>
     <string name="settings_update_install_failure_generic">The update could not be installed. Try again or review Android install permission for AALyrics.</string>
     <string name="settings_retry">Retry</string>
