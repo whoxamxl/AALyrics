@@ -444,10 +444,12 @@ internal fun AppUpdateRow(
             }
 
             AppUpdateUiPhase.UPDATE_AVAILABLE -> {
-                AppUpdateStatusTextRow(
-                    label = "${updateAvailableLabel} ${
+                AppUpdateActionRow(
+                    status = "${updateAvailableLabel} ${
                         state.availableVersionName?.asVersionLabel().orEmpty()
                     }".trim(),
+                    actionLabel = downloadLabel,
+                    onAction = onDownloadUpdate,
                 )
             }
 
