@@ -86,31 +86,34 @@ Approved follow-up direction:
 - [x] Add best-effort resume-after-update behavior.
 - [x] Add durable automatic update checking preference and bounded automatic discovery.
 - [x] Add automatic-discovery new-release dialog and session suppression.
-- [ ] Compose Download + Install into one user-facing Update action.
-- [ ] Align Previews, Reset behavior, docs, tests, CI, and real-device regression validation.
+- [x] Compose Download + Install into one user-facing Update action.
+- [x] Align one-step Update Previews, Reset behavior, docs, and focused test coverage.
+- [ ] Run final architecture/unit/build/CI/Codex/real-device regression validation.
 
 ## Current checkpoint
 
-Automatic discovery now surfaces a process-local `New release available` dialog without changing manual update discovery or install-refresh behavior.
+One-step user-facing `Update` composition is implemented while the validated download/verify/preflight/install safety boundaries remain separate internally.
 
 Completed in this checkpoint:
 
-- added `AutomaticUpdateReleasePromptRuntime` as the application-owned transient prompt/suppression owner;
-- only `AppUpdateCheckState.UpdateAvailable` with `origin=AUTOMATIC` can request the prompt;
-- `MANUAL` and `INSTALL_REFRESH` update availability never create the automatic dialog;
-- the dialog shows the discovered version with `Update`, `Not now`, a top-right close action, and system-Back dismissal;
-- outside-tap dismissal is disabled;
-- `Not now`, close, and Back share the same dismissal path and suppress that exact version for the rest of the current app-process session;
-- a different automatically discovered version remains eligible for presentation;
-- `Update` closes the prompt, suppresses transient re-presentation of the same version, and starts the existing download/verification pipeline;
-- this checkpoint does not auto-chain a completed download into install; that remains the next one-step Update checkpoint;
-- prompt and same-session suppression survive ordinary navigation/recomposition/Activity recreation because ownership is process-level;
-- `Reset AALyrics` clears the transient prompt and process-local suppression;
-- durable `SuccessfulUpdate` feedback has presentation priority, dialogs are not stacked, and an unconsumed success marker prevents automatic checking on that Phone entry;
-- focused prompt-runtime tests cover automatic-only eligibility, manual/install-refresh exclusion, same-version suppression, different-version eligibility, Update consumption, and Reset;
-- typical, narrow-phone, and enlarged-font new-release dialog Previews were added;
-- Update UX and Phone Settings documentation are aligned.
+- added `AppUpdateCheckRuntime.requestUpdate()` as the single user-intent entry point for update execution;
+- manual Settings update actions and the automatic `New release available` dialog now converge on the same one-step runtime path;
+- `UPDATE_AVAILABLE` / `DOWNLOAD_FAILED` enter download, a verified `DOWNLOADED` artifact advances automatically into install preparation, and recoverable retained-APK states continue without redownloading;
+- added explicit `VerifyingDownload` runtime state and `VERIFYING` Phone presentation with `Verifying update…` feedback;
+- normal successful download no longer exposes a second user-facing Install decision;
+- process-restored `DOWNLOADED` remains an internal recovery state and is presented as `Ready to update v…` with the same `Update` action;
+- install-time latest-release refresh can redirect an active one-step intent to a newer eligible release, download/verify it, and continue installation without intentionally installing the stale retained APK first;
+- source-trust interruption preserves the verified APK; dismissing the explanation does not lose the target, pressing Update reopens it without redownload, and granting trust resumes install from the retained artifact;
+- install-permission presentation was moved from Settings-owned rendering to a global Phone overlay so an update started from Lyrics can reach the same permission flow without destination routing;
+- global dialog priority remains `Update successful` -> install permission -> automatic release prompt, preventing stacked update dialogs;
+- primary-tab changes now clear the transient global install-permission prompt consistently after the ownership move;
+- Settings presentation now uses `Update` / `Retry` rather than separate Download / Install actions while keeping determinate download progress and internal state visibility;
+- focused runtime tests cover end-to-end one-step download/verify/install orchestration, source-trust interruption and grant return without redownload, retry after download failure, and newer-release redirect during install refresh;
+- Settings mapper/Preview coverage includes verification and retained-APK ready-after-restore presentation;
+- `docs/UPDATE_UX.md` and `docs/PHONE_SETTINGS.md` are aligned with the implemented one-step flow and global permission overlay.
 
-No end-to-end one-step Download + Install composition has been implemented yet. The `Update` action currently enters the already-validated download/verification state machine and leaves installation as the existing explicit follow-up.
+The PackageInstaller, SHA-256 verification, retained verified APK, install-time release refresh, package/version/signing preflight, Android per-source trust, durable `PendingUpdate`, Android-owned confirmation, replacement reconciliation, and one-time success feedback contracts remain intact.
 
-Next checkpoint: **compose Download + Install into one user-facing `Update` action while preserving download, checksum verification, retained-artifact ownership, install refresh, APK preflight, source trust, PackageInstaller, and Android confirmation as separate internal boundaries**. Do not begin it until explicitly requested.
+Focused tests have been added but the final validation suite has **not** been executed in this checkpoint.
+
+Next checkpoint: **run final regression validation: architecture checks, unit tests, debug APK build, CI, Codex review, and bounded real-device checks; fix only concrete findings and then prepare the branch for merge**. Do not begin it until explicitly requested.
