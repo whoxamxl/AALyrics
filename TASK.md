@@ -86,6 +86,7 @@ Approved update-UX stack direction (this branch implements items 1–4; later it
 - [x] Add best-effort resume-after-update behavior.
 - [x] Preserve typed install-failure reasons through Settings and explain them in the failure tooltip.
 - [x] Standardize dismissible custom update-dialog X placement through shared `PhoneDialogHeader`.
+- [x] Bind durable pending-update recovery to the exact PackageInstaller session and clear matching stale markers on abandoned/failed-session recovery.
 - [ ] Complete same-release-signing device E2E from a #74 recovery-capable OLD APK to a newer #74 recovery-capable APK, confirming `ACTION_MY_PACKAGE_REPLACED` reconciliation and one-time Successful dialog. *(explicitly deferred device validation; best-effort automatic resume is not required to occur)*
 - [ ] Add automatic update checking preference and new-release dialog. *(deferred to dependent PR #75; out of scope for #74)*
 - [ ] Compose Download + Install into one user-facing Update action. *(deferred to dependent PR #76; out of scope for #74)*
@@ -109,6 +110,7 @@ Completed in this checkpoint:
 - focused tests cover resume requested, resume disabled, unreconciled replacement, and launch-request failure;
 - install preparation and PackageInstaller failures now retain typed reasons through Phone presentation; the failure tooltip explains the specific boundary, including signing identity mismatch before source-trust evaluation;
 - permission and successful-update dialogs now share `PhoneDialogHeader`, fixing the X at one standard trailing header position and documenting that contract in the Phone UI spec;
+- Codex review identified a valid process-death recovery gap; `PendingUpdate` now persists the PackageInstaller session ID, startup abandonment clears only its matching marker, and terminal failure clears the matching marker even when the original process-local status sink is gone;
 - Update UX and Phone Settings documentation are aligned.
 
 No notification fallback, automatic update checking, release-available dialog, or one-step Update composition has been implemented yet.
