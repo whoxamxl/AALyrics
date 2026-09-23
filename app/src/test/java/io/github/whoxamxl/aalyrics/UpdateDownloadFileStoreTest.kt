@@ -115,6 +115,23 @@ class UpdateDownloadFileStoreTest {
     }
 
     @Test
+    fun `transient cleanup removes legacy verified storage`() {
+        val legacyRoot = tempRoot.resolve("legacy-files/updates").apply {
+            mkdirs()
+            resolve("AALyrics-v0.1.0.apk").writeText("legacy")
+        }
+        val store = UpdateDownloadFileStore(
+            stagingDirectory = stagingRoot,
+            verifiedDirectory = verifiedRoot,
+            legacyVerifiedDirectory = legacyRoot,
+        )
+
+        store.cleanupTransientArtifacts()
+
+        assertFalse(legacyRoot.exists())
+    }
+
+    @Test
     fun `transient cleanup removes staging and interrupted promotion only`() {
         stagingRoot.mkdirs()
         stagingRoot.resolve("AALyrics-v0.2.0.apk.part").writeText("partial")
