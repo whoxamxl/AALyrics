@@ -374,6 +374,12 @@ internal class AppUpdateCheckRuntime(
                         recoveryPersistenceFailed = true
                         throw error
                     }
+                    if (operationGeneration.get() != generation) {
+                        runCatching {
+                            recoveryStore.clearPendingUpdateForSession(sessionId)
+                        }
+                        throw CancellationException("Update operation became stale during recovery write")
+                    }
                 },
             )
 
