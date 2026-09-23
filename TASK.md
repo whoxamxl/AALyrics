@@ -147,9 +147,9 @@ CHECK_FAILED
 
 ### Implementation
 
-- [ ] Extend the GitHub Release model/client with public asset metadata.
-- [ ] Add deterministic APK/checksum asset resolution with focused tests.
-- [ ] Add checksum parsing and SHA-256 verification with focused tests.
+- [x] Extend the GitHub Release model/client with public asset metadata.
+- [x] Add deterministic APK/checksum asset resolution with focused tests.
+- [x] Add checksum parsing and SHA-256 verification with focused tests.
 - [ ] Add app-private download/file boundary and cleanup rules.
 - [ ] Extend the application-owned update runtime through download states.
 - [ ] Wire Download/Retry callbacks and production presentation.
@@ -157,12 +157,17 @@ CHECK_FAILED
 - [ ] Align Previews and `docs/RELEASES.md` / `docs/PHONE_SETTINGS.md`.
 - [ ] Run architecture checks, unit tests, debug APK build, CI, real-device verification, and bounded review before merge.
 
-## First implementation checkpoint
+## Current checkpoint
 
-Implement only:
+Completed:
 
 1. GitHub Release asset metadata;
 2. exact APK/checksum asset resolution;
-3. focused unit tests for the asset contract.
+3. focused asset-contract tests;
+4. strict `sha256sum` payload parsing for the exact APK filename;
+5. streaming SHA-256 calculation and digest verification;
+6. focused checksum parsing / match / mismatch tests.
 
-Do not start file download, checksum verification, or Settings wiring before this checkpoint is reviewed.
+The first asset-resolution checkpoint passed CI before checksum work began.
+
+Next checkpoint: app-private download/file ownership and cleanup. Do not wire Settings or Package Installer yet.
