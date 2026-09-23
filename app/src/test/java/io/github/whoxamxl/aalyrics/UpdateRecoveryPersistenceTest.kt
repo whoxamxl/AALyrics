@@ -20,6 +20,7 @@ class UpdateRecoveryPersistenceTest {
         val value = PendingUpdate(
             targetVersion = "0.3.0-alpha.1",
             targetVersionCode = 3L,
+            installerSessionId = 77,
             resumeAfterUpdate = true,
         )
 
@@ -33,6 +34,7 @@ class UpdateRecoveryPersistenceTest {
         var pending: PendingUpdate? = PendingUpdate(
             targetVersion = "0.3.0-alpha.1",
             targetVersionCode = 3L,
+            installerSessionId = 77,
             resumeAfterUpdate = true,
         )
         var successful: SuccessfulUpdate? = null
@@ -64,6 +66,15 @@ class UpdateRecoveryPersistenceTest {
             persistence(
                 readPendingTargetVersion = { null },
                 readPendingTargetVersionCode = { 3L },
+                readPendingInstallerSessionId = { 77 },
+                readPendingResumeAfterUpdate = { true },
+            ).pendingUpdate(),
+        )
+        assertNull(
+            persistence(
+                readPendingTargetVersion = { "0.3.0-alpha.1" },
+                readPendingTargetVersionCode = { 3L },
+                readPendingInstallerSessionId = { null },
                 readPendingResumeAfterUpdate = { true },
             ).pendingUpdate(),
         )
@@ -86,6 +97,7 @@ class UpdateRecoveryPersistenceTest {
                 PendingUpdate(
                     targetVersion = "0.3.0-alpha.1",
                     targetVersionCode = 3L,
+                    installerSessionId = 77,
                 ),
             )
         }
@@ -109,6 +121,7 @@ class UpdateRecoveryPersistenceTest {
         var pending: PendingUpdate? = PendingUpdate(
             targetVersion = "0.3.0-alpha.2",
             targetVersionCode = 4L,
+            installerSessionId = 78,
         )
         var successful: SuccessfulUpdate? = SuccessfulUpdate(
             installedVersion = "0.3.0-alpha.1",
@@ -137,7 +150,7 @@ class UpdateRecoveryPersistenceTest {
         assertNull(persistence.pendingUpdate())
         assertEquals("0.3.0-alpha.1", persistence.successfulUpdate()?.installedVersion)
 
-        pending = PendingUpdate("0.3.0-alpha.2", 4L)
+        pending = PendingUpdate("0.3.0-alpha.2", 4L, 78)
         persistence.clearSuccessfulUpdate()
         assertEquals("0.3.0-alpha.2", persistence.pendingUpdate()?.targetVersion)
         assertNull(persistence.successfulUpdate())
@@ -156,6 +169,9 @@ class UpdateRecoveryPersistenceTest {
         },
         readPendingTargetVersionCode: () -> Long? = {
             readPending?.invoke()?.targetVersionCode
+        },
+        readPendingInstallerSessionId: () -> Int? = {
+            readPending?.invoke()?.installerSessionId
         },
         readPendingResumeAfterUpdate: () -> Boolean? = {
             readPending?.invoke()?.resumeAfterUpdate
@@ -177,6 +193,7 @@ class UpdateRecoveryPersistenceTest {
     ) = UpdateRecoveryPersistence(
         readPendingTargetVersion = readPendingTargetVersion,
         readPendingTargetVersionCode = readPendingTargetVersionCode,
+        readPendingInstallerSessionId = readPendingInstallerSessionId,
         readPendingResumeAfterUpdate = readPendingResumeAfterUpdate,
         readSuccessfulInstalledVersion = readSuccessfulInstalledVersion,
         readSuccessfulInstalledVersionCode = readSuccessfulInstalledVersionCode,
