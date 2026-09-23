@@ -956,13 +956,32 @@ class AppUpdateCheckRuntimeTest {
         releases: List<GitHubRelease>,
         assetDownloadClient: UpdateAssetDownloadClient? = null,
         downloadFileStore: UpdateDownloadFileStore? = null,
+        installPreparation: UpdateInstallPreparation? = null,
+        installSourceTrustChecker: InstallSourceTrustChecker? = null,
+        packageInstaller: UpdatePackageInstaller? = null,
     ) = AppUpdateCheckRuntime(
         installedVersionName = installedVersionName,
         releaseClient = GitHubReleaseClient { Result.success(releases) },
         applicationScope = this,
         assetDownloadClient = assetDownloadClient,
         downloadFileStore = downloadFileStore,
+        installPreparation = installPreparation,
+        installSourceTrustChecker = installSourceTrustChecker,
+        packageInstaller = packageInstaller,
     )
+
+    private fun installPreparation(
+        installedVersionName: String,
+        releases: List<GitHubRelease>,
+        preflightResult: UpdateApkPreflightResult = UpdateApkPreflightResult.Ready,
+    ) = UpdateInstallPreparation(
+        installedVersionName = installedVersionName,
+        releaseClient = GitHubReleaseClient { Result.success(releases) },
+        preflightEvaluator = UpdateApkPreflightEvaluator { _, _ ->
+            preflightResult
+        },
+    )
+
 
     private fun release(
         tagName: String,
@@ -1006,6 +1025,37 @@ class AppUpdateCheckRuntimeTest {
     ): String {
         val digest = AALyricsSha256.calculate(ByteArrayInputStream(bytes))
         return "${digest.hex}  $apkFileName\n"
+    }
+
+    private class FakeUpdatePackageInstaller(
+        private val sessionId: Int = 77,
+        private var installFailure: Throwable? = null,
+    ) : UpdatePackageInstaller {
+        var installCount: Int = 0
+            private set
+        val abandonedSessions = mutableListOf<Int>()
+        private var statusSink: UpdatePackageInstallerStatusSink? = null
+
+        override suspend fun install(
+            apkFile: File,
+            statusSink: UpdatePackageInstallerStatusSink,
+            onSessionCreated: (Int) -> Unit,
+        ): Result<Int> {
+            installCount += 1
+            this.statusSink = statusSink
+            onSessionCreated(sessionId)
+            return installFailure?.let(Result<Int>::failure)
+                ?: Result.success(sessionId)
+        }
+
+        override fun abandon(sessionId: Int) {
+            abandonedSessions += sessionId
+            statusSink = null
+        }
+
+        fun emit(status: UpdatePackageInstallerStatus) {
+            statusSink?.onStatus(status)
+        }
     }
 
     private class FakeUpdateAssetDownloadClient(
