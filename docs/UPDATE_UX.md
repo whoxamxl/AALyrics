@@ -158,11 +158,15 @@ If automatic return succeeds, normal entry handling still decides what is displa
 
 ## Automatic update checks
 
-Settings now exposes:
+Settings now exposes a compact switch aligned with the rest of Phone Settings:
 
 ```text
-Automatically check for updates        [ON/OFF]
+Automatically check for updates   [i]   [ON/OFF]
+```
 
+The shared info tooltip contains:
+
+```text
 Check for new releases and notify you when one is available.
 Updates are never installed without your confirmation.
 ```
