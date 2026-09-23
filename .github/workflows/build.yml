@@ -101,33 +101,3 @@ jobs:
           archive: false
           if-no-files-found: error
           retention-days: 14
-
-      # Temporary PR-only artifact used to exercise the real GitHub Release
-      # update path on-device. Remove before merging this feature.
-      - name: Build update-test debug APK
-        if: github.event_name == 'pull_request' && github.head_ref == 'feature/update-download'
-        env:
-          AALYRICS_VERSION_NAME: "0.1.0-alpha.1"
-        run: |
-          ./gradlew :app:clean :app:assembleDebug --stacktrace
-          mkdir -p update-test
-          cp app/build/outputs/apk/debug/app-debug.apk update-test/aalyrics-update-test.apk
-          cp app/build/outputs/apk/debug/app-debug.apk update-test/aalyrics-update-test-0.1.0-alpha.1.apk
-
-      - name: Upload update-test debug APK
-        if: github.event_name == 'pull_request' && github.head_ref == 'feature/update-download'
-        uses: actions/upload-artifact@v4
-        with:
-          name: aalyrics-update-test-apk-0.1.0-alpha.1
-          path: update-test/aalyrics-update-test.apk
-          if-no-files-found: error
-          retention-days: 7
-
-      - name: Upload direct update-test APK
-        if: github.event_name == 'pull_request' && github.head_ref == 'feature/update-download'
-        uses: actions/upload-artifact@v7
-        with:
-          path: update-test/aalyrics-update-test-0.1.0-alpha.1.apk
-          archive: false
-          if-no-files-found: error
-          retention-days: 7
