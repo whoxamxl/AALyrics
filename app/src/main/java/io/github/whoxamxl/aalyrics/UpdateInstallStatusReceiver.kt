@@ -59,6 +59,10 @@ class UpdateInstallStatusReceiver : BroadcastReceiver() {
             }
 
             else -> {
+                clearPendingRecovery(
+                    context = context,
+                    sessionId = sessionId,
+                )
                 UpdatePackageInstallerStatusRegistry.dispatch(
                     sessionId = sessionId,
                     status = UpdatePackageInstallerStatus.Failure(
@@ -118,6 +122,10 @@ class UpdateInstallStatusReceiver : BroadcastReceiver() {
         runCatching {
             context.packageManager.packageInstaller.abandonSession(sessionId)
         }
+        clearPendingRecovery(
+            context = context,
+            sessionId = sessionId,
+        )
         UpdatePackageInstallerStatusRegistry.dispatch(
             sessionId = sessionId,
             status = UpdatePackageInstallerStatus.Failure(
@@ -126,6 +134,16 @@ class UpdateInstallStatusReceiver : BroadcastReceiver() {
             ),
             terminal = true,
         )
+    }
+
+    private fun clearPendingRecovery(
+        context: Context,
+        sessionId: Int,
+    ) {
+        runCatching {
+            SharedPreferencesUpdateRecoveryStore(context)
+                .clearPendingUpdateForSession(sessionId)
+        }
     }
 
     private fun confirmationIntent(intent: Intent): Intent? =
