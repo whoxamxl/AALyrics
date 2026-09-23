@@ -47,7 +47,8 @@
     <string name="settings_section_app">APP</string>
     <string name="settings_version">Version</string>
     <string name="settings_automatically_check_for_updates">Automatically check for updates</string>
-    <string name="settings_automatically_check_for_updates_supporting">Check for new releases and notify you when one is available. Updates are never installed without your confirmation.</string>
+    <string name="settings_automatically_check_for_updates_info">Check for new releases and notify you when one is available. Updates are never installed without your confirmation.</string>
+    <string name="settings_automatically_check_for_updates_info_description">About automatic update checks</string>
     <string name="settings_check_for_updates">Check for updates</string>
     <string name="settings_checking_for_updates">Checking for updates…</string>
     <string name="settings_up_to_date">Up to date</string>
