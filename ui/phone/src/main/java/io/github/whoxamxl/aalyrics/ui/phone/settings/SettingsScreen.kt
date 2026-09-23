@@ -44,6 +44,8 @@ fun SettingsScreen(
     onDownloadUpdate: () -> Unit,
     onInstallUpdate: () -> Unit,
     onOpenInstallSettings: () -> Unit,
+    onDismissInstallPermissionDialog: () -> Unit,
+    onDownloadUpdateFromGitHub: (String) -> Unit,
     onOpenGitHub: () -> Unit,
     onHelpFeedback: (HelpFeedbackDestination) -> Unit,
     onSupportAALyrics: () -> Unit,
@@ -143,7 +145,6 @@ fun SettingsScreen(
             onCheckForUpdates = onCheckForUpdates,
             onDownloadUpdate = onDownloadUpdate,
             onInstallUpdate = onInstallUpdate,
-            onOpenInstallSettings = onOpenInstallSettings,
             onChangelogRequested = { activeSubscreen = SettingsSubscreen.CHANGELOG },
             onPrivacyPolicyRequested = {
                 activeSubscreen = SettingsSubscreen.PRIVACY_POLICY
@@ -164,6 +165,21 @@ fun SettingsScreen(
             bottomOverlayInset = bottomOverlayInset,
         )
     }
+
+    state.installPermissionDialog?.let { dialogState ->
+        InstallPermissionDialog(
+            state = dialogState,
+            onDismissRequest = onDismissInstallPermissionDialog,
+            onGrantPermission = {
+                onDismissInstallPermissionDialog()
+                onOpenInstallSettings()
+            },
+            onDownloadFromGitHub = {
+                onDismissInstallPermissionDialog()
+                onDownloadUpdateFromGitHub(dialogState.versionName)
+            },
+        )
+    }
 }
 
 @Composable
@@ -181,7 +197,6 @@ internal fun SettingsScreenContent(
     onCheckForUpdates: () -> Unit,
     onDownloadUpdate: () -> Unit,
     onInstallUpdate: () -> Unit,
-    onOpenInstallSettings: () -> Unit,
     onChangelogRequested: () -> Unit,
     onPrivacyPolicyRequested: () -> Unit,
     onTermsOfUseRequested: () -> Unit,
@@ -298,8 +313,6 @@ internal fun SettingsScreenContent(
                     stringResource(R.string.settings_preparing_update_install),
                 installPermissionRequiredLabel =
                     stringResource(R.string.settings_install_permission_required),
-                openInstallSettingsLabel =
-                    stringResource(R.string.settings_open_install_settings),
                 installingLabel = stringResource(R.string.settings_installing_update),
                 retryLabel = stringResource(R.string.settings_retry),
                 checkFailedLabel = stringResource(R.string.settings_update_check_failed),
@@ -316,7 +329,6 @@ internal fun SettingsScreenContent(
                 onCheckForUpdates = onCheckForUpdates,
                 onDownloadUpdate = onDownloadUpdate,
                 onInstallUpdate = onInstallUpdate,
-                onOpenInstallSettings = onOpenInstallSettings,
             )
 
             SettingsDivider()
