@@ -11,6 +11,16 @@ on:
         required: false
         default: ""
         type: string
+      update_test_release_signed:
+        description: "Also build the update-test APK with the durable release signing identity"
+        required: false
+        default: false
+        type: boolean
+      update_test_version_code:
+        description: "Android VERSION_CODE for the release-signed update-test APK; must be lower than the target published release"
+        required: false
+        default: "1"
+        type: string
 
 permissions:
   contents: read
