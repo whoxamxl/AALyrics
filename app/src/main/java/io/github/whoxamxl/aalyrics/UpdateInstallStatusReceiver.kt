@@ -27,33 +27,24 @@ class UpdateInstallStatusReceiver : BroadcastReceiver() {
 
         when (status) {
             PackageInstaller.STATUS_PENDING_USER_ACTION -> {
-                UpdatePackageInstallerStatusRegistry.withRegisteredSession(sessionId) {
-                    val confirmationIntent = confirmationIntent(intent)
-                    if (confirmationIntent == null) {
-                        failPendingSession(
+                val handledInProcess =
+                    UpdatePackageInstallerStatusRegistry.withRegisteredSession(sessionId) {
+                        handlePendingUserAction(
                             context = context,
+                            intent = intent,
                             sessionId = sessionId,
-                            message = "Missing installer confirmation intent",
+                            notifyRuntime = true,
                         )
-                        return@withRegisteredSession
                     }
 
-                    val launched = runCatching {
-                        confirmationIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                        context.startActivity(confirmationIntent)
-                    }.isSuccess
-
-                    if (launched) {
-                        UpdatePackageInstallerStatusRegistry.dispatch(
-                            sessionId = sessionId,
-                            status = UpdatePackageInstallerStatus.PendingUserAction,
-                            terminal = false,
-                        )
-                    } else {
-                        failPendingSession(
+                if (!handledInProcess) {
+                    val recovery = AndroidUpdateInstallerSessionRecovery(context)
+                    if (recovery.canResumePendingUserAction(sessionId)) {
+                        handlePendingUserAction(
                             context = context,
+                            intent = intent,
                             sessionId = sessionId,
-                            message = "Unable to launch installer confirmation",
+                            notifyRuntime = false,
                         )
                     }
                 }
@@ -77,6 +68,45 @@ class UpdateInstallStatusReceiver : BroadcastReceiver() {
                     terminal = true,
                 )
             }
+        }
+    }
+
+    private fun handlePendingUserAction(
+        context: Context,
+        intent: Intent,
+        sessionId: Int,
+        notifyRuntime: Boolean,
+    ) {
+        val confirmationIntent = confirmationIntent(intent)
+        if (confirmationIntent == null) {
+            failPendingSession(
+                context = context,
+                sessionId = sessionId,
+                message = "Missing installer confirmation intent",
+            )
+            return
+        }
+
+        val launched = runCatching {
+            confirmationIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            context.startActivity(confirmationIntent)
+        }.isSuccess
+
+        if (!launched) {
+            failPendingSession(
+                context = context,
+                sessionId = sessionId,
+                message = "Unable to launch installer confirmation",
+            )
+            return
+        }
+
+        if (notifyRuntime) {
+            UpdatePackageInstallerStatusRegistry.dispatch(
+                sessionId = sessionId,
+                status = UpdatePackageInstallerStatus.PendingUserAction,
+                terminal = false,
+            )
         }
     }
 
