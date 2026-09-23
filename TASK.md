@@ -2,8 +2,8 @@
 
 ## Branch and baseline
 
-- Branch: `feature/update-ux`.
-- Base: `feature/package-installer` at `df1e394f8dce87b87cc25e6c57cbaa071e40e29d`.
+- Branch: `feature/automatic-update-check`.
+- Base: `feature/package-installer` at `e97894c0920d40cd3f01f3dd719dd0b52d3b6ad7` (`#74` squash-merged recovery UX baseline).
 - Parent installer PR: #72.
 - Classification: SETTINGS / UPDATE UX / ANDROID PACKAGE INSTALLER.
 - Authoritative references: `AGENTS.md`, `docs/UPDATE_UX.md`, `docs/RELEASES.md`, `docs/PHONE_SETTINGS.md`, and the validated package-installer runtime/tests inherited from the parent branch.
@@ -113,6 +113,7 @@ Completed in this checkpoint:
 - durable `SuccessfulUpdate` feedback has presentation priority, dialogs are not stacked, and an unconsumed success marker prevents automatic checking on that Phone entry;
 - focused prompt-runtime tests cover automatic-only eligibility, manual/install-refresh exclusion, same-version suppression, different-version eligibility, Update consumption, and Reset;
 - typical, narrow-phone, and enlarged-font new-release dialog Previews were added;
+- the new-release dialog now reuses #74's shared `PhoneDialogHeader`, matching the permission and successful-update dialogs for close-icon geometry and touch target;
 - Update UX and Phone Settings documentation are aligned.
 - inherited #74 recovery hardening remains preserved: process-death cleanup is session-bound and Reset cannot race a stale pending marker past the PackageInstaller commit boundary.
 
