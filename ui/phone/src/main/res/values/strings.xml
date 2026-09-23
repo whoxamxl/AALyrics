@@ -58,6 +58,14 @@
     <string name="settings_preparing_update_install">Preparing installation…</string>
     <string name="settings_install_permission_required">Installation permission required</string>
     <string name="settings_open_install_settings">Open settings</string>
+    <string name="settings_install_permission_dialog_eyebrow">INSTALL UPDATES</string>
+    <string name="settings_install_permission_dialog_title">Allow AALyrics to install updates</string>
+    <string name="settings_install_permission_dialog_version">For update v%1$s</string>
+    <string name="settings_install_permission_dialog_body">AALyrics is distributed outside Google Play. Android requires permission for AALyrics to hand a downloaded update to the system installer.</string>
+    <string name="settings_install_permission_dialog_reason">This permission does not allow silent updates. Android will still ask you to confirm each installation.</string>
+    <string name="settings_install_permission_dialog_grant">Grant permission</string>
+    <string name="settings_install_permission_dialog_download_github">Download from GitHub</string>
+    <string name="settings_install_permission_dialog_close">Close update permission dialog</string>
     <string name="settings_installing_update">Installing update…</string>
     <string name="settings_update_install_failed">Installation failed</string>
     <string name="settings_update_install_failure_generic">The update could not be installed. Try again or review Android install permission for AALyrics.</string>
