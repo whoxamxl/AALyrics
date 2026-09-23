@@ -317,8 +317,15 @@ class AALyricsApplication : Application() {
     override fun onCreate() {
         super.onCreate()
         val updateUserAgent = "AALyrics/${BuildConfig.VERSION_NAME}"
-        AndroidUpdateInstallerSessionRecovery(this)
-            .cleanupInterruptedSessions()
+        updateRecoveryStore = SharedPreferencesUpdateRecoveryStore(this)
+        AndroidUpdateInstallerSessionRecovery(
+            context = this,
+            onSessionAbandoned = { sessionId ->
+                runCatching {
+                    updateRecoveryStore.clearPendingUpdateForSession(sessionId)
+                }
+            },
+        ).cleanupInterruptedSessions()
         val updateReleaseClient = HttpGitHubReleaseClient(
             userAgent = updateUserAgent,
         )
@@ -334,7 +341,6 @@ class AALyricsApplication : Application() {
                 installedPackageName = packageName,
             ),
         )
-        updateRecoveryStore = SharedPreferencesUpdateRecoveryStore(this)
         updateSuccessFeedbackRuntime = UpdateSuccessFeedbackRuntime(updateRecoveryStore)
         appUpdateCheckRuntime = AppUpdateCheckRuntime(
             installedVersionName = BuildConfig.VERSION_NAME,
