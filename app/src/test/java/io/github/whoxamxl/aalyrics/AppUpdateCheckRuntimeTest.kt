@@ -601,7 +601,60 @@ class AppUpdateCheckRuntimeTest {
     }
 
     @Test
-    fun `install waits for source trust and rechecks after settings return`() = runTest {
+    fun `denied source trust return stays required without reopening prompt`() = runTest {
+        val root = createTempDirectory("aalyrics-install-runtime").toFile()
+        retainedUpdate(root, "0.2.0-alpha.2")
+        val installer = FakeUpdatePackageInstaller()
+        val permissionPromptVersions = mutableListOf<String>()
+        try {
+            val runtime = runtime(
+                installedVersionName = "0.2.0-alpha.1",
+                releases = emptyList(),
+                downloadFileStore = updateStore(root),
+                installPreparation = installPreparation(
+                    installedVersionName = "0.2.0-alpha.1",
+                    releases = listOf(
+                        release("v0.2.0-alpha.2", prerelease = true),
+                    ),
+                ),
+                installSourceTrustChecker = InstallSourceTrustChecker { false },
+                packageInstaller = installer,
+                onInstallPermissionRequired = permissionPromptVersions::add,
+            )
+
+            runtime.installUpdate()
+            runCurrent()
+            assertEquals(
+                AppUpdateCheckState.InstallPermissionRequired("0.2.0-alpha.2"),
+                runtime.state.value,
+            )
+            assertEquals(listOf("0.2.0-alpha.2"), permissionPromptVersions)
+            assertEquals(0, installer.installCount)
+
+            runtime.onInstallSourceTrustReturned()
+            runCurrent()
+
+            assertEquals(
+                AppUpdateCheckState.InstallPermissionRequired("0.2.0-alpha.2"),
+                runtime.state.value,
+            )
+            assertEquals(listOf("0.2.0-alpha.2"), permissionPromptVersions)
+            assertEquals(0, installer.installCount)
+
+            runtime.installUpdate()
+
+            assertEquals(
+                listOf("0.2.0-alpha.2", "0.2.0-alpha.2"),
+                permissionPromptVersions,
+            )
+            assertEquals(0, installer.installCount)
+        } finally {
+            root.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun `granted source trust return resumes install without reopening prompt`() = runTest {
         val root = createTempDirectory("aalyrics-install-runtime").toFile()
         retainedUpdate(root, "0.2.0-alpha.2")
         val installer = FakeUpdatePackageInstaller()
@@ -632,25 +685,6 @@ class AppUpdateCheckRuntimeTest {
             assertEquals(listOf("0.2.0-alpha.2"), permissionPromptVersions)
             assertEquals(0, installer.installCount)
 
-            runtime.onInstallSourceTrustReturned()
-            runCurrent()
-            assertEquals(
-                AppUpdateCheckState.InstallPermissionRequired("0.2.0-alpha.2"),
-                runtime.state.value,
-            )
-            assertEquals(listOf("0.2.0-alpha.2"), permissionPromptVersions)
-            assertEquals(0, installer.installCount)
-
-            runtime.installUpdate()
-            assertEquals(
-                listOf("0.2.0-alpha.2", "0.2.0-alpha.2"),
-                permissionPromptVersions,
-            )
-            assertEquals(
-                AppUpdateCheckState.InstallPermissionRequired("0.2.0-alpha.2"),
-                runtime.state.value,
-            )
-
             sourceTrusted = true
             runtime.onInstallSourceTrustReturned()
             runCurrent()
@@ -659,6 +693,7 @@ class AppUpdateCheckRuntimeTest {
                 AppUpdateCheckState.Installing("0.2.0-alpha.2"),
                 runtime.state.value,
             )
+            assertEquals(listOf("0.2.0-alpha.2"), permissionPromptVersions)
             assertEquals(1, installer.installCount)
         } finally {
             root.deleteRecursively()
