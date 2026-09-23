@@ -39,6 +39,8 @@ import io.github.whoxamxl.aalyrics.ui.phone.shell.PhoneAppShell
 import io.github.whoxamxl.aalyrics.ui.phone.state.PhoneShellUiState
 import io.github.whoxamxl.aalyrics.ui.phone.state.PlaybackQueueItemUiState
 import io.github.whoxamxl.aalyrics.ui.phone.sync.SyncScreen
+import io.github.whoxamxl.aalyrics.ui.phone.update.UpdateSuccessfulDialog
+import io.github.whoxamxl.aalyrics.ui.phone.update.UpdateSuccessfulDialogUiState
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
@@ -91,6 +93,8 @@ internal fun PhoneRuntimeHost(
     val appUpdateCheckState by application.appUpdateCheckState.collectAsStateWithLifecycle()
     val installPermissionPrompt by
         application.installPermissionPrompt.collectAsStateWithLifecycle()
+    val successfulUpdate by
+        application.successfulUpdate.collectAsStateWithLifecycle()
 
     DisposableEffect(application) {
         onDispose {
@@ -296,6 +300,15 @@ internal fun PhoneRuntimeHost(
                 bottomOverlayInset = bottomOverlayInset,
             )
         }
+    }
+
+    successfulUpdate?.let { update ->
+        UpdateSuccessfulDialog(
+            state = UpdateSuccessfulDialogUiState(
+                versionName = update.installedVersion,
+            ),
+            onDismissRequest = application::dismissSuccessfulUpdate,
+        )
     }
 }
 
