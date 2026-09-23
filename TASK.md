@@ -61,13 +61,16 @@ Download starts only from an explicit user `Download` / retry action after `UPDA
 
 The application-owned runtime must:
 
-1. enter `DOWNLOADING`;
-2. download the checksum and APK from the selected release;
-3. parse exactly one SHA-256 digest from the checksum payload;
-4. calculate SHA-256 for the downloaded APK;
-5. compare expected and actual digests case-insensitively;
-6. promote the verified APK from app-private cache staging into app-private no-backup persistent storage only after the digest matches;
-7. enter `DOWNLOADED` only after successful verification.
+1. enter `PREPARING_DOWNLOAD` while resolving assets, checksum, and staging;
+2. enter `DOWNLOADING` immediately before APK byte transfer;
+3. download the checksum and APK from the selected release;
+4. report received-byte progress against the GitHub Release asset size;
+5. require the completed byte count to match the published asset size;
+6. parse exactly one SHA-256 digest from the checksum payload;
+7. calculate SHA-256 for the downloaded APK;
+8. compare expected and actual digests case-insensitively;
+9. promote the verified APK from app-private cache staging into app-private no-backup persistent storage only after the digest matches;
+10. enter `DOWNLOADED` only after successful verification.
 
 Transport/protocol failures, asset-contract failures, malformed checksum content, I/O failures, and digest mismatch map to `DOWNLOAD_FAILED`.
 
@@ -91,7 +94,7 @@ Update artifacts are application-owned distribution files, not user documents.
 
 ## Reset AALyrics
 
-This slice introduces an app-owned cached artifact, so Reset semantics change:
+This slice introduces app-owned staging and verified update artifacts, so Reset semantics change:
 
 - cancel any active update download;
 - delete partial and verified update artifacts owned by the update runtime;
@@ -160,7 +163,8 @@ CHECK_FAILED
 - [x] Wire Download/Retry callbacks and production presentation.
 - [x] Integrate Reset AALyrics cleanup/cancellation.
 - [x] Align Previews and `docs/RELEASES.md` / `docs/PHONE_SETTINGS.md`.
-- [ ] Run architecture checks, unit tests, debug APK build, CI, real-device verification, and bounded review before merge.
+- [x] Complete real-device verified-download, determinate-progress, and process-restart validation.
+- [ ] Complete final architecture/build/unit/CI validation and bounded review before merge.
 
 ## Current checkpoint
 
@@ -186,6 +190,6 @@ The download presentation now separates preparation from transfer: `PREPARING_DO
 
 12. verified APK retention survives process restart without persisting a separate state record: runtime startup derives `DOWNLOADED` from the retained canonical APK and removes it once the installed version catches up.
 
-Remaining work is final architecture/build/unit/CI validation, real-device verified-download/restart testing, bounded review, and merge readiness. Package Installer remains deferred. Its explicit Install action must re-check the latest eligible Release before handoff so a retained older verified APK is not installed first when a newer update has appeared.
+Remaining work is final architecture/build/unit/CI validation, bounded review, and merge readiness. Package Installer remains deferred. Its explicit Install action must re-check the latest eligible Release before handoff so a retained older verified APK is not installed first when a newer update has appeared.
 
 Real-device update/install validation uses the reusable manual `Build` workflow input `update_test_version`. Run the workflow against the branch/ref under test and supply an older published version such as `0.1.0-alpha.1`; CI then emits both ZIP and direct-APK update-test artifacts with that VERSION_NAME override. This fixture is intentionally retained for the follow-up Package Installer slice instead of being tied to PR #71.
