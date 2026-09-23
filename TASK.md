@@ -84,28 +84,33 @@ Approved follow-up direction:
 - [x] Reconcile `ACTION_MY_PACKAGE_REPLACED` into durable update-success state.
 - [x] Show one-time Update successful feedback on the next valid app entry.
 - [x] Add best-effort resume-after-update behavior.
-- [ ] Add automatic update checking preference and new-release dialog.
+- [x] Add durable automatic update checking preference and bounded automatic discovery.
+- [ ] Add automatic-discovery new-release dialog and session suppression.
 - [ ] Compose Download + Install into one user-facing Update action.
 - [ ] Align Previews, Reset behavior, docs, tests, CI, and real-device regression validation.
 
 ## Current checkpoint
 
-Successful package replacement now makes a bounded best-effort request to return to AALyrics when the persisted resume intent allows it.
+`Automatically check for updates` is now a durable Phone setting and drives bounded automatic release discovery without changing the manual update path.
 
 Completed in this checkpoint:
 
-- added an `UpdatePostReplacementResume` boundary that only considers reconciled `SuccessfulUpdate` state;
-- `resumeAfterUpdate=true` requests one launch; false, no pending update, or unreconciled replacement performs no launch;
-- the Android launcher uses an explicit `MainActivity` intent with `NEW_TASK`, `CLEAR_TOP`, and `SINGLE_TOP` flags;
-- the receiver attempts resume only after durable pending-to-success promotion has completed;
-- a thrown launch failure is contained and does not alter update recovery state;
-- an accepted `startActivity()` request is treated only as a request, not proof that Android displayed the Activity;
-- `SuccessfulUpdate` is never cleared or modified by the resume attempt;
-- automatic return uses normal app entry handling and does not add Main/Lyrics destination routing;
-- if Android blocks or suppresses background Activity launch, the next ordinary app launch still surfaces the durable success dialog;
-- focused tests cover resume requested, resume disabled, unreconciled replacement, and launch-request failure;
+- added app-owned `automaticallyCheckForUpdates` persistence to the Phone settings store;
+- default is ON, including existing preference stores where the new key is absent;
+- `Reset AALyrics` restores the preference to ON;
+- Settings APP section now shows the toggle above the existing Version / `Check for updates` row;
+- supporting copy is always visible and explicitly states that updates are never installed without confirmation;
+- manual `Check for updates` remains available regardless of toggle state;
+- automatic checking is deferred until the normal Phone entry reaches `READY`, so onboarding/permission entry gates remain authoritative;
+- an enabled preference consumes at most one automatic check attempt per app process;
+- enabling the preference later in the same process may use that still-unused process attempt;
+- automatic checks only start from update-runtime `IDLE` and do not replace retained verified APK/download/install state;
+- update discovery now records internal origin as `MANUAL`, `AUTOMATIC`, or `INSTALL_REFRESH` so later presentation can distinguish automatic discovery safely;
+- install-time latest-release refresh is explicitly not classified as automatic discovery;
+- focused tests cover durable preference/default/reset behavior, process-scoped automatic attempts, automatic-origin propagation, retained-update protection, and mapper propagation;
+- Settings Previews cover the default ON state and explicit OFF state;
 - Update UX and Phone Settings documentation are aligned.
 
-No notification fallback, automatic update checking, release-available dialog, or one-step Update composition has been implemented yet.
+No `New release available` dialog or same-session dismissal suppression has been implemented yet. Automatic discovery currently only produces the existing update runtime state.
 
-Next checkpoint: **add `Automatically check for updates` as a durable Settings preference and wire automatic release checking without changing manual `Check for updates` behavior**. Do not begin it until explicitly requested.
+Next checkpoint: **implement the automatic-discovery-only `New release available` dialog with Update / Not now / X / Back dismissal and suppress repeated presentation of the same version for the rest of the current app session**. Do not begin it until explicitly requested.
