@@ -298,13 +298,7 @@ internal class AppUpdateCheckRuntime(
 
             ensureCurrentOperation(generation)
             installResult.fold(
-                onSuccess = { sessionId ->
-                    if (
-                        mutableState.value !is AppUpdateCheckState.InstallFailed &&
-                        activeInstallSessionId == null
-                    ) {
-                        activeInstallSessionId = sessionId
-                    }
+                onSuccess = {
                     if (mutableState.value is AppUpdateCheckState.PreparingInstall) {
                         mutableState.value =
                             AppUpdateCheckState.Installing(target.versionName)
