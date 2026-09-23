@@ -22,6 +22,7 @@ internal interface UpdatePackageInstaller {
         apkFile: File,
         statusSink: UpdatePackageInstallerStatusSink,
         onSessionCreated: (Int) -> Unit = {},
+        onBeforeCommit: (Int) -> Unit = {},
     ): Result<Int>
 
     fun abandon(sessionId: Int)
