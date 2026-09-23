@@ -1,5 +1,7 @@
 package io.github.whoxamxl.aalyrics
 
+import java.util.concurrent.CountDownLatch
+import kotlin.concurrent.thread
 import kotlin.io.path.createTempDirectory
 import kotlin.test.AfterTest
 import kotlin.test.Test
@@ -101,6 +103,70 @@ class UpdateDownloadFileStoreTest {
 
         assertFalse(promoting.exists())
         assertTrue(files.partialApk.isFile)
+    }
+
+    @Test
+    fun `conditional verified commit refuses stale operation`() {
+        val store = store()
+        val files = store.prepare(
+            apkFileName = "AALyrics-v0.2.0.apk",
+            operationId = 7L,
+        )
+        files.partialApk.writeText("verified bytes")
+        val promoting = store.stageVerified(
+            files = files,
+            operationId = 7L,
+        )
+
+        val committed = store.commitVerified(
+            files = files,
+            promotingApk = promoting,
+            canCommit = { false },
+        )
+
+        assertNull(committed)
+        assertFalse(files.verifiedApk.exists())
+        assertTrue(promoting.isFile)
+    }
+
+    @Test
+    fun `reset cleanup serialized after verified commit leaves no canonical apk`() {
+        val store = store()
+        val files = store.prepare(
+            apkFileName = "AALyrics-v0.2.0.apk",
+            operationId = 7L,
+        )
+        files.partialApk.writeText("verified bytes")
+        val promoting = store.stageVerified(
+            files = files,
+            operationId = 7L,
+        )
+        val ownershipChecked = CountDownLatch(1)
+        val allowCommit = CountDownLatch(1)
+
+        val commitThread = thread(start = true) {
+            store.commitVerified(
+                files = files,
+                promotingApk = promoting,
+                canCommit = {
+                    ownershipChecked.countDown()
+                    allowCommit.await()
+                    true
+                },
+            )
+        }
+        ownershipChecked.await()
+
+        val resetThread = thread(start = true) {
+            store.clearAll()
+        }
+
+        allowCommit.countDown()
+        commitThread.join()
+        resetThread.join()
+
+        assertFalse(stagingRoot.exists())
+        assertFalse(verifiedRoot.exists())
     }
 
     @Test
