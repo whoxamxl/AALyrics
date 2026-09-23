@@ -105,6 +105,27 @@ class AutomaticUpdateCheckRuntimeTest {
     }
 
     @Test
+    fun `reset clears durable cadence and process guard`() {
+        val store = FakeCadenceStore()
+        var requests = 0
+        val runtime = runtime(
+            store = store,
+            request = {
+                requests += 1
+                true
+            },
+        )
+
+        assertTrue(runtime.requestIfEnabled(true))
+        assertFalse(runtime.requestIfEnabled(true))
+        runtime.resetCadence()
+
+        assertEquals(null, store.lastCheckAtMillis())
+        assertTrue(runtime.requestIfEnabled(true))
+        assertEquals(2, requests)
+    }
+
+    @Test
     fun `future cadence timestamp does not trigger automatic check`() {
         val store = FakeCadenceStore(lastCheckAt = DAY_10 + 1L)
         var requests = 0
