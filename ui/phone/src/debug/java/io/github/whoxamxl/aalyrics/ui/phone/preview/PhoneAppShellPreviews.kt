@@ -308,6 +308,8 @@ internal fun PreviewSettingsDestination(
         onAndroidAutoCompatibilitySetup = {},
         onCheckForUpdates = {},
         onDownloadUpdate = {},
+        onInstallUpdate = {},
+        onOpenInstallSettings = {},
         onOpenGitHub = {},
         onHelpFeedback = {},
         onSupportAALyrics = {},
