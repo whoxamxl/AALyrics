@@ -3,7 +3,7 @@ package io.github.whoxamxl.aalyrics
 internal class AutomaticUpdateCheckRuntime(
     private val cadenceStore: UpdateCheckCadenceStore,
     private val requestAutomaticCheck: () -> Boolean,
-    private val nowMillis: () -> Long = System::currentTimeMillis,
+    private val nowMillis: () -> Long = { System.currentTimeMillis() },
     private val intervalMillis: Long = DEFAULT_INTERVAL_MILLIS,
 ) {
     private var attemptedThisProcess: Boolean = false
@@ -23,6 +23,11 @@ internal class AutomaticUpdateCheckRuntime(
 
     fun recordSuccessfulReleaseQuery() {
         cadenceStore.recordCheckAtMillis(nowMillis())
+    }
+
+    fun resetCadence() {
+        cadenceStore.clear()
+        attemptedThisProcess = false
     }
 
     private fun isDue(): Boolean {
