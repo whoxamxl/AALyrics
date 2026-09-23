@@ -199,7 +199,7 @@ class AppUpdateCheckRuntimeTest {
                 installedVersionName = "0.2.0-alpha.1",
                 releases = listOf(release),
                 assetDownloadClient = downloadClient,
-                downloadFileStore = UpdateDownloadFileStore(root),
+                downloadFileStore = updateStore(root),
             )
 
             runtime.checkForUpdates()
@@ -240,7 +240,7 @@ class AppUpdateCheckRuntimeTest {
                     ),
                     apkBytes = "different".encodeToByteArray(),
                 ),
-                downloadFileStore = UpdateDownloadFileStore(root),
+                downloadFileStore = updateStore(root),
             )
 
             runtime.checkForUpdates()
@@ -252,7 +252,8 @@ class AppUpdateCheckRuntimeTest {
                 AppUpdateCheckState.DownloadFailed("0.2.0-alpha.2"),
                 runtime.state.value,
             )
-            assertEquals(emptyList(), root.listFiles()?.toList().orEmpty())
+            assertFalse(stagingRoot(root).exists())
+            assertFalse(verifiedRoot(root).exists())
         } finally {
             root.deleteRecursively()
         }
@@ -277,7 +278,7 @@ class AppUpdateCheckRuntimeTest {
                 installedVersionName = "0.2.0-alpha.1",
                 releases = listOf(release),
                 assetDownloadClient = downloadClient,
-                downloadFileStore = UpdateDownloadFileStore(root),
+                downloadFileStore = updateStore(root),
             )
 
             runtime.checkForUpdates()
@@ -311,7 +312,7 @@ class AppUpdateCheckRuntimeTest {
                 installedVersionName = "0.2.0-alpha.1",
                 releases = listOf(release),
                 assetDownloadClient = downloadClient,
-                downloadFileStore = UpdateDownloadFileStore(root),
+                downloadFileStore = updateStore(root),
             )
 
             runtime.checkForUpdates()
@@ -349,7 +350,7 @@ class AppUpdateCheckRuntimeTest {
                 installedVersionName = "0.2.0-alpha.1",
                 releases = listOf(release),
                 assetDownloadClient = downloadClient,
-                downloadFileStore = UpdateDownloadFileStore(root),
+                downloadFileStore = updateStore(root),
             )
 
             runtime.checkForUpdates()
@@ -390,7 +391,7 @@ class AppUpdateCheckRuntimeTest {
                     checksumGate = checksumGate,
                     downloadGate = downloadGate,
                 ),
-                downloadFileStore = UpdateDownloadFileStore(root),
+                downloadFileStore = updateStore(root),
             )
 
             runtime.checkForUpdates()
@@ -431,7 +432,7 @@ class AppUpdateCheckRuntimeTest {
         val release = downloadableRelease("v0.2.0-alpha.2")
         val gate = CompletableDeferred<Unit>()
         val root = createTempDirectory("aalyrics-update-runtime").toFile()
-        val store = UpdateDownloadFileStore(root)
+        val store = updateStore(root)
         try {
             val runtime = runtime(
                 installedVersionName = "0.2.0-alpha.1",
@@ -457,7 +458,8 @@ class AppUpdateCheckRuntimeTest {
             runCurrent()
 
             assertEquals(AppUpdateCheckState.Idle, runtime.state.value)
-            assertFalse(root.exists())
+            assertFalse(stagingRoot(root).exists())
+            assertFalse(verifiedRoot(root).exists())
         } finally {
             gate.complete(Unit)
             root.deleteRecursively()
@@ -477,7 +479,7 @@ class AppUpdateCheckRuntimeTest {
                     checksumPayload = checksumPayload(apkBytes, release.assets.first().name),
                     apkBytes = apkBytes,
                 ),
-                downloadFileStore = UpdateDownloadFileStore(root),
+                downloadFileStore = updateStore(root),
             )
 
             runtime.checkForUpdates()
@@ -485,18 +487,105 @@ class AppUpdateCheckRuntimeTest {
             runtime.downloadUpdate()
             runCurrent()
             assertTrue(runtime.state.value is AppUpdateCheckState.Downloaded)
-            assertTrue(root.exists())
+            assertTrue(verifiedRoot(root).isDirectory)
 
             runtime.reset()
             runtime.downloadUpdate()
             runCurrent()
 
             assertEquals(AppUpdateCheckState.Idle, runtime.state.value)
-            assertFalse(root.exists())
+            assertFalse(stagingRoot(root).exists())
+            assertFalse(verifiedRoot(root).exists())
         } finally {
             root.deleteRecursively()
         }
     }
+
+    @Test
+    fun `verified download restores after process restart`() = runTest {
+        val apkBytes = "signed apk bytes".encodeToByteArray()
+        val release = downloadableRelease("v0.2.0-alpha.2")
+        val root = createTempDirectory("aalyrics-update-runtime").toFile()
+        try {
+            val firstRuntime = runtime(
+                installedVersionName = "0.2.0-alpha.1",
+                releases = listOf(release),
+                assetDownloadClient = FakeUpdateAssetDownloadClient(
+                    checksumPayload = checksumPayload(apkBytes, release.assets.first().name),
+                    apkBytes = apkBytes,
+                ),
+                downloadFileStore = updateStore(root),
+            )
+            firstRuntime.checkForUpdates()
+            runCurrent()
+            firstRuntime.downloadUpdate()
+            runCurrent()
+            val firstDownloaded = firstRuntime.state.value as AppUpdateCheckState.Downloaded
+
+            stagingRoot(root).mkdirs()
+            stagingRoot(root).resolve("stale.part").writeText("stale")
+
+            val restartedRuntime = runtime(
+                installedVersionName = "0.2.0-alpha.1",
+                releases = emptyList(),
+                downloadFileStore = updateStore(root),
+            )
+
+            val restored = restartedRuntime.state.value as AppUpdateCheckState.Downloaded
+            assertEquals("0.2.0-alpha.2", restored.versionName)
+            assertEquals(firstDownloaded.apkFile.canonicalFile, restored.apkFile.canonicalFile)
+            assertEquals(apkBytes.toList(), restored.apkFile.readBytes().toList())
+            assertFalse(stagingRoot(root).exists())
+        } finally {
+            root.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun `retained verified apk is removed when installed version catches up`() = runTest {
+        val apkBytes = "signed apk bytes".encodeToByteArray()
+        val release = downloadableRelease("v0.2.0-alpha.2")
+        val root = createTempDirectory("aalyrics-update-runtime").toFile()
+        try {
+            val firstRuntime = runtime(
+                installedVersionName = "0.2.0-alpha.1",
+                releases = listOf(release),
+                assetDownloadClient = FakeUpdateAssetDownloadClient(
+                    checksumPayload = checksumPayload(apkBytes, release.assets.first().name),
+                    apkBytes = apkBytes,
+                ),
+                downloadFileStore = updateStore(root),
+            )
+            firstRuntime.checkForUpdates()
+            runCurrent()
+            firstRuntime.downloadUpdate()
+            runCurrent()
+            assertTrue(firstRuntime.state.value is AppUpdateCheckState.Downloaded)
+            assertTrue(verifiedRoot(root).isDirectory)
+
+            val updatedRuntime = runtime(
+                installedVersionName = "0.2.0-alpha.2",
+                releases = emptyList(),
+                downloadFileStore = updateStore(root),
+            )
+
+            assertEquals(AppUpdateCheckState.Idle, updatedRuntime.state.value)
+            assertFalse(verifiedRoot(root).exists())
+        } finally {
+            root.deleteRecursively()
+        }
+    }
+
+    private fun updateStore(root: File) = UpdateDownloadFileStore(
+        stagingDirectory = stagingRoot(root),
+        verifiedDirectory = verifiedRoot(root),
+    )
+
+    private fun stagingRoot(root: File): File =
+        root.resolve("cache/updates")
+
+    private fun verifiedRoot(root: File): File =
+        root.resolve("files/updates")
 
     private fun kotlinx.coroutines.test.TestScope.runtime(
         installedVersionName: String,
