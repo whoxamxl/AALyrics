@@ -418,6 +418,7 @@ internal object PhonePreviewFixtures {
         appUpdate = AppUpdateUiState(
             phase = AppUpdateUiPhase.DOWNLOADING,
             availableVersionName = "0.1.2",
+            downloadProgress = 0.64f,
         ),
     )
     val settingsDownloadedUpdate = settingsTypical.copy(
