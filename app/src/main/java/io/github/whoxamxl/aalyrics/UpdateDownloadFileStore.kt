@@ -34,9 +34,15 @@ internal class UpdateDownloadFileStore(
         )
     }
 
-    fun promoteVerified(files: UpdateDownloadFiles): File {
+    fun stageVerified(
+        files: UpdateDownloadFiles,
+        operationId: Long,
+    ): File {
         requireOwned(files.partialApk, stagingDirectory, "staging")
         requireOwned(files.verifiedApk, verifiedDirectory, "verified")
+        check(operationId >= 0L) {
+            "Update operation id must not be negative"
+        }
         check(files.partialApk.isFile) {
             "Partial APK does not exist"
         }
@@ -44,7 +50,7 @@ internal class UpdateDownloadFileStore(
         ensureDirectory(verifiedDirectory, "verified update directory")
         val promotingApk = File(
             verifiedDirectory,
-            "${files.verifiedApk.name}.promoting",
+            "${files.verifiedApk.name}.op-$operationId.promoting",
         )
         requireOwned(promotingApk, verifiedDirectory, "verified")
         check(!promotingApk.exists()) {
@@ -53,18 +59,38 @@ internal class UpdateDownloadFileStore(
 
         try {
             files.partialApk.copyTo(promotingApk, overwrite = false)
-            replaceVerifiedTarget(
-                source = promotingApk,
-                target = files.verifiedApk,
-            )
-            clearVerifiedExcept(files.verifiedApk)
-            files.partialApk.delete()
-            clearDirectoryIfEmpty(stagingDirectory)
-            return files.verifiedApk
+            return promotingApk
         } catch (error: Exception) {
             promotingApk.delete()
             throw error
         }
+    }
+
+    fun commitVerified(
+        files: UpdateDownloadFiles,
+        promotingApk: File,
+    ): File {
+        requireOwned(files.partialApk, stagingDirectory, "staging")
+        requireOwned(files.verifiedApk, verifiedDirectory, "verified")
+        requireOwned(promotingApk, verifiedDirectory, "verified")
+        check(promotingApk.isFile) {
+            "Promoting APK does not exist"
+        }
+
+        replaceVerifiedTarget(
+            source = promotingApk,
+            target = files.verifiedApk,
+        )
+        clearVerifiedExcept(files.verifiedApk)
+        files.partialApk.delete()
+        clearDirectoryIfEmpty(stagingDirectory)
+        return files.verifiedApk
+    }
+
+    fun discardPromotion(promotingApk: File) {
+        requireOwned(promotingApk, verifiedDirectory, "verified")
+        promotingApk.delete()
+        clearDirectoryIfEmpty(verifiedDirectory)
     }
 
     fun discardPartial(files: UpdateDownloadFiles) {
