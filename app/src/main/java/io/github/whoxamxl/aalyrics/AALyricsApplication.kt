@@ -215,6 +215,9 @@ class AALyricsApplication : Application() {
     }
 
     internal fun onPhoneReadyForAutomaticUpdateCheck() {
+        if (updateSuccessFeedbackRuntime.successfulUpdate.value != null) {
+            return
+        }
         automaticUpdateCheckRuntime.requestIfEnabled(
             phonePresentationSettingsStore.automaticallyCheckForUpdates.value,
         )
