@@ -473,6 +473,108 @@ class AppUpdateCheckRuntimeTest {
     }
 
     @Test
+    fun `one step source trust grant resumes retained apk without redownload`() = runTest {
+        val apkBytes = "signed apk bytes".encodeToByteArray()
+        val release = downloadableRelease("v0.2.0-alpha.2")
+        val downloadClient = FakeUpdateAssetDownloadClient(
+            checksumPayload = checksumPayload(apkBytes, release.assets.first().name),
+            apkBytes = apkBytes,
+        )
+        val installer = FakeUpdatePackageInstaller()
+        var sourceTrusted = false
+        val root = createTempDirectory("aalyrics-one-step-trust-return").toFile()
+        try {
+            val runtime = runtime(
+                installedVersionName = "0.2.0-alpha.1",
+                releases = listOf(release),
+                assetDownloadClient = downloadClient,
+                downloadFileStore = updateStore(root),
+                installPreparation = installPreparation(
+                    installedVersionName = "0.2.0-alpha.1",
+                    releases = listOf(release),
+                ),
+                installSourceTrustChecker = InstallSourceTrustChecker { sourceTrusted },
+                packageInstaller = installer,
+            )
+
+            runtime.checkForUpdates()
+            runCurrent()
+            runtime.requestUpdate()
+            runCurrent()
+
+            assertEquals(
+                AppUpdateCheckState.InstallPermissionRequired("0.2.0-alpha.2"),
+                runtime.state.value,
+            )
+            assertEquals(1, downloadClient.downloadCount)
+
+            sourceTrusted = true
+            runtime.onInstallSourceTrustReturned()
+            runCurrent()
+
+            assertEquals(
+                AppUpdateCheckState.Installing("0.2.0-alpha.2"),
+                runtime.state.value,
+            )
+            assertEquals(1, downloadClient.downloadCount)
+            assertEquals(1, installer.installCount)
+        } finally {
+            root.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun `one step retry after download failure continues through install`() = runTest {
+        val apkBytes = "signed apk bytes".encodeToByteArray()
+        val release = downloadableRelease("v0.2.0-alpha.2")
+        val downloadClient = FakeUpdateAssetDownloadClient(
+            checksumPayload = checksumPayload(apkBytes, release.assets.first().name),
+            apkBytes = apkBytes,
+            failDownloads = 1,
+        )
+        val installer = FakeUpdatePackageInstaller()
+        val root = createTempDirectory("aalyrics-one-step-retry").toFile()
+        try {
+            val runtime = runtime(
+                installedVersionName = "0.2.0-alpha.1",
+                releases = listOf(release),
+                assetDownloadClient = downloadClient,
+                downloadFileStore = updateStore(root),
+                installPreparation = installPreparation(
+                    installedVersionName = "0.2.0-alpha.1",
+                    releases = listOf(release),
+                ),
+                installSourceTrustChecker = InstallSourceTrustChecker { true },
+                packageInstaller = installer,
+            )
+
+            runtime.checkForUpdates()
+            runCurrent()
+            runtime.requestUpdate()
+            runCurrent()
+
+            assertEquals(
+                AppUpdateCheckState.DownloadFailed("0.2.0-alpha.2"),
+                runtime.state.value,
+            )
+            assertEquals(1, downloadClient.downloadCount)
+            assertEquals(0, installer.installCount)
+
+            runtime.requestUpdate()
+            runCurrent()
+
+            assertEquals(
+                AppUpdateCheckState.Installing("0.2.0-alpha.2"),
+                runtime.state.value,
+            )
+            assertEquals(2, downloadClient.downloadCount)
+            assertEquals(1, installer.installCount)
+        } finally {
+            root.deleteRecursively()
+        }
+    }
+
+    @Test
     fun `digest mismatch becomes download failed and leaves no apk artifact`() = runTest {
         val release = downloadableRelease("v0.2.0-alpha.2")
         val root = createTempDirectory("aalyrics-update-runtime").toFile()
