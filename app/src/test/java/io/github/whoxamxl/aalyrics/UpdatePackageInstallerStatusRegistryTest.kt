@@ -2,6 +2,8 @@ package io.github.whoxamxl.aalyrics
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 
 class UpdatePackageInstallerStatusRegistryTest {
     @Test
@@ -12,6 +14,7 @@ class UpdatePackageInstallerStatusRegistryTest {
             sessionId = sessionId,
             sink = UpdatePackageInstallerStatusSink(statuses::add),
         )
+        assertTrue(UpdatePackageInstallerStatusRegistry.isRegistered(sessionId))
 
         UpdatePackageInstallerStatusRegistry.dispatch(
             sessionId = sessionId,
@@ -39,6 +42,7 @@ class UpdatePackageInstallerStatusRegistryTest {
             ),
             statuses,
         )
+        assertFalse(UpdatePackageInstallerStatusRegistry.isRegistered(sessionId))
     }
 
     @Test
@@ -51,6 +55,7 @@ class UpdatePackageInstallerStatusRegistryTest {
         )
 
         UpdatePackageInstallerStatusRegistry.unregister(sessionId)
+        assertFalse(UpdatePackageInstallerStatusRegistry.isRegistered(sessionId))
         UpdatePackageInstallerStatusRegistry.dispatch(
             sessionId = sessionId,
             status = UpdatePackageInstallerStatus.Success,
