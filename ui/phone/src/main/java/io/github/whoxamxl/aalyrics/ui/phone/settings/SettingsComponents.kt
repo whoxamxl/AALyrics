@@ -138,6 +138,7 @@ internal fun SettingsSwitchRow(
     onCheckedChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
+    supportingText: String? = null,
     infoText: String? = null,
     infoContentDescription: String? = null,
 ) {
@@ -159,16 +160,32 @@ internal fun SettingsSwitchRow(
             ),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(
-            text = title,
-            style = AALyricsTypography.AppTitle,
-            color = if (enabled) {
-                AALyricsColors.TextPrimary
-            } else {
-                AALyricsColors.TextTertiary
-            },
+        Column(
             modifier = Modifier.weight(1f),
-        )
+        ) {
+            Text(
+                text = title,
+                style = AALyricsTypography.AppTitle,
+                color = if (enabled) {
+                    AALyricsColors.TextPrimary
+                } else {
+                    AALyricsColors.TextTertiary
+                },
+            )
+
+            supportingText?.let { text ->
+                Spacer(Modifier.height(AALyricsSpacing.Space4))
+                Text(
+                    text = text,
+                    style = AALyricsTypography.TrackArtist,
+                    color = if (enabled) {
+                        AALyricsColors.TextSecondary
+                    } else {
+                        AALyricsColors.TextTertiary
+                    },
+                )
+            }
+        }
 
         if (infoText != null && infoContentDescription != null) {
             SettingInfoTooltip(
