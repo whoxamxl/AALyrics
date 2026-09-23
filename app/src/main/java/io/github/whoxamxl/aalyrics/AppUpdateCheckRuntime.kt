@@ -66,12 +66,19 @@ internal class AppUpdateCheckRuntime(
     private val applicationScope: CoroutineScope,
     private val assetDownloadClient: UpdateAssetDownloadClient? = null,
     private val downloadFileStore: UpdateDownloadFileStore? = null,
+    private val installPreparation: UpdateInstallPreparation? = null,
+    private val installSourceTrustChecker: InstallSourceTrustChecker? = null,
+    private val packageInstaller: UpdatePackageInstaller? = null,
 ) {
     private val mutableState = MutableStateFlow<AppUpdateCheckState>(AppUpdateCheckState.Idle)
     val state: StateFlow<AppUpdateCheckState> = mutableState.asStateFlow()
 
     private var checkJob: Job? = null
     private var downloadJob: Job? = null
+    private var installJob: Job? = null
+    @Volatile
+    private var activeInstallSessionId: Int? = null
+    private var installTarget: InstallTarget? = null
     private var availableCandidate: AALyricsReleaseCandidate? = null
     private val operationGeneration = AtomicLong(0L)
 
@@ -400,6 +407,11 @@ internal class AppUpdateCheckRuntime(
         AppUpdateCheckState.DownloadFailed(
             versionName = candidate.release.tagName.removePrefix("v"),
         )
+
+    private data class InstallTarget(
+        val versionName: String,
+        val apkFile: File,
+    )
 
     private companion object {
         val VERIFIED_APK_NAME = Regex("^AALyrics-(v.+)\\.apk$")
