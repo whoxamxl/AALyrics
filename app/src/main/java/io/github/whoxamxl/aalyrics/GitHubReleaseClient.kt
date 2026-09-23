@@ -7,10 +7,16 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
 
+internal data class GitHubReleaseAsset(
+    val name: String,
+    val downloadUrl: String,
+)
+
 internal data class GitHubRelease(
     val tagName: String,
     val draft: Boolean,
     val prerelease: Boolean,
+    val assets: List<GitHubReleaseAsset> = emptyList(),
 )
 
 internal fun interface GitHubReleaseClient {
@@ -69,11 +75,32 @@ internal class HttpGitHubReleaseClient(
             for (index in 0 until array.length()) {
                 val item = array.optJSONObject(index) ?: continue
                 val tagName = item.optString("tag_name").takeIf { it.isNotBlank() } ?: continue
+                val assetsJson = item.optJSONArray("assets")
+                val assets = buildList {
+                    if (assetsJson != null) {
+                        for (assetIndex in 0 until assetsJson.length()) {
+                            val asset = assetsJson.optJSONObject(assetIndex) ?: continue
+                            val name = asset.optString("name")
+                                .takeIf { it.isNotBlank() }
+                                ?: continue
+                            val downloadUrl = asset.optString("browser_download_url")
+                                .takeIf { it.isNotBlank() }
+                                ?: continue
+                            add(
+                                GitHubReleaseAsset(
+                                    name = name,
+                                    downloadUrl = downloadUrl,
+                                ),
+                            )
+                        }
+                    }
+                }
                 add(
                     GitHubRelease(
                         tagName = tagName,
                         draft = item.optBoolean("draft", false),
                         prerelease = item.optBoolean("prerelease", false),
+                        assets = assets,
                     ),
                 )
             }
