@@ -57,7 +57,6 @@
     <string name="settings_install_update">Install</string>
     <string name="settings_preparing_update_install">Preparing installation…</string>
     <string name="settings_install_permission_required">Installation permission required</string>
-    <string name="settings_open_install_settings">Open settings</string>
     <string name="settings_install_permission_dialog_eyebrow">INSTALL UPDATES</string>
     <string name="settings_install_permission_dialog_title">Allow AALyrics to install updates</string>
     <string name="settings_install_permission_dialog_version">For update v%1$s</string>
