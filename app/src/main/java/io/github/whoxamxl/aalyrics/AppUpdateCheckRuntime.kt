@@ -290,7 +290,7 @@ internal class AppUpdateCheckRuntime(
                     is UpdatePackageInstallerStatus.Failure -> {
                         activeInstallSessionId = null
                         runCatching {
-                            recoveryStore.clear()
+                            recoveryStore.clearPendingUpdate()
                         }
                         mutableState.value =
                             AppUpdateCheckState.InstallFailed(target.versionName)
@@ -333,7 +333,7 @@ internal class AppUpdateCheckRuntime(
                 onFailure = {
                     activeInstallSessionId = null
                     runCatching {
-                        recoveryStore.clear()
+                        recoveryStore.clearPendingUpdate()
                     }
                     mutableState.value =
                         AppUpdateCheckState.InstallFailed(target.versionName)
