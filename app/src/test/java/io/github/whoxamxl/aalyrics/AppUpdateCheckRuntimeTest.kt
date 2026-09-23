@@ -211,7 +211,7 @@ class AppUpdateCheckRuntimeTest {
 
             runtime.downloadUpdate()
             assertEquals(
-                AppUpdateCheckState.Downloading("0.2.0-alpha.2"),
+                AppUpdateCheckState.PreparingDownload("0.2.0-alpha.2"),
                 runtime.state.value,
             )
             runCurrent()
@@ -374,10 +374,11 @@ class AppUpdateCheckRuntimeTest {
     }
 
     @Test
-    fun `settings reentry preserves active and completed verified download`() = runTest {
+    fun `settings reentry preserves preparing downloading and completed verified download`() = runTest {
         val apkBytes = "signed apk bytes".encodeToByteArray()
         val release = downloadableRelease("v0.2.0-alpha.2")
-        val gate = CompletableDeferred<Unit>()
+        val checksumGate = CompletableDeferred<Unit>()
+        val downloadGate = CompletableDeferred<Unit>()
         val root = createTempDirectory("aalyrics-update-runtime").toFile()
         try {
             val runtime = runtime(
@@ -386,7 +387,8 @@ class AppUpdateCheckRuntimeTest {
                 assetDownloadClient = FakeUpdateAssetDownloadClient(
                     checksumPayload = checksumPayload(apkBytes, release.assets.first().name),
                     apkBytes = apkBytes,
-                    downloadGate = gate,
+                    checksumGate = checksumGate,
+                    downloadGate = downloadGate,
                 ),
                 downloadFileStore = UpdateDownloadFileStore(root),
             )
@@ -398,17 +400,27 @@ class AppUpdateCheckRuntimeTest {
 
             runtime.onSettingsEntered()
             assertEquals(
+                AppUpdateCheckState.PreparingDownload("0.2.0-alpha.2"),
+                runtime.state.value,
+            )
+
+            checksumGate.complete(Unit)
+            runCurrent()
+            runtime.onSettingsEntered()
+            assertEquals(
                 AppUpdateCheckState.Downloading("0.2.0-alpha.2"),
                 runtime.state.value,
             )
 
-            gate.complete(Unit)
+            downloadGate.complete(Unit)
             runCurrent()
             assertTrue(runtime.state.value is AppUpdateCheckState.Downloaded)
 
             runtime.onSettingsEntered()
             assertTrue(runtime.state.value is AppUpdateCheckState.Downloaded)
         } finally {
+            checksumGate.complete(Unit)
+            downloadGate.complete(Unit)
             root.deleteRecursively()
         }
     }
@@ -540,6 +552,7 @@ class AppUpdateCheckRuntimeTest {
         private val checksumPayload: String,
         private val apkBytes: ByteArray,
         private var failDownloads: Int = 0,
+        private val checksumGate: CompletableDeferred<Unit>? = null,
         private val downloadGate: CompletableDeferred<Unit>? = null,
     ) : UpdateAssetDownloadClient {
         var fetchTextCount: Int = 0
@@ -552,6 +565,7 @@ class AppUpdateCheckRuntimeTest {
             maxBytes: Long,
         ): Result<String> {
             fetchTextCount += 1
+            checksumGate?.await()
             return Result.success(checksumPayload)
         }
 
