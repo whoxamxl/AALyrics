@@ -85,6 +85,7 @@ Approved update-UX stack direction (this branch implements items 1–4; later it
 - [x] Show one-time Update successful feedback on the next valid app entry.
 - [x] Add best-effort resume-after-update behavior.
 - [x] Preserve typed install-failure reasons through Settings and explain them in the failure tooltip.
+- [x] Standardize dismissible custom update-dialog X placement through shared `PhoneDialogHeader`.
 - [ ] Add automatic update checking preference and new-release dialog. *(deferred to dependent PR #75; out of scope for #74)*
 - [ ] Compose Download + Install into one user-facing Update action. *(deferred to dependent PR #76; out of scope for #74)*
 - [x] Align #74 Previews, Reset behavior, docs, focused tests, and CI.
@@ -106,6 +107,7 @@ Completed in this checkpoint:
 - if Android blocks or suppresses background Activity launch, the next ordinary app launch still surfaces the durable success dialog;
 - focused tests cover resume requested, resume disabled, unreconciled replacement, and launch-request failure;
 - install preparation and PackageInstaller failures now retain typed reasons through Phone presentation; the failure tooltip explains the specific boundary, including signing identity mismatch before source-trust evaluation;
+- permission and successful-update dialogs now share `PhoneDialogHeader`, fixing the X at one standard trailing header position and documenting that contract in the Phone UI spec;
 - Update UX and Phone Settings documentation are aligned.
 
 No notification fallback, automatic update checking, release-available dialog, or one-step Update composition has been implemented yet.
