@@ -79,6 +79,26 @@ class UpdateDownloadFileStoreTest {
     }
 
     @Test
+    fun `promotion replaces the same retained version without exposing two apks`() {
+        verifiedRoot.mkdirs()
+        val retained = verifiedRoot.resolve("AALyrics-v0.2.0.apk").apply {
+            writeText("old")
+        }
+        val store = store()
+        val files = store.prepare("AALyrics-v0.2.0.apk")
+        files.partialApk.writeText("new")
+
+        val verified = store.promoteVerified(files)
+
+        assertEquals(retained.canonicalFile, verified.canonicalFile)
+        assertEquals("new", verified.readText())
+        assertEquals(
+            listOf("AALyrics-v0.2.0.apk"),
+            verifiedRoot.listFiles().orEmpty().map { it.name },
+        )
+    }
+
+    @Test
     fun `discard partial removes staging without touching verified apk`() {
         verifiedRoot.mkdirs()
         val retained = verifiedRoot.resolve("AALyrics-v0.1.0.apk").apply {
