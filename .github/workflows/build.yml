@@ -196,6 +196,11 @@ jobs:
           if-no-files-found: error
           retention-days: 3
 
+      - name: Remove update-test release keystore
+        if: always() && github.event_name == 'workflow_dispatch' && inputs.update_test_release_signed
+        shell: bash
+        run: rm -f "$RUNNER_TEMP/aalyrics-release.keystore"
+
       - name: Build update-test debug APK
         if: github.event_name == 'workflow_dispatch' && inputs.update_test_version != ''
         env:
