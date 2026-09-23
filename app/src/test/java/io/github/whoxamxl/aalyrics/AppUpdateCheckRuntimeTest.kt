@@ -40,6 +40,31 @@ class AppUpdateCheckRuntimeTest {
     }
 
     @Test
+    fun `automatic check tags discovered release with automatic origin`() = runTest {
+        val runtime = runtime(
+            installedVersionName = "0.2.0-alpha.1",
+            releases = listOf(
+                release("v0.2.0-alpha.2", prerelease = true),
+            ),
+        )
+
+        assertTrue(
+            runtime.checkForUpdates(
+                origin = UpdateCheckOrigin.AUTOMATIC,
+            ),
+        )
+        runCurrent()
+
+        assertEquals(
+            AppUpdateCheckState.UpdateAvailable(
+                versionName = "0.2.0-alpha.2",
+                origin = UpdateCheckOrigin.AUTOMATIC,
+            ),
+            runtime.state.value,
+        )
+    }
+
+    @Test
     fun `same base development release is up to date`() = runTest {
         val runtime = runtime(
             installedVersionName = "0.2.0-alpha.1-dev+abcdef0.dirty",
@@ -719,7 +744,10 @@ class AppUpdateCheckRuntimeTest {
             runCurrent()
 
             assertEquals(
-                AppUpdateCheckState.UpdateAvailable("0.2.0-beta.1"),
+                AppUpdateCheckState.UpdateAvailable(
+                    versionName = "0.2.0-beta.1",
+                    origin = UpdateCheckOrigin.INSTALL_REFRESH,
+                ),
                 runtime.state.value,
             )
             assertEquals(0, installer.installCount)
