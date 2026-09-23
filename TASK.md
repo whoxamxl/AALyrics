@@ -86,6 +86,7 @@ Approved update-UX stack direction (this branch implements items 1–4; later it
 - [x] Add best-effort resume-after-update behavior.
 - [x] Preserve typed install-failure reasons through Settings and explain them in the failure tooltip.
 - [x] Standardize dismissible custom update-dialog X placement through shared `PhoneDialogHeader`.
+- [ ] Complete same-release-signing device E2E from a #74 recovery-capable OLD APK to a newer #74 recovery-capable APK, confirming `ACTION_MY_PACKAGE_REPLACED` reconciliation and one-time Successful dialog. *(explicitly deferred device validation; best-effort automatic resume is not required to occur)*
 - [ ] Add automatic update checking preference and new-release dialog. *(deferred to dependent PR #75; out of scope for #74)*
 - [ ] Compose Download + Install into one user-facing Update action. *(deferred to dependent PR #76; out of scope for #74)*
 - [x] Align #74 Previews, Reset behavior, docs, focused tests, and CI.
@@ -111,5 +112,7 @@ Completed in this checkpoint:
 - Update UX and Phone Settings documentation are aligned.
 
 No notification fallback, automatic update checking, release-available dialog, or one-step Update composition has been implemented yet.
+
+Remaining device-only validation is intentionally limited to a controlled same-signing replacement where both the OLD and NEW binaries contain this #74 recovery implementation. The previously exercised update into published `v0.2.0-alpha.1` cannot validate replacement reconciliation or Successful dialog because that target binary predates the #74 receiver/recovery code.
 
 PR #74 stops at this recovery/resume checkpoint. Automatic update discovery is intentionally deferred to dependent PR #75, and one-step Update composition to dependent PR #76. Do not implement either on `feature/update-recovery-ux`.
