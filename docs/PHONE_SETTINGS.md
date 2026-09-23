@@ -557,6 +557,7 @@ On an actual Settings navigation entry, application/runtime wiring applies these
 CHECKING                  -> keep
 PREPARING_DOWNLOAD        -> keep
 DOWNLOADING               -> keep
+VERIFYING                 -> keep
 DOWNLOADED                -> keep
 PREPARING_INSTALL         -> keep
 INSTALL_PERMISSION_REQUIRED -> keep while the install flow is awaiting platform trust; revalidate on return
@@ -564,7 +565,7 @@ INSTALLING                -> keep
 other completed check/download/install states -> IDLE
 ```
 
-Therefore `UP_TO_DATE`, `UPDATE_AVAILABLE`, `CHECK_FAILED`, `DOWNLOAD_FAILED`, and `INSTALL_FAILED` remain visit-local. Leaving Settings and returning presents the ordinary retained-artifact/check state rather than preserving a stale failure banner. Active download/install work is retained while the process is alive, and a successfully verified `DOWNLOADED` artifact is retained beyond the current Settings visit. `INSTALL_PERMISSION_REQUIRED` is revalidated after returning from Android settings instead of assuming the user granted trust.
+Therefore `UP_TO_DATE`, `UPDATE_AVAILABLE`, `CHECK_FAILED`, `DOWNLOAD_FAILED`, and `INSTALL_FAILED` remain visit-local. Leaving Settings and returning presents the ordinary retained-artifact/check state rather than preserving a stale failure banner. Active preparation/download/verification/install work is retained while the process is alive, and a successfully verified `DOWNLOADED` artifact is retained beyond the current Settings visit. `INSTALL_PERMISSION_REQUIRED` is revalidated after returning from Android settings instead of assuming the user granted trust.
 
 Configuration changes, Activity recreation, recomposition, Settings subscreen navigation, and Settings-tab reselection while already in Settings remain the same visit and must not clear active update/install state. Check/download/install orchestration is application-owned and continues across ordinary destination changes where the platform operation permits it.
 
@@ -989,6 +990,8 @@ Deterministic debug Previews should cover at least:
 - app update checking;
 - app up-to-date state;
 - app update available state;
+- app update downloading and verification states;
+- retained-APK ready-after-restore state;
 - app update failure/retry state;
 - automatic update checking ON and OFF;
 - new-release dialog at typical, narrow, and enlarged-font configurations;
@@ -1029,7 +1032,7 @@ PR #50 implements the Phone runtime-host application-composition boundary from `
 
 A durable Plain auto-scroll preference remains a separate ownership decision unless the runtime-host implementation has an already-approved backing seam.
 
-The Check-for-updates slice replaces the production `UNAVAILABLE` update state with an application-owned update-check runtime. Manual `Check for updates` / `Retry` remains explicit and always available; in addition, an enabled automatic-check preference may start one cadence-eligible check after normal Phone entry reaches `READY`. Settings composition itself still does not own or directly start network work. Download remains deferred and `UPDATE_AVAILABLE` stays informational until the later download/integrity slice. Changelog remains functional independently of release-network wiring: the application supplies the bundled repository `CHANGELOG.md` as presentation text. The About & Support implementation keeps bundled legal-document access application-owned, maps Help & Feedback semantic actions to GitHub destinations in `:app`, and keeps the existing Buy Me a Coffee handoff application-owned; none of these capabilities moves asset access or browser launching into `:ui:phone`.
+The update slice is application-owned end to end. Manual `Check for updates` / `Retry` remains explicit and always available; in addition, an enabled automatic-check preference may start one cadence-eligible check after normal Phone entry reaches `READY`. Settings composition does not own network, file, verification, or installer work. Once `UPDATE_AVAILABLE` is reached, the single semantic `Update` action delegates to application runtime orchestration, which preserves download, SHA-256 verification, retained-artifact recovery, install refresh, APK preflight, source trust, PackageInstaller, and durable replacement-recovery boundaries. Changelog remains functional independently of release-network wiring: the application supplies the bundled repository `CHANGELOG.md` as presentation text. The About & Support implementation keeps bundled legal-document access application-owned, maps Help & Feedback semantic actions to GitHub destinations in `:app`, and keeps the existing Buy Me a Coffee handoff application-owned; none of these capabilities moves asset access or browser launching into `:ui:phone`.
 
 That wiring must preserve the existing capability ownership documented in the relevant architecture files.
 
