@@ -28,6 +28,8 @@ internal sealed interface AppUpdateCheckState {
 
     data class Downloading(
         val versionName: String,
+        val downloadedBytes: Long,
+        val totalBytes: Long,
     ) : AppUpdateCheckState
 
     data class Downloaded(
@@ -181,16 +183,37 @@ internal class AppUpdateCheckRuntime(
             return downloadFailed(candidate)
         }
 
+        val totalBytes = assets.apk.sizeBytes
+            ?.takeIf { it in 1L..MAX_APK_BYTES }
+            ?: return downloadFailed(candidate)
+
         val files = fileStore.prepare(assets.apk.name)
         currentCoroutineContext().ensureActive()
+        val versionName = candidate.release.tagName.removePrefix("v")
         mutableState.value = AppUpdateCheckState.Downloading(
-            versionName = candidate.release.tagName.removePrefix("v"),
+            versionName = versionName,
+            downloadedBytes = 0L,
+            totalBytes = totalBytes,
         )
-        client.downloadTo(
+        val downloadedBytes = client.downloadTo(
             asset = assets.apk,
             destination = files.partialApk,
             maxBytes = MAX_APK_BYTES,
+            onProgress = { receivedBytes ->
+                if (downloadJob?.isActive == true) {
+                    mutableState.value = AppUpdateCheckState.Downloading(
+                        versionName = versionName,
+                        downloadedBytes = receivedBytes.coerceIn(0L, totalBytes),
+                        totalBytes = totalBytes,
+                    )
+                }
+            },
         ).getOrElse {
+            fileStore.discardPartial(files)
+            return downloadFailed(candidate)
+        }
+        currentCoroutineContext().ensureActive()
+        if (downloadedBytes != totalBytes) {
             fileStore.discardPartial(files)
             return downloadFailed(candidate)
         }
