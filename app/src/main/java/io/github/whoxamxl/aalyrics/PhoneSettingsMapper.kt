@@ -122,6 +122,26 @@ internal fun mapPhoneSettingsState(
                     phase = AppUpdateUiPhase.DOWNLOAD_FAILED,
                     availableVersionName = appUpdateCheckState.versionName,
                 )
+            is AppUpdateCheckState.PreparingInstall ->
+                AppUpdateUiState(
+                    phase = AppUpdateUiPhase.PREPARING_INSTALL,
+                    availableVersionName = appUpdateCheckState.versionName,
+                )
+            is AppUpdateCheckState.InstallPermissionRequired ->
+                AppUpdateUiState(
+                    phase = AppUpdateUiPhase.INSTALL_PERMISSION_REQUIRED,
+                    availableVersionName = appUpdateCheckState.versionName,
+                )
+            is AppUpdateCheckState.Installing ->
+                AppUpdateUiState(
+                    phase = AppUpdateUiPhase.INSTALLING,
+                    availableVersionName = appUpdateCheckState.versionName,
+                )
+            is AppUpdateCheckState.InstallFailed ->
+                AppUpdateUiState(
+                    phase = AppUpdateUiPhase.INSTALL_FAILED,
+                    availableVersionName = appUpdateCheckState.versionName,
+                )
         },
     )
 }
