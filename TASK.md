@@ -152,9 +152,9 @@ CHECK_FAILED
 - [x] Add checksum parsing and SHA-256 verification with focused tests.
 - [x] Add app-private download/file boundary and cleanup rules.
 - [x] Extend the application-owned update runtime through download states.
-- [ ] Wire Download/Retry callbacks and production presentation.
-- [ ] Integrate Reset AALyrics cleanup/cancellation.
-- [ ] Align Previews and `docs/RELEASES.md` / `docs/PHONE_SETTINGS.md`.
+- [x] Wire Download/Retry callbacks and production presentation.
+- [x] Integrate Reset AALyrics cleanup/cancellation.
+- [x] Align Previews and `docs/RELEASES.md` / `docs/PHONE_SETTINGS.md`.
 - [ ] Run architecture checks, unit tests, debug APK build, CI, real-device verification, and bounded review before merge.
 
 ## Current checkpoint
@@ -173,6 +173,8 @@ Completed:
 10. application-owned download orchestration from the selected release through checksum fetch, APK staging, digest verification, verified promotion, retry, and failure cleanup;
 11. runtime states for `DOWNLOADING`, `DOWNLOADED`, and `DOWNLOAD_FAILED` plus focused lifecycle/state-mapping tests.
 
-The asset-resolution and checksum/file-boundary checkpoints passed CI before runtime orchestration work began.
+The asset-resolution, checksum/file-boundary, and runtime-orchestration checkpoints passed build/test validation before final production wiring.
 
-Next checkpoint: production dependency wiring in `AALyricsApplication`, Settings Download/Retry callback wiring, Reset AALyrics cancellation/cleanup, Preview/docs alignment, and end-to-end validation. Package Installer remains deferred.
+Production wiring is now complete: `AALyricsApplication` owns the download client/file store, Settings Download/Retry is connected, Reset cancels update work and clears update cache, and Preview/docs are aligned.
+
+Remaining work is final architecture/build/unit/CI validation, real-device verified-download testing, bounded review, and merge readiness. Package Installer remains deferred.
