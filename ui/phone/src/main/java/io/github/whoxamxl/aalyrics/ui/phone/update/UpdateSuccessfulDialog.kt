@@ -3,18 +3,14 @@ package io.github.whoxamxl.aalyrics.ui.phone.update
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -25,13 +21,13 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import io.github.whoxamxl.aalyrics.ui.designsystem.icon.AALyricsIcons
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsColors
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsRadius
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsSpacing
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsStroke
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsTypography
 import io.github.whoxamxl.aalyrics.ui.phone.R
+import io.github.whoxamxl.aalyrics.ui.phone.component.PhoneDialogHeader
 
 @Immutable
 data class UpdateSuccessfulDialogUiState(
@@ -89,31 +85,13 @@ fun UpdateSuccessfulDialogContent(
         Column(
             modifier = Modifier.padding(AALyricsSpacing.Space24),
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.Top,
-            ) {
-                Text(
-                    text = stringResource(R.string.update_successful_eyebrow),
-                    style = AALyricsTypography.Label,
-                    color = AALyricsColors.AccentCyan,
-                    modifier = Modifier.weight(1f),
-                )
-
-                IconButton(
-                    onClick = onDismissRequest,
-                    modifier = Modifier.size(AALyricsSpacing.Space48),
-                ) {
-                    Icon(
-                        imageVector = AALyricsIcons.Close,
-                        contentDescription = stringResource(
-                            R.string.update_successful_close,
-                        ),
-                        tint = AALyricsColors.TextSecondary,
-                        modifier = Modifier.size(AALyricsSpacing.Space24),
-                    )
-                }
-            }
+            PhoneDialogHeader(
+                eyebrow = stringResource(R.string.update_successful_eyebrow),
+                closeContentDescription = stringResource(
+                    R.string.update_successful_close,
+                ),
+                onClose = onDismissRequest,
+            )
 
             Spacer(Modifier.height(AALyricsSpacing.Space8))
 
