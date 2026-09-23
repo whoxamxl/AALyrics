@@ -34,7 +34,7 @@ class UpdatePackageReplacedReceiver : BroadcastReceiver() {
 
         runCatching {
             val application = context.applicationContext as? AALyricsApplication
-            if (application != null) {
+            val reconciliation = if (application != null) {
                 application.reconcilePackageReplacement()
             } else {
                 UpdatePackageReplacementHandler(
@@ -44,6 +44,10 @@ class UpdatePackageReplacedReceiver : BroadcastReceiver() {
                     installedVersionCode = BuildConfig.VERSION_CODE.toLong(),
                 )
             }
+
+            UpdatePostReplacementResume(
+                launcher = AndroidUpdateAppResumeLauncher(context),
+            ).attempt(reconciliation)
         }
     }
 }
