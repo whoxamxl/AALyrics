@@ -178,6 +178,24 @@ jobs:
           mkdir -p update-test-release-signed
           cp app/build/outputs/apk/release/app-release.apk             "update-test-release-signed/aalyrics-update-test-release-signed-${AALYRICS_VERSION_NAME}.apk"
 
+      - name: Upload release-signed update-test APK
+        if: github.event_name == 'workflow_dispatch' && inputs.update_test_release_signed
+        uses: actions/upload-artifact@v4
+        with:
+          name: aalyrics-update-test-release-signed-${{ inputs.update_test_version }}
+          path: update-test-release-signed/aalyrics-update-test-release-signed-${{ inputs.update_test_version }}.apk
+          if-no-files-found: error
+          retention-days: 3
+
+      - name: Upload direct release-signed update-test APK
+        if: github.event_name == 'workflow_dispatch' && inputs.update_test_release_signed
+        uses: actions/upload-artifact@v7
+        with:
+          path: update-test-release-signed/aalyrics-update-test-release-signed-${{ inputs.update_test_version }}.apk
+          archive: false
+          if-no-files-found: error
+          retention-days: 3
+
       - name: Build update-test debug APK
         if: github.event_name == 'workflow_dispatch' && inputs.update_test_version != ''
         env:
