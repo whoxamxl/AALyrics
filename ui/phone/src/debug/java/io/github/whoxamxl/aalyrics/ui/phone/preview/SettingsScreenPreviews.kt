@@ -89,6 +89,12 @@ private fun SettingsUpdateFailedPreview() {
     SettingsScreenPreview(PhonePreviewFixtures.settingsUpdateFailed)
 }
 
+@Preview(name = "Update · preparing download", group = "SettingsScreen", widthDp = 412, heightDp = 900)
+@Composable
+private fun SettingsUpdatePreparingDownloadPreview() {
+    SettingsScreenPreview(PhonePreviewFixtures.settingsPreparingUpdateDownload)
+}
+
 @Preview(name = "Update · downloading", group = "SettingsScreen", widthDp = 412, heightDp = 900)
 @Composable
 private fun SettingsUpdateDownloadingPreview() {
@@ -226,11 +232,18 @@ internal fun SettingsScreenPreview(
                     val version = state.appUpdate.availableVersionName ?: "0.1.2"
                     state = state.copy(
                         appUpdate = AppUpdateUiState(
-                            phase = AppUpdateUiPhase.DOWNLOADING,
+                            phase = AppUpdateUiPhase.PREPARING_DOWNLOAD,
                             availableVersionName = version,
                         ),
                     )
                     scope.launch {
+                        delay(500)
+                        state = state.copy(
+                            appUpdate = AppUpdateUiState(
+                                phase = AppUpdateUiPhase.DOWNLOADING,
+                                availableVersionName = version,
+                            ),
+                        )
                         delay(1200)
                         state = state.copy(
                             appUpdate = AppUpdateUiState(
