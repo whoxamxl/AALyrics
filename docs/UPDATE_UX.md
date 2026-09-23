@@ -150,7 +150,11 @@ The durable `SuccessfulUpdate` marker is loaded into a process-level feedback ru
 
 Typical, narrow-phone, and enlarged-font Previews cover the success dialog.
 
-Automatic return to AALyrics after replacement remains best-effort only. The UX does not depend on background Activity launch succeeding. If Android does not permit automatic return, the next ordinary user launch still guarantees the one-time success feedback.
+After successful reconciliation, the receiver now evaluates the carried `resumeAfterUpdate` intent. When it is true, AALyrics makes one best-effort request to open `MainActivity` using an explicit new-task/clear-top/single-top intent. When it is false, or replacement did not reconcile successfully, no launch request is made.
+
+This is deliberately a launch **request**, not a correctness signal. Android may reject or suppress background Activity launch depending on platform state. A thrown launch failure is contained, and even a request accepted by `startActivity()` is not treated as proof that UI became visible. The durable `SuccessfulUpdate` marker is never cleared or modified by the resume attempt.
+
+If automatic return succeeds, normal entry handling still decides what is displayed; no update-specific destination routing is added. If it does not succeed, the next ordinary user launch still guarantees the one-time success feedback. No notification fallback is implemented in this checkpoint.
 
 ## Automatic update checks
 
