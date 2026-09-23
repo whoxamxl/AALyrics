@@ -151,7 +151,7 @@ CHECK_FAILED
 - [x] Add deterministic APK/checksum asset resolution with focused tests.
 - [x] Add checksum parsing and SHA-256 verification with focused tests.
 - [x] Add app-private download/file boundary and cleanup rules.
-- [ ] Extend the application-owned update runtime through download states.
+- [x] Extend the application-owned update runtime through download states.
 - [ ] Wire Download/Retry callbacks and production presentation.
 - [ ] Integrate Reset AALyrics cleanup/cancellation.
 - [ ] Align Previews and `docs/RELEASES.md` / `docs/PHONE_SETTINGS.md`.
@@ -169,8 +169,10 @@ Completed:
 6. focused checksum parsing / match / mismatch tests;
 7. bounded HTTPS update-asset download boundary with HTTPS-only redirect handling;
 8. app-private update file ownership with `.part` staging, verified promotion, stale cleanup, and path-ownership guards;
-9. focused file-store lifecycle / cleanup tests.
+9. focused file-store lifecycle / cleanup tests;
+10. application-owned download orchestration from the selected release through checksum fetch, APK staging, digest verification, verified promotion, retry, and failure cleanup;
+11. runtime states for `DOWNLOADING`, `DOWNLOADED`, and `DOWNLOAD_FAILED` plus focused lifecycle/state-mapping tests.
 
-The asset-resolution checkpoint passed CI before checksum and file-boundary work began.
+The asset-resolution and checksum/file-boundary checkpoints passed CI before runtime orchestration work began.
 
-Next checkpoint: application-owned runtime integration through `DOWNLOADING`, `DOWNLOADED`, and `DOWNLOAD_FAILED`. Do not wire Package Installer yet.
+Next checkpoint: production dependency wiring in `AALyricsApplication`, Settings Download/Retry callback wiring, Reset AALyrics cancellation/cleanup, Preview/docs alignment, and end-to-end validation. Package Installer remains deferred.
