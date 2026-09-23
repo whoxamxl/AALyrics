@@ -58,7 +58,7 @@ Grant permission
 Download from GitHub  ↗
 ```
 
-The dialog has an explicit close affordance. System Back has the same dismissal semantics. Leaving the current primary tab dismisses it. Activity/process loss does not make a dismissed dialog automatically reappear.
+The dialog has an explicit close affordance. System Back has the same dismissal semantics. Leaving the current primary tab dismisses it. Moving AALyrics to the background or stopping/replacing the Activity also dismisses the transient prompt. Returning to the foreground, recreating the Activity, or surviving process loss must not make a dismissed dialog automatically reappear.
 
 The durable/runtime fact that install-source trust is missing must remain separate from transient dialog visibility. If the user dismisses the explanation, it stays dismissed until the user explicitly invokes Update/Install again while permission is still missing.
 
@@ -71,7 +71,7 @@ The separation layer is implemented before the dialog itself:
 - entering the permission-required state requests the prompt once;
 - explicitly invoking Install/Update again while permission is still required re-requests the prompt without repeating download or install preparation;
 - dismissing the prompt does not clear `InstallPermissionRequired`;
-- Settings root reset, leaving Settings for another primary destination, Activity/composition disposal, Reset AALyrics, and returning from Android source-trust Settings clear only the transient prompt.
+- Settings root reset, leaving Settings for another primary destination, Activity stop/background, Activity/composition disposal, Reset AALyrics, and returning from Android source-trust Settings clear only the transient prompt.
 
 The Phone presentation model carries the prompt separately from `AppUpdateUiPhase.INSTALL_PERMISSION_REQUIRED`.
 
@@ -84,14 +84,16 @@ Required behavior:
 - right-side close button dismisses only the transient prompt;
 - system Back has the same dismissal behavior;
 - tapping outside the dialog does not dismiss it;
-- leaving Settings for another primary destination, Settings root reset, Activity/composition disposal, Reset, or returning from Android source-trust Settings clears the transient prompt;
+- leaving Settings for another primary destination, Settings root reset, Activity stop/background, Activity/composition disposal, Reset, or returning from Android source-trust Settings clears the transient prompt;
+- foreground return does not recreate the prompt merely because `INSTALL_PERMISSION_REQUIRED` is still true;
+- returning from Android source-trust Settings re-checks platform trust only: refusal keeps `INSTALL_PERMISSION_REQUIRED` with the prompt dismissed, while granted trust resumes the retained-APK install without reopening the explanation;
 - dismissing the dialog does not clear `INSTALL_PERMISSION_REQUIRED` or the retained verified APK;
 - the compact Settings update row remains in the permission-required phase and exposes `Install` as the explicit way to reopen the explanation;
 - `Grant permission` dismisses the explanation and opens Android's per-app source-trust Settings;
 - `Download from GitHub` dismisses the explanation and opens the matching GitHub Release page externally;
 - neither action bypasses Android's final installation confirmation.
 
-The dialog explains why sideload-distributed AALyrics needs the per-source permission and explicitly states that the permission does not grant silent-install capability. Typical, narrow-width, and enlarged-font Previews cover the shared dialog content.
+The dialog explains why sideload-distributed AALyrics needs the per-source permission and explicitly states that the permission does not grant silent-install capability. Typical, narrow-width, and enlarged-font Previews cover the shared dialog content. Settings Previews also pin the permission-return outcomes: denied returns to the permission-required row with no modal, while granted proceeds to the installing presentation. Runtime tests independently cover the denied and granted source-trust return paths.
 
 ## Successful-update feedback
 
