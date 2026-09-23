@@ -65,6 +65,18 @@ private fun SettingsTargetLanguagePickerPreview() {
     )
 }
 
+@Preview(name = "Update · idle", group = "SettingsScreen", widthDp = 412, heightDp = 900)
+@Composable
+private fun SettingsUpdateIdlePreview() {
+    SettingsScreenPreview(PhonePreviewFixtures.settingsIdleUpdate)
+}
+
+@Preview(name = "Update · unavailable", group = "SettingsScreen", widthDp = 412, heightDp = 900)
+@Composable
+private fun SettingsUpdateUnavailablePreview() {
+    SettingsScreenPreview(PhonePreviewFixtures.settingsUnavailableUpdate)
+}
+
 @Preview(name = "Update · checking", group = "SettingsScreen", widthDp = 412, heightDp = 900)
 @Composable
 private fun SettingsUpdateCheckingPreview() {
