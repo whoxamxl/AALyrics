@@ -99,11 +99,13 @@ The reset operation must remain application-owned; `:ui:phone` only emits the ex
 
 ## Phone presentation contract
 
-This slice activates the existing reserved states:
+This slice activates the update download states:
 
 ```text
 UPDATE_AVAILABLE
     ↓ Download
+PREPARING_DOWNLOAD
+    ↓ APK transfer begins
 DOWNLOADING
     ↓ verified
 DOWNLOADED
@@ -176,6 +178,8 @@ Completed:
 The asset-resolution, checksum/file-boundary, and runtime-orchestration checkpoints passed build/test validation before final production wiring.
 
 Production wiring is now complete: `AALyricsApplication` owns the download client/file store, Settings Download/Retry is connected, Reset cancels update work and clears update cache, and Preview/docs are aligned.
+
+The download presentation now separates preparation from transfer: `PREPARING_DOWNLOAD` retains the compact circular activity indicator while assets/checksum/staging are prepared, then `DOWNLOADING` switches to an indeterminate linear progress bar when APK transfer begins.
 
 Remaining work is final architecture/build/unit/CI validation, real-device verified-download testing, bounded review, and merge readiness. Package Installer remains deferred.
 
