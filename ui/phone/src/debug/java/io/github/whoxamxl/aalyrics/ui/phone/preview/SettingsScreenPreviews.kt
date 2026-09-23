@@ -101,6 +101,12 @@ private fun SettingsUpdateDownloadedPreview() {
     SettingsScreenPreview(PhonePreviewFixtures.settingsDownloadedUpdate)
 }
 
+@Preview(name = "Update · download failed", group = "SettingsScreen", widthDp = 412, heightDp = 900)
+@Composable
+private fun SettingsUpdateDownloadFailedPreview() {
+    SettingsScreenPreview(PhonePreviewFixtures.settingsDownloadFailed)
+}
+
 
 @Preview(name = "Narrow · 320dp", group = "SettingsScreen", widthDp = 320, heightDp = 700)
 @Composable
@@ -198,6 +204,7 @@ internal fun SettingsScreenPreview(
                         translationTarget = english,
                         androidAutoCompatibilityStatus =
                             io.github.whoxamxl.aalyrics.ui.phone.settings.AndroidAutoCompatibilityUiStatus.NOT_REVIEWED,
+                        appUpdate = AppUpdateUiState(phase = AppUpdateUiPhase.IDLE),
                     )
                 },
                 onAndroidAutoCompatibilitySetup = {},
@@ -215,7 +222,24 @@ internal fun SettingsScreenPreview(
                         )
                     }
                 },
-                onDownloadUpdate = {},
+                onDownloadUpdate = {
+                    val version = state.appUpdate.availableVersionName ?: "0.1.2"
+                    state = state.copy(
+                        appUpdate = AppUpdateUiState(
+                            phase = AppUpdateUiPhase.DOWNLOADING,
+                            availableVersionName = version,
+                        ),
+                    )
+                    scope.launch {
+                        delay(1200)
+                        state = state.copy(
+                            appUpdate = AppUpdateUiState(
+                                phase = AppUpdateUiPhase.DOWNLOADED,
+                                availableVersionName = version,
+                            ),
+                        )
+                    }
+                },
                 onOpenGitHub = {},
                 onHelpFeedback = {},
                 onSupportAALyrics = {},
