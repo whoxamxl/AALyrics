@@ -71,6 +71,7 @@ data class SettingsScreenUiState(
     val plainLyricsAutoScrollEnabled: Boolean = true,
     val ignoreNonAudioApps: Boolean = true,
     val allowUnclassifiedApps: Boolean = false,
+    val automaticallyCheckForUpdates: Boolean = true,
     val verboseDetailsEnabled: Boolean = false,
     val translationEnabled: Boolean = false,
     val translationTarget: SettingsLanguageOptionUiState,
