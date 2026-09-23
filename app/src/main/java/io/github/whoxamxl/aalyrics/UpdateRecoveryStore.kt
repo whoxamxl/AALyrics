@@ -5,6 +5,7 @@ import android.content.Context
 internal data class PendingUpdate(
     val targetVersion: String,
     val targetVersionCode: Long,
+    val installerSessionId: Int,
     val resumeAfterUpdate: Boolean = true,
 )
 
@@ -30,9 +31,22 @@ internal interface UpdateRecoveryStore {
     fun clearAll()
 }
 
+internal fun UpdateRecoveryStore.clearPendingUpdateForSession(
+    installerSessionId: Int,
+): Boolean {
+    require(installerSessionId >= 0) {
+        "Installer session ID must not be negative"
+    }
+    val pending = pendingUpdate() ?: return false
+    if (pending.installerSessionId != installerSessionId) return false
+    clearPendingUpdate()
+    return true
+}
+
 internal class UpdateRecoveryPersistence(
     private val readPendingTargetVersion: () -> String?,
     private val readPendingTargetVersionCode: () -> Long?,
+    private val readPendingInstallerSessionId: () -> Int?,
     private val readPendingResumeAfterUpdate: () -> Boolean?,
     private val readSuccessfulInstalledVersion: () -> String?,
     private val readSuccessfulInstalledVersionCode: () -> Long?,
@@ -50,12 +64,16 @@ internal class UpdateRecoveryPersistence(
         val targetVersionCode = readPendingTargetVersionCode()
             ?.takeIf { it > 0L }
             ?: return null
+        val installerSessionId = readPendingInstallerSessionId()
+            ?.takeIf { it >= 0 }
+            ?: return null
         val resumeAfterUpdate = readPendingResumeAfterUpdate()
             ?: return null
 
         return PendingUpdate(
             targetVersion = targetVersion,
             targetVersionCode = targetVersionCode,
+            installerSessionId = installerSessionId,
             resumeAfterUpdate = resumeAfterUpdate,
         )
     }
@@ -83,6 +101,9 @@ internal class UpdateRecoveryPersistence(
         }
         require(pendingUpdate.targetVersionCode > 0L) {
             "Pending update versionCode must be positive"
+        }
+        require(pendingUpdate.installerSessionId >= 0) {
+            "Pending update installer session ID must not be negative"
         }
         check(writePendingUpdate(pendingUpdate)) {
             "Unable to persist pending update"
@@ -134,6 +155,9 @@ internal class SharedPreferencesUpdateRecoveryStore(
         readPendingTargetVersionCode = {
             preferences.longOrNull(PENDING_TARGET_VERSION_CODE_KEY)
         },
+        readPendingInstallerSessionId = {
+            preferences.intOrNull(PENDING_INSTALLER_SESSION_ID_KEY)
+        },
         readPendingResumeAfterUpdate = {
             preferences.booleanOrNull(PENDING_RESUME_AFTER_UPDATE_KEY)
         },
@@ -150,6 +174,7 @@ internal class SharedPreferencesUpdateRecoveryStore(
             preferences.edit()
                 .putString(PENDING_TARGET_VERSION_KEY, pendingUpdate.targetVersion)
                 .putLong(PENDING_TARGET_VERSION_CODE_KEY, pendingUpdate.targetVersionCode)
+                .putInt(PENDING_INSTALLER_SESSION_ID_KEY, pendingUpdate.installerSessionId)
                 .putBoolean(
                     PENDING_RESUME_AFTER_UPDATE_KEY,
                     pendingUpdate.resumeAfterUpdate,
@@ -160,6 +185,7 @@ internal class SharedPreferencesUpdateRecoveryStore(
             preferences.edit()
                 .remove(PENDING_TARGET_VERSION_KEY)
                 .remove(PENDING_TARGET_VERSION_CODE_KEY)
+                .remove(PENDING_INSTALLER_SESSION_ID_KEY)
                 .remove(PENDING_RESUME_AFTER_UPDATE_KEY)
                 .putString(
                     SUCCESSFUL_INSTALLED_VERSION_KEY,
@@ -179,6 +205,7 @@ internal class SharedPreferencesUpdateRecoveryStore(
             preferences.edit()
                 .remove(PENDING_TARGET_VERSION_KEY)
                 .remove(PENDING_TARGET_VERSION_CODE_KEY)
+                .remove(PENDING_INSTALLER_SESSION_ID_KEY)
                 .remove(PENDING_RESUME_AFTER_UPDATE_KEY)
                 .commit()
         },
@@ -193,6 +220,7 @@ internal class SharedPreferencesUpdateRecoveryStore(
             preferences.edit()
                 .remove(PENDING_TARGET_VERSION_KEY)
                 .remove(PENDING_TARGET_VERSION_CODE_KEY)
+                .remove(PENDING_INSTALLER_SESSION_ID_KEY)
                 .remove(PENDING_RESUME_AFTER_UPDATE_KEY)
                 .remove(SUCCESSFUL_INSTALLED_VERSION_KEY)
                 .remove(SUCCESSFUL_INSTALLED_VERSION_CODE_KEY)
@@ -234,6 +262,13 @@ internal class SharedPreferencesUpdateRecoveryStore(
             null
         }
 
+    private fun android.content.SharedPreferences.intOrNull(key: String): Int? =
+        if (contains(key)) {
+            getInt(key, -1)
+        } else {
+            null
+        }
+
     private fun android.content.SharedPreferences.booleanOrNull(key: String): Boolean? =
         if (contains(key)) {
             getBoolean(key, false)
@@ -246,6 +281,7 @@ internal class SharedPreferencesUpdateRecoveryStore(
 
         const val PENDING_TARGET_VERSION_KEY = "pending_target_version"
         const val PENDING_TARGET_VERSION_CODE_KEY = "pending_target_version_code"
+        const val PENDING_INSTALLER_SESSION_ID_KEY = "pending_installer_session_id"
         const val PENDING_RESUME_AFTER_UPDATE_KEY = "pending_resume_after_update"
 
         const val SUCCESSFUL_INSTALLED_VERSION_KEY = "successful_installed_version"
