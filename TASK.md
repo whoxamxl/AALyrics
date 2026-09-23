@@ -80,7 +80,9 @@ Approved follow-up direction:
 - [x] Freeze the validated Package Installer baseline in TASK/update documentation.
 - [x] Separate install-permission runtime state from transient dialog visibility.
 - [x] Implement the large install-permission explanation dialog and lifecycle behavior.
-- [ ] Add durable pending/success update reconciliation and one-time success feedback.
+- [x] Persist durable `PendingUpdate` immediately before PackageInstaller commit.
+- [ ] Reconcile `ACTION_MY_PACKAGE_REPLACED` into durable update-success state.
+- [ ] Show one-time Update successful feedback on the next valid app entry.
 - [ ] Add best-effort resume-after-update behavior.
 - [ ] Add automatic update checking preference and new-release dialog.
 - [ ] Compose Download + Install into one user-facing Update action.
@@ -88,27 +90,23 @@ Approved follow-up direction:
 
 ## Current checkpoint
 
-The install-permission explanation UX is implemented on top of the separated prompt state.
+Durable pending-update intent is now persisted at the PackageInstaller commit boundary.
 
 Completed in this checkpoint:
 
-- large modal explanation surface with responsive scrollable content;
-- explicit copy explaining sideload distribution, Android per-source permission, and the continued Android-owned final install confirmation;
-- top-right close button;
-- system Back dismissal with the same transient-only behavior;
-- outside-tap dismissal intentionally disabled;
-- primary `Grant permission` action that dismisses the prompt before opening Android's per-app source-trust Settings;
-- secondary `Download from GitHub` action with external-link icon that dismisses the prompt and opens the matching GitHub Release page;
-- permission-required Settings row now exposes `Install` as the explicit dialog re-entry action rather than jumping directly to system Settings;
-- prompt dismissal still preserves `INSTALL_PERMISSION_REQUIRED` and the retained verified APK;
-- leaving Settings, Settings root reset, Activity stop/background, Activity/composition disposal, Reset, and Android source-trust Settings return continue to clear only the transient prompt;
-- foreground return does not automatically recreate a dismissed permission prompt;
-- denied source-trust return keeps `INSTALL_PERMISSION_REQUIRED` with the prompt dismissed until the user explicitly presses `Install` again;
-- granted source-trust return resumes installation from the retained verified APK without reopening the explanation;
-- typical, narrow-phone, and enlarged-font dialog Previews plus explicit denied/granted permission-return Settings Previews;
-- focused runtime tests cover denied/granted Android source-trust return behavior;
-- Phone/Update UX docs aligned with the implemented behavior.
+- added app-owned `PendingUpdate(targetVersion, targetVersionCode, resumeAfterUpdate)` persistence backed by dedicated SharedPreferences;
+- persistence uses synchronous commit so process/package replacement cannot race an asynchronous preference write;
+- invalid/incomplete pending state is ignored on read and persistence failures fail closed;
+- APK preflight now preserves the validated archive `versionCode` and install preparation propagates that exact value instead of inferring it from release metadata;
+- PackageInstaller exposes a bounded pre-commit hook after APK write/fsync and immediately before `Session.commit()`;
+- install runtime records `PendingUpdate` from that hook with `resumeAfterUpdate=true`;
+- inability to persist the marker prevents installer commit;
+- PackageInstaller success deliberately does **not** clear the pending marker;
+- terminal installer failure and synchronous install failure clear the marker;
+- `Reset AALyrics` clears the marker together with app-owned update work and retained update artifacts, while Android install-source trust remains untouched;
+- focused persistence/runtime tests cover round-trip state, malformed state, write failure, pre-commit recording, success retention, failure cleanup, and Reset cleanup;
+- Reset user-facing copy and Update/Phone Settings documentation are aligned.
 
-No durable update-success marker, post-update feedback, automatic update check, or one-step Download/Install composition has been started.
+No `ACTION_MY_PACKAGE_REPLACED` receiver, durable `updateSucceeded` reconciliation, success dialog, or resume-after-update behavior has been implemented yet.
 
-Next checkpoint: **add durable pending/success update reconciliation and one-time Update successful feedback**. Do not begin it until explicitly requested.
+Next checkpoint: **add `ACTION_MY_PACKAGE_REPLACED` recovery that compares the pending target with the newly installed binary and records durable update success without starting an Activity**. Do not begin it until explicitly requested.
