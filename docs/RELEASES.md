@@ -314,6 +314,25 @@ Debug and release APKs use different signing identities. If a debug AALyrics bui
 
 After the first release-signed installation, later APKs signed with the same release key and a higher `versionCode` can update it normally.
 
+### Update-install validation fixture
+
+The manual `Build` workflow keeps the ordinary debug-signed `update_test_version` fixture for update-discovery/download testing. For a real self-update installation test, enable `update_test_release_signed` and provide both an older `update_test_version` and a positive `update_test_version_code` lower than the published target release's Android version code.
+
+That opt-in path restores the durable release keystore only inside the Actions runner, builds an older-version release APK with the same signing identity as published AALyrics releases, and uploads it only as a short-retention Actions artifact. It is never published as a GitHub Release. The keystore is removed from the runner after the fixture path and is never included in an artifact or log.
+
+The intended device validation is:
+
+```text
+install older same-release-signed fixture
+    -> Check for updates
+    -> Download / verify current published release
+    -> Install
+    -> Android confirmation
+    -> current published AALyrics replaces the fixture
+```
+
+The debug-signed fixture remains unsuitable for proving successful replacement because Android update compatibility requires the same signing identity.
+
 AALyrics is intentionally distributed outside Google Play. For Android Auto, non-Play media apps still require Android Auto developer mode and **Developer settings → Unknown sources** on the test/user device. APK signing does not remove that Android Auto trust-source requirement.
 
 ## Release readiness
