@@ -67,12 +67,40 @@ class UpdateDownloadFileStoreTest {
         val files = store.prepare("AALyrics-v0.2.0.apk", operationId = 7L)
         files.partialApk.writeText("verified bytes")
 
-        val verified = store.promoteVerified(files)
+        val promoting = store.stageVerified(files, operationId = 7L)
+        val verified = store.commitVerified(files, promoting)
 
         assertEquals("verified bytes", verified.readText())
         assertFalse(files.partialApk.exists())
         assertFalse(stagingRoot.exists())
         assertTrue(files.verifiedApk.isFile)
+    }
+
+    @Test
+    fun `verified staging uses operation-owned promotion path`() {
+        val store = store()
+        val files = store.prepare(
+            apkFileName = "AALyrics-v0.2.0.apk",
+            operationId = 7L,
+        )
+        files.partialApk.writeText("verified bytes")
+
+        val promoting = store.stageVerified(
+            files = files,
+            operationId = 7L,
+        )
+
+        assertEquals(
+            "AALyrics-v0.2.0.apk.op-7.promoting",
+            promoting.name,
+        )
+        assertEquals("verified bytes", promoting.readText())
+        assertFalse(files.verifiedApk.exists())
+
+        store.discardPromotion(promoting)
+
+        assertFalse(promoting.exists())
+        assertTrue(files.partialApk.isFile)
     }
 
     @Test
@@ -85,12 +113,13 @@ class UpdateDownloadFileStoreTest {
         val files = store.prepare("AALyrics-v0.2.0.apk", operationId = 7L)
 
         assertFails {
-            store.promoteVerified(files)
+            store.stageVerified(files, operationId = 7L)
         }
         assertTrue(oldVerified.isFile)
 
         files.partialApk.writeText("new")
-        val verified = store.promoteVerified(files)
+        val promoting = store.stageVerified(files, operationId = 7L)
+        val verified = store.commitVerified(files, promoting)
 
         assertFalse(oldVerified.exists())
         assertEquals("new", verified.readText())
@@ -106,7 +135,8 @@ class UpdateDownloadFileStoreTest {
         val files = store.prepare("AALyrics-v0.2.0.apk", operationId = 7L)
         files.partialApk.writeText("new")
 
-        val verified = store.promoteVerified(files)
+        val promoting = store.stageVerified(files, operationId = 7L)
+        val verified = store.commitVerified(files, promoting)
 
         assertEquals(retained.canonicalFile, verified.canonicalFile)
         assertEquals("new", verified.readText())
@@ -221,11 +251,12 @@ class UpdateDownloadFileStoreTest {
         val verified = verifiedRoot.resolve("AALyrics-v0.2.0.apk")
 
         assertFails {
-            store.promoteVerified(
-                UpdateDownloadFiles(
+            store.stageVerified(
+                files = UpdateDownloadFiles(
                     partialApk = outside,
                     verifiedApk = verified,
                 ),
+                operationId = 7L,
             )
         }
         assertTrue(outside.exists())
