@@ -294,7 +294,10 @@ internal class AppUpdateCheckRuntime(
             val apkFile = fileStore.commitVerified(
                 files = files,
                 promotingApk = promotingApk,
-            )
+                canCommit = {
+                    operationGeneration.get() == generation
+                },
+            ) ?: throw CancellationException("Update operation is stale")
             ensureCurrentOperation(generation)
             AppUpdateCheckState.Downloaded(
                 versionName = candidate.release.tagName.removePrefix("v"),
