@@ -137,6 +137,18 @@ private fun SettingsUpdateInstallPermissionPreview() {
     SettingsScreenPreview(PhonePreviewFixtures.settingsInstallPermissionRequired)
 }
 
+@Preview(name = "Permission return · denied", group = "SettingsScreen", widthDp = 412, heightDp = 900)
+@Composable
+private fun SettingsPermissionReturnDeniedPreview() {
+    SettingsScreenPreview(PhonePreviewFixtures.settingsInstallPermissionRequired)
+}
+
+@Preview(name = "Permission return · granted", group = "SettingsScreen", widthDp = 412, heightDp = 900)
+@Composable
+private fun SettingsPermissionReturnGrantedPreview() {
+    SettingsScreenPreview(PhonePreviewFixtures.settingsInstallingUpdate)
+}
+
 @Preview(name = "Update · installing", group = "SettingsScreen", widthDp = 412, heightDp = 900)
 @Composable
 private fun SettingsUpdateInstallingPreview() {
