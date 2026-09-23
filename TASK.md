@@ -246,7 +246,7 @@ next launch removes stale retained APK
 
 ### Implementation
 
-- [ ] Add APK preflight boundary and focused tests.
+- [x] Add APK preflight boundary and focused tests.
 - [ ] Add install-time Release refresh and stale-retained-release handling.
 - [ ] Add source-trust permission/settings handoff.
 - [ ] Add PackageInstaller session boundary and status handling.
@@ -259,6 +259,6 @@ next launch removes stale retained APK
 
 ## Current checkpoint
 
-Documentation contract is aligned across TASK.md, docs/RELEASES.md, and docs/PHONE_SETTINGS.md. No Package Installer implementation has started yet.
+Documentation contract is aligned. APK preflight now has a fail-closed pure decision model, signing-lineage compatibility logic, an Android PackageManager archive/installed-package inspector with API 26-27 fallback, retained-artifact ownership checks, focused tests, and production object-graph wiring. Installer runtime actions are not wired yet.
 
-Next checkpoint: add the APK preflight boundary and focused tests.
+Next checkpoint: add the explicit Install-time latest eligible Release refresh and stale-retained-release decision.
