@@ -48,7 +48,7 @@ internal object AALyricsReleaseAssetResolver {
     }
 }
 
-private fun AALyricsVersion.toCanonicalReleaseTag(): String = buildString {
+internal fun AALyricsVersion.toCanonicalReleaseTag(): String = buildString {
     append('v')
     append(major)
     append('.')
