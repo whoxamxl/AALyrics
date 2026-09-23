@@ -477,11 +477,7 @@ internal fun AppUpdateRow(
 
             AppUpdateUiPhase.DOWNLOADING -> {
                 AppUpdateDownloadProgressRow(
-                    label = if (state.availableVersionName.isNullOrBlank()) {
-                        downloadingLabel
-                    } else {
-                        "${downloadingLabel} ${state.availableVersionName.asVersionLabel()}"
-                    },
+                    label = downloadingLabel,
                     progress = state.downloadProgress ?: 0f,
                 )
             }
