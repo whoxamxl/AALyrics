@@ -73,7 +73,7 @@ internal class AppUpdateCheckRuntime(
 
         mutableState.value = AppUpdateCheckState.Checking
         checkJob = applicationScope.launch {
-            mutableState.value = try {
+            val nextState = try {
                 resolveCheckState()
             } catch (error: CancellationException) {
                 throw error
@@ -81,6 +81,8 @@ internal class AppUpdateCheckRuntime(
                 availableCandidate = null
                 AppUpdateCheckState.Failed
             }
+            currentCoroutineContext().ensureActive()
+            mutableState.value = nextState
         }
     }
 
@@ -101,7 +103,7 @@ internal class AppUpdateCheckRuntime(
         val versionName = candidate.release.tagName.removePrefix("v")
         mutableState.value = AppUpdateCheckState.PreparingDownload(versionName)
         downloadJob = applicationScope.launch {
-            mutableState.value = try {
+            val nextState = try {
                 resolveDownloadState(candidate)
             } catch (error: CancellationException) {
                 downloadFileStore?.clearStaging()
@@ -110,6 +112,8 @@ internal class AppUpdateCheckRuntime(
                 downloadFileStore?.clearStaging()
                 AppUpdateCheckState.DownloadFailed(versionName)
             }
+            currentCoroutineContext().ensureActive()
+            mutableState.value = nextState
         }
     }
 
