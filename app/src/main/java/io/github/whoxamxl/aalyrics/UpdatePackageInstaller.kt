@@ -21,6 +21,7 @@ internal interface UpdatePackageInstaller {
     suspend fun install(
         apkFile: File,
         statusSink: UpdatePackageInstallerStatusSink,
+        onSessionCreated: (Int) -> Unit = {},
     ): Result<Int>
 
     fun abandon(sessionId: Int)
