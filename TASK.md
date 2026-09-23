@@ -81,7 +81,7 @@ Approved follow-up direction:
 - [x] Separate install-permission runtime state from transient dialog visibility.
 - [x] Implement the large install-permission explanation dialog and lifecycle behavior.
 - [x] Persist durable `PendingUpdate` immediately before PackageInstaller commit.
-- [ ] Reconcile `ACTION_MY_PACKAGE_REPLACED` into durable update-success state.
+- [x] Reconcile `ACTION_MY_PACKAGE_REPLACED` into durable update-success state.
 - [ ] Show one-time Update successful feedback on the next valid app entry.
 - [ ] Add best-effort resume-after-update behavior.
 - [ ] Add automatic update checking preference and new-release dialog.
@@ -90,23 +90,23 @@ Approved follow-up direction:
 
 ## Current checkpoint
 
-Durable pending-update intent is now persisted at the PackageInstaller commit boundary.
+Package replacement now reconciles durable pending intent into durable success state without launching presentation.
 
 Completed in this checkpoint:
 
-- added app-owned `PendingUpdate(targetVersion, targetVersionCode, resumeAfterUpdate)` persistence backed by dedicated SharedPreferences;
-- persistence uses synchronous commit so process/package replacement cannot race an asynchronous preference write;
-- invalid/incomplete pending state is ignored on read and persistence failures fail closed;
-- APK preflight now preserves the validated archive `versionCode` and install preparation propagates that exact value instead of inferring it from release metadata;
-- PackageInstaller exposes a bounded pre-commit hook after APK write/fsync and immediately before `Session.commit()`;
-- install runtime records `PendingUpdate` from that hook with `resumeAfterUpdate=true`;
-- inability to persist the marker prevents installer commit;
-- PackageInstaller success deliberately does **not** clear the pending marker;
-- terminal installer failure and synchronous install failure clear the marker;
-- `Reset AALyrics` clears the marker together with app-owned update work and retained update artifacts, while Android install-source trust remains untouched;
-- focused persistence/runtime tests cover round-trip state, malformed state, write failure, pre-commit recording, success retention, failure cleanup, and Reset cleanup;
-- Reset user-facing copy and Update/Phone Settings documentation are aligned.
+- extended update recovery persistence with `SuccessfulUpdate(installedVersion, installedVersionCode, resumeAfterUpdate)`;
+- split recovery cleanup scopes so installer failure clears pending state only, while `Reset AALyrics` clears pending and successful state;
+- added pure package-replacement reconciliation policy;
+- exact target `versionCode` requires matching `versionName`; a strictly newer installed `versionCode` also satisfies the pending target;
+- older or same-code/name-mismatched replacements leave pending state untouched;
+- successful reconciliation carries the pending `resumeAfterUpdate` flag forward and atomically replaces pending keys with successful keys in one synchronous SharedPreferences commit;
+- registered a non-exported manifest receiver for `android.intent.action.MY_PACKAGE_REPLACED`;
+- the receiver uses the new binary's `BuildConfig.VERSION_NAME` / `VERSION_CODE`, does not start an Activity, and performs no Phone presentation work;
+- receiver/persistence failure is contained rather than forcing a UI launch;
+- focused policy/handler/persistence tests cover exact match, newer installed binary, mismatches, no-pending behavior, promotion, and untouched pending state;
+- Reset tests now cover unconsumed successful update state as well as pending state;
+- Reset copy and Update/Phone Settings documentation are aligned.
 
-No `ACTION_MY_PACKAGE_REPLACED` receiver, durable `updateSucceeded` reconciliation, success dialog, or resume-after-update behavior has been implemented yet.
+No `Update successful` dialog, success-marker consumption, forced Main/Lyrics routing, notification fallback, or best-effort resume behavior has been implemented yet.
 
-Next checkpoint: **add `ACTION_MY_PACKAGE_REPLACED` recovery that compares the pending target with the newly installed binary and records durable update success without starting an Activity**. Do not begin it until explicitly requested.
+Next checkpoint: **surface durable `SuccessfulUpdate` on the next valid app entry as a one-time `Update successful` dialog, and clear it only when the user dismisses that feedback**. Do not begin it until explicitly requested.
