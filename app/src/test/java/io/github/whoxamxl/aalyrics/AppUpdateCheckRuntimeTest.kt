@@ -298,6 +298,81 @@ class AppUpdateCheckRuntimeTest {
     }
 
     @Test
+    fun `missing apk size metadata fails before transfer`() = runTest {
+        val tagName = "v0.2.0-alpha.2"
+        val apkName = "AALyrics-$tagName.apk"
+        val release = release(
+            tagName = tagName,
+            prerelease = true,
+            assets = listOf(
+                asset(apkName),
+                asset("$apkName.sha256", sizeBytes = 128L),
+            ),
+        )
+        val apkBytes = "signed apk bytes".encodeToByteArray()
+        val downloadClient = FakeUpdateAssetDownloadClient(
+            checksumPayload = checksumPayload(apkBytes, apkName),
+            apkBytes = apkBytes,
+        )
+        val root = createTempDirectory("aalyrics-update-runtime").toFile()
+        try {
+            val runtime = runtime(
+                installedVersionName = "0.2.0-alpha.1",
+                releases = listOf(release),
+                assetDownloadClient = downloadClient,
+                downloadFileStore = updateStore(root),
+            )
+
+            runtime.checkForUpdates()
+            runCurrent()
+            runtime.downloadUpdate()
+            runCurrent()
+
+            assertEquals(
+                AppUpdateCheckState.DownloadFailed("0.2.0-alpha.2"),
+                runtime.state.value,
+            )
+            assertEquals(0, downloadClient.downloadCount)
+        } finally {
+            root.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun `downloaded byte count must match release asset size`() = runTest {
+        val apkBytes = "signed apk bytes".encodeToByteArray()
+        val release = downloadableRelease(
+            tagName = "v0.2.0-alpha.2",
+            apkSizeBytes = apkBytes.size.toLong() + 1L,
+        )
+        val root = createTempDirectory("aalyrics-update-runtime").toFile()
+        try {
+            val runtime = runtime(
+                installedVersionName = "0.2.0-alpha.1",
+                releases = listOf(release),
+                assetDownloadClient = FakeUpdateAssetDownloadClient(
+                    checksumPayload = checksumPayload(apkBytes, release.assets.first().name),
+                    apkBytes = apkBytes,
+                ),
+                downloadFileStore = updateStore(root),
+            )
+
+            runtime.checkForUpdates()
+            runCurrent()
+            runtime.downloadUpdate()
+            runCurrent()
+
+            assertEquals(
+                AppUpdateCheckState.DownloadFailed("0.2.0-alpha.2"),
+                runtime.state.value,
+            )
+            assertFalse(verifiedRoot(root).exists())
+        } finally {
+            root.deleteRecursively()
+        }
+    }
+
+    @Test
     fun `download failure can retry the same selected release`() = runTest {
         val apkBytes = "signed apk bytes".encodeToByteArray()
         val release = downloadableRelease("v0.2.0-alpha.2")
