@@ -42,6 +42,22 @@ internal sealed interface AppUpdateCheckState {
     data class DownloadFailed(
         val versionName: String,
     ) : AppUpdateCheckState
+
+    data class PreparingInstall(
+        val versionName: String,
+    ) : AppUpdateCheckState
+
+    data class InstallPermissionRequired(
+        val versionName: String,
+    ) : AppUpdateCheckState
+
+    data class Installing(
+        val versionName: String,
+    ) : AppUpdateCheckState
+
+    data class InstallFailed(
+        val versionName: String,
+    ) : AppUpdateCheckState
 }
 
 internal class AppUpdateCheckRuntime(
