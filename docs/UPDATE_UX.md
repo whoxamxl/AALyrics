@@ -69,7 +69,7 @@ The separation layer is implemented before the dialog itself:
 - `AppUpdateCheckState.InstallPermissionRequired` remains the durable process-runtime fact that Android source trust is missing for the retained install target;
 - `UpdateInstallPermissionPromptRuntime` owns a separate process-local, non-persisted prompt request;
 - entering the permission-required state requests the prompt once;
-- explicitly invoking Install/Update again while permission is still required re-requests the prompt without repeating download or install preparation;
+- explicitly invoking Update again while permission is still required re-requests the prompt without repeating download or install preparation;
 - dismissing the prompt does not clear `InstallPermissionRequired`;
 - Settings root reset, leaving Settings for another primary destination, Activity stop/background, Activity/composition disposal, Reset AALyrics, and returning from Android source-trust Settings clear only the transient prompt.
 
