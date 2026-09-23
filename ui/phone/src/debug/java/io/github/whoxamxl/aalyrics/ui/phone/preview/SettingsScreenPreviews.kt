@@ -286,7 +286,7 @@ internal fun SettingsScreenPreview(
                         )
                     }
                 },
-                onDownloadUpdate = {
+                onUpdate = {
                     val version = state.appUpdate.availableVersionName ?: "0.1.2"
                     state = state.copy(
                         appUpdate = AppUpdateUiState(
@@ -295,63 +295,32 @@ internal fun SettingsScreenPreview(
                         ),
                     )
                     scope.launch {
-                        delay(500)
+                        delay(400)
                         state = state.copy(
                             appUpdate = AppUpdateUiState(
                                 phase = AppUpdateUiPhase.DOWNLOADING,
                                 availableVersionName = version,
-                                downloadProgress = 0f,
+                                downloadProgress = 0.64f,
                             ),
                         )
-                        listOf(0.18f, 0.43f, 0.71f, 1f).forEach { progress ->
-                            delay(300)
-                            state = state.copy(
-                                appUpdate = AppUpdateUiState(
-                                    phase = AppUpdateUiPhase.DOWNLOADING,
-                                    availableVersionName = version,
-                                    downloadProgress = progress,
-                                ),
-                            )
-                        }
+                        delay(400)
                         state = state.copy(
                             appUpdate = AppUpdateUiState(
-                                phase = AppUpdateUiPhase.DOWNLOADED,
+                                phase = AppUpdateUiPhase.VERIFYING,
                                 availableVersionName = version,
                             ),
                         )
-                    }
-                },
-                onInstallUpdate = {
-                    val version = state.appUpdate.availableVersionName ?: "0.1.2"
-                    state = state.copy(
-                        appUpdate = AppUpdateUiState(
-                            phase = AppUpdateUiPhase.PREPARING_INSTALL,
-                            availableVersionName = version,
-                        ),
-                    )
-                    scope.launch {
-                        delay(600)
+                        delay(400)
+                        state = state.copy(
+                            appUpdate = AppUpdateUiState(
+                                phase = AppUpdateUiPhase.PREPARING_INSTALL,
+                                availableVersionName = version,
+                            ),
+                        )
+                        delay(400)
                         state = state.copy(
                             appUpdate = AppUpdateUiState(
                                 phase = AppUpdateUiPhase.INSTALL_PERMISSION_REQUIRED,
-                                availableVersionName = version,
-                            ),
-                        )
-                    }
-                },
-                onOpenInstallSettings = {
-                    val version = state.appUpdate.availableVersionName ?: "0.1.2"
-                    state = state.copy(
-                        appUpdate = AppUpdateUiState(
-                            phase = AppUpdateUiPhase.PREPARING_INSTALL,
-                            availableVersionName = version,
-                        ),
-                    )
-                    scope.launch {
-                        delay(350)
-                        state = state.copy(
-                            appUpdate = AppUpdateUiState(
-                                phase = AppUpdateUiPhase.INSTALLING,
                                 availableVersionName = version,
                             ),
                         )
@@ -411,9 +380,7 @@ private fun SettingsScreenContentPreview(
                 },
                 onAndroidAutoCompatibilitySetup = {},
                 onCheckForUpdates = {},
-                onDownloadUpdate = {},
-                onInstallUpdate = {},
-                onOpenInstallSettings = {},
+                onUpdate = {},
                 onChangelogRequested = {},
                 onPrivacyPolicyRequested = {},
                 onTermsOfUseRequested = {},
