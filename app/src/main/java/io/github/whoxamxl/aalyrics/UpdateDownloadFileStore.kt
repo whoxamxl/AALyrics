@@ -14,13 +14,22 @@ internal class UpdateDownloadFileStore(
     private val verifiedDirectory: File,
     private val legacyVerifiedDirectory: File? = null,
 ) {
-    fun prepare(apkFileName: String): UpdateDownloadFiles {
+    fun prepare(
+        apkFileName: String,
+        operationId: Long,
+    ): UpdateDownloadFiles {
         requireSafeFileName(apkFileName)
+        check(operationId >= 0L) {
+            "Update operation id must not be negative"
+        }
         clearStaging()
         ensureDirectory(stagingDirectory, "update staging directory")
 
         return UpdateDownloadFiles(
-            partialApk = File(stagingDirectory, "$apkFileName.part"),
+            partialApk = File(
+                stagingDirectory,
+                "$apkFileName.op-$operationId.part",
+            ),
             verifiedApk = File(verifiedDirectory, apkFileName),
         )
     }
