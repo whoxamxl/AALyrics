@@ -14,6 +14,8 @@ internal class UpdateDownloadFileStore(
     private val verifiedDirectory: File,
     private val legacyVerifiedDirectory: File? = null,
 ) {
+    private val artifactMutationLock = Any()
+
     fun prepare(
         apkFileName: String,
         operationId: Long,
@@ -37,7 +39,7 @@ internal class UpdateDownloadFileStore(
     fun stageVerified(
         files: UpdateDownloadFiles,
         operationId: Long,
-    ): File {
+    ): File = synchronized(artifactMutationLock) {
         requireOwned(files.partialApk, stagingDirectory, "staging")
         requireOwned(files.verifiedApk, verifiedDirectory, "verified")
         check(operationId >= 0L) {
@@ -69,12 +71,16 @@ internal class UpdateDownloadFileStore(
     fun commitVerified(
         files: UpdateDownloadFiles,
         promotingApk: File,
-    ): File {
+        canCommit: () -> Boolean = { true },
+    ): File? = synchronized(artifactMutationLock) {
         requireOwned(files.partialApk, stagingDirectory, "staging")
         requireOwned(files.verifiedApk, verifiedDirectory, "verified")
         requireOwned(promotingApk, verifiedDirectory, "verified")
         check(promotingApk.isFile) {
             "Promoting APK does not exist"
+        }
+        if (!canCommit()) {
+            return@synchronized null
         }
 
         replaceVerifiedTarget(
@@ -84,10 +90,10 @@ internal class UpdateDownloadFileStore(
         clearVerifiedExcept(files.verifiedApk)
         files.partialApk.delete()
         clearDirectoryIfEmpty(stagingDirectory)
-        return files.verifiedApk
+        files.verifiedApk
     }
 
-    fun discardPromotion(promotingApk: File) {
+    fun discardPromotion(promotingApk: File) = synchronized(artifactMutationLock) {
         requireOwned(promotingApk, verifiedDirectory, "verified")
         promotingApk.delete()
         clearDirectoryIfEmpty(verifiedDirectory)
@@ -99,7 +105,7 @@ internal class UpdateDownloadFileStore(
         clearDirectoryIfEmpty(stagingDirectory)
     }
 
-    fun cleanupTransientArtifacts() {
+    fun cleanupTransientArtifacts() = synchronized(artifactMutationLock) {
         clearLegacyVerified()
         clearStaging()
         if (!verifiedDirectory.isDirectory) return
@@ -111,7 +117,7 @@ internal class UpdateDownloadFileStore(
         clearDirectoryIfEmpty(verifiedDirectory)
     }
 
-    fun retainedVerifiedApk(): File? {
+    fun retainedVerifiedApk(): File? = synchronized(artifactMutationLock) {
         if (!verifiedDirectory.isDirectory) return null
 
         val children = verifiedDirectory.listFiles().orEmpty()
@@ -132,21 +138,21 @@ internal class UpdateDownloadFileStore(
             return null
         }
 
-        return apks.singleOrNull()
+        apks.singleOrNull()
     }
 
-    fun clearStaging() {
+    fun clearStaging() = synchronized(artifactMutationLock) {
         clearDirectory(stagingDirectory)
     }
 
-    fun clearVerified() {
+    fun clearVerified() = synchronized(artifactMutationLock) {
         clearDirectory(verifiedDirectory)
     }
 
-    fun clearAll() {
+    fun clearAll() = synchronized(artifactMutationLock) {
         clearLegacyVerified()
-        clearStaging()
-        clearVerified()
+        clearDirectory(stagingDirectory)
+        clearDirectory(verifiedDirectory)
     }
 
     private fun clearLegacyVerified() {
