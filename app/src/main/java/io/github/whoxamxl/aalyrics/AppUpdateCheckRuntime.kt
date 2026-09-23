@@ -69,6 +69,7 @@ internal class AppUpdateCheckRuntime(
     private val installPreparation: UpdateInstallPreparation? = null,
     private val installSourceTrustChecker: InstallSourceTrustChecker? = null,
     private val packageInstaller: UpdatePackageInstaller? = null,
+    private val updateRecoveryStore: UpdateRecoveryStore? = null,
     private val onInstallPermissionRequired: (String) -> Unit = {},
 ) {
     private val mutableState = MutableStateFlow<AppUpdateCheckState>(AppUpdateCheckState.Idle)
@@ -214,10 +215,12 @@ internal class AppUpdateCheckRuntime(
         val preparation = installPreparation
         val trustChecker = installSourceTrustChecker
         val installer = packageInstaller
+        val recoveryStore = updateRecoveryStore
         if (
             preparation == null ||
             trustChecker == null ||
-            installer == null
+            installer == null ||
+            recoveryStore == null
         ) {
             installTarget = target
             mutableState.value = AppUpdateCheckState.InstallFailed(target.versionName)
@@ -240,8 +243,9 @@ internal class AppUpdateCheckRuntime(
             }
 
             ensureCurrentOperation(generation)
-            when (preparationResult) {
-                UpdateInstallPreparationResult.Ready -> Unit
+            val targetVersionCode = when (preparationResult) {
+                is UpdateInstallPreparationResult.Ready ->
+                    preparationResult.targetVersionCode
 
                 is UpdateInstallPreparationResult.NewerReleaseAvailable -> {
                     availableCandidate = preparationResult.candidate
@@ -285,6 +289,9 @@ internal class AppUpdateCheckRuntime(
 
                     is UpdatePackageInstallerStatus.Failure -> {
                         activeInstallSessionId = null
+                        runCatching {
+                            recoveryStore.clear()
+                        }
                         mutableState.value =
                             AppUpdateCheckState.InstallFailed(target.versionName)
                     }
@@ -301,6 +308,18 @@ internal class AppUpdateCheckRuntime(
                         installer.abandon(sessionId)
                     }
                 },
+                onBeforeCommit = {
+                    if (operationGeneration.get() != generation) {
+                        throw CancellationException("Update operation is stale")
+                    }
+                    recoveryStore.recordPendingUpdate(
+                        PendingUpdate(
+                            targetVersion = target.versionName,
+                            targetVersionCode = targetVersionCode,
+                            resumeAfterUpdate = true,
+                        ),
+                    )
+                },
             )
 
             ensureCurrentOperation(generation)
@@ -313,6 +332,9 @@ internal class AppUpdateCheckRuntime(
                 },
                 onFailure = {
                     activeInstallSessionId = null
+                    runCatching {
+                        recoveryStore.clear()
+                    }
                     mutableState.value =
                         AppUpdateCheckState.InstallFailed(target.versionName)
                 },
@@ -335,6 +357,7 @@ internal class AppUpdateCheckRuntime(
         installTarget = null
         availableCandidate = null
         downloadFileStore?.clearAll()
+        updateRecoveryStore?.clear()
         mutableState.value = AppUpdateCheckState.Idle
     }
 
