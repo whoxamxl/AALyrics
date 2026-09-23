@@ -242,7 +242,7 @@ next launch removes stale retained APK
 - [x] Define PackageInstaller session ownership and failure behavior.
 - [x] Re-evaluate Reset AALyrics for installer state.
 - [x] Define same-release-signing real-device validation requirements.
-- [ ] Align docs/RELEASES.md and docs/PHONE_SETTINGS.md.
+- [x] Align docs/RELEASES.md and docs/PHONE_SETTINGS.md.
 
 ### Implementation
 
@@ -259,6 +259,6 @@ next launch removes stale retained APK
 
 ## Current checkpoint
 
-Planning checkpoint only. No Package Installer implementation has started yet.
+Documentation contract is aligned across TASK.md, docs/RELEASES.md, and docs/PHONE_SETTINGS.md. No Package Installer implementation has started yet.
 
-Next checkpoint: align docs/RELEASES.md, commit, then align docs/PHONE_SETTINGS.md separately.
+Next checkpoint: add the APK preflight boundary and focused tests.
