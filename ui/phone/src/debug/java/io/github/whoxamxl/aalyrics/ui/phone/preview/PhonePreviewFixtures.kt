@@ -440,6 +440,31 @@ internal object PhonePreviewFixtures {
             failureReason = "The APK could not be downloaded or verified.",
         ),
     )
+    val settingsPreparingInstall = settingsTypical.copy(
+        appUpdate = AppUpdateUiState(
+            phase = AppUpdateUiPhase.PREPARING_INSTALL,
+            availableVersionName = "0.1.2",
+        ),
+    )
+    val settingsInstallPermissionRequired = settingsTypical.copy(
+        appUpdate = AppUpdateUiState(
+            phase = AppUpdateUiPhase.INSTALL_PERMISSION_REQUIRED,
+            availableVersionName = "0.1.2",
+        ),
+    )
+    val settingsInstallingUpdate = settingsTypical.copy(
+        appUpdate = AppUpdateUiState(
+            phase = AppUpdateUiPhase.INSTALLING,
+            availableVersionName = "0.1.2",
+        ),
+    )
+    val settingsInstallFailed = settingsTypical.copy(
+        appUpdate = AppUpdateUiState(
+            phase = AppUpdateUiPhase.INSTALL_FAILED,
+            availableVersionName = "0.1.2",
+            failureReason = "Android Package Installer did not complete the update.",
+        ),
+    )
     val settingsTranslationOn = settingsTypical.copy(translationEnabled = true)
     val settingsAndroidAutoSkipped = settingsTypical.copy(
         androidAutoCompatibilityStatus = AndroidAutoCompatibilityUiStatus.SKIPPED,
