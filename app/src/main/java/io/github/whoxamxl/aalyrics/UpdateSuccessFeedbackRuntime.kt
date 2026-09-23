@@ -17,8 +17,16 @@ internal class UpdateSuccessFeedbackRuntime(
         mutableSuccessfulUpdate.value = recoveryStore.successfulUpdate()
     }
 
-    fun dismiss() {
-        recoveryStore.clearSuccessfulUpdate()
-        mutableSuccessfulUpdate.value = null
-    }
+    fun dismiss(): Boolean =
+        runCatching {
+            recoveryStore.clearSuccessfulUpdate()
+        }.fold(
+            onSuccess = {
+                mutableSuccessfulUpdate.value = null
+                true
+            },
+            onFailure = {
+                false
+            },
+        )
 }
