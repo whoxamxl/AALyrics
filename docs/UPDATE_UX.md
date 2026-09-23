@@ -26,7 +26,7 @@ The follow-up branch starts from `feature/package-installer` at `df1e394f8dce87b
 
 The baseline has been exercised with an older APK built through the manual Actions fixture using the same durable release-signing identity as published AALyrics releases. Real-device validation covered the explicit update path through update discovery, verified download, Android per-source install trust, Android-owned install confirmation, cancellation/retry, and successful same-signing self-update.
 
-The current user-visible baseline intentionally remains:
+The validated pre-UX user-visible baseline was:
 
 ```text
 Check for updates
