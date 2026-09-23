@@ -73,7 +73,25 @@ The separation layer is implemented before the dialog itself:
 - dismissing the prompt does not clear `InstallPermissionRequired`;
 - Settings root reset, leaving Settings for another primary destination, Activity/composition disposal, Reset AALyrics, and returning from Android source-trust Settings clear only the transient prompt.
 
-The Phone presentation model carries the prompt separately from `AppUpdateUiPhase.INSTALL_PERMISSION_REQUIRED`. The large explanatory dialog is intentionally the next implementation checkpoint; this state-ownership checkpoint does not yet change the rendered Settings UI.
+The Phone presentation model carries the prompt separately from `AppUpdateUiPhase.INSTALL_PERMISSION_REQUIRED`.
+
+### Permission dialog checkpoint
+
+The large explanation dialog is now implemented as a modal Phone surface rather than a full-screen setup destination.
+
+Required behavior:
+
+- right-side close button dismisses only the transient prompt;
+- system Back has the same dismissal behavior;
+- tapping outside the dialog does not dismiss it;
+- leaving Settings for another primary destination, Settings root reset, Activity/composition disposal, Reset, or returning from Android source-trust Settings clears the transient prompt;
+- dismissing the dialog does not clear `INSTALL_PERMISSION_REQUIRED` or the retained verified APK;
+- the compact Settings update row remains in the permission-required phase and exposes `Install` as the explicit way to reopen the explanation;
+- `Grant permission` dismisses the explanation and opens Android's per-app source-trust Settings;
+- `Download from GitHub` dismisses the explanation and opens the matching GitHub Release page externally;
+- neither action bypasses Android's final installation confirmation.
+
+The dialog explains why sideload-distributed AALyrics needs the per-source permission and explicitly states that the permission does not grant silent-install capability. Typical, narrow-width, and enlarged-font Previews cover the shared dialog content.
 
 ## Successful-update feedback
 
