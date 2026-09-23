@@ -2,11 +2,18 @@ package io.github.whoxamxl.aalyrics
 
 import java.io.File
 
+internal fun interface UpdateApkPreflightEvaluator {
+    fun evaluate(
+        retainedApk: File,
+        expectedVersionName: String,
+    ): UpdateApkPreflightResult
+}
+
 internal class UpdateApkPreflightBoundary(
     private val fileStore: UpdateDownloadFileStore,
     private val packageInspector: UpdateApkPackageInspector,
-) {
-    fun evaluate(
+) : UpdateApkPreflightEvaluator {
+    override fun evaluate(
         retainedApk: File,
         expectedVersionName: String,
     ): UpdateApkPreflightResult {
