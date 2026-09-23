@@ -188,4 +188,4 @@ The download presentation now separates preparation from transfer: `PREPARING_DO
 
 Remaining work is final architecture/build/unit/CI validation, real-device verified-download/restart testing, bounded review, and merge readiness. Package Installer remains deferred. Its explicit Install action must re-check the latest eligible Release before handoff so a retained older verified APK is not installed first when a newer update has appeared.
 
-For real-device validation only, PR #71 temporarily builds an additional debug APK with `AALYRICS_VERSION_NAME=0.1.0-alpha.1` so the public `v0.2.0-alpha.1` Release is discoverable as a newer update. This CI-only scaffolding must be removed after device validation and before merge.
+Real-device update/install validation uses the reusable manual `Build` workflow input `update_test_version`. Run the workflow against the branch/ref under test and supply an older published version such as `0.1.0-alpha.1`; CI then emits both ZIP and direct-APK update-test artifacts with that VERSION_NAME override. This fixture is intentionally retained for the follow-up Package Installer slice instead of being tied to PR #71.
