@@ -69,6 +69,7 @@ internal class AppUpdateCheckRuntime(
     private val installPreparation: UpdateInstallPreparation? = null,
     private val installSourceTrustChecker: InstallSourceTrustChecker? = null,
     private val packageInstaller: UpdatePackageInstaller? = null,
+    private val onInstallPermissionRequired: (String) -> Unit = {},
 ) {
     private val mutableState = MutableStateFlow<AppUpdateCheckState>(AppUpdateCheckState.Idle)
     val state: StateFlow<AppUpdateCheckState> = mutableState.asStateFlow()
@@ -178,6 +179,11 @@ internal class AppUpdateCheckRuntime(
             is AppUpdateCheckState.InstallFailed ->
                 installTarget
 
+            is AppUpdateCheckState.InstallPermissionRequired -> {
+                onInstallPermissionRequired(current.versionName)
+                return
+            }
+
             else -> null
         } ?: return
 
@@ -257,6 +263,7 @@ internal class AppUpdateCheckRuntime(
             if (!trustChecker.canRequestPackageInstalls()) {
                 mutableState.value =
                     AppUpdateCheckState.InstallPermissionRequired(target.versionName)
+                onInstallPermissionRequired(target.versionName)
                 return@launch
             }
 
