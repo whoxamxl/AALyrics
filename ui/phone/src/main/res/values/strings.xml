@@ -57,12 +57,7 @@
     <string name="settings_preparing_update">Preparing update…</string>
     <string name="settings_verifying_update">Verifying update…</string>
     <string name="settings_ready_to_update">Ready to update</string>
-    <string name="settings_download_update">Download</string>
-    <string name="settings_preparing_update_download">Preparing download…</string>
-    <string name="settings_downloading_update">Downloading</string>
-    <string name="settings_update_downloaded">Downloaded</string>
-    <string name="settings_install_update">Install</string>
-    <string name="settings_preparing_update_install">Preparing installation…</string>
+    <string name="settings_downloading_update">Downloading update…</string>
     <string name="settings_install_permission_required">Installation permission required</string>
     <string name="settings_install_permission_dialog_eyebrow">INSTALL UPDATES</string>
     <string name="settings_install_permission_dialog_title">Allow AALyrics to install updates</string>
