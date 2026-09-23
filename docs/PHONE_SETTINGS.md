@@ -512,7 +512,7 @@ Application/runtime wiring owns both manual and automatic discovery:
 10. all origins use the same public AALyrics GitHub Releases query, release grammar, channel eligibility, and version comparison;
 11. only `AUTOMATIC` `UPDATE_AVAILABLE` results request the global `New release available` dialog; manual and install-refresh results never do.
 
-The automatic release dialog shows the discovered version with `Update` and `Not now` actions plus a close affordance. System Back, close, and `Not now` share one dismissal path; outside-tap dismissal is disabled. Dismissal stores the version in process-local suppression so the same release is not prompted again during ordinary navigation, recomposition, or Activity recreation in that process. A different automatically discovered version remains eligible.
+The automatic release dialog shows the discovered version with `Update` and `Not now` actions plus a close affordance. Like the #74 install-permission and successful-update dialogs, it uses the shared `PhoneDialogHeader`, so all dismissible custom update dialogs keep the same trailing X position, 24dp icon, and 48dp touch target. System Back, close, and `Not now` share one dismissal path; outside-tap dismissal is disabled. Dismissal stores the version in process-local suppression so the same release is not prompted again during ordinary navigation, recomposition, or Activity recreation in that process. A different automatically discovered version remains eligible.
 
 `Update` also suppresses transient re-presentation of that version and starts the existing download/verification pipeline. It does not yet auto-chain a completed download into installation; the one-step Download + Install composition remains the next checkpoint.
 
