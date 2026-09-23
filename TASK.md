@@ -83,7 +83,7 @@ Update artifacts are application-owned distribution files, not user documents.
 - use app-private storage only; do not request shared-storage permission;
 - partial `.part` files live under cache staging, use operation-owned filenames, and are cleaned on failure/cancellation/restart;
 - verified APKs live under app-private no-backup persistent storage;
-- promotion uses a transient persistent `.promoting` file so interrupted promotion cannot become a completed APK;
+- promotion uses an operation-owned transient persistent `.promoting` file and commits it only after ownership is revalidated, so interrupted/stale promotion cannot become a completed APK;
 - retain at most one verified update APK;
 - an active download is application-owned and continues if the user leaves Settings;
 - configuration change / Activity recreation must not cancel or restart the download;
