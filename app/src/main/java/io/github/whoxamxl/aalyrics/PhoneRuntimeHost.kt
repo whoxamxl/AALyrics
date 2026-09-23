@@ -67,6 +67,7 @@ internal fun PhoneRuntimeHost(
     onOpenSourceCode: () -> Unit,
     onOpenHelpFeedback: (HelpFeedbackDestination) -> Unit,
     onOpenSupportAALyrics: () -> Unit,
+    onOpenUpdateRelease: (String) -> Unit = {},
 ) {
     val playback by application.playbackState.collectAsStateWithLifecycle()
     val playbackSourceRuntimeState by
@@ -286,6 +287,9 @@ internal fun PhoneRuntimeHost(
                 onDownloadUpdate = application::downloadUpdate,
                 onInstallUpdate = application::installUpdate,
                 onOpenInstallSettings = onOpenInstallSettings,
+                onDismissInstallPermissionDialog =
+                    application::dismissInstallPermissionPrompt,
+                onDownloadUpdateFromGitHub = onOpenUpdateRelease,
                 onOpenGitHub = onOpenSourceCode,
                 onHelpFeedback = onOpenHelpFeedback,
                 onSupportAALyrics = onOpenSupportAALyrics,
