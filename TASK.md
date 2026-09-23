@@ -247,18 +247,20 @@ next launch removes stale retained APK
 ### Implementation
 
 - [x] Add APK preflight boundary and focused tests.
-- [ ] Add install-time Release refresh and stale-retained-release handling.
-- [ ] Add source-trust permission/settings handoff.
-- [ ] Add PackageInstaller session boundary and status handling.
-- [ ] Add runtime states and Phone Install/Retry actions.
-- [ ] Integrate Reset with installer/session lifecycle.
-- [ ] Add/update Previews and presentation coverage.
-- [ ] Extend CI with a same-release-signing update-install test artifact.
+- [x] Add install-time Release refresh and stale-retained-release handling.
+- [x] Add source-trust permission/settings handoff.
+- [x] Add PackageInstaller session boundary and status handling.
+- [x] Add runtime states and Phone Install/Retry actions.
+- [x] Integrate Reset with installer/session lifecycle.
+- [x] Add/update Previews and presentation coverage.
+- [x] Extend CI with a same-release-signing update-install test artifact.
 - [ ] Complete real-device install validation.
 - [ ] Complete final architecture/build/unit/CI validation and bounded review before merge.
 
 ## Current checkpoint
 
-Documentation contract is aligned. APK preflight now has a fail-closed pure decision model, signing-lineage compatibility logic, an Android PackageManager archive/installed-package inspector with API 26-27 fallback, retained-artifact ownership checks, focused tests, and production object-graph wiring. Installer runtime actions are not wired yet.
+Implementation is wired through Phone Settings and Android PackageInstaller handoff. Completed checkpoints now include fail-closed APK package/version/signing preflight, explicit Install-time eligible-Release refresh, per-source install trust handling with return/recheck, PackageInstaller.Session write/fsync/commit and status callback handling, Reset/session cleanup, stale-callback suppression, Phone presentation/Previews, and the opt-in same-release-signing Actions fixture.
 
-Next checkpoint: add the explicit Install-time latest eligible Release refresh and stale-retained-release decision.
+CI run #884 passed architecture checks, debug APK build, unit tests, and ordinary debug artifact upload for the substantive implementation. The release-signed fixture steps are intentionally skipped on pull-request CI and still require an explicit workflow_dispatch run with signing secrets.
+
+Next checkpoint: run the release-signed older-version fixture manually, complete real-device permission/cancel/retry/successful-self-update validation, then perform final Doc/Preview/regression review before merge readiness.
