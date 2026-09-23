@@ -1243,7 +1243,8 @@ class AppUpdateCheckRuntimeTest {
             installCount += 1
             this.statusSink = statusSink
             onSessionCreated(sessionId)
-            return installFailure?.let(Result<Int>::failure)
+            return installFailure
+                ?.let { error -> Result.failure<Int>(error) }
                 ?: Result.success(sessionId)
         }
 
