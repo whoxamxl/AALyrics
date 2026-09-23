@@ -99,7 +99,7 @@ Completed in this checkpoint:
 - default is ON, including existing preference stores where the new key is absent;
 - `Reset AALyrics` restores the preference to ON;
 - Settings APP section now shows the toggle above the existing Version / `Check for updates` row;
-- supporting copy is always visible and explicitly states that updates are never installed without confirmation;
+- explanatory copy is stored in the shared Settings info tooltip and explicitly states that updates are never installed without confirmation;
 - manual `Check for updates` remains available regardless of toggle state;
 - automatic checking is deferred until the normal Phone entry reaches `READY`, so onboarding/permission entry gates remain authoritative;
 - an enabled preference consumes at most one automatic check attempt per app process;
