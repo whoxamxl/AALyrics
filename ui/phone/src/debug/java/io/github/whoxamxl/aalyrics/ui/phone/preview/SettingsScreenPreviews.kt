@@ -242,9 +242,19 @@ internal fun SettingsScreenPreview(
                             appUpdate = AppUpdateUiState(
                                 phase = AppUpdateUiPhase.DOWNLOADING,
                                 availableVersionName = version,
+                                downloadProgress = 0f,
                             ),
                         )
-                        delay(1200)
+                        listOf(0.18f, 0.43f, 0.71f, 1f).forEach { progress ->
+                            delay(300)
+                            state = state.copy(
+                                appUpdate = AppUpdateUiState(
+                                    phase = AppUpdateUiPhase.DOWNLOADING,
+                                    availableVersionName = version,
+                                    downloadProgress = progress,
+                                ),
+                            )
+                        }
                         state = state.copy(
                             appUpdate = AppUpdateUiState(
                                 phase = AppUpdateUiPhase.DOWNLOADED,
