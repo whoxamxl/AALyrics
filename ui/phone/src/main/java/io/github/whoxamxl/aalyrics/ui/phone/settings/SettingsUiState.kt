@@ -45,6 +45,7 @@ enum class AppUpdateUiPhase {
 data class AppUpdateUiState(
     val phase: AppUpdateUiPhase = AppUpdateUiPhase.IDLE,
     val availableVersionName: String? = null,
+    val downloadProgress: Float? = null,
     val failureReason: String? = null,
 )
 
