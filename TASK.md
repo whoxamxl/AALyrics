@@ -82,7 +82,7 @@ Approved follow-up direction:
 - [x] Implement the large install-permission explanation dialog and lifecycle behavior.
 - [x] Persist durable `PendingUpdate` immediately before PackageInstaller commit.
 - [x] Reconcile `ACTION_MY_PACKAGE_REPLACED` into durable update-success state.
-- [ ] Show one-time Update successful feedback on the next valid app entry.
+- [x] Show one-time Update successful feedback on the next valid app entry.
 - [ ] Add best-effort resume-after-update behavior.
 - [ ] Add automatic update checking preference and new-release dialog.
 - [ ] Compose Download + Install into one user-facing Update action.
@@ -90,23 +90,24 @@ Approved follow-up direction:
 
 ## Current checkpoint
 
-Package replacement now reconciles durable pending intent into durable success state without launching presentation.
+Durable successful-update state is now surfaced once on the next valid Phone entry without overriding normal Phone navigation.
 
 Completed in this checkpoint:
 
-- extended update recovery persistence with `SuccessfulUpdate(installedVersion, installedVersionCode, resumeAfterUpdate)`;
-- split recovery cleanup scopes so installer failure clears pending state only, while `Reset AALyrics` clears pending and successful state;
-- added pure package-replacement reconciliation policy;
-- exact target `versionCode` requires matching `versionName`; a strictly newer installed `versionCode` also satisfies the pending target;
-- older or same-code/name-mismatched replacements leave pending state untouched;
-- successful reconciliation carries the pending `resumeAfterUpdate` flag forward and atomically replaces pending keys with successful keys in one synchronous SharedPreferences commit;
-- registered a non-exported manifest receiver for `android.intent.action.MY_PACKAGE_REPLACED`;
-- the receiver uses the new binary's `BuildConfig.VERSION_NAME` / `VERSION_CODE`, does not start an Activity, and performs no Phone presentation work;
-- receiver/persistence failure is contained rather than forcing a UI launch;
-- focused policy/handler/persistence tests cover exact match, newer installed binary, mismatches, no-pending behavior, promotion, and untouched pending state;
-- Reset tests now cover unconsumed successful update state as well as pending state;
-- Reset copy and Update/Phone Settings documentation are aligned.
+- added a process-level `UpdateSuccessFeedbackRuntime` that loads durable `SuccessfulUpdate` state at startup;
+- package-replacement reconciliation refreshes that runtime immediately when the receiver runs in the live AALyrics process, while later fresh launches load the same durable state directly;
+- the feedback runtime does not clear the marker merely because presentation becomes visible;
+- Done / close / system Back use one dismissal path that clears durable success first and removes process state only when persistence succeeds;
+- persistence-clear failure leaves the success feedback visible rather than losing the durable acknowledgement;
+- added a compact large-width-safe `AALyrics updated` dialog showing the actual installed version;
+- outside-tap dismissal is disabled;
+- Phone presentation shows the dialog only after the normal app entry gates reach `READY`;
+- normal startup remains `PhoneDestination.Home` / Lyrics; no update-specific Main/Lyrics routing was added;
+- process death before dismissal preserves the marker, so a later valid Phone entry shows the dialog again;
+- typical, narrow-phone, and enlarged-font dialog Previews were added;
+- focused runtime tests cover startup restoration, post-replacement refresh, successful consumption, and failed durable clear;
+- Update UX / Phone Settings docs are aligned with the implemented behavior.
 
-No `Update successful` dialog, success-marker consumption, forced Main/Lyrics routing, notification fallback, or best-effort resume behavior has been implemented yet.
+No best-effort automatic resume, notification fallback, automatic update checking, release-available dialog, or one-step Update composition has been implemented yet.
 
-Next checkpoint: **surface durable `SuccessfulUpdate` on the next valid app entry as a one-time `Update successful` dialog, and clear it only when the user dismisses that feedback**. Do not begin it until explicitly requested.
+Next checkpoint: **add best-effort resume-after-update behavior using the existing `resumeAfterUpdate` intent, without making update correctness depend on background Activity launch**. Do not begin it until explicitly requested.
