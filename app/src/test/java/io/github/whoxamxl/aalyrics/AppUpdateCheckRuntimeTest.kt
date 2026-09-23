@@ -327,6 +327,152 @@ class AppUpdateCheckRuntimeTest {
     }
 
     @Test
+    fun `one step update downloads verifies and starts install`() = runTest {
+        val apkBytes = "signed apk bytes".encodeToByteArray()
+        val release = downloadableRelease("v0.2.0-alpha.2")
+        val installer = FakeUpdatePackageInstaller()
+        val recoveryStore = FakeUpdateRecoveryStore()
+        val root = createTempDirectory("aalyrics-one-step-update").toFile()
+        try {
+            val runtime = runtime(
+                installedVersionName = "0.2.0-alpha.1",
+                releases = listOf(release),
+                assetDownloadClient = FakeUpdateAssetDownloadClient(
+                    checksumPayload = checksumPayload(apkBytes, release.assets.first().name),
+                    apkBytes = apkBytes,
+                ),
+                downloadFileStore = updateStore(root),
+                installPreparation = installPreparation(
+                    installedVersionName = "0.2.0-alpha.1",
+                    releases = listOf(release),
+                    preflightResult =
+                        UpdateApkPreflightResult.Ready(targetVersionCode = 42L),
+                ),
+                installSourceTrustChecker = InstallSourceTrustChecker { true },
+                packageInstaller = installer,
+                updateRecoveryStore = recoveryStore,
+            )
+
+            runtime.checkForUpdates()
+            runCurrent()
+            runtime.requestUpdate()
+            runCurrent()
+
+            assertEquals(
+                AppUpdateCheckState.Installing("0.2.0-alpha.2"),
+                runtime.state.value,
+            )
+            assertEquals(1, installer.installCount)
+            assertEquals(
+                PendingUpdate(
+                    targetVersion = "0.2.0-alpha.2",
+                    targetVersionCode = 42L,
+                    resumeAfterUpdate = true,
+                ),
+                recoveryStore.pendingUpdate(),
+            )
+        } finally {
+            root.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun `one step update stops for source trust without redownloading`() = runTest {
+        val apkBytes = "signed apk bytes".encodeToByteArray()
+        val release = downloadableRelease("v0.2.0-alpha.2")
+        val downloadClient = FakeUpdateAssetDownloadClient(
+            checksumPayload = checksumPayload(apkBytes, release.assets.first().name),
+            apkBytes = apkBytes,
+        )
+        val permissionPromptVersions = mutableListOf<String>()
+        val root = createTempDirectory("aalyrics-one-step-permission").toFile()
+        try {
+            val runtime = runtime(
+                installedVersionName = "0.2.0-alpha.1",
+                releases = listOf(release),
+                assetDownloadClient = downloadClient,
+                downloadFileStore = updateStore(root),
+                installPreparation = installPreparation(
+                    installedVersionName = "0.2.0-alpha.1",
+                    releases = listOf(release),
+                ),
+                installSourceTrustChecker = InstallSourceTrustChecker { false },
+                packageInstaller = FakeUpdatePackageInstaller(),
+                onInstallPermissionRequired = permissionPromptVersions::add,
+            )
+
+            runtime.checkForUpdates()
+            runCurrent()
+            runtime.requestUpdate()
+            runCurrent()
+
+            assertEquals(
+                AppUpdateCheckState.InstallPermissionRequired("0.2.0-alpha.2"),
+                runtime.state.value,
+            )
+            assertEquals(1, downloadClient.downloadCount)
+            assertEquals(listOf("0.2.0-alpha.2"), permissionPromptVersions)
+
+            runtime.requestUpdate()
+
+            assertEquals(1, downloadClient.downloadCount)
+            assertEquals(
+                listOf("0.2.0-alpha.2", "0.2.0-alpha.2"),
+                permissionPromptVersions,
+            )
+        } finally {
+            root.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun `one step update follows newer release found during install refresh`() = runTest {
+        val betaBytes = "newer signed apk bytes".encodeToByteArray()
+        val betaRelease = downloadableRelease("v0.2.0-beta.1")
+        val alphaRelease = release("v0.2.0-alpha.2", prerelease = true)
+        val downloadClient = FakeUpdateAssetDownloadClient(
+            checksumPayload = checksumPayload(
+                betaBytes,
+                betaRelease.assets.first().name,
+            ),
+            apkBytes = betaBytes,
+        )
+        val installer = FakeUpdatePackageInstaller()
+        val root = createTempDirectory("aalyrics-one-step-refresh").toFile()
+        retainedUpdate(root, "0.2.0-alpha.2")
+        try {
+            val runtime = runtime(
+                installedVersionName = "0.2.0-alpha.1",
+                releases = emptyList(),
+                assetDownloadClient = downloadClient,
+                downloadFileStore = updateStore(root),
+                installPreparation = installPreparation(
+                    installedVersionName = "0.2.0-alpha.1",
+                    releases = listOf(betaRelease, alphaRelease),
+                    preflightResult =
+                        UpdateApkPreflightResult.Ready(targetVersionCode = 43L),
+                ),
+                installSourceTrustChecker = InstallSourceTrustChecker { true },
+                packageInstaller = installer,
+            )
+
+            assertTrue(runtime.state.value is AppUpdateCheckState.Downloaded)
+
+            runtime.requestUpdate()
+            runCurrent()
+
+            assertEquals(
+                AppUpdateCheckState.Installing("0.2.0-beta.1"),
+                runtime.state.value,
+            )
+            assertEquals(1, downloadClient.downloadCount)
+            assertEquals(1, installer.installCount)
+        } finally {
+            root.deleteRecursively()
+        }
+    }
+
+    @Test
     fun `digest mismatch becomes download failed and leaves no apk artifact`() = runTest {
         val release = downloadableRelease("v0.2.0-alpha.2")
         val root = createTempDirectory("aalyrics-update-runtime").toFile()
