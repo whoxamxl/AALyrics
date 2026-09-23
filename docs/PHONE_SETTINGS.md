@@ -415,10 +415,11 @@ Up to date                                    ✓
 
 Update available: v0.2.0-alpha.2         Download
 
-Preparing download…                             ◌
-
-Downloading v0.2.0-alpha.2
+Preparing download…
 [indeterminate linear progress]
+
+Downloading v0.2.0-alpha.2                  64%
+[determinate 0–100% linear progress]
 
 Update downloaded v0.2.0-alpha.2                ✓
 
@@ -427,7 +428,7 @@ Download failed                       ⓘ   ↻ Retry
 Update check failed                   ⓘ   ↻ Retry
 ```
 
-Every update-state row keeps the same trailing-edge alignment used by the installed version value. Retry and Download remain compact inline actions. `UPDATE_AVAILABLE` exposes Download only because APK download and SHA-256 verification are now application-owned and functional. After the user presses Download, `PREPARING_DOWNLOAD` uses the compact circular activity indicator while the runtime resolves assets, fetches/parses the checksum, and prepares app-private staging. Immediately before APK bytes are transferred, the runtime moves to `DOWNLOADING`, which uses an indeterminate horizontal progress bar. No fabricated percentage is shown because byte-level progress is not yet part of the runtime contract. `DOWNLOADED` remains informational; Install is intentionally absent until Package Installer handoff is implemented.
+Every update-state row keeps the same trailing-edge alignment used by the installed version value. Retry and Download remain compact inline actions. `UPDATE_AVAILABLE` exposes Download only because APK download and SHA-256 verification are now application-owned and functional. After the user presses Download, `PREPARING_DOWNLOAD` uses an indeterminate horizontal progress bar while the runtime resolves assets, fetches/parses the checksum, and prepares app-private staging. Immediately before APK bytes are transferred, the runtime moves to `DOWNLOADING`. GitHub Release asset metadata supplies the expected APK byte size, and the download client reports received bytes so Settings renders a determinate 0–100% horizontal progress bar and percentage. If the received byte count does not match the published asset size, the transfer fails closed. `DOWNLOADED` remains informational; Install is intentionally absent until Package Installer handoff is implemented.
 
 The UI emits `onCheckForUpdates` and `onDownloadUpdate`; it does not perform GitHub HTTP requests, release comparison, file I/O, or checksum verification directly.
 
