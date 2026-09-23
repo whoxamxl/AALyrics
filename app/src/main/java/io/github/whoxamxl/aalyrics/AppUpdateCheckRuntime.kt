@@ -77,6 +77,7 @@ internal class AppUpdateCheckRuntime(
     private val installSourceTrustChecker: InstallSourceTrustChecker? = null,
     private val packageInstaller: UpdatePackageInstaller? = null,
     private val updateRecoveryStore: UpdateRecoveryStore? = null,
+    private val onReleaseQuerySucceeded: (UpdateCheckOrigin) -> Unit = {},
     private val onInstallPermissionRequired: (String) -> Unit = {},
 ) {
     private val mutableState = MutableStateFlow<AppUpdateCheckState>(AppUpdateCheckState.Idle)
@@ -403,6 +404,10 @@ internal class AppUpdateCheckRuntime(
 
         val releases = releaseClient.fetchReleases().getOrElse {
             return checkFailed(generation)
+        }
+        ensureCurrentOperation(generation)
+        runCatching {
+            onReleaseQuerySucceeded(origin)
         }
         val candidate = AALyricsReleaseSelector.selectLatestEligible(
             installedVersion = installedVersion,
