@@ -123,6 +123,12 @@ class MainActivity : ComponentActivity() {
                             onOpenSupportAALyrics = {
                                 openCustomTabUrl(SUPPORT_URL)
                             },
+                            onOpenUpdateRelease = { versionName ->
+                                openCustomTabUrl(
+                                    RELEASE_TAG_URL_PREFIX +
+                                        Uri.encode("v$versionName"),
+                                )
+                            },
                         )
                     }
                 }
@@ -186,6 +192,8 @@ class MainActivity : ComponentActivity() {
         const val ENTRY_PREFERENCES_NAME = "app_entry_setup"
         const val ANDROID_AUTO_COMPATIBILITY_KEY = "android_auto_compatibility"
         const val SOURCE_CODE_URL = "https://github.com/whoxamxl/AALyrics"
+        const val RELEASE_TAG_URL_PREFIX =
+            "https://github.com/whoxamxl/AALyrics/releases/tag/"
         const val SUPPORT_URL = "https://buymeacoffee.com/whoxamxi"
     }
 }
