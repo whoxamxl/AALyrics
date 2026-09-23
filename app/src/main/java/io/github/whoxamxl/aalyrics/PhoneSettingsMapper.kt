@@ -5,6 +5,7 @@ import io.github.whoxamxl.aalyrics.translation.api.TranslationModelPhase
 import io.github.whoxamxl.aalyrics.translation.api.TranslationModelState
 import io.github.whoxamxl.aalyrics.translation.api.TranslationSettings
 import io.github.whoxamxl.aalyrics.ui.phone.settings.AndroidAutoCompatibilityUiStatus
+import io.github.whoxamxl.aalyrics.ui.phone.settings.AppUpdateInstallFailureUiReason
 import io.github.whoxamxl.aalyrics.ui.phone.settings.AppUpdateUiPhase
 import io.github.whoxamxl.aalyrics.ui.phone.settings.AppUpdateUiState
 import io.github.whoxamxl.aalyrics.ui.phone.settings.InstallPermissionDialogUiState
@@ -148,7 +149,50 @@ internal fun mapPhoneSettingsState(
                 AppUpdateUiState(
                     phase = AppUpdateUiPhase.INSTALL_FAILED,
                     availableVersionName = appUpdateCheckState.versionName,
+                    installFailureReason = appUpdateCheckState.reason.toUiReason(),
                 )
         },
     )
 }
+
+private fun AppUpdateInstallFailureReason.toUiReason(): AppUpdateInstallFailureUiReason =
+    when (this) {
+        AppUpdateInstallFailureReason.DEPENDENCIES_UNAVAILABLE ->
+            AppUpdateInstallFailureUiReason.DEPENDENCIES_UNAVAILABLE
+        AppUpdateInstallFailureReason.RELEASE_REFRESH_FAILED ->
+            AppUpdateInstallFailureUiReason.RELEASE_REFRESH_FAILED
+        AppUpdateInstallFailureReason.INSTALLED_VERSION_INVALID ->
+            AppUpdateInstallFailureUiReason.INSTALLED_VERSION_INVALID
+        AppUpdateInstallFailureReason.RETAINED_VERSION_INVALID ->
+            AppUpdateInstallFailureUiReason.RETAINED_VERSION_INVALID
+        AppUpdateInstallFailureReason.RETAINED_RELEASE_NOT_ELIGIBLE ->
+            AppUpdateInstallFailureUiReason.RETAINED_RELEASE_NOT_ELIGIBLE
+        AppUpdateInstallFailureReason.RETAINED_RELEASE_NOT_NEWER ->
+            AppUpdateInstallFailureUiReason.RETAINED_RELEASE_NOT_NEWER
+        AppUpdateInstallFailureReason.NO_ELIGIBLE_RELEASE ->
+            AppUpdateInstallFailureUiReason.NO_ELIGIBLE_RELEASE
+        AppUpdateInstallFailureReason.RETAINED_RELEASE_NO_LONGER_CURRENT ->
+            AppUpdateInstallFailureUiReason.RETAINED_RELEASE_NO_LONGER_CURRENT
+        AppUpdateInstallFailureReason.APK_FILE_MISSING ->
+            AppUpdateInstallFailureUiReason.APK_FILE_MISSING
+        AppUpdateInstallFailureReason.APK_NOT_CANONICAL ->
+            AppUpdateInstallFailureUiReason.APK_NOT_CANONICAL
+        AppUpdateInstallFailureReason.APK_UNREADABLE ->
+            AppUpdateInstallFailureUiReason.APK_UNREADABLE
+        AppUpdateInstallFailureReason.PACKAGE_MISMATCH ->
+            AppUpdateInstallFailureUiReason.PACKAGE_MISMATCH
+        AppUpdateInstallFailureReason.VERSION_NOT_NEWER ->
+            AppUpdateInstallFailureUiReason.VERSION_NOT_NEWER
+        AppUpdateInstallFailureReason.VERSION_NAME_MISMATCH ->
+            AppUpdateInstallFailureUiReason.VERSION_NAME_MISMATCH
+        AppUpdateInstallFailureReason.SIGNING_IDENTITY_UNAVAILABLE ->
+            AppUpdateInstallFailureUiReason.SIGNING_IDENTITY_UNAVAILABLE
+        AppUpdateInstallFailureReason.SIGNING_IDENTITY_MISMATCH ->
+            AppUpdateInstallFailureUiReason.SIGNING_IDENTITY_MISMATCH
+        AppUpdateInstallFailureReason.RECOVERY_STATE_PERSISTENCE_FAILED ->
+            AppUpdateInstallFailureUiReason.RECOVERY_STATE_PERSISTENCE_FAILED
+        AppUpdateInstallFailureReason.INSTALLER_HANDOFF_FAILED ->
+            AppUpdateInstallFailureUiReason.INSTALLER_HANDOFF_FAILED
+        AppUpdateInstallFailureReason.INSTALLER_REJECTED ->
+            AppUpdateInstallFailureUiReason.INSTALLER_REJECTED
+    }
