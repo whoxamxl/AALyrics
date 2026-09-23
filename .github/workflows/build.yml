@@ -122,6 +122,22 @@ jobs:
 
       # Manual, reusable update-flow fixture. From Actions -> Build -> Run workflow,
       # choose the branch/ref under test and supply an older published version name.
+      - name: Validate release-signed update-test inputs
+        if: github.event_name == 'workflow_dispatch' && inputs.update_test_release_signed
+        shell: bash
+        env:
+          UPDATE_TEST_VERSION: ${{ inputs.update_test_version }}
+          UPDATE_TEST_VERSION_CODE: ${{ inputs.update_test_version_code }}
+        run: |
+          if [[ -z "$UPDATE_TEST_VERSION" ]]; then
+            echo "update_test_version is required for the release-signed update-test APK."
+            exit 1
+          fi
+          if [[ ! "$UPDATE_TEST_VERSION_CODE" =~ ^[1-9][0-9]*$ ]]; then
+            echo "update_test_version_code must be a positive integer."
+            exit 1
+          fi
+
       - name: Build update-test debug APK
         if: github.event_name == 'workflow_dispatch' && inputs.update_test_version != ''
         env:
