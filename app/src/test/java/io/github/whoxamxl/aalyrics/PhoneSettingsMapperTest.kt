@@ -173,9 +173,16 @@ class PhoneSettingsMapperTest {
         assertEquals(AppUpdateUiPhase.PREPARING_DOWNLOAD, preparing.phase)
         assertEquals("0.2.0-alpha.2", preparing.availableVersionName)
 
-        val downloading = mapped(AppUpdateCheckState.Downloading("0.2.0-alpha.2"))
+        val downloading = mapped(
+            AppUpdateCheckState.Downloading(
+                versionName = "0.2.0-alpha.2",
+                downloadedBytes = 25L,
+                totalBytes = 100L,
+            ),
+        )
         assertEquals(AppUpdateUiPhase.DOWNLOADING, downloading.phase)
         assertEquals("0.2.0-alpha.2", downloading.availableVersionName)
+        assertEquals(0.25f, downloading.downloadProgress)
 
         val downloaded = mapped(
             AppUpdateCheckState.Downloaded(
