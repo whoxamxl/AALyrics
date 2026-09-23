@@ -78,7 +78,7 @@ Approved follow-up direction:
 ## Implementation checkpoints
 
 - [x] Freeze the validated Package Installer baseline in TASK/update documentation.
-- [ ] Separate install-permission runtime state from transient dialog visibility.
+- [x] Separate install-permission runtime state from transient dialog visibility.
 - [ ] Implement the large install-permission explanation dialog and lifecycle behavior.
 - [ ] Add durable pending/success update reconciliation and one-time success feedback.
 - [ ] Add best-effort resume-after-update behavior.
@@ -88,8 +88,18 @@ Approved follow-up direction:
 
 ## Current checkpoint
 
-Documentation-only baseline checkpoint.
+Install-permission state ownership is now separated from transient presentation visibility.
 
-No production behavior has changed on `feature/update-ux` yet. The branch is intentionally pinned to the validated Package Installer behavior before any UX implementation begins.
+Completed in this checkpoint:
 
-The next implementation checkpoint is **install-permission dialog visibility/state separation**, but it must not begin until explicitly requested.
+- `InstallPermissionRequired` remains the update-runtime fact and is not cleared when the explanation is dismissed;
+- a process-local `UpdateInstallPermissionPromptRuntime` owns prompt visibility/request state separately;
+- entering permission-required requests the prompt once;
+- explicitly invoking Install/Update again while still permission-required re-requests the prompt without repeating download/preflight;
+- Phone presentation maps the prompt separately from `AppUpdateUiPhase.INSTALL_PERMISSION_REQUIRED`;
+- leaving Settings, Settings root reset, Activity/composition disposal, Reset, and Android source-trust Settings return dismiss only the transient prompt;
+- focused runtime/controller/mapper tests cover the separation and explicit re-request contract.
+
+The existing compact `Installation permission required / Open settings` row is intentionally still rendered. The large explanatory dialog has **not** been implemented yet.
+
+Next checkpoint: **implement the large install-permission explanation dialog and its UI dismissal/actions**. Do not begin it until explicitly requested.
