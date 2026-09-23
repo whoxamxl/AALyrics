@@ -6,6 +6,8 @@ import kotlin.io.path.createTempDirectory
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
@@ -632,6 +634,131 @@ class AppUpdateCheckRuntimeTest {
             assertFalse(verifiedRoot(root).exists())
         } finally {
             gate.complete(Unit)
+            root.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun `stale canceled download cannot mutate replacement download after reset`() = runTest {
+        val apkBytes = "signed apk bytes".encodeToByteArray()
+        val release = downloadableRelease("v0.2.0-alpha.2")
+        val staleGate = CompletableDeferred<Unit>()
+        val replacementGate = CompletableDeferred<Unit>()
+        val root = createTempDirectory("aalyrics-update-runtime").toFile()
+        var downloadCount = 0
+
+        val client = object : UpdateAssetDownloadClient {
+            override suspend fun fetchText(
+                asset: GitHubReleaseAsset,
+                maxBytes: Long,
+            ): Result<String> = Result.success(
+                checksumPayload(apkBytes, release.assets.first().name),
+            )
+
+            override suspend fun downloadTo(
+                asset: GitHubReleaseAsset,
+                destination: File,
+                maxBytes: Long,
+                onProgress: (downloadedBytes: Long) -> Unit,
+            ): Result<Long> {
+                downloadCount += 1
+                return when (downloadCount) {
+                    1 -> {
+                        onProgress(4L)
+                        withContext(NonCancellable) {
+                            staleGate.await()
+                        }
+                        onProgress(12L)
+                        Result.failure(IllegalStateException("stale transfer failed"))
+                    }
+
+                    2 -> {
+                        destination.parentFile?.mkdirs()
+                        destination.writeBytes(apkBytes.copyOfRange(0, 8))
+                        onProgress(8L)
+                        replacementGate.await()
+                        destination.writeBytes(apkBytes)
+                        onProgress(apkBytes.size.toLong())
+                        Result.success(apkBytes.size.toLong())
+                    }
+
+                    else -> error("Unexpected download call")
+                }
+            }
+        }
+
+        try {
+            val runtime = runtime(
+                installedVersionName = "0.2.0-alpha.1",
+                releases = listOf(release),
+                assetDownloadClient = client,
+                downloadFileStore = updateStore(root),
+            )
+
+            runtime.checkForUpdates()
+            runCurrent()
+            runtime.downloadUpdate()
+            runCurrent()
+            assertEquals(
+                AppUpdateCheckState.Downloading(
+                    versionName = "0.2.0-alpha.2",
+                    downloadedBytes = 4L,
+                    totalBytes = 16L,
+                ),
+                runtime.state.value,
+            )
+
+            runtime.reset()
+            runCurrent()
+            assertEquals(AppUpdateCheckState.Idle, runtime.state.value)
+
+            runtime.checkForUpdates()
+            runCurrent()
+            assertEquals(
+                AppUpdateCheckState.UpdateAvailable("0.2.0-alpha.2"),
+                runtime.state.value,
+            )
+
+            runtime.downloadUpdate()
+            runCurrent()
+            assertEquals(
+                AppUpdateCheckState.Downloading(
+                    versionName = "0.2.0-alpha.2",
+                    downloadedBytes = 8L,
+                    totalBytes = 16L,
+                ),
+                runtime.state.value,
+            )
+            val replacementPartial =
+                stagingRoot(root).resolve("AALyrics-v0.2.0-alpha.2.apk.part")
+            assertTrue(replacementPartial.isFile)
+
+            staleGate.complete(Unit)
+            runCurrent()
+
+            assertEquals(
+                AppUpdateCheckState.Downloading(
+                    versionName = "0.2.0-alpha.2",
+                    downloadedBytes = 8L,
+                    totalBytes = 16L,
+                ),
+                runtime.state.value,
+            )
+            assertTrue(replacementPartial.isFile)
+            assertEquals(
+                apkBytes.copyOfRange(0, 8).toList(),
+                replacementPartial.readBytes().toList(),
+            )
+
+            replacementGate.complete(Unit)
+            runCurrent()
+
+            val downloaded = runtime.state.value as AppUpdateCheckState.Downloaded
+            assertEquals(apkBytes.toList(), downloaded.apkFile.readBytes().toList())
+            assertEquals(2, downloadCount)
+        } finally {
+            staleGate.complete(Unit)
+            replacementGate.complete(Unit)
             root.deleteRecursively()
         }
     }
