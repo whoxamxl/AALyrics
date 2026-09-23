@@ -155,10 +155,10 @@ private fun SettingsUpdateInstallingPreview() {
     SettingsScreenPreview(PhonePreviewFixtures.settingsInstallingUpdate)
 }
 
-@Preview(name = "Update · install failed", group = "SettingsScreen", widthDp = 412, heightDp = 900)
+@Preview(name = "Update · install failed · signing mismatch", group = "SettingsScreen", widthDp = 412, heightDp = 900)
 @Composable
-private fun SettingsUpdateInstallFailedPreview() {
-    SettingsScreenPreview(PhonePreviewFixtures.settingsInstallFailed)
+private fun SettingsUpdateInstallFailedSigningMismatchPreview() {
+    SettingsScreenPreview(PhonePreviewFixtures.settingsInstallFailedSigningMismatch)
 }
 
 
