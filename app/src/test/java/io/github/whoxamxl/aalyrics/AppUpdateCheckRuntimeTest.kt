@@ -669,6 +669,7 @@ class AppUpdateCheckRuntimeTest {
                             staleGate.await()
                         }
                         onProgress(12L)
+                        destination.delete()
                         Result.failure(IllegalStateException("stale transfer failed"))
                     }
 
@@ -730,7 +731,7 @@ class AppUpdateCheckRuntimeTest {
                 runtime.state.value,
             )
             val replacementPartial =
-                stagingRoot(root).resolve("AALyrics-v0.2.0-alpha.2.apk.part")
+                stagingRoot(root).resolve("AALyrics-v0.2.0-alpha.2.apk.op-1.part")
             assertTrue(replacementPartial.isFile)
 
             staleGate.complete(Unit)
