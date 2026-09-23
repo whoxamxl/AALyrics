@@ -1,6 +1,7 @@
 package io.github.whoxamxl.aalyrics
 
 import java.io.File
+import java.util.concurrent.atomic.AtomicLong
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -55,6 +56,7 @@ internal class AppUpdateCheckRuntime(
     private var checkJob: Job? = null
     private var downloadJob: Job? = null
     private var availableCandidate: AALyricsReleaseCandidate? = null
+    private val operationGeneration = AtomicLong(0L)
 
     init {
         mutableState.value = restoreVerifiedDownload()
@@ -71,17 +73,18 @@ internal class AppUpdateCheckRuntime(
             return
         }
 
+        val generation = operationGeneration.get()
         mutableState.value = AppUpdateCheckState.Checking
         checkJob = applicationScope.launch {
             val nextState = try {
-                resolveCheckState()
+                resolveCheckState(generation)
             } catch (error: CancellationException) {
                 throw error
             } catch (_: Exception) {
-                availableCandidate = null
+                clearCandidateIfCurrent(generation)
                 AppUpdateCheckState.Failed
             }
-            currentCoroutineContext().ensureActive()
+            ensureCurrentOperation(generation)
             mutableState.value = nextState
         }
     }
@@ -100,24 +103,29 @@ internal class AppUpdateCheckRuntime(
             return
         }
 
+        val generation = operationGeneration.get()
         val versionName = candidate.release.tagName.removePrefix("v")
         mutableState.value = AppUpdateCheckState.PreparingDownload(versionName)
         downloadJob = applicationScope.launch {
             val nextState = try {
-                resolveDownloadState(candidate)
+                resolveDownloadState(
+                    candidate = candidate,
+                    generation = generation,
+                )
             } catch (error: CancellationException) {
-                downloadFileStore?.clearStaging()
+                clearStagingIfCurrent(generation)
                 throw error
             } catch (_: Exception) {
-                downloadFileStore?.clearStaging()
+                clearStagingIfCurrent(generation)
                 AppUpdateCheckState.DownloadFailed(versionName)
             }
-            currentCoroutineContext().ensureActive()
+            ensureCurrentOperation(generation)
             mutableState.value = nextState
         }
     }
 
     fun reset() {
+        operationGeneration.incrementAndGet()
         checkJob?.cancel()
         downloadJob?.cancel()
         checkJob = null
@@ -137,53 +145,61 @@ internal class AppUpdateCheckRuntime(
         }
     }
 
-    private suspend fun resolveCheckState(): AppUpdateCheckState {
+    private suspend fun resolveCheckState(
+        generation: Long,
+    ): AppUpdateCheckState {
         val installedVersion = AALyricsVersionParser.parseInstalledVersion(installedVersionName)
-            ?: return checkFailed()
+            ?: return checkFailed(generation)
 
         val releases = releaseClient.fetchReleases().getOrElse {
-            return checkFailed()
+            return checkFailed(generation)
         }
         val candidate = AALyricsReleaseSelector.selectLatestEligible(
             installedVersion = installedVersion,
             releases = releases,
-        ) ?: return checkFailed()
+        ) ?: return checkFailed(generation)
 
+        ensureCurrentOperation(generation)
         return if (AALyricsReleaseSelector.isUpdateAvailable(installedVersion, candidate)) {
-            availableCandidate = candidate
+            if (operationGeneration.get() == generation) {
+                availableCandidate = candidate
+            }
             AppUpdateCheckState.UpdateAvailable(
                 versionName = candidate.release.tagName.removePrefix("v"),
             )
         } else {
-            availableCandidate = null
+            clearCandidateIfCurrent(generation)
             AppUpdateCheckState.UpToDate
         }
     }
 
     private suspend fun resolveDownloadState(
         candidate: AALyricsReleaseCandidate,
+        generation: Long,
     ): AppUpdateCheckState {
         val client = assetDownloadClient
             ?: return downloadFailed(candidate)
         val fileStore = downloadFileStore
             ?: return downloadFailed(candidate)
         val assets = AALyricsReleaseAssetResolver.resolve(candidate.release).getOrElse {
-            fileStore.clearStaging()
+            clearStagingIfCurrent(generation)
             return downloadFailed(candidate)
         }
 
-        val checksumPayload = client.fetchText(
+        val checksumResult = client.fetchText(
             asset = assets.checksum,
             maxBytes = MAX_CHECKSUM_BYTES,
-        ).getOrElse {
-            fileStore.clearStaging()
+        )
+        ensureCurrentOperation(generation)
+        val checksumPayload = checksumResult.getOrElse {
+            clearStagingIfCurrent(generation)
             return downloadFailed(candidate)
         }
         val expectedDigest = AALyricsSha256.parsePublishedChecksum(
             payload = checksumPayload,
             expectedFileName = assets.apk.name,
         ).getOrElse {
-            fileStore.clearStaging()
+            clearStagingIfCurrent(generation)
             return downloadFailed(candidate)
         }
 
@@ -191,8 +207,9 @@ internal class AppUpdateCheckRuntime(
             ?.takeIf { it in 1L..MAX_APK_BYTES }
             ?: return downloadFailed(candidate)
 
+        ensureCurrentOperation(generation)
         val files = fileStore.prepare(assets.apk.name)
-        currentCoroutineContext().ensureActive()
+        ensureCurrentOperation(generation)
         val versionName = candidate.release.tagName.removePrefix("v")
         mutableState.value = AppUpdateCheckState.Downloading(
             versionName = versionName,
@@ -200,7 +217,7 @@ internal class AppUpdateCheckRuntime(
             totalBytes = totalBytes,
         )
         var lastReportedPercent = 0
-        val downloadedBytes = client.downloadTo(
+        val downloadResult = client.downloadTo(
             asset = assets.apk,
             destination = files.partialApk,
             maxBytes = MAX_APK_BYTES,
@@ -208,6 +225,7 @@ internal class AppUpdateCheckRuntime(
                 val boundedBytes = receivedBytes.coerceIn(0L, totalBytes)
                 val percent = ((boundedBytes * 100L) / totalBytes).toInt()
                 if (
+                    operationGeneration.get() == generation &&
                     downloadJob?.isActive == true &&
                     percent != lastReportedPercent
                 ) {
@@ -219,16 +237,24 @@ internal class AppUpdateCheckRuntime(
                     )
                 }
             },
-        ).getOrElse {
-            fileStore.discardPartial(files)
+        )
+        ensureCurrentOperation(generation)
+        val downloadedBytes = downloadResult.getOrElse {
+            discardPartialIfCurrent(
+                generation = generation,
+                files = files,
+            )
             return downloadFailed(candidate)
         }
-        currentCoroutineContext().ensureActive()
         if (downloadedBytes != totalBytes) {
-            fileStore.discardPartial(files)
+            discardPartialIfCurrent(
+                generation = generation,
+                files = files,
+            )
             return downloadFailed(candidate)
         }
 
+        ensureCurrentOperation(generation)
         val verified = files.partialApk.inputStream().buffered().use { input ->
             AALyricsSha256.verify(
                 expected = expectedDigest,
@@ -236,11 +262,16 @@ internal class AppUpdateCheckRuntime(
             )
         }
         if (!verified) {
-            fileStore.discardPartial(files)
+            discardPartialIfCurrent(
+                generation = generation,
+                files = files,
+            )
             return downloadFailed(candidate)
         }
 
+        ensureCurrentOperation(generation)
         val apkFile = fileStore.promoteVerified(files)
+        ensureCurrentOperation(generation)
         return AppUpdateCheckState.Downloaded(
             versionName = candidate.release.tagName.removePrefix("v"),
             apkFile = apkFile,
@@ -277,9 +308,39 @@ internal class AppUpdateCheckRuntime(
         )
     }
 
-    private fun checkFailed(): AppUpdateCheckState {
-        availableCandidate = null
+    private fun checkFailed(
+        generation: Long,
+    ): AppUpdateCheckState {
+        clearCandidateIfCurrent(generation)
         return AppUpdateCheckState.Failed
+    }
+
+    private fun clearCandidateIfCurrent(generation: Long) {
+        if (operationGeneration.get() == generation) {
+            availableCandidate = null
+        }
+    }
+
+    private fun clearStagingIfCurrent(generation: Long) {
+        if (operationGeneration.get() == generation) {
+            downloadFileStore?.clearStaging()
+        }
+    }
+
+    private fun discardPartialIfCurrent(
+        generation: Long,
+        files: UpdateDownloadFiles,
+    ) {
+        if (operationGeneration.get() == generation) {
+            downloadFileStore?.discardPartial(files)
+        }
+    }
+
+    private suspend fun ensureCurrentOperation(generation: Long) {
+        currentCoroutineContext().ensureActive()
+        if (operationGeneration.get() != generation) {
+            throw CancellationException("Update operation is stale")
+        }
     }
 
     private fun downloadFailed(
