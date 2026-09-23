@@ -28,7 +28,7 @@ class UpdateApkPreflightBoundaryTest {
         )
 
         assertEquals(
-            UpdateApkPreflightResult.Ready,
+            UpdateApkPreflightResult.Ready(targetVersionCode = 41L),
             boundary.evaluate(
                 retainedApk = retained,
                 expectedVersionName = "0.2.0-alpha.2",
