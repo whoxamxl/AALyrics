@@ -331,9 +331,12 @@ internal class AppUpdateCheckRuntime(
                     }
 
                     is UpdatePackageInstallerStatus.Failure -> {
+                        val failedSessionId = activeInstallSessionId
                         activeInstallSessionId = null
-                        runCatching {
-                            recoveryStore.clearPendingUpdate()
+                        failedSessionId?.let { sessionId ->
+                            runCatching {
+                                recoveryStore.clearPendingUpdateForSession(sessionId)
+                            }
                         }
                         mutableState.value = AppUpdateCheckState.InstallFailed(
                             versionName = target.versionName,
@@ -354,7 +357,7 @@ internal class AppUpdateCheckRuntime(
                         installer.abandon(sessionId)
                     }
                 },
-                onBeforeCommit = {
+                onBeforeCommit = { sessionId ->
                     if (operationGeneration.get() != generation) {
                         throw CancellationException("Update operation is stale")
                     }
@@ -363,6 +366,7 @@ internal class AppUpdateCheckRuntime(
                             PendingUpdate(
                                 targetVersion = target.versionName,
                                 targetVersionCode = targetVersionCode,
+                                installerSessionId = sessionId,
                                 resumeAfterUpdate = true,
                             ),
                         )
@@ -382,9 +386,12 @@ internal class AppUpdateCheckRuntime(
                     }
                 },
                 onFailure = {
+                    val failedSessionId = activeInstallSessionId
                     activeInstallSessionId = null
-                    runCatching {
-                        recoveryStore.clearPendingUpdate()
+                    failedSessionId?.let { sessionId ->
+                        runCatching {
+                            recoveryStore.clearPendingUpdateForSession(sessionId)
+                        }
                     }
                     mutableState.value = AppUpdateCheckState.InstallFailed(
                         versionName = target.versionName,
