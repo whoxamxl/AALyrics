@@ -210,9 +210,7 @@ internal fun PhoneRuntimeHost(
             playbackSurface = playbackSurface,
         ),
         onDestinationSelected = { destination ->
-            if (destination != PhoneDestination.Settings) {
-                application.dismissInstallPermissionPrompt()
-            }
+            application.dismissInstallPermissionPrompt()
             if (isSettingsNavigationEntry(selectedDestination, destination)) {
                 application.onSettingsEntered()
             }
