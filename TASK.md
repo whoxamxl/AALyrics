@@ -150,7 +150,7 @@ CHECK_FAILED
 - [x] Extend the GitHub Release model/client with public asset metadata.
 - [x] Add deterministic APK/checksum asset resolution with focused tests.
 - [x] Add checksum parsing and SHA-256 verification with focused tests.
-- [ ] Add app-private download/file boundary and cleanup rules.
+- [x] Add app-private download/file boundary and cleanup rules.
 - [ ] Extend the application-owned update runtime through download states.
 - [ ] Wire Download/Retry callbacks and production presentation.
 - [ ] Integrate Reset AALyrics cleanup/cancellation.
@@ -166,8 +166,11 @@ Completed:
 3. focused asset-contract tests;
 4. strict `sha256sum` payload parsing for the exact APK filename;
 5. streaming SHA-256 calculation and digest verification;
-6. focused checksum parsing / match / mismatch tests.
+6. focused checksum parsing / match / mismatch tests;
+7. bounded HTTPS update-asset download boundary with HTTPS-only redirect handling;
+8. app-private update file ownership with `.part` staging, verified promotion, stale cleanup, and path-ownership guards;
+9. focused file-store lifecycle / cleanup tests.
 
-The first asset-resolution checkpoint passed CI before checksum work began.
+The asset-resolution checkpoint passed CI before checksum and file-boundary work began.
 
-Next checkpoint: app-private download/file ownership and cleanup. Do not wire Settings or Package Installer yet.
+Next checkpoint: application-owned runtime integration through `DOWNLOADING`, `DOWNLOADED`, and `DOWNLOAD_FAILED`. Do not wire Package Installer yet.
