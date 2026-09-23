@@ -1207,6 +1207,7 @@ class AppUpdateCheckRuntimeTest {
         installPreparation: UpdateInstallPreparation? = null,
         installSourceTrustChecker: InstallSourceTrustChecker? = null,
         packageInstaller: UpdatePackageInstaller? = null,
+        updateRecoveryStore: UpdateRecoveryStore? = FakeUpdateRecoveryStore(),
         onInstallPermissionRequired: (String) -> Unit = {},
     ) = AppUpdateCheckRuntime(
         installedVersionName = installedVersionName,
@@ -1217,13 +1218,15 @@ class AppUpdateCheckRuntimeTest {
         installPreparation = installPreparation,
         installSourceTrustChecker = installSourceTrustChecker,
         packageInstaller = packageInstaller,
+        updateRecoveryStore = updateRecoveryStore,
         onInstallPermissionRequired = onInstallPermissionRequired,
     )
 
     private fun installPreparation(
         installedVersionName: String,
         releases: List<GitHubRelease>,
-        preflightResult: UpdateApkPreflightResult = UpdateApkPreflightResult.Ready,
+        preflightResult: UpdateApkPreflightResult =
+            UpdateApkPreflightResult.Ready(targetVersionCode = 41L),
     ) = UpdateInstallPreparation(
         installedVersionName = installedVersionName,
         releaseClient = GitHubReleaseClient { Result.success(releases) },
@@ -1287,18 +1290,25 @@ class AppUpdateCheckRuntimeTest {
         val abandonedSessions = mutableListOf<Int>()
         private var statusSink: UpdatePackageInstallerStatusSink? = null
 
+        var beforeCommitCount: Int = 0
+            private set
+
         override suspend fun install(
             apkFile: File,
             statusSink: UpdatePackageInstallerStatusSink,
             onSessionCreated: (Int) -> Unit,
+            onBeforeCommit: (Int) -> Unit,
         ): Result<Int> {
             installCount += 1
             this.statusSink = statusSink
             onSessionCreated(sessionId)
-            statusDuringInstall?.let(statusSink::onStatus)
-            return installFailure
-                ?.let { error -> Result.failure<Int>(error) }
-                ?: Result.success(sessionId)
+            return runCatching {
+                onBeforeCommit(sessionId)
+                beforeCommitCount += 1
+                installFailure?.let { throw it }
+                statusDuringInstall?.let(statusSink::onStatus)
+                sessionId
+            }
         }
 
         override fun abandon(sessionId: Int) {
@@ -1308,6 +1318,29 @@ class AppUpdateCheckRuntimeTest {
 
         fun emit(status: UpdatePackageInstallerStatus) {
             statusSink?.onStatus(status)
+        }
+    }
+
+    private class FakeUpdateRecoveryStore(
+        private val recordFailure: Throwable? = null,
+    ) : UpdateRecoveryStore {
+        private var pending: PendingUpdate? = null
+        var recordCount: Int = 0
+            private set
+        var clearCount: Int = 0
+            private set
+
+        override fun pendingUpdate(): PendingUpdate? = pending
+
+        override fun recordPendingUpdate(pendingUpdate: PendingUpdate) {
+            recordFailure?.let { throw it }
+            recordCount += 1
+            pending = pendingUpdate
+        }
+
+        override fun clear() {
+            clearCount += 1
+            pending = null
         }
     }
 
