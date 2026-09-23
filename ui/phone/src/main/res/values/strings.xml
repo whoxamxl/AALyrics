@@ -53,6 +53,10 @@
     <string name="settings_checking_for_updates">Checking for updates…</string>
     <string name="settings_up_to_date">Up to date</string>
     <string name="settings_update_available">Update available:</string>
+    <string name="settings_update_action">Update</string>
+    <string name="settings_preparing_update">Preparing update…</string>
+    <string name="settings_verifying_update">Verifying update…</string>
+    <string name="settings_ready_to_update">Ready to update</string>
     <string name="settings_download_update">Download</string>
     <string name="settings_preparing_update_download">Preparing download…</string>
     <string name="settings_downloading_update">Downloading</string>
