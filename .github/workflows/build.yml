@@ -4,6 +4,12 @@ on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch:
+    inputs:
+      update_test_version:
+        description: "Optional installed versionName override for real-device update testing"
+        required: false
+        type: string
 
 permissions:
   contents: read
@@ -90,3 +96,21 @@ jobs:
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 14
+
+      - name: Build update-test debug APK
+        if: github.event_name == 'workflow_dispatch' && inputs.update_test_version != ''
+        env:
+          AALYRICS_VERSION_NAME: ${{ inputs.update_test_version }}
+        run: |
+          ./gradlew :app:clean :app:assembleDebug --stacktrace
+          mkdir -p update-test
+          cp app/build/outputs/apk/debug/app-debug.apk update-test/aalyrics-update-test.apk
+
+      - name: Upload update-test debug APK
+        if: github.event_name == 'workflow_dispatch' && inputs.update_test_version != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: aalyrics-update-test-apk-${{ inputs.update_test_version }}
+          path: update-test/aalyrics-update-test.apk
+          if-no-files-found: error
+          retention-days: 7
