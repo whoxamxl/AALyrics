@@ -472,6 +472,10 @@ The follow-up UX may replace the compact install-permission-required row treatme
 
 The approved follow-up contract is defined in `docs/UPDATE_UX.md`. Merely adding that contract does not change current runtime or Phone behavior.
 
+The first Update UX checkpoint now separates the platform/runtime permission fact from modal visibility. `INSTALL_PERMISSION_REQUIRED` remains the update phase, while a separate process-local prompt request determines whether the future explanation dialog should currently be shown. Dismissing that prompt does not alter the update phase or retained APK. Re-invoking Install/Update while permission is still missing re-requests the prompt without repeating the download. Navigation away from Settings, Settings root reset, Activity/composition disposal, Reset, and return from Android source-trust Settings clear only the transient prompt.
+
+The explanatory modal itself is not part of this checkpoint; the existing compact permission-required row remains rendered until the next Phone UI change.
+
 The UI emits `onCheckForUpdates`, `onDownloadUpdate`, `onInstallUpdate`, and an install-permission-settings callback. It does not perform GitHub HTTP requests, APK/package inspection, file I/O, signing checks, Android settings navigation, or PackageInstaller session work directly.
 
 Application/runtime wiring owns the check:
