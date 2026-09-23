@@ -56,6 +56,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import kotlin.math.roundToInt
 import io.github.whoxamxl.aalyrics.ui.designsystem.icon.AALyricsIcons
 import io.github.whoxamxl.aalyrics.ui.phone.component.PhonePopupMenu
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsColors
@@ -647,7 +648,7 @@ private fun AppUpdateDownloadProgressRow(
                 modifier = Modifier.weight(1f),
             )
             Text(
-                text = "${(boundedProgress * 100f).toInt()}%",
+                text = "${(boundedProgress * 100f).roundToInt()}%",
                 style = AALyricsTypography.TrackArtist,
                 color = AALyricsColors.TextSecondary,
             )
