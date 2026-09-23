@@ -3,13 +3,12 @@ package io.github.whoxamxl.aalyrics
 import java.io.File
 
 internal sealed interface UpdatePackageInstallerStatus {
-    data class PendingUserAction(
-        val confirmationToken: String,
-    ) : UpdatePackageInstallerStatus
+    data object PendingUserAction : UpdatePackageInstallerStatus
 
     data object Success : UpdatePackageInstallerStatus
 
     data class Failure(
+        val statusCode: Int,
         val message: String?,
     ) : UpdatePackageInstallerStatus
 }
@@ -19,7 +18,7 @@ internal fun interface UpdatePackageInstallerStatusSink {
 }
 
 internal interface UpdatePackageInstaller {
-    fun install(
+    suspend fun install(
         apkFile: File,
         statusSink: UpdatePackageInstallerStatusSink,
     ): Result<Int>
