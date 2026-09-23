@@ -22,7 +22,7 @@ The UX follow-up may compose these stages into fewer user-visible actions, but i
 
 ## Validated baseline
 
-The follow-up branch starts from `feature/package-installer` at `df1e394f8dce87b87cc25e6c57cbaa071e40e29d`.
+The current stacked follow-up starts from `feature/package-installer` after the #74 recovery UX was squash-merged at `e97894c0920d40cd3f01f3dd719dd0b52d3b6ad7`. The original Package Installer checkpoint remains the underlying safety baseline; #74's durable recovery, permission-dialog, typed-failure, and successful-update behavior are now inherited requirements for later update UX work.
 
 The baseline has been exercised with an older APK built through the manual Actions fixture using the same durable release-signing identity as published AALyrics releases. Real-device validation covered the explicit update path through update discovery, verified download, Android per-source install trust, Android-owned install confirmation, cancellation/retry, and successful same-signing self-update.
 
@@ -205,7 +205,7 @@ Update
 Not now
 ```
 
-The dialog also has a top-right close action. System Back, close, and `Not now` share the same dismissal semantics. Outside-tap dismissal is disabled.
+The dialog also has a top-right close action. It reuses the same `PhoneDialogHeader` introduced by #74 for the install-permission and successful-update dialogs, preserving one trailing close position, a 24dp icon, and a 48dp touch target across dismissible custom update surfaces. System Back, close, and `Not now` share the same dismissal semantics. Outside-tap dismissal is disabled.
 
 Dismissal records the target version in process-local suppression state. The same version is not prompted again during that app-process session, including after ordinary navigation, recomposition, or Activity recreation. A different automatically discovered version remains eligible. `Reset AALyrics` clears this process-local suppression together with the transient prompt.
 
