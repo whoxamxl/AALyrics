@@ -884,6 +884,7 @@ class AppUpdateCheckRuntimeTest {
         val root = createTempDirectory("aalyrics-install-runtime").toFile()
         retainedUpdate(root, "0.2.0-alpha.2")
         val installer = FakeUpdatePackageInstaller(sessionId = 88)
+        val recoveryStore = FakeUpdateRecoveryStore()
         try {
             val runtime = runtime(
                 installedVersionName = "0.2.0-alpha.1",
@@ -897,6 +898,7 @@ class AppUpdateCheckRuntimeTest {
                 ),
                 installSourceTrustChecker = InstallSourceTrustChecker { true },
                 packageInstaller = installer,
+                updateRecoveryStore = recoveryStore,
             )
 
             runtime.installUpdate()
@@ -905,6 +907,7 @@ class AppUpdateCheckRuntimeTest {
                 AppUpdateCheckState.Installing("0.2.0-alpha.2"),
                 runtime.state.value,
             )
+            assertNotNull(recoveryStore.pendingUpdate())
 
             runtime.reset()
             runCurrent()
@@ -912,6 +915,8 @@ class AppUpdateCheckRuntimeTest {
             assertEquals(AppUpdateCheckState.Idle, runtime.state.value)
             assertEquals(listOf(88), installer.abandonedSessions)
             assertFalse(verifiedRoot(root).exists())
+            assertNull(recoveryStore.pendingUpdate())
+            assertEquals(1, recoveryStore.clearCount)
 
             installer.emit(
                 UpdatePackageInstallerStatus.Failure(
