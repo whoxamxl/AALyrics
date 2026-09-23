@@ -635,7 +635,10 @@ class AppUpdateCheckRuntimeTest {
             runCurrent()
 
             assertEquals(
-                AppUpdateCheckState.InstallFailed("0.2.0-alpha.2"),
+                AppUpdateCheckState.InstallFailed(
+                    versionName = "0.2.0-alpha.2",
+                    reason = AppUpdateInstallFailureReason.RECOVERY_STATE_PERSISTENCE_FAILED,
+                ),
                 runtime.state.value,
             )
             assertEquals(0, installer.beforeCommitCount)
@@ -679,11 +682,52 @@ class AppUpdateCheckRuntimeTest {
             )
 
             assertEquals(
-                AppUpdateCheckState.InstallFailed("0.2.0-alpha.2"),
+                AppUpdateCheckState.InstallFailed(
+                    versionName = "0.2.0-alpha.2",
+                    reason = AppUpdateInstallFailureReason.INSTALLER_REJECTED,
+                ),
                 runtime.state.value,
             )
             assertNull(recoveryStore.pendingUpdate())
             assertEquals(1, recoveryStore.clearCount)
+        } finally {
+            root.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun `signing mismatch is exposed as a typed install failure`() = runTest {
+        val root = createTempDirectory("aalyrics-install-runtime").toFile()
+        retainedUpdate(root, "0.2.0-alpha.2")
+        try {
+            val runtime = runtime(
+                installedVersionName = "0.2.0-alpha.1",
+                releases = emptyList(),
+                downloadFileStore = updateStore(root),
+                installPreparation = installPreparation(
+                    installedVersionName = "0.2.0-alpha.1",
+                    releases = listOf(
+                        release("v0.2.0-alpha.2", prerelease = true),
+                    ),
+                    preflightResult = UpdateApkPreflightResult.Rejected(
+                        UpdateApkPreflightRejection.SIGNING_IDENTITY_MISMATCH,
+                    ),
+                ),
+                installSourceTrustChecker = InstallSourceTrustChecker { false },
+                packageInstaller = FakeUpdatePackageInstaller(),
+                updateRecoveryStore = FakeUpdateRecoveryStore(),
+            )
+
+            runtime.installUpdate()
+            runCurrent()
+
+            assertEquals(
+                AppUpdateCheckState.InstallFailed(
+                    versionName = "0.2.0-alpha.2",
+                    reason = AppUpdateInstallFailureReason.SIGNING_IDENTITY_MISMATCH,
+                ),
+                runtime.state.value,
+            )
         } finally {
             root.deleteRecursively()
         }
@@ -864,7 +908,10 @@ class AppUpdateCheckRuntimeTest {
             )
 
             assertEquals(
-                AppUpdateCheckState.InstallFailed("0.2.0-alpha.2"),
+                AppUpdateCheckState.InstallFailed(
+                    versionName = "0.2.0-alpha.2",
+                    reason = AppUpdateInstallFailureReason.INSTALLER_REJECTED,
+                ),
                 runtime.state.value,
             )
             assertTrue(retained.isFile)
