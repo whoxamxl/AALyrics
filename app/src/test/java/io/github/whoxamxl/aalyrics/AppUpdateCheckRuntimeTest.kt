@@ -756,6 +756,28 @@ class AppUpdateCheckRuntimeTest {
     }
 
     @Test
+    fun `stable install does not restore retained prerelease apk`() = runTest {
+        val root = createTempDirectory("aalyrics-update-runtime").toFile()
+        try {
+            verifiedRoot(root).mkdirs()
+            verifiedRoot(root)
+                .resolve("AALyrics-v0.3.0-alpha.1.apk")
+                .writeText("verified")
+
+            val runtime = runtime(
+                installedVersionName = "0.2.0",
+                releases = emptyList(),
+                downloadFileStore = updateStore(root),
+            )
+
+            assertEquals(AppUpdateCheckState.Idle, runtime.state.value)
+            assertFalse(verifiedRoot(root).exists())
+        } finally {
+            root.deleteRecursively()
+        }
+    }
+
+    @Test
     fun `retained verified apk is removed when installed version catches up`() = runTest {
         val apkBytes = "signed apk bytes".encodeToByteArray()
         val release = downloadableRelease("v0.2.0-alpha.2")
