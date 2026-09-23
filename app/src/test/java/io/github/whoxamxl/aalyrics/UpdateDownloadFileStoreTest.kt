@@ -1,16 +1,18 @@
 package io.github.whoxamxl.aalyrics
 
-import java.nio.file.Files
 import kotlin.io.path.createTempDirectory
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertFails
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class UpdateDownloadFileStoreTest {
     private val tempRoot = createTempDirectory("aalyrics-update-store").toFile()
+    private val stagingRoot = tempRoot.resolve("cache/updates")
+    private val verifiedRoot = tempRoot.resolve("files/updates")
 
     @AfterTest
     fun tearDown() {
@@ -18,32 +20,32 @@ class UpdateDownloadFileStoreTest {
     }
 
     @Test
-    fun `prepare clears stale artifacts and returns owned partial and verified paths`() {
-        val root = tempRoot.resolve("updates").apply { mkdirs() }
-        root.resolve("stale.apk").writeText("stale")
-        root.resolve("nested").apply { mkdirs() }.resolve("stale.part").writeText("stale")
-        val store = UpdateDownloadFileStore(root)
+    fun `prepare clears staging but retains existing verified apk`() {
+        stagingRoot.mkdirs()
+        stagingRoot.resolve("stale.part").writeText("stale")
+        verifiedRoot.mkdirs()
+        val retained = verifiedRoot.resolve("AALyrics-v0.2.0.apk").apply {
+            writeText("verified")
+        }
+        val store = store()
 
-        val files = store.prepare("AALyrics-v0.2.0-alpha.2.apk")
+        val files = store.prepare("AALyrics-v0.3.0.apk")
 
-        assertTrue(root.isDirectory)
-        assertFalse(root.resolve("stale.apk").exists())
-        assertFalse(root.resolve("nested").exists())
+        assertFalse(stagingRoot.resolve("stale.part").exists())
+        assertTrue(retained.isFile)
         assertEquals(
-            root.resolve("AALyrics-v0.2.0-alpha.2.apk.part").canonicalFile,
+            stagingRoot.resolve("AALyrics-v0.3.0.apk.part").canonicalFile,
             files.partialApk.canonicalFile,
         )
         assertEquals(
-            root.resolve("AALyrics-v0.2.0-alpha.2.apk").canonicalFile,
+            verifiedRoot.resolve("AALyrics-v0.3.0.apk").canonicalFile,
             files.verifiedApk.canonicalFile,
         )
-        assertFalse(files.partialApk.exists())
-        assertFalse(files.verifiedApk.exists())
     }
 
     @Test
-    fun `promote verified renames partial apk into final apk`() {
-        val store = UpdateDownloadFileStore(tempRoot.resolve("updates"))
+    fun `promote verified moves staged bytes into persistent verified directory`() {
+        val store = store()
         val files = store.prepare("AALyrics-v0.2.0.apk")
         files.partialApk.writeText("verified bytes")
 
@@ -51,68 +53,131 @@ class UpdateDownloadFileStoreTest {
 
         assertEquals("verified bytes", verified.readText())
         assertFalse(files.partialApk.exists())
+        assertFalse(stagingRoot.exists())
         assertTrue(files.verifiedApk.isFile)
     }
 
     @Test
-    fun `promote verified fails when partial apk is absent`() {
-        val store = UpdateDownloadFileStore(tempRoot.resolve("updates"))
+    fun `promotion replaces older verified apk only after staged bytes exist`() {
+        verifiedRoot.mkdirs()
+        val oldVerified = verifiedRoot.resolve("AALyrics-v0.1.0.apk").apply {
+            writeText("old")
+        }
+        val store = store()
         val files = store.prepare("AALyrics-v0.2.0.apk")
 
         assertFails {
             store.promoteVerified(files)
         }
-        assertFalse(files.verifiedApk.exists())
+        assertTrue(oldVerified.isFile)
+
+        files.partialApk.writeText("new")
+        val verified = store.promoteVerified(files)
+
+        assertFalse(oldVerified.exists())
+        assertEquals("new", verified.readText())
     }
 
     @Test
-    fun `discard partial removes only partial apk`() {
-        val store = UpdateDownloadFileStore(tempRoot.resolve("updates"))
+    fun `discard partial removes staging without touching verified apk`() {
+        verifiedRoot.mkdirs()
+        val retained = verifiedRoot.resolve("AALyrics-v0.1.0.apk").apply {
+            writeText("verified")
+        }
+        val store = store()
         val files = store.prepare("AALyrics-v0.2.0.apk")
         files.partialApk.writeText("partial")
 
         store.discardPartial(files)
 
         assertFalse(files.partialApk.exists())
-        assertFalse(files.verifiedApk.exists())
+        assertTrue(retained.isFile)
     }
 
     @Test
-    fun `clear all removes update cache contents and root directory`() {
-        val root = tempRoot.resolve("updates")
-        val store = UpdateDownloadFileStore(root)
+    fun `transient cleanup removes staging and interrupted promotion only`() {
+        stagingRoot.mkdirs()
+        stagingRoot.resolve("AALyrics-v0.2.0.apk.part").writeText("partial")
+        verifiedRoot.mkdirs()
+        val retained = verifiedRoot.resolve("AALyrics-v0.2.0.apk").apply {
+            writeText("verified")
+        }
+        verifiedRoot.resolve("AALyrics-v0.3.0.apk.promoting").writeText("partial promotion")
+        val store = store()
+
+        store.cleanupTransientArtifacts()
+
+        assertFalse(stagingRoot.exists())
+        assertFalse(verifiedRoot.resolve("AALyrics-v0.3.0.apk.promoting").exists())
+        assertTrue(retained.isFile)
+    }
+
+    @Test
+    fun `retained verified apk returns the single persistent apk`() {
+        verifiedRoot.mkdirs()
+        val retained = verifiedRoot.resolve("AALyrics-v0.2.0.apk").apply {
+            writeText("verified")
+        }
+        val store = store()
+
+        assertEquals(retained.canonicalFile, store.retainedVerifiedApk()?.canonicalFile)
+    }
+
+    @Test
+    fun `multiple verified apks fail closed and are removed`() {
+        verifiedRoot.mkdirs()
+        verifiedRoot.resolve("AALyrics-v0.2.0.apk").writeText("one")
+        verifiedRoot.resolve("AALyrics-v0.3.0.apk").writeText("two")
+        val store = store()
+
+        assertNull(store.retainedVerifiedApk())
+        assertFalse(verifiedRoot.exists())
+    }
+
+    @Test
+    fun `clear all removes staging and verified directories`() {
+        val store = store()
         val files = store.prepare("AALyrics-v0.2.0.apk")
         files.partialApk.writeText("partial")
+        verifiedRoot.mkdirs()
+        verifiedRoot.resolve("AALyrics-v0.1.0.apk").writeText("verified")
 
         store.clearAll()
 
-        assertFalse(root.exists())
+        assertFalse(stagingRoot.exists())
+        assertFalse(verifiedRoot.exists())
     }
 
     @Test
     fun `prepare rejects path traversal filename`() {
-        val store = UpdateDownloadFileStore(tempRoot.resolve("updates"))
+        val store = store()
 
         assertFails {
             store.prepare("../AALyrics-v0.2.0.apk")
         }
-        assertFalse(tempRoot.resolve("updates").exists())
+        assertFalse(stagingRoot.exists())
+        assertFalse(verifiedRoot.exists())
     }
 
     @Test
-    fun `promotion rejects files outside owned directory`() {
-        val store = UpdateDownloadFileStore(tempRoot.resolve("updates"))
+    fun `promotion rejects files outside owned directories`() {
+        val store = store()
         val outside = tempRoot.resolve("outside.apk").apply { writeText("bytes") }
-        val owned = tempRoot.resolve("updates").resolve("AALyrics-v0.2.0.apk")
+        val verified = verifiedRoot.resolve("AALyrics-v0.2.0.apk")
 
         assertFails {
             store.promoteVerified(
                 UpdateDownloadFiles(
                     partialApk = outside,
-                    verifiedApk = owned,
+                    verifiedApk = verified,
                 ),
             )
         }
         assertTrue(outside.exists())
     }
+
+    private fun store() = UpdateDownloadFileStore(
+        stagingDirectory = stagingRoot,
+        verifiedDirectory = verifiedRoot,
+    )
 }
