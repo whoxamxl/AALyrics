@@ -295,6 +295,7 @@ internal class AppUpdateCheckRuntime(
             recoveryStore == null
         ) {
             installTarget = target
+            oneStepUpdateRequested = false
             mutableState.value = AppUpdateCheckState.InstallFailed(target.versionName)
             return
         }
@@ -404,6 +405,7 @@ internal class AppUpdateCheckRuntime(
             ensureCurrentOperation(generation)
             installResult.fold(
                 onSuccess = {
+                    oneStepUpdateRequested = false
                     if (mutableState.value is AppUpdateCheckState.PreparingInstall) {
                         mutableState.value =
                             AppUpdateCheckState.Installing(target.versionName)
