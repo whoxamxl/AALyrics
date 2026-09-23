@@ -34,6 +34,8 @@ import io.github.whoxamxl.aalyrics.ui.phone.lyrics.LyricsViewportInteractionMode
 import io.github.whoxamxl.aalyrics.ui.phone.navigation.PhoneDestination
 import io.github.whoxamxl.aalyrics.ui.phone.settings.AndroidAutoCompatibilityUiStatus
 import io.github.whoxamxl.aalyrics.ui.phone.settings.HelpFeedbackDestination
+import io.github.whoxamxl.aalyrics.ui.phone.settings.InstallPermissionDialog
+import io.github.whoxamxl.aalyrics.ui.phone.settings.InstallPermissionDialogUiState
 import io.github.whoxamxl.aalyrics.ui.phone.settings.SettingsScreen
 import io.github.whoxamxl.aalyrics.ui.phone.shell.PhoneAppShell
 import io.github.whoxamxl.aalyrics.ui.phone.state.PhoneShellUiState
@@ -195,7 +197,6 @@ internal fun PhoneRuntimeHost(
         thirdPartyLicensesText = application.thirdPartyLicensesText,
         translationModelCleanupState = translationModelCleanupState,
         appUpdateCheckState = appUpdateCheckState,
-        installPermissionPrompt = installPermissionPrompt,
     )
 
     PhoneAppShell(
@@ -301,12 +302,7 @@ internal fun PhoneRuntimeHost(
                 },
                 onAndroidAutoCompatibilitySetup = onAndroidAutoCompatibilitySetup,
                 onCheckForUpdates = application::checkForUpdates,
-                onDownloadUpdate = application::downloadUpdate,
-                onInstallUpdate = application::installUpdate,
-                onOpenInstallSettings = onOpenInstallSettings,
-                onDismissInstallPermissionDialog =
-                    application::dismissInstallPermissionPrompt,
-                onDownloadUpdateFromGitHub = onOpenUpdateRelease,
+                onUpdate = application::requestUpdate,
                 onOpenGitHub = onOpenSourceCode,
                 onHelpFeedback = onOpenHelpFeedback,
                 onSupportAALyrics = onOpenSupportAALyrics,
@@ -315,15 +311,36 @@ internal fun PhoneRuntimeHost(
         }
     }
 
-    if (successfulUpdate != null) {
-        UpdateSuccessfulDialog(
-            state = UpdateSuccessfulDialogUiState(
-                versionName = successfulUpdate!!.installedVersion,
-            ),
-            onDismissRequest = application::dismissSuccessfulUpdate,
-        )
-    } else {
-        automaticUpdateReleasePrompt?.let { prompt ->
+    when {
+        successfulUpdate != null -> {
+            UpdateSuccessfulDialog(
+                state = UpdateSuccessfulDialogUiState(
+                    versionName = successfulUpdate!!.installedVersion,
+                ),
+                onDismissRequest = application::dismissSuccessfulUpdate,
+            )
+        }
+
+        installPermissionPrompt != null -> {
+            val prompt = installPermissionPrompt!!
+            InstallPermissionDialog(
+                state = InstallPermissionDialogUiState(
+                    versionName = prompt.versionName,
+                ),
+                onDismissRequest = application::dismissInstallPermissionPrompt,
+                onGrantPermission = {
+                    application.dismissInstallPermissionPrompt()
+                    onOpenInstallSettings()
+                },
+                onDownloadFromGitHub = {
+                    application.dismissInstallPermissionPrompt()
+                    onOpenUpdateRelease(prompt.versionName)
+                },
+            )
+        }
+
+        automaticUpdateReleasePrompt != null -> {
+            val prompt = automaticUpdateReleasePrompt!!
             NewReleaseAvailableDialog(
                 state = NewReleaseAvailableDialogUiState(
                     versionName = prompt.versionName,
