@@ -125,6 +125,30 @@ private fun SettingsUpdateDownloadFailedPreview() {
     SettingsScreenPreview(PhonePreviewFixtures.settingsDownloadFailed)
 }
 
+@Preview(name = "Update · preparing install", group = "SettingsScreen", widthDp = 412, heightDp = 900)
+@Composable
+private fun SettingsUpdatePreparingInstallPreview() {
+    SettingsScreenPreview(PhonePreviewFixtures.settingsPreparingInstall)
+}
+
+@Preview(name = "Update · install permission", group = "SettingsScreen", widthDp = 412, heightDp = 900)
+@Composable
+private fun SettingsUpdateInstallPermissionPreview() {
+    SettingsScreenPreview(PhonePreviewFixtures.settingsInstallPermissionRequired)
+}
+
+@Preview(name = "Update · installing", group = "SettingsScreen", widthDp = 412, heightDp = 900)
+@Composable
+private fun SettingsUpdateInstallingPreview() {
+    SettingsScreenPreview(PhonePreviewFixtures.settingsInstallingUpdate)
+}
+
+@Preview(name = "Update · install failed", group = "SettingsScreen", widthDp = 412, heightDp = 900)
+@Composable
+private fun SettingsUpdateInstallFailedPreview() {
+    SettingsScreenPreview(PhonePreviewFixtures.settingsInstallFailed)
+}
+
 
 @Preview(name = "Narrow · 320dp", group = "SettingsScreen", widthDp = 320, heightDp = 700)
 @Composable
