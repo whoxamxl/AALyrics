@@ -4,6 +4,8 @@ import java.io.File
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -19,6 +21,10 @@ internal sealed interface AppUpdateCheckState {
     ) : AppUpdateCheckState
 
     data object Failed : AppUpdateCheckState
+
+    data class PreparingDownload(
+        val versionName: String,
+    ) : AppUpdateCheckState
 
     data class Downloading(
         val versionName: String,
@@ -57,6 +63,7 @@ internal class AppUpdateCheckRuntime(
             checkJob?.isActive == true ||
             downloadJob?.isActive == true ||
             mutableState.value == AppUpdateCheckState.Checking ||
+            mutableState.value is AppUpdateCheckState.PreparingDownload ||
             mutableState.value is AppUpdateCheckState.Downloading
         ) {
             return
@@ -90,7 +97,7 @@ internal class AppUpdateCheckRuntime(
         }
 
         val versionName = candidate.release.tagName.removePrefix("v")
-        mutableState.value = AppUpdateCheckState.Downloading(versionName)
+        mutableState.value = AppUpdateCheckState.PreparingDownload(versionName)
         downloadJob = applicationScope.launch {
             mutableState.value = try {
                 resolveDownloadState(candidate)
@@ -117,6 +124,7 @@ internal class AppUpdateCheckRuntime(
     fun onSettingsEntered() {
         mutableState.value = when (val current = mutableState.value) {
             AppUpdateCheckState.Checking,
+            is AppUpdateCheckState.PreparingDownload,
             is AppUpdateCheckState.Downloading,
             is AppUpdateCheckState.Downloaded -> current
             else -> AppUpdateCheckState.Idle
@@ -174,6 +182,10 @@ internal class AppUpdateCheckRuntime(
         }
 
         val files = fileStore.prepare(assets.apk.name)
+        currentCoroutineContext().ensureActive()
+        mutableState.value = AppUpdateCheckState.Downloading(
+            versionName = candidate.release.tagName.removePrefix("v"),
+        )
         client.downloadTo(
             asset = assets.apk,
             destination = files.partialApk,
