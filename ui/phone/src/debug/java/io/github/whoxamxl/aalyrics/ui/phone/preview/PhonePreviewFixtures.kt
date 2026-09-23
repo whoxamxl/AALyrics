@@ -420,6 +420,13 @@ internal object PhonePreviewFixtures {
             availableVersionName = "0.1.2",
         ),
     )
+    val settingsDownloadFailed = settingsTypical.copy(
+        appUpdate = AppUpdateUiState(
+            phase = AppUpdateUiPhase.DOWNLOAD_FAILED,
+            availableVersionName = "0.1.2",
+            failureReason = "The APK could not be downloaded or verified.",
+        ),
+    )
     val settingsTranslationOn = settingsTypical.copy(translationEnabled = true)
     val settingsAndroidAutoSkipped = settingsTypical.copy(
         androidAutoCompatibilityStatus = AndroidAutoCompatibilityUiStatus.SKIPPED,
