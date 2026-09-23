@@ -84,7 +84,6 @@ class AALyricsApplication : Application() {
     private lateinit var phonePlaybackSourceCanOpenAppStateFlow: StateFlow<Boolean>
     private lateinit var phoneDetailsStateFlow: StateFlow<DetailsScreenUiState>
     private lateinit var appUpdateCheckRuntime: AppUpdateCheckRuntime
-    private lateinit var updateApkPreflightBoundary: UpdateApkPreflightBoundary
     private val mutablePlaybackArtworkState = MutableStateFlow<Bitmap?>(null)
     private val mutableQueueArtworkBitmapsState =
         MutableStateFlow<Map<Long, Bitmap>>(emptyMap())
@@ -197,6 +196,14 @@ class AALyricsApplication : Application() {
         appUpdateCheckRuntime.downloadUpdate()
     }
 
+    internal fun installUpdate() {
+        appUpdateCheckRuntime.installUpdate()
+    }
+
+    internal fun onInstallSourceTrustReturned() {
+        appUpdateCheckRuntime.onInstallSourceTrustReturned()
+    }
+
     internal fun onSettingsEntered() {
         appUpdateCheckRuntime.onSettingsEntered()
     }
@@ -277,28 +284,38 @@ class AALyricsApplication : Application() {
     override fun onCreate() {
         super.onCreate()
         val updateUserAgent = "AALyrics/${BuildConfig.VERSION_NAME}"
+        val updateReleaseClient = HttpGitHubReleaseClient(
+            userAgent = updateUserAgent,
+        )
         val updateFileStore = UpdateDownloadFileStore(
             stagingDirectory = cacheDir.resolve(UPDATE_STAGING_DIRECTORY_NAME),
             verifiedDirectory = noBackupFilesDir.resolve(UPDATE_VERIFIED_DIRECTORY_NAME),
             legacyVerifiedDirectory = filesDir.resolve(UPDATE_VERIFIED_DIRECTORY_NAME),
         )
-        appUpdateCheckRuntime = AppUpdateCheckRuntime(
-            installedVersionName = BuildConfig.VERSION_NAME,
-            releaseClient = HttpGitHubReleaseClient(
-                userAgent = updateUserAgent,
-            ),
-            applicationScope = applicationScope,
-            assetDownloadClient = HttpUpdateAssetDownloadClient(
-                userAgent = updateUserAgent,
-            ),
-            downloadFileStore = updateFileStore,
-        )
-        updateApkPreflightBoundary = UpdateApkPreflightBoundary(
+        val updatePreflight = UpdateApkPreflightBoundary(
             fileStore = updateFileStore,
             packageInspector = AndroidUpdateApkPackageInspector(
                 packageManager = packageManager,
                 installedPackageName = packageName,
             ),
+        )
+        appUpdateCheckRuntime = AppUpdateCheckRuntime(
+            installedVersionName = BuildConfig.VERSION_NAME,
+            releaseClient = updateReleaseClient,
+            applicationScope = applicationScope,
+            assetDownloadClient = HttpUpdateAssetDownloadClient(
+                userAgent = updateUserAgent,
+            ),
+            downloadFileStore = updateFileStore,
+            installPreparation = UpdateInstallPreparation(
+                installedVersionName = BuildConfig.VERSION_NAME,
+                releaseClient = updateReleaseClient,
+                preflightEvaluator = updatePreflight,
+            ),
+            installSourceTrustChecker = AndroidInstallSourceTrustChecker(
+                packageManager = packageManager,
+            ),
+            packageInstaller = AndroidUpdatePackageInstaller(this),
         )
         translationSettingsStore = SharedPreferencesTranslationSettingsStore(this)
         phonePresentationSettingsStore = SharedPreferencesPhonePresentationSettingsStore(this)
