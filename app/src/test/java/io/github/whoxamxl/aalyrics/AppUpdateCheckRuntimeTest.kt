@@ -605,6 +605,7 @@ class AppUpdateCheckRuntimeTest {
         val root = createTempDirectory("aalyrics-install-runtime").toFile()
         retainedUpdate(root, "0.2.0-alpha.2")
         val installer = FakeUpdatePackageInstaller()
+        val permissionPromptVersions = mutableListOf<String>()
         var sourceTrusted = false
         try {
             val runtime = runtime(
@@ -619,6 +620,7 @@ class AppUpdateCheckRuntimeTest {
                 ),
                 installSourceTrustChecker = InstallSourceTrustChecker { sourceTrusted },
                 packageInstaller = installer,
+                onInstallPermissionRequired = permissionPromptVersions::add,
             )
 
             runtime.installUpdate()
@@ -627,6 +629,7 @@ class AppUpdateCheckRuntimeTest {
                 AppUpdateCheckState.InstallPermissionRequired("0.2.0-alpha.2"),
                 runtime.state.value,
             )
+            assertEquals(listOf("0.2.0-alpha.2"), permissionPromptVersions)
             assertEquals(0, installer.installCount)
 
             runtime.onInstallSourceTrustReturned()
@@ -635,7 +638,18 @@ class AppUpdateCheckRuntimeTest {
                 AppUpdateCheckState.InstallPermissionRequired("0.2.0-alpha.2"),
                 runtime.state.value,
             )
+            assertEquals(listOf("0.2.0-alpha.2"), permissionPromptVersions)
             assertEquals(0, installer.installCount)
+
+            runtime.installUpdate()
+            assertEquals(
+                listOf("0.2.0-alpha.2", "0.2.0-alpha.2"),
+                permissionPromptVersions,
+            )
+            assertEquals(
+                AppUpdateCheckState.InstallPermissionRequired("0.2.0-alpha.2"),
+                runtime.state.value,
+            )
 
             sourceTrusted = true
             runtime.onInstallSourceTrustReturned()
@@ -1158,6 +1172,7 @@ class AppUpdateCheckRuntimeTest {
         installPreparation: UpdateInstallPreparation? = null,
         installSourceTrustChecker: InstallSourceTrustChecker? = null,
         packageInstaller: UpdatePackageInstaller? = null,
+        onInstallPermissionRequired: (String) -> Unit = {},
     ) = AppUpdateCheckRuntime(
         installedVersionName = installedVersionName,
         releaseClient = GitHubReleaseClient { Result.success(releases) },
@@ -1167,6 +1182,7 @@ class AppUpdateCheckRuntimeTest {
         installPreparation = installPreparation,
         installSourceTrustChecker = installSourceTrustChecker,
         packageInstaller = packageInstaller,
+        onInstallPermissionRequired = onInstallPermissionRequired,
     )
 
     private fun installPreparation(
