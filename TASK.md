@@ -83,31 +83,29 @@ Approved follow-up direction:
 - [x] Persist durable `PendingUpdate` immediately before PackageInstaller commit.
 - [x] Reconcile `ACTION_MY_PACKAGE_REPLACED` into durable update-success state.
 - [x] Show one-time Update successful feedback on the next valid app entry.
-- [ ] Add best-effort resume-after-update behavior.
+- [x] Add best-effort resume-after-update behavior.
 - [ ] Add automatic update checking preference and new-release dialog.
 - [ ] Compose Download + Install into one user-facing Update action.
 - [ ] Align Previews, Reset behavior, docs, tests, CI, and real-device regression validation.
 
 ## Current checkpoint
 
-Durable successful-update state is now surfaced once on the next valid Phone entry without overriding normal Phone navigation.
+Successful package replacement now makes a bounded best-effort request to return to AALyrics when the persisted resume intent allows it.
 
 Completed in this checkpoint:
 
-- added a process-level `UpdateSuccessFeedbackRuntime` that loads durable `SuccessfulUpdate` state at startup;
-- package-replacement reconciliation refreshes that runtime immediately when the receiver runs in the live AALyrics process, while later fresh launches load the same durable state directly;
-- the feedback runtime does not clear the marker merely because presentation becomes visible;
-- Done / close / system Back use one dismissal path that clears durable success first and removes process state only when persistence succeeds;
-- persistence-clear failure leaves the success feedback visible rather than losing the durable acknowledgement;
-- added a compact large-width-safe `AALyrics updated` dialog showing the actual installed version;
-- outside-tap dismissal is disabled;
-- Phone presentation shows the dialog only after the normal app entry gates reach `READY`;
-- normal startup remains `PhoneDestination.Home` / Lyrics; no update-specific Main/Lyrics routing was added;
-- process death before dismissal preserves the marker, so a later valid Phone entry shows the dialog again;
-- typical, narrow-phone, and enlarged-font dialog Previews were added;
-- focused runtime tests cover startup restoration, post-replacement refresh, successful consumption, and failed durable clear;
-- Update UX / Phone Settings docs are aligned with the implemented behavior.
+- added an `UpdatePostReplacementResume` boundary that only considers reconciled `SuccessfulUpdate` state;
+- `resumeAfterUpdate=true` requests one launch; false, no pending update, or unreconciled replacement performs no launch;
+- the Android launcher uses an explicit `MainActivity` intent with `NEW_TASK`, `CLEAR_TOP`, and `SINGLE_TOP` flags;
+- the receiver attempts resume only after durable pending-to-success promotion has completed;
+- a thrown launch failure is contained and does not alter update recovery state;
+- an accepted `startActivity()` request is treated only as a request, not proof that Android displayed the Activity;
+- `SuccessfulUpdate` is never cleared or modified by the resume attempt;
+- automatic return uses normal app entry handling and does not add Main/Lyrics destination routing;
+- if Android blocks or suppresses background Activity launch, the next ordinary app launch still surfaces the durable success dialog;
+- focused tests cover resume requested, resume disabled, unreconciled replacement, and launch-request failure;
+- Update UX and Phone Settings documentation are aligned.
 
-No best-effort automatic resume, notification fallback, automatic update checking, release-available dialog, or one-step Update composition has been implemented yet.
+No notification fallback, automatic update checking, release-available dialog, or one-step Update composition has been implemented yet.
 
-Next checkpoint: **add best-effort resume-after-update behavior using the existing `resumeAfterUpdate` intent, without making update correctness depend on background Activity launch**. Do not begin it until explicitly requested.
+Next checkpoint: **add `Automatically check for updates` as a durable Settings preference and wire automatic release checking without changing manual `Check for updates` behavior**. Do not begin it until explicitly requested.
