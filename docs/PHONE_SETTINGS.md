@@ -485,6 +485,8 @@ Download from GitHub  ↗
 
 The top-right close button and system Back dismiss only the dialog. Outside-tap dismissal is disabled. `Grant permission` dismisses the prompt and hands off to Android's per-app unknown-source Settings. `Download from GitHub` dismisses the prompt and opens the matching GitHub Release page externally. The compact update row stays in `INSTALL_PERMISSION_REQUIRED` after dismissal and shows `Install` as the explicit re-entry action; it no longer bypasses the explanation by jumping directly to Android Settings. If source trust is still denied when Android Settings returns, the row remains permission-required and the dialog stays dismissed until the user explicitly presses `Install` again. If source trust is granted, the runtime resumes installation from the retained verified APK without reopening the explanation dialog.
 
+The modal uses content-driven height instead of filling a fixed percentage of the Phone viewport. Normal content ends after the secondary GitHub action with standard bottom padding; oversized content remains scrollable within the available dialog viewport. The `INSTALL UPDATES` eyebrow and close action share the top header row, and the target version sits directly below using secondary-text contrast.
+
 The UI emits `onCheckForUpdates`, `onDownloadUpdate`, `onInstallUpdate`, and an install-permission-settings callback. It does not perform GitHub HTTP requests, APK/package inspection, file I/O, signing checks, Android settings navigation, or PackageInstaller session work directly.
 
 Application/runtime wiring owns the check:
