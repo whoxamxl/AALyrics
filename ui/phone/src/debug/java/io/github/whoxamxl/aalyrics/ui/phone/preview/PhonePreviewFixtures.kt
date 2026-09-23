@@ -390,6 +390,12 @@ internal object PhonePreviewFixtures {
         termsOfUseText = termsOfUseMarkdownSample,
         thirdPartyLicensesText = thirdPartyLicensesMarkdownSample,
     )
+    val settingsIdleUpdate = settingsTypical.copy(
+        appUpdate = AppUpdateUiState(phase = AppUpdateUiPhase.IDLE),
+    )
+    val settingsUnavailableUpdate = settingsTypical.copy(
+        appUpdate = AppUpdateUiState(phase = AppUpdateUiPhase.UNAVAILABLE),
+    )
     val settingsCheckingUpdate = settingsTypical.copy(
         appUpdate = AppUpdateUiState(phase = AppUpdateUiPhase.CHECKING),
     )
