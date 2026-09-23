@@ -1,6 +1,9 @@
 package io.github.whoxamxl.aalyrics
 
 import java.io.File
+import java.nio.file.AtomicMoveNotSupportedException
+import java.nio.file.Files
+import java.nio.file.StandardCopyOption
 
 internal data class UpdateDownloadFiles(
     val partialApk: File,
@@ -41,13 +44,12 @@ internal class UpdateDownloadFileStore(
 
         try {
             files.partialApk.copyTo(promotingApk, overwrite = false)
-            clearVerifiedExcept(promotingApk)
-            check(promotingApk.renameTo(files.verifiedApk)) {
-                "Unable to promote verified APK"
-            }
-            check(files.partialApk.delete() || !files.partialApk.exists()) {
-                "Unable to remove staged APK after promotion"
-            }
+            replaceVerifiedTarget(
+                source = promotingApk,
+                target = files.verifiedApk,
+            )
+            clearVerifiedExcept(files.verifiedApk)
+            files.partialApk.delete()
             clearDirectoryIfEmpty(stagingDirectory)
             return files.verifiedApk
         } catch (error: Exception) {
@@ -108,6 +110,26 @@ internal class UpdateDownloadFileStore(
     fun clearAll() {
         clearStaging()
         clearVerified()
+    }
+
+    private fun replaceVerifiedTarget(
+        source: File,
+        target: File,
+    ) {
+        try {
+            Files.move(
+                source.toPath(),
+                target.toPath(),
+                StandardCopyOption.ATOMIC_MOVE,
+                StandardCopyOption.REPLACE_EXISTING,
+            )
+        } catch (_: AtomicMoveNotSupportedException) {
+            Files.move(
+                source.toPath(),
+                target.toPath(),
+                StandardCopyOption.REPLACE_EXISTING,
+            )
+        }
     }
 
     private fun clearVerifiedExcept(retained: File) {
