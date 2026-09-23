@@ -224,6 +224,10 @@ class AALyricsApplication : Application() {
         )
     }
 
+    internal fun requestUpdate() {
+        appUpdateCheckRuntime.requestUpdate()
+    }
+
     internal fun downloadUpdate() {
         appUpdateCheckRuntime.downloadUpdate()
     }
@@ -235,7 +239,7 @@ class AALyricsApplication : Application() {
     internal fun acceptAutomaticUpdateReleasePrompt() {
         automaticUpdateReleasePromptRuntime.consumeForUpdate()
             ?: return
-        appUpdateCheckRuntime.downloadUpdate()
+        appUpdateCheckRuntime.requestUpdate()
     }
 
     internal fun installUpdate() {
