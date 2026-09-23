@@ -195,15 +195,22 @@ internal class AppUpdateCheckRuntime(
             downloadedBytes = 0L,
             totalBytes = totalBytes,
         )
+        var lastReportedPercent = 0
         val downloadedBytes = client.downloadTo(
             asset = assets.apk,
             destination = files.partialApk,
             maxBytes = MAX_APK_BYTES,
             onProgress = { receivedBytes ->
-                if (downloadJob?.isActive == true) {
+                val boundedBytes = receivedBytes.coerceIn(0L, totalBytes)
+                val percent = ((boundedBytes * 100L) / totalBytes).toInt()
+                if (
+                    downloadJob?.isActive == true &&
+                    percent != lastReportedPercent
+                ) {
+                    lastReportedPercent = percent
                     mutableState.value = AppUpdateCheckState.Downloading(
                         versionName = versionName,
-                        downloadedBytes = receivedBytes.coerceIn(0L, totalBytes),
+                        downloadedBytes = boundedBytes,
                         totalBytes = totalBytes,
                     )
                 }
