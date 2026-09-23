@@ -290,13 +290,23 @@ Active downloads survive destination changes and Activity recreation because the
 
 `Reset AALyrics` cancels update work and clears both staging and verified update artifacts.
 
-### Deferred installation
+### In-app installation handoff
 
-`DOWNLOADED` means that the signed-release APK bytes match the Release-published SHA-256. It does **not** install or launch the APK in this slice.
+`DOWNLOADED` means that the retained signed-release APK bytes match the Release-published SHA-256. Installation remains a separate explicit user action.
 
-Package Installer handoff, install-permission handling, and installed/signing-identity validation remain separate follow-up concerns. The future explicit Install action must refresh eligible GitHub Releases before handing the retained APK to Package Installer. If a newer eligible release exists than the retained verified APK, AALyrics must offer/download that newer release instead of intentionally installing the stale retained APK first; this avoids a needless two-step update.
+When the user presses `Install`, AALyrics must first refresh eligible GitHub Releases using the same release grammar and installed-channel rules used by ordinary update discovery. If the retained verified release is still the latest eligible release, installation preparation may continue. If a newer eligible release has appeared, AALyrics must not intentionally install the older retained APK first; it returns to the normal update/download path for the newer release. This refresh happens only on the explicit Install action, not in the background and not merely because `DOWNLOADED` is restored.
 
-The Settings `Changelog` entry is independent of the update-network path. It renders the repository `CHANGELOG.md` bundled into the installed APK; it does not fetch GitHub Release notes at runtime. GitHub Releases remain authoritative for signed update distribution, while `CHANGELOG.md` is authoritative for the in-app release history.
+Before any PackageInstaller session is created, application-owned preflight validates the retained APK as an update of the installed AALyrics package. The retained file must still be the canonical verified artifact, archive metadata must be readable, the package name must match `io.github.whoxamxl.aalyrics`, the archive version must be newer than the installed Android package version, and its signing identity must be update-compatible with the installed AALyrics package. SHA-256 verification proves Release-asset integrity; package/version/signing validation separately proves that Android package handoff is appropriate.
+
+AALyrics targets Android 8.0+ and declares `android.permission.REQUEST_INSTALL_PACKAGES` for this feature. Before installer handoff it checks `PackageManager.canRequestPackageInstalls()`. If Android does not currently trust AALyrics as an install source, Settings exposes an explicit action that opens the platform's per-app unknown-source settings. On return, AALyrics re-checks platform state rather than assuming permission was granted. This platform-owned trust choice is not cleared by Reset AALyrics. Android's PackageManager exposes this trust check from API 26 onward, while the legacy `Intent.ACTION_INSTALL_PACKAGE` entry point is deprecated from API 29 in favor of `PackageInstaller`.
+
+Installation uses `android.content.pm.PackageInstaller.Session`, not the deprecated ACTION_INSTALL_PACKAGE flow. The application-owned boundary creates a full-install session, streams the retained APK into the session, syncs/closes the write, and commits with an `IntentSender` status callback. A `STATUS_PENDING_USER_ACTION` result hands the system-provided confirmation intent to the user; AALyrics does not bypass or synthesize Android's final install confirmation.
+
+Installer cancellation or terminal install failure preserves an otherwise-valid verified APK so the user can retry without downloading it again. A successful self-update may replace or terminate the current AALyrics process before an in-process terminal state is durable, so next-launch installed-version reconciliation remains authoritative: once the installed package version reaches or passes the retained release, the old verified APK is removed and update state returns to `IDLE`.
+
+Reset AALyrics invalidates app-owned install preparation, abandons any installer session still under AALyrics control when practical, and clears the existing app-owned update artifacts. Reset does not revoke Android's per-source install trust and does not undo an already installed package.
+
+The Settings `Changelog` entry remains independent of the update-network path. It renders the repository `CHANGELOG.md` bundled into the installed APK; it does not fetch GitHub Release notes at runtime. GitHub Releases remain authoritative for signed update distribution, while `CHANGELOG.md` is authoritative for the in-app release history.
 
 ## Installation and updates
 
