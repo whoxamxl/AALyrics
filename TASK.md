@@ -101,8 +101,12 @@ Completed in this checkpoint:
 - secondary `Download from GitHub` action with external-link icon that dismisses the prompt and opens the matching GitHub Release page;
 - permission-required Settings row now exposes `Install` as the explicit dialog re-entry action rather than jumping directly to system Settings;
 - prompt dismissal still preserves `INSTALL_PERMISSION_REQUIRED` and the retained verified APK;
-- leaving Settings, Settings root reset, Activity/composition disposal, Reset, and Android source-trust Settings return continue to clear only the transient prompt;
-- typical, narrow-phone, and enlarged-font dialog Previews;
+- leaving Settings, Settings root reset, Activity stop/background, Activity/composition disposal, Reset, and Android source-trust Settings return continue to clear only the transient prompt;
+- foreground return does not automatically recreate a dismissed permission prompt;
+- denied source-trust return keeps `INSTALL_PERMISSION_REQUIRED` with the prompt dismissed until the user explicitly presses `Install` again;
+- granted source-trust return resumes installation from the retained verified APK without reopening the explanation;
+- typical, narrow-phone, and enlarged-font dialog Previews plus explicit denied/granted permission-return Settings Previews;
+- focused runtime tests cover denied/granted Android source-trust return behavior;
 - Phone/Update UX docs aligned with the implemented behavior.
 
 No durable update-success marker, post-update feedback, automatic update check, or one-step Download/Install composition has been started.
