@@ -7,6 +7,8 @@ import android.content.pm.PackageInstaller
 import android.os.Build
 import java.io.File
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
 
 internal class AndroidUpdatePackageInstaller(
@@ -17,6 +19,7 @@ internal class AndroidUpdatePackageInstaller(
     override suspend fun install(
         apkFile: File,
         statusSink: UpdatePackageInstallerStatusSink,
+        onSessionCreated: (Int) -> Unit,
     ): Result<Int> = withContext(Dispatchers.IO) {
         runCatching {
             check(apkFile.isFile) {
@@ -40,6 +43,7 @@ internal class AndroidUpdatePackageInstaller(
             }
 
             val sessionId = packageInstaller.createSession(params)
+            onSessionCreated(sessionId)
             try {
                 packageInstaller.openSession(sessionId).use { session ->
                     apkFile.inputStream().buffered().use { input ->
@@ -53,10 +57,12 @@ internal class AndroidUpdatePackageInstaller(
                         }
                     }
 
+                    currentCoroutineContext().ensureActive()
                     UpdatePackageInstallerStatusRegistry.register(
                         sessionId = sessionId,
                         sink = statusSink,
                     )
+                    currentCoroutineContext().ensureActive()
                     session.commit(
                         installStatusIntentSender(sessionId),
                     )
