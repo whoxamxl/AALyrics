@@ -173,13 +173,17 @@ Updates are never installed without your confirmation.
 
 The preference is app-owned and durable. Its default is **ON**, including users whose existing preferences do not yet contain the key. `Reset AALyrics` restores it to ON.
 
-Automatic checking is deliberately bounded:
+Automatic checking is deliberately low-frequency and bounded:
 
 - no automatic network check occurs before the normal Phone entry gates reach `READY`;
-- when enabled, the first valid Phone entry may request one automatic check per app process;
-- if the setting was OFF at entry and is switched ON later in the same process, that enables the still-unused one-process attempt;
-- once an automatic attempt has been consumed, ordinary recomposition, Activity recreation, navigation, or repeated READY rendering does not trigger another automatic check in that process;
-- an automatic check starts only from the update runtime's idle state and does not overwrite a retained verified APK or active download/install state.
+- automatic discovery is eligible only when at least **7 full days** have elapsed since the durable cadence timestamp, or when no cadence timestamp exists yet;
+- starting an automatic check records the cadence timestamp immediately, so a failed network request does not cause repeated automatic retries after process restarts during the same 7-day window;
+- a successful manual GitHub Releases query also refreshes the same cadence timestamp, so manually checking today suppresses redundant automatic discovery for the next 7 days;
+- manual `Check for updates` is never blocked by the automatic cadence;
+- if the setting was OFF at entry and is switched ON later, an automatic check is requested only if the durable 7-day cadence is due;
+- a process-local attempt guard remains as secondary duplicate protection against recomposition, Activity recreation, navigation, or repeated READY rendering;
+- an automatic check starts only from the update runtime's idle state and does not overwrite a retained verified APK or active download/install state;
+- `Reset AALyrics` clears both the durable cadence timestamp and the process-local attempt guard, so the restored ON default is eligible for a fresh check at the next valid READY entry.
 
 The existing `Check for updates` action remains available as the explicit manual path regardless of the preference and retains its existing behavior.
 
@@ -211,7 +215,7 @@ If permission is missing after the APK has already been verified, dismissing the
 
 Every durable state introduced by this UX follow-up must explicitly re-evaluate `Reset AALyrics`.
 
-Both implemented recovery markers — `PendingUpdate` and `SuccessfulUpdate` — are app-owned and are deleted by `Reset AALyrics`, together with active app-owned update work and retained update artifacts. The durable automatic-update-check preference is also app-owned and resets to its default value, ON. Android's per-source install trust remains system-owned and must not be revoked by Reset.
+Both implemented recovery markers — `PendingUpdate` and `SuccessfulUpdate` — are app-owned and are deleted by `Reset AALyrics`, together with active app-owned update work and retained update artifacts. The durable automatic-update-check preference is app-owned and resets to its default value, ON. Its durable 7-day cadence timestamp and process-local attempt guard are also cleared so reset returns automatic discovery to a fresh state. Android's per-source install trust remains system-owned and must not be revoked by Reset.
 
 ## Implementation order
 
