@@ -66,7 +66,7 @@ The application-owned runtime must:
 3. parse exactly one SHA-256 digest from the checksum payload;
 4. calculate SHA-256 for the downloaded APK;
 5. compare expected and actual digests case-insensitively;
-6. promote the verified APK from app-private cache staging into app-private persistent files storage only after the digest matches;
+6. promote the verified APK from app-private cache staging into app-private no-backup persistent storage only after the digest matches;
 7. enter `DOWNLOADED` only after successful verification.
 
 Transport/protocol failures, asset-contract failures, malformed checksum content, I/O failures, and digest mismatch map to `DOWNLOAD_FAILED`.
@@ -79,7 +79,7 @@ Update artifacts are application-owned distribution files, not user documents.
 
 - use app-private storage only; do not request shared-storage permission;
 - partial `.part` files live under cache staging and are cleaned on failure/cancellation/restart;
-- verified APKs live under app-private persistent files storage;
+- verified APKs live under app-private no-backup persistent storage;
 - promotion uses a transient persistent `.promoting` file so interrupted promotion cannot become a completed APK;
 - retain at most one verified update APK;
 - an active download is application-owned and continues if the user leaves Settings;
@@ -180,7 +180,7 @@ Completed:
 
 The asset-resolution, checksum/file-boundary, and runtime-orchestration checkpoints passed build/test validation before final production wiring.
 
-Production wiring is now complete: `AALyricsApplication` owns separate cache staging and persistent verified-update storage, Settings Download/Retry is connected, Reset cancels update work and clears both storage areas, and Preview/docs are aligned.
+Production wiring is now complete: `AALyricsApplication` owns separate cache staging and no-backup persistent verified-update storage, Settings Download/Retry is connected, Reset cancels update work and clears both storage areas, and Preview/docs are aligned.
 
 The download presentation now separates preparation from transfer: `PREPARING_DOWNLOAD` uses an indeterminate linear progress bar while assets/checksum/staging are prepared, then `DOWNLOADING` switches to determinate 0–100% progress driven by received bytes against the GitHub Release asset size.
 
