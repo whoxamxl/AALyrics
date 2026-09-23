@@ -134,13 +134,23 @@ The success marker stores the new binary's actual version and carries forward th
 
 A successful package replacement may terminate the old process. The new binary therefore owns durable success reconciliation.
 
-On the next valid app entry after the installed package is confirmed to have reached the requested target:
+On the next valid Phone entry after the installed package is confirmed to have reached the requested target, AALyrics keeps the normal Phone startup destination (`PhoneDestination.Home`, which is Lyrics) and overlays a one-time success dialog:
 
-1. route presentation to the main/Lyrics destination;
-2. show an `Update successful` dialog once;
-3. clear the success marker only after the success feedback has been consumed.
+```text
+AALyrics updated
 
-Automatic return to AALyrics after replacement is best-effort only. The UX must not depend on background Activity launch succeeding. If Android does not permit automatic return, the next ordinary user launch still guarantees the one-time success feedback.
+You're now running v0.x.x.
+
+Done
+```
+
+No update-specific navigation override is applied. The dialog appears only once the normal entry gates have reached `READY`, so Notification Access and Android Auto compatibility onboarding remain authoritative.
+
+The durable `SuccessfulUpdate` marker is loaded into a process-level feedback runtime. It is not cleared when the dialog is first shown. Done, the top-right close button, and system Back all request the same dismissal. Dismissal clears the durable success marker first and removes the dialog from process state only when that clear succeeds. Outside-tap dismissal is disabled. If the process dies before dismissal, the marker remains and the dialog is shown again on the next valid Phone entry.
+
+Typical, narrow-phone, and enlarged-font Previews cover the success dialog.
+
+Automatic return to AALyrics after replacement remains best-effort only. The UX does not depend on background Activity launch succeeding. If Android does not permit automatic return, the next ordinary user launch still guarantees the one-time success feedback.
 
 ## Automatic update checks
 
