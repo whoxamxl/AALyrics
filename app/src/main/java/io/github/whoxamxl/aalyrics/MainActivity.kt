@@ -54,6 +54,12 @@ class MainActivity : ComponentActivity() {
         renderEntryState()
     }
 
+    override fun onStop() {
+        (application as? AALyricsApplication)
+            ?.dismissInstallPermissionPrompt()
+        super.onStop()
+    }
+
     private fun renderEntryState() {
         val state = currentEntryState()
         if (state == renderedEntryState) return
