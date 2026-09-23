@@ -29,12 +29,12 @@ class UpdateDownloadFileStoreTest {
         }
         val store = store()
 
-        val files = store.prepare("AALyrics-v0.3.0.apk")
+        val files = store.prepare("AALyrics-v0.3.0.apk", operationId = 7L)
 
         assertFalse(stagingRoot.resolve("stale.part").exists())
         assertTrue(retained.isFile)
         assertEquals(
-            stagingRoot.resolve("AALyrics-v0.3.0.apk.part").canonicalFile,
+            stagingRoot.resolve("AALyrics-v0.3.0.apk.op-7.part").canonicalFile,
             files.partialApk.canonicalFile,
         )
         assertEquals(
@@ -44,9 +44,27 @@ class UpdateDownloadFileStoreTest {
     }
 
     @Test
+    fun `prepare gives different operations different partial paths`() {
+        val store = store()
+
+        val first = store.prepare(
+            apkFileName = "AALyrics-v0.2.0.apk",
+            operationId = 7L,
+        )
+        val second = store.prepare(
+            apkFileName = "AALyrics-v0.2.0.apk",
+            operationId = 8L,
+        )
+
+        assertEquals("AALyrics-v0.2.0.apk.op-7.part", first.partialApk.name)
+        assertEquals("AALyrics-v0.2.0.apk.op-8.part", second.partialApk.name)
+        assertFalse(first.partialApk.canonicalFile == second.partialApk.canonicalFile)
+    }
+
+    @Test
     fun `promote verified moves staged bytes into persistent verified directory`() {
         val store = store()
-        val files = store.prepare("AALyrics-v0.2.0.apk")
+        val files = store.prepare("AALyrics-v0.2.0.apk", operationId = 7L)
         files.partialApk.writeText("verified bytes")
 
         val verified = store.promoteVerified(files)
@@ -64,7 +82,7 @@ class UpdateDownloadFileStoreTest {
             writeText("old")
         }
         val store = store()
-        val files = store.prepare("AALyrics-v0.2.0.apk")
+        val files = store.prepare("AALyrics-v0.2.0.apk", operationId = 7L)
 
         assertFails {
             store.promoteVerified(files)
@@ -85,7 +103,7 @@ class UpdateDownloadFileStoreTest {
             writeText("old")
         }
         val store = store()
-        val files = store.prepare("AALyrics-v0.2.0.apk")
+        val files = store.prepare("AALyrics-v0.2.0.apk", operationId = 7L)
         files.partialApk.writeText("new")
 
         val verified = store.promoteVerified(files)
@@ -105,7 +123,7 @@ class UpdateDownloadFileStoreTest {
             writeText("verified")
         }
         val store = store()
-        val files = store.prepare("AALyrics-v0.2.0.apk")
+        val files = store.prepare("AALyrics-v0.2.0.apk", operationId = 7L)
         files.partialApk.writeText("partial")
 
         store.discardPartial(files)
@@ -174,7 +192,7 @@ class UpdateDownloadFileStoreTest {
     @Test
     fun `clear all removes staging and verified directories`() {
         val store = store()
-        val files = store.prepare("AALyrics-v0.2.0.apk")
+        val files = store.prepare("AALyrics-v0.2.0.apk", operationId = 7L)
         files.partialApk.writeText("partial")
         verifiedRoot.mkdirs()
         verifiedRoot.resolve("AALyrics-v0.1.0.apk").writeText("verified")
@@ -190,7 +208,7 @@ class UpdateDownloadFileStoreTest {
         val store = store()
 
         assertFails {
-            store.prepare("../AALyrics-v0.2.0.apk")
+            store.prepare("../AALyrics-v0.2.0.apk", operationId = 7L)
         }
         assertFalse(stagingRoot.exists())
         assertFalse(verifiedRoot.exists())
