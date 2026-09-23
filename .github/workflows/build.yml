@@ -4,12 +4,6 @@ on:
   push:
     branches: [main]
   pull_request:
-  workflow_dispatch:
-    inputs:
-      update_test_version:
-        description: "Optional installed versionName override for real-device update testing"
-        required: false
-        type: string
 
 permissions:
   contents: read
@@ -97,20 +91,22 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
+      # Temporary PR-only artifact used to exercise the real GitHub Release
+      # update path on-device. Remove before merging this feature.
       - name: Build update-test debug APK
-        if: github.event_name == 'workflow_dispatch' && inputs.update_test_version != ''
+        if: github.event_name == 'pull_request' && github.head_ref == 'feature/update-download'
         env:
-          AALYRICS_VERSION_NAME: ${{ inputs.update_test_version }}
+          AALYRICS_VERSION_NAME: "0.1.0-alpha.1"
         run: |
           ./gradlew :app:clean :app:assembleDebug --stacktrace
           mkdir -p update-test
           cp app/build/outputs/apk/debug/app-debug.apk update-test/aalyrics-update-test.apk
 
       - name: Upload update-test debug APK
-        if: github.event_name == 'workflow_dispatch' && inputs.update_test_version != ''
+        if: github.event_name == 'pull_request' && github.head_ref == 'feature/update-download'
         uses: actions/upload-artifact@v4
         with:
-          name: aalyrics-update-test-apk-${{ inputs.update_test_version }}
+          name: aalyrics-update-test-apk-0.1.0-alpha.1
           path: update-test/aalyrics-update-test.apk
           if-no-files-found: error
           retention-days: 7
