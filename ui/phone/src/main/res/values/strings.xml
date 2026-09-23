@@ -51,6 +51,7 @@
     <string name="settings_up_to_date">Up to date</string>
     <string name="settings_update_available">Update available:</string>
     <string name="settings_download_update">Download</string>
+    <string name="settings_preparing_update_download">Preparing download…</string>
     <string name="settings_downloading_update">Downloading</string>
     <string name="settings_update_downloaded">Downloaded</string>
     <string name="settings_retry">Retry</string>
