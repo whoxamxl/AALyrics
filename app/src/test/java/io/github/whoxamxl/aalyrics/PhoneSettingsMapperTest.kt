@@ -10,6 +10,8 @@ import io.github.whoxamxl.aalyrics.ui.phone.settings.TranslationModelUiState
 import java.util.Locale
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 
 class PhoneSettingsMapperTest {
     @Test
@@ -216,6 +218,48 @@ class PhoneSettingsMapperTest {
         val installFailed = mapped(AppUpdateCheckState.InstallFailed("0.2.0-alpha.2"))
         assertEquals(AppUpdateUiPhase.INSTALL_FAILED, installFailed.phase)
         assertEquals("0.2.0-alpha.2", installFailed.availableVersionName)
+    }
+
+    @Test
+    fun `permission-required runtime state is independent from dialog visibility`() {
+        fun mapped(prompt: UpdateInstallPermissionPrompt?) = mapPhoneSettingsState(
+            translationSettings = TranslationSettings(enabled = false),
+            translationModelStates = emptyMap(),
+            verboseDetailsEnabled = false,
+            plainLyricsAutoScrollEnabled = true,
+            ignoreNonAudioApps = true,
+            allowUnclassifiedApps = false,
+            androidAutoStatus = AndroidAutoCompatibilityUiStatus.ENABLED,
+            appVersionName = "0.2.0-alpha.1",
+            currentYear = 2026,
+            noticeText = "notice",
+            licenseText = "license",
+            changelogText = "changelog",
+            privacyPolicyText = "privacy",
+            appUpdateCheckState =
+                AppUpdateCheckState.InstallPermissionRequired("0.2.0-alpha.2"),
+            installPermissionPrompt = prompt,
+            displayLocale = Locale.ENGLISH,
+        )
+
+        val dismissed = mapped(prompt = null)
+        assertEquals(
+            AppUpdateUiPhase.INSTALL_PERMISSION_REQUIRED,
+            dismissed.appUpdate.phase,
+        )
+        assertNull(dismissed.installPermissionDialog)
+
+        val requested = mapped(
+            prompt = UpdateInstallPermissionPrompt("0.2.0-alpha.2"),
+        )
+        assertEquals(
+            AppUpdateUiPhase.INSTALL_PERMISSION_REQUIRED,
+            requested.appUpdate.phase,
+        )
+        assertEquals(
+            "0.2.0-alpha.2",
+            assertNotNull(requested.installPermissionDialog).versionName,
+        )
     }
 
     @Test
