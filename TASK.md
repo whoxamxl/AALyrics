@@ -182,10 +182,10 @@ The asset-resolution, checksum/file-boundary, and runtime-orchestration checkpoi
 
 Production wiring is now complete: `AALyricsApplication` owns separate cache staging and persistent verified-update storage, Settings Download/Retry is connected, Reset cancels update work and clears both storage areas, and Preview/docs are aligned.
 
-The download presentation now separates preparation from transfer: `PREPARING_DOWNLOAD` retains the compact circular activity indicator while assets/checksum/staging are prepared, then `DOWNLOADING` switches to an indeterminate linear progress bar when APK transfer begins.
+The download presentation now separates preparation from transfer: `PREPARING_DOWNLOAD` uses an indeterminate linear progress bar while assets/checksum/staging are prepared, then `DOWNLOADING` switches to determinate 0–100% progress driven by received bytes against the GitHub Release asset size.
 
 12. verified APK retention survives process restart without persisting a separate state record: runtime startup derives `DOWNLOADED` from the retained canonical APK and removes it once the installed version catches up.
 
-Remaining work is final architecture/build/unit/CI validation, real-device verified-download/restart testing, bounded review, and merge readiness. Package Installer remains deferred.
+Remaining work is final architecture/build/unit/CI validation, real-device verified-download/restart testing, bounded review, and merge readiness. Package Installer remains deferred. Its explicit Install action must re-check the latest eligible Release before handoff so a retained older verified APK is not installed first when a newer update has appeared.
 
 For real-device validation only, PR #71 temporarily builds an additional debug APK with `AALYRICS_VERSION_NAME=0.1.0-alpha.1` so the public `v0.2.0-alpha.1` Release is discoverable as a newer update. This CI-only scaffolding must be removed after device validation and before merge.
