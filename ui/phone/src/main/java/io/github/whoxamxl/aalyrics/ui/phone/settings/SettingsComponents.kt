@@ -466,7 +466,7 @@ internal fun AppUpdateRow(
             }
 
             AppUpdateUiPhase.PREPARING_DOWNLOAD -> {
-                AppUpdateProgressRow(label = preparingDownloadLabel)
+                AppUpdateIndeterminateBarRow(label = preparingDownloadLabel)
             }
 
             AppUpdateUiPhase.DOWNLOADING -> {
@@ -476,6 +476,7 @@ internal fun AppUpdateRow(
                     } else {
                         "${downloadingLabel} ${state.availableVersionName.asVersionLabel()}"
                     },
+                    progress = state.downloadProgress ?: 0f,
                 )
             }
 
@@ -598,7 +599,7 @@ private fun AppUpdateProgressRow(
 }
 
 @Composable
-private fun AppUpdateDownloadProgressRow(
+private fun AppUpdateIndeterminateBarRow(
     label: String,
 ) {
     Column(
@@ -616,6 +617,46 @@ private fun AppUpdateDownloadProgressRow(
         Spacer(Modifier.height(AALyricsSpacing.Space8))
 
         LinearProgressIndicator(
+            modifier = Modifier.fillMaxWidth(),
+            color = AALyricsColors.AccentCyan,
+            trackColor = AALyricsColors.OverlaySoft,
+        )
+    }
+}
+
+@Composable
+private fun AppUpdateDownloadProgressRow(
+    label: String,
+    progress: Float,
+) {
+    val boundedProgress = progress.coerceIn(0f, 1f)
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = AALyricsSpacing.Space48),
+        verticalArrangement = Arrangement.Center,
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = label,
+                style = AALyricsTypography.TrackArtist,
+                color = AALyricsColors.TextSecondary,
+                modifier = Modifier.weight(1f),
+            )
+            Text(
+                text = "${(boundedProgress * 100f).toInt()}%",
+                style = AALyricsTypography.TrackArtist,
+                color = AALyricsColors.TextSecondary,
+            )
+        }
+
+        Spacer(Modifier.height(AALyricsSpacing.Space8))
+
+        LinearProgressIndicator(
+            progress = { boundedProgress },
             modifier = Modifier.fillMaxWidth(),
             color = AALyricsColors.AccentCyan,
             trackColor = AALyricsColors.OverlaySoft,
