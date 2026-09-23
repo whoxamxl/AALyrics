@@ -228,10 +228,6 @@ class AALyricsApplication : Application() {
         appUpdateCheckRuntime.requestUpdate()
     }
 
-    internal fun downloadUpdate() {
-        appUpdateCheckRuntime.downloadUpdate()
-    }
-
     internal fun dismissAutomaticUpdateReleasePrompt() {
         automaticUpdateReleasePromptRuntime.dismiss()
     }
@@ -240,10 +236,6 @@ class AALyricsApplication : Application() {
         automaticUpdateReleasePromptRuntime.consumeForUpdate()
             ?: return
         appUpdateCheckRuntime.requestUpdate()
-    }
-
-    internal fun installUpdate() {
-        appUpdateCheckRuntime.installUpdate()
     }
 
     internal fun onInstallSourceTrustReturned() {
