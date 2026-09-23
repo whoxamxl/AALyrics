@@ -335,6 +335,16 @@ install older same-release-signed fixture
 
 The debug-signed fixture remains unsuitable for proving successful replacement because Android update compatibility requires the same signing identity.
 
+#### Validated Package Installer baseline
+
+The same-release-signing fixture path has now been exercised on a real device. The validated baseline covers explicit update discovery/download, SHA-256 verification, Android per-source install trust, Android-owned confirmation, cancellation/retry without requiring a second download of an otherwise-valid retained APK, and successful replacement of the older release-signed fixture by the newer published release.
+
+This validation establishes the current split `Download -> Install` flow as a functional checkpoint. A later Phone UX slice may compose those two user-visible actions into a single `Update` action, but the underlying download, verification, retained-artifact, install-time Release refresh, package/version/signing preflight, source-trust, and PackageInstaller boundaries remain required.
+
+The published target used for this device pass predates the current update/installer runtime. It therefore proves Android's same-signing replacement path but cannot fully prove the new binary's next-launch retained-APK cleanup end to end. That cleanup remains part of the runtime/test contract until a release containing the current update runtime can be used as the update target.
+
+The approved follow-up UX contract is documented in `docs/UPDATE_UX.md`.
+
 AALyrics is intentionally distributed outside Google Play. For Android Auto, non-Play media apps still require Android Auto developer mode and **Developer settings → Unknown sources** on the test/user device. APK signing does not remove that Android Auto trust-source requirement.
 
 ## Release readiness
