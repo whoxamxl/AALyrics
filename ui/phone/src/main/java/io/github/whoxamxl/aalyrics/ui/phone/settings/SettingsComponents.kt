@@ -379,12 +379,11 @@ internal fun AppUpdateRow(
     checkingLabel: String,
     upToDateLabel: String,
     updateAvailableLabel: String,
-    downloadLabel: String,
-    preparingDownloadLabel: String,
+    updateLabel: String,
+    preparingLabel: String,
     downloadingLabel: String,
-    downloadedLabel: String,
-    installLabel: String,
-    preparingInstallLabel: String,
+    verifyingLabel: String,
+    readyLabel: String,
     installPermissionRequiredLabel: String,
     installingLabel: String,
     retryLabel: String,
@@ -396,8 +395,7 @@ internal fun AppUpdateRow(
     installFailureReason: String,
     unavailableLabel: String,
     onCheckForUpdates: () -> Unit,
-    onDownloadUpdate: () -> Unit,
-    onInstallUpdate: () -> Unit,
+    onUpdate: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -458,8 +456,8 @@ internal fun AppUpdateRow(
                     status = "${updateAvailableLabel} ${
                         state.availableVersionName?.asVersionLabel().orEmpty()
                     }".trim(),
-                    actionLabel = downloadLabel,
-                    onAction = onDownloadUpdate,
+                    actionLabel = updateLabel,
+                    onAction = onUpdate,
                 )
             }
 
@@ -474,7 +472,7 @@ internal fun AppUpdateRow(
             }
 
             AppUpdateUiPhase.PREPARING_DOWNLOAD -> {
-                AppUpdateIndeterminateBarRow(label = preparingDownloadLabel)
+                AppUpdateIndeterminateBarRow(label = preparingLabel)
             }
 
             AppUpdateUiPhase.DOWNLOADING -> {
@@ -488,15 +486,19 @@ internal fun AppUpdateRow(
                 )
             }
 
+            AppUpdateUiPhase.VERIFYING -> {
+                AppUpdateIndeterminateBarRow(label = verifyingLabel)
+            }
+
             AppUpdateUiPhase.DOWNLOADED -> {
                 AppUpdateActionRow(
                     status = if (state.availableVersionName.isNullOrBlank()) {
-                        downloadedLabel
+                        readyLabel
                     } else {
-                        "${downloadedLabel} ${state.availableVersionName.asVersionLabel()}"
+                        "${readyLabel} ${state.availableVersionName.asVersionLabel()}"
                     },
-                    actionLabel = installLabel,
-                    onAction = onInstallUpdate,
+                    actionLabel = updateLabel,
+                    onAction = onUpdate,
                 )
             }
 
@@ -506,19 +508,19 @@ internal fun AppUpdateRow(
                     reason = state.failureReason ?: genericFailureReason,
                     failureInfoContentDescription = failureInfoContentDescription,
                     retryLabel = retryLabel,
-                    onRetry = onDownloadUpdate,
+                    onRetry = onUpdate,
                 )
             }
 
             AppUpdateUiPhase.PREPARING_INSTALL -> {
-                AppUpdateIndeterminateBarRow(label = preparingInstallLabel)
+                AppUpdateIndeterminateBarRow(label = preparingLabel)
             }
 
             AppUpdateUiPhase.INSTALL_PERMISSION_REQUIRED -> {
                 AppUpdateActionRow(
                     status = installPermissionRequiredLabel,
-                    actionLabel = installLabel,
-                    onAction = onInstallUpdate,
+                    actionLabel = updateLabel,
+                    onAction = onUpdate,
                 )
             }
 
@@ -532,7 +534,7 @@ internal fun AppUpdateRow(
                     reason = state.failureReason ?: installFailureReason,
                     failureInfoContentDescription = failureInfoContentDescription,
                     retryLabel = retryLabel,
-                    onRetry = onInstallUpdate,
+                    onRetry = onUpdate,
                 )
             }
         }
