@@ -299,6 +299,8 @@ internal fun SettingsScreenPreview(
                         )
                     }
                 },
+                onInstallUpdate = {},
+                onOpenInstallSettings = {},
                 onOpenGitHub = {},
                 onHelpFeedback = {},
                 onSupportAALyrics = {},
