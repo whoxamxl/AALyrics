@@ -2,7 +2,6 @@ package io.github.whoxamxl.aalyrics.ui.phone.preview
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -73,9 +72,7 @@ private fun InstallPermissionDialogPreview() {
                 onDismissRequest = {},
                 onGrantPermission = {},
                 onDownloadFromGitHub = {},
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .fillMaxHeight(0.86f),
+                modifier = Modifier.fillMaxWidth(),
             )
         }
     }
