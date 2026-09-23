@@ -84,6 +84,7 @@ class AALyricsApplication : Application() {
     private lateinit var phonePlaybackSourceCanOpenAppStateFlow: StateFlow<Boolean>
     private lateinit var phoneDetailsStateFlow: StateFlow<DetailsScreenUiState>
     private lateinit var appUpdateCheckRuntime: AppUpdateCheckRuntime
+    private val installPermissionPromptRuntime = UpdateInstallPermissionPromptRuntime()
     private val mutablePlaybackArtworkState = MutableStateFlow<Bitmap?>(null)
     private val mutableQueueArtworkBitmapsState =
         MutableStateFlow<Map<Long, Bitmap>>(emptyMap())
@@ -188,6 +189,9 @@ class AALyricsApplication : Application() {
     internal val appUpdateCheckState: StateFlow<AppUpdateCheckState>
         get() = appUpdateCheckRuntime.state
 
+    internal val installPermissionPrompt: StateFlow<UpdateInstallPermissionPrompt?>
+        get() = installPermissionPromptRuntime.prompt
+
     internal fun checkForUpdates() {
         appUpdateCheckRuntime.checkForUpdates()
     }
@@ -201,7 +205,12 @@ class AALyricsApplication : Application() {
     }
 
     internal fun onInstallSourceTrustReturned() {
+        installPermissionPromptRuntime.dismiss()
         appUpdateCheckRuntime.onInstallSourceTrustReturned()
+    }
+
+    internal fun dismissInstallPermissionPrompt() {
+        installPermissionPromptRuntime.dismiss()
     }
 
     internal fun onSettingsEntered() {
@@ -265,6 +274,7 @@ class AALyricsApplication : Application() {
     }
 
     fun resetAppOwnedSettings() {
+        installPermissionPromptRuntime.dismiss()
         appUpdateCheckRuntime.reset()
         translationSettingsStore.resetToDefaults()
         phonePresentationSettingsStore.resetToDefaults()
@@ -318,6 +328,7 @@ class AALyricsApplication : Application() {
                 packageManager = packageManager,
             ),
             packageInstaller = AndroidUpdatePackageInstaller(this),
+            onInstallPermissionRequired = installPermissionPromptRuntime::request,
         )
         translationSettingsStore = SharedPreferencesTranslationSettingsStore(this)
         phonePresentationSettingsStore = SharedPreferencesPhonePresentationSettingsStore(this)
