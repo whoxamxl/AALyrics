@@ -16,7 +16,7 @@ This slice owns exactly four new capabilities:
 1. resolve the expected APK and checksum assets from the already-selected GitHub Release;
 2. download those two public assets through an application-owned boundary;
 3. verify the downloaded APK against the published SHA-256 before accepting it;
-4. expose the existing `DOWNLOADING`, `DOWNLOADED`, and `DOWNLOAD_FAILED` Settings presentation states.
+4. expose `PREPARING_DOWNLOAD`, `DOWNLOADING`, `DOWNLOADED`, and `DOWNLOAD_FAILED` Settings presentation states.
 
 ## Scope boundary
 
@@ -176,7 +176,7 @@ Completed:
 8. app-private update file ownership with `.part` staging, verified promotion, stale cleanup, and path-ownership guards;
 9. focused file-store lifecycle / cleanup tests;
 10. application-owned download orchestration from the selected release through checksum fetch, APK staging, digest verification, verified promotion, retry, and failure cleanup;
-11. runtime states for `DOWNLOADING`, `DOWNLOADED`, and `DOWNLOAD_FAILED` plus focused lifecycle/state-mapping tests.
+11. runtime states for `PREPARING_DOWNLOAD`, `DOWNLOADING`, `DOWNLOADED`, and `DOWNLOAD_FAILED` plus focused lifecycle/state-mapping tests;
 
 The asset-resolution, checksum/file-boundary, and runtime-orchestration checkpoints passed build/test validation before final production wiring.
 
@@ -184,7 +184,7 @@ Production wiring is now complete: `AALyricsApplication` owns separate cache sta
 
 The download presentation now separates preparation from transfer: `PREPARING_DOWNLOAD` retains the compact circular activity indicator while assets/checksum/staging are prepared, then `DOWNLOADING` switches to an indeterminate linear progress bar when APK transfer begins.
 
-Verified APK retention now survives process restart without persisting a separate state record: runtime startup derives `DOWNLOADED` from the retained canonical APK and removes it once the installed version catches up.
+12. verified APK retention survives process restart without persisting a separate state record: runtime startup derives `DOWNLOADED` from the retained canonical APK and removes it once the installed version catches up.
 
 Remaining work is final architecture/build/unit/CI validation, real-device verified-download/restart testing, bounded review, and merge readiness. Package Installer remains deferred.
 
