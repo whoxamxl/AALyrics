@@ -20,6 +20,7 @@ internal class AndroidUpdatePackageInstaller(
         apkFile: File,
         statusSink: UpdatePackageInstallerStatusSink,
         onSessionCreated: (Int) -> Unit,
+        onBeforeCommit: (Int) -> Unit,
     ): Result<Int> = withContext(Dispatchers.IO) {
         runCatching {
             check(apkFile.isFile) {
@@ -62,6 +63,8 @@ internal class AndroidUpdatePackageInstaller(
                         sessionId = sessionId,
                         sink = statusSink,
                     )
+                    currentCoroutineContext().ensureActive()
+                    onBeforeCommit(sessionId)
                     currentCoroutineContext().ensureActive()
                     session.commit(
                         installStatusIntentSender(sessionId),
