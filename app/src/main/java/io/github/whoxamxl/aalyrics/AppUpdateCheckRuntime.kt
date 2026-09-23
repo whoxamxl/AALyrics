@@ -208,7 +208,10 @@ internal class AppUpdateCheckRuntime(
             ?: return downloadFailed(candidate)
 
         ensureCurrentOperation(generation)
-        val files = fileStore.prepare(assets.apk.name)
+        val files = fileStore.prepare(
+            apkFileName = assets.apk.name,
+            operationId = generation,
+        )
         ensureCurrentOperation(generation)
         val versionName = candidate.release.tagName.removePrefix("v")
         mutableState.value = AppUpdateCheckState.Downloading(
