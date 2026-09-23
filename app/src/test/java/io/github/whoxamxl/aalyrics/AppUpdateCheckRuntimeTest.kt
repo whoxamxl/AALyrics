@@ -931,6 +931,30 @@ class AppUpdateCheckRuntimeTest {
     }
 
     @Test
+    fun `reset clears unconsumed successful update recovery state`() = runTest {
+        val successful = SuccessfulUpdate(
+            installedVersion = "0.2.0-alpha.2",
+            installedVersionCode = 42L,
+            resumeAfterUpdate = true,
+        )
+        val recoveryStore = FakeUpdateRecoveryStore(
+            initialSuccessful = successful,
+        )
+        val runtime = runtime(
+            installedVersionName = "0.2.0-alpha.2",
+            releases = emptyList(),
+            updateRecoveryStore = recoveryStore,
+        )
+
+        assertEquals(successful, recoveryStore.successfulUpdate())
+
+        runtime.reset()
+
+        assertNull(recoveryStore.successfulUpdate())
+        assertEquals(1, recoveryStore.clearCount)
+    }
+
+    @Test
     fun `reset suppresses check result when client converts cancellation to failure`() = runTest {
         val gate = CompletableDeferred<Unit>()
         val runtime = AppUpdateCheckRuntime(
@@ -1457,9 +1481,10 @@ class AppUpdateCheckRuntimeTest {
 
     private class FakeUpdateRecoveryStore(
         private val recordFailure: Throwable? = null,
+        initialSuccessful: SuccessfulUpdate? = null,
     ) : UpdateRecoveryStore {
         private var pending: PendingUpdate? = null
-        private var successful: SuccessfulUpdate? = null
+        private var successful: SuccessfulUpdate? = initialSuccessful
         var recordCount: Int = 0
             private set
         var clearCount: Int = 0
