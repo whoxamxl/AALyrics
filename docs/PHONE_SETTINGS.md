@@ -478,13 +478,15 @@ DOWNLOADED      -> keep
 other completed check/download states -> IDLE
 ```
 
-Therefore `UP_TO_DATE`, `UPDATE_AVAILABLE`, `CHECK_FAILED`, and `DOWNLOAD_FAILED` remain visit-local. Leaving Settings and returning presents `Check for updates` again for those states. Active preparation/download work and a successfully verified `DOWNLOADED` artifact are intentionally retained across Settings navigation within the current application process.
+Therefore `UP_TO_DATE`, `UPDATE_AVAILABLE`, `CHECK_FAILED`, and `DOWNLOAD_FAILED` remain visit-local. Leaving Settings and returning presents `Check for updates` again for those states. Active preparation/download work is retained while the process is alive, and a successfully verified `DOWNLOADED` artifact is retained beyond the current Settings visit.
 
 Configuration changes, Activity recreation, recomposition, Settings subscreen navigation, and Settings-tab reselection while already in Settings remain the same visit and must not clear update state. Check/download jobs are application-owned and continue across destination changes.
 
 Only one check or download may be active at a time. The active presentation exposes no duplicate action.
 
-The verified APK is an app-owned cache artifact rather than persisted user data. Process death does not restore the download state; stale update-cache artifacts are cleaned on runtime initialization. `Reset AALyrics` cancels active update work, deletes partial/verified update artifacts, clears the selected release, and restores update presentation to `IDLE`.
+Partial APK bytes live only in app-private cache storage. A SHA-256-verified APK is promoted into app-private persistent files storage and becomes the source of truth for `DOWNLOADED`. On process restart, the runtime removes transient staging/promotion files and restores `DOWNLOADED` when the retained APK has a canonical AALyrics release filename and is still newer than the installed version. Once the installed app reaches or passes that retained release, the stale verified APK is deleted and update state returns to `IDLE`.
+
+`Reset AALyrics` cancels active update work, deletes both transient and verified update artifacts, clears the selected release, and restores update presentation to `IDLE`.
 
 ### Changelog
 
