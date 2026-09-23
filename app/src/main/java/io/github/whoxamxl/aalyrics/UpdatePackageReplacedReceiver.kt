@@ -33,12 +33,17 @@ class UpdatePackageReplacedReceiver : BroadcastReceiver() {
         if (intent.action != Intent.ACTION_MY_PACKAGE_REPLACED) return
 
         runCatching {
-            UpdatePackageReplacementHandler(
-                recoveryStore = SharedPreferencesUpdateRecoveryStore(context),
-            ).reconcile(
-                installedVersion = BuildConfig.VERSION_NAME,
-                installedVersionCode = BuildConfig.VERSION_CODE.toLong(),
-            )
+            val application = context.applicationContext as? AALyricsApplication
+            if (application != null) {
+                application.reconcilePackageReplacement()
+            } else {
+                UpdatePackageReplacementHandler(
+                    recoveryStore = SharedPreferencesUpdateRecoveryStore(context),
+                ).reconcile(
+                    installedVersion = BuildConfig.VERSION_NAME,
+                    installedVersionCode = BuildConfig.VERSION_CODE.toLong(),
+                )
+            }
         }
     }
 }
