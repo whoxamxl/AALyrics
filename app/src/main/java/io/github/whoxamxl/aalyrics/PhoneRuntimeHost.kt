@@ -90,6 +90,8 @@ internal fun PhoneRuntimeHost(
     val verboseDetailsEnabled by application.verboseDetailsEnabled.collectAsStateWithLifecycle()
     val ignoreNonAudioApps by application.ignoreNonAudioApps.collectAsStateWithLifecycle()
     val allowUnclassifiedApps by application.allowUnclassifiedApps.collectAsStateWithLifecycle()
+    val automaticallyCheckForUpdates by
+        application.automaticallyCheckForUpdates.collectAsStateWithLifecycle()
     val appUpdateCheckState by application.appUpdateCheckState.collectAsStateWithLifecycle()
     val installPermissionPrompt by
         application.installPermissionPrompt.collectAsStateWithLifecycle()
@@ -100,6 +102,10 @@ internal fun PhoneRuntimeHost(
         onDispose {
             application.dismissInstallPermissionPrompt()
         }
+    }
+
+    LaunchedEffect(application) {
+        application.onPhoneReadyForAutomaticUpdateCheck()
     }
 
     val queueArtworkCache = remember {
@@ -173,6 +179,7 @@ internal fun PhoneRuntimeHost(
         plainLyricsAutoScrollEnabled = plainLyricsAutoScrollEnabled,
         ignoreNonAudioApps = ignoreNonAudioApps,
         allowUnclassifiedApps = allowUnclassifiedApps,
+        automaticallyCheckForUpdates = automaticallyCheckForUpdates,
         androidAutoStatus = androidAutoStatus,
         appVersionName = BuildConfig.VERSION_NAME,
         currentYear = Year.now().value,
@@ -274,6 +281,8 @@ internal fun PhoneRuntimeHost(
                 onPlainLyricsAutoScrollChanged = { plainLyricsAutoScrollEnabled = it },
                 onIgnoreNonAudioAppsChanged = application::setIgnoreNonAudioApps,
                 onAllowUnclassifiedAppsChanged = application::setAllowUnclassifiedApps,
+                onAutomaticallyCheckForUpdatesChanged =
+                    application::setAutomaticallyCheckForUpdates,
                 onVerboseDetailsChanged = application::setVerboseDetailsEnabled,
                 onTranslationEnabledChanged = application::setTranslationEnabled,
                 onTranslationTargetSelected = application::setTranslationTargetLanguage,
