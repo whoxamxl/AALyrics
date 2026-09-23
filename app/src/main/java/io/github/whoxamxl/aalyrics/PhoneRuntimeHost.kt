@@ -39,6 +39,8 @@ import io.github.whoxamxl.aalyrics.ui.phone.shell.PhoneAppShell
 import io.github.whoxamxl.aalyrics.ui.phone.state.PhoneShellUiState
 import io.github.whoxamxl.aalyrics.ui.phone.state.PlaybackQueueItemUiState
 import io.github.whoxamxl.aalyrics.ui.phone.sync.SyncScreen
+import io.github.whoxamxl.aalyrics.ui.phone.update.NewReleaseAvailableDialog
+import io.github.whoxamxl.aalyrics.ui.phone.update.NewReleaseAvailableDialogUiState
 import io.github.whoxamxl.aalyrics.ui.phone.update.UpdateSuccessfulDialog
 import io.github.whoxamxl.aalyrics.ui.phone.update.UpdateSuccessfulDialogUiState
 import kotlinx.coroutines.CancellationException
@@ -97,6 +99,8 @@ internal fun PhoneRuntimeHost(
         application.installPermissionPrompt.collectAsStateWithLifecycle()
     val successfulUpdate by
         application.successfulUpdate.collectAsStateWithLifecycle()
+    val automaticUpdateReleasePrompt by
+        application.automaticUpdateReleasePrompt.collectAsStateWithLifecycle()
 
     DisposableEffect(application) {
         onDispose {
@@ -311,13 +315,24 @@ internal fun PhoneRuntimeHost(
         }
     }
 
-    successfulUpdate?.let { update ->
+    if (successfulUpdate != null) {
         UpdateSuccessfulDialog(
             state = UpdateSuccessfulDialogUiState(
-                versionName = update.installedVersion,
+                versionName = successfulUpdate!!.installedVersion,
             ),
             onDismissRequest = application::dismissSuccessfulUpdate,
         )
+    } else {
+        automaticUpdateReleasePrompt?.let { prompt ->
+            NewReleaseAvailableDialog(
+                state = NewReleaseAvailableDialogUiState(
+                    versionName = prompt.versionName,
+                ),
+                onUpdate = application::acceptAutomaticUpdateReleasePrompt,
+                onDismissRequest =
+                    application::dismissAutomaticUpdateReleasePrompt,
+            )
+        }
     }
 }
 
