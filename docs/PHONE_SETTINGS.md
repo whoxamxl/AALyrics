@@ -547,7 +547,9 @@ Partial APK bytes live only in app-private cache storage. A SHA-256-verified APK
 
 Immediately before a PackageInstaller session is committed, application-owned update recovery persistence records `PendingUpdate(targetVersion, targetVersionCode, resumeAfterUpdate=true)`. The versionCode is the value already validated from APK package metadata during install preflight. Persistence is synchronous and happens only after the APK has been written/fsynced into the session. If that durable write fails, the installer session is not committed. The old binary does not clear the marker on PackageInstaller success; terminal installer failure clears only the pending state.
 
-After Android replaces the package, a manifest-registered non-exported `ACTION_MY_PACKAGE_REPLACED` receiver compares the pending target with the version running in the new binary. Exact target versionCode/versionName matches reconcile as success, and any strictly newer installed versionCode also satisfies the pending target. Older or same-code/name-mismatched replacements do not consume the pending marker. Successful reconciliation synchronously promotes the pending marker to durable `SuccessfulUpdate(installedVersion, installedVersionCode, resumeAfterUpdate)` state without starting an Activity. Presentation of that success state is a later checkpoint.
+After Android replaces the package, a manifest-registered non-exported `ACTION_MY_PACKAGE_REPLACED` receiver compares the pending target with the version running in the new binary. Exact target versionCode/versionName matches reconcile as success, and any strictly newer installed versionCode also satisfies the pending target. Older or same-code/name-mismatched replacements do not consume the pending marker. Successful reconciliation synchronously promotes the pending marker to durable `SuccessfulUpdate(installedVersion, installedVersionCode, resumeAfterUpdate)` state without starting an Activity.
+
+The next valid Phone entry keeps the ordinary startup destination (`PhoneDestination.Home`, which aliases Lyrics) and overlays the update-success dialog. There is no update-specific destination override. The dialog shows the actual installed version from `SuccessfulUpdate`, not an inferred target label. Done, the close button, and system Back share the same dismissal path. Outside-tap dismissal is disabled. The durable success marker is cleared before the dialog is removed from process state; if that clear fails, the dialog remains visible. Process death before dismissal therefore preserves the marker and causes the dialog to reappear at the next valid Phone entry.
 
 `Reset AALyrics` cancels app-owned update/install preparation, abandons any PackageInstaller session still under AALyrics control when practical, deletes transient and verified update artifacts, clears the selected release and all app-owned update recovery markers, and restores presentation to `IDLE`. Reset does not revoke Android's per-source install trust and does not undo a package already installed by Android.
 
@@ -959,6 +961,7 @@ Deterministic debug Previews should cover at least:
 - app update failure/retry state;
 - install-permission explanation dialog at typical, narrow, and enlarged-font configurations;
 - install-permission Settings return with trust denied and trust granted;
+- update-success dialog at typical, narrow, and enlarged-font configurations;
 - Changelog screen at typical, narrow, and enlarged-font configurations;
 - Privacy Policy screen at typical, narrow, and enlarged-font configurations;
 - Terms of Use screen at typical, narrow, and enlarged-font configurations;
