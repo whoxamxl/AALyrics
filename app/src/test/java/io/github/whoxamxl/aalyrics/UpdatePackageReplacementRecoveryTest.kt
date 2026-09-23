@@ -10,6 +10,7 @@ class UpdatePackageReplacementRecoveryTest {
             pendingUpdate = PendingUpdate(
                 targetVersion = "0.3.0-alpha.1",
                 targetVersionCode = 3L,
+                installerSessionId = 77,
                 resumeAfterUpdate = true,
             ),
             installedVersion = "0.3.0-alpha.1",
@@ -34,6 +35,7 @@ class UpdatePackageReplacementRecoveryTest {
             pendingUpdate = PendingUpdate(
                 targetVersion = "0.3.0-alpha.1",
                 targetVersionCode = 3L,
+                installerSessionId = 77,
                 resumeAfterUpdate = false,
             ),
             installedVersion = "0.3.0-beta.1",
@@ -58,6 +60,7 @@ class UpdatePackageReplacementRecoveryTest {
             pendingUpdate = PendingUpdate(
                 targetVersion = "0.3.0-alpha.1",
                 targetVersionCode = 3L,
+                installerSessionId = 77,
             ),
             installedVersion = "0.3.0-alpha.1-dev",
             installedVersionCode = 3L,
@@ -75,6 +78,7 @@ class UpdatePackageReplacementRecoveryTest {
             pendingUpdate = PendingUpdate(
                 targetVersion = "0.3.0-alpha.2",
                 targetVersionCode = 4L,
+                installerSessionId = 78,
             ),
             installedVersion = "0.3.0-alpha.1",
             installedVersionCode = 3L,
