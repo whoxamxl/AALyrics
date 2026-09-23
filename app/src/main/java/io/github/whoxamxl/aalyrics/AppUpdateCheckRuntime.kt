@@ -41,6 +41,10 @@ internal sealed interface AppUpdateCheckState {
         val totalBytes: Long,
     ) : AppUpdateCheckState
 
+    data class VerifyingDownload(
+        val versionName: String,
+    ) : AppUpdateCheckState
+
     data class Downloaded(
         val versionName: String,
         val apkFile: File,
@@ -90,6 +94,7 @@ internal class AppUpdateCheckRuntime(
     private var activeInstallSessionId: Int? = null
     private var installTarget: InstallTarget? = null
     private var availableCandidate: AALyricsReleaseCandidate? = null
+    private var oneStepUpdateRequested: Boolean = false
     private val operationGeneration = AtomicLong(0L)
 
     init {
@@ -107,6 +112,7 @@ internal class AppUpdateCheckRuntime(
             mutableState.value == AppUpdateCheckState.Checking ||
             mutableState.value is AppUpdateCheckState.PreparingDownload ||
             mutableState.value is AppUpdateCheckState.Downloading ||
+            mutableState.value is AppUpdateCheckState.VerifyingDownload ||
             mutableState.value is AppUpdateCheckState.PreparingInstall ||
             mutableState.value is AppUpdateCheckState.InstallPermissionRequired ||
             mutableState.value is AppUpdateCheckState.Installing ||
@@ -139,6 +145,11 @@ internal class AppUpdateCheckRuntime(
     }
 
     fun downloadUpdate() {
+        oneStepUpdateRequested = false
+        beginDownload()
+    }
+
+    fun requestUpdate() {
         if (
             downloadJob?.isActive == true ||
             checkJob?.isActive == true ||
@@ -148,6 +159,33 @@ internal class AppUpdateCheckRuntime(
             return
         }
 
+        oneStepUpdateRequested = true
+        when (val current = mutableState.value) {
+            is AppUpdateCheckState.UpdateAvailable,
+            is AppUpdateCheckState.DownloadFailed -> beginDownload()
+
+            is AppUpdateCheckState.Downloaded -> {
+                beginInstall(
+                    InstallTarget(
+                        versionName = current.versionName,
+                        apkFile = current.apkFile,
+                    ),
+                )
+            }
+
+            is AppUpdateCheckState.InstallPermissionRequired -> {
+                onInstallPermissionRequired(current.versionName)
+            }
+
+            is AppUpdateCheckState.InstallFailed -> {
+                installTarget?.let(::beginInstall)
+            }
+
+            else -> Unit
+        }
+    }
+
+    private fun beginDownload() {
         val candidate = availableCandidate ?: return
         val currentState = mutableState.value
         if (
@@ -175,10 +213,26 @@ internal class AppUpdateCheckRuntime(
             }
             ensureCurrentOperation(generation)
             mutableState.value = nextState
+
+            if (nextState is AppUpdateCheckState.DownloadFailed) {
+                oneStepUpdateRequested = false
+            } else if (
+                nextState is AppUpdateCheckState.Downloaded &&
+                oneStepUpdateRequested
+            ) {
+                downloadJob = null
+                beginInstall(
+                    InstallTarget(
+                        versionName = nextState.versionName,
+                        apkFile = nextState.apkFile,
+                    ),
+                )
+            }
         }
     }
 
     fun installUpdate() {
+        oneStepUpdateRequested = false
         if (
             checkJob?.isActive == true ||
             downloadJob?.isActive == true ||
@@ -272,12 +326,17 @@ internal class AppUpdateCheckRuntime(
                         versionName = preparationResult.candidate.release.tagName.removePrefix("v"),
                         origin = UpdateCheckOrigin.INSTALL_REFRESH,
                     )
+                    if (oneStepUpdateRequested) {
+                        installJob = null
+                        beginDownload()
+                    }
                     return@launch
                 }
 
                 is UpdateInstallPreparationResult.ReleaseRefreshRejected,
                 UpdateInstallPreparationResult.ReleaseRefreshFailed,
                 is UpdateInstallPreparationResult.ApkPreflightRejected -> {
+                    oneStepUpdateRequested = false
                     mutableState.value = AppUpdateCheckState.InstallFailed(target.versionName)
                     return@launch
                 }
@@ -308,6 +367,7 @@ internal class AppUpdateCheckRuntime(
 
                     is UpdatePackageInstallerStatus.Failure -> {
                         activeInstallSessionId = null
+                        oneStepUpdateRequested = false
                         runCatching {
                             recoveryStore.clearPendingUpdate()
                         }
@@ -351,6 +411,7 @@ internal class AppUpdateCheckRuntime(
                 },
                 onFailure = {
                     activeInstallSessionId = null
+                    oneStepUpdateRequested = false
                     runCatching {
                         recoveryStore.clearPendingUpdate()
                     }
@@ -375,6 +436,7 @@ internal class AppUpdateCheckRuntime(
         activeInstallSessionId = null
         installTarget = null
         availableCandidate = null
+        oneStepUpdateRequested = false
         downloadFileStore?.clearAll()
         updateRecoveryStore?.clearAll()
         mutableState.value = AppUpdateCheckState.Idle
@@ -385,6 +447,7 @@ internal class AppUpdateCheckRuntime(
             AppUpdateCheckState.Checking,
             is AppUpdateCheckState.PreparingDownload,
             is AppUpdateCheckState.Downloading,
+            is AppUpdateCheckState.VerifyingDownload,
             is AppUpdateCheckState.Downloaded,
             is AppUpdateCheckState.PreparingInstall,
             is AppUpdateCheckState.InstallPermissionRequired,
@@ -525,6 +588,7 @@ internal class AppUpdateCheckRuntime(
         }
 
         ensureCurrentOperation(generation)
+        mutableState.value = AppUpdateCheckState.VerifyingDownload(versionName)
         val verified = files.partialApk.inputStream().buffered().use { input ->
             AALyricsSha256.verify(
                 expected = expectedDigest,
