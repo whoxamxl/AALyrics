@@ -389,7 +389,7 @@ Version                v0.2.0-alpha.1-dev+abcdef0
                               Check for updates
 ```
 
-This slice makes the following lifecycle states production-reachable:
+The production lifecycle now includes both explicit update discovery and verified download:
 
 ```text
 IDLE
@@ -397,17 +397,12 @@ CHECKING
 UP_TO_DATE
 UPDATE_AVAILABLE
 CHECK_FAILED
-```
-
-The existing download-oriented states remain reserved for a later slice:
-
-```text
 DOWNLOADING
 DOWNLOADED
 DOWNLOAD_FAILED
 ```
 
-Expected Check-only presentation:
+Expected presentation:
 
 ```text
 Version                v0.2.0-alpha.1-dev+abcdef0
@@ -417,14 +412,20 @@ Checking for updates…                         ◌
 
 Up to date                                    ✓
 
-Update available: v0.2.0-alpha.2
+Update available: v0.2.0-alpha.2         Download
 
-Update check failed                 ⓘ   ↻ Retry
+Downloading v0.2.0-alpha.2                     ◌
+
+Update downloaded v0.2.0-alpha.2                ✓
+
+Download failed                       ⓘ   ↻ Retry
+
+Update check failed                   ⓘ   ↻ Retry
 ```
 
-Every check-state row keeps the same trailing-edge alignment used by the installed version value. Retry remains a compact inline action. `UPDATE_AVAILABLE` is informational in this slice: an enabled Download action must not be shown until APK download and integrity verification are actually implemented.
+Every update-state row keeps the same trailing-edge alignment used by the installed version value. Retry and Download remain compact inline actions. `UPDATE_AVAILABLE` exposes Download only because APK download and SHA-256 verification are now application-owned and functional. `DOWNLOADED` remains informational; Install is intentionally absent until Package Installer handoff is implemented.
 
-The UI emits `onCheckForUpdates`; it does not perform GitHub HTTP requests or release comparison directly.
+The UI emits `onCheckForUpdates` and `onDownloadUpdate`; it does not perform GitHub HTTP requests, release comparison, file I/O, or checksum verification directly.
 
 Application/runtime wiring owns the check:
 
@@ -463,20 +464,22 @@ Update results are intentionally short-lived so Settings does not keep presentin
 
 The Phone navigation host owns Settings-visit entry detection. A transition from any non-Settings destination into Settings starts a new Settings visit. The presentation `SettingsScreen` itself does not emit an entry callback from composition.
 
-On an actual Settings navigation entry, application/runtime wiring keeps an active `CHECKING` operation but normalizes completed/stale check results back to `IDLE`:
+On an actual Settings navigation entry, application/runtime wiring applies these lifetime rules:
 
 ```text
 CHECKING        -> keep
-everything else -> IDLE
+DOWNLOADING     -> keep
+DOWNLOADED      -> keep
+other completed check/download states -> IDLE
 ```
 
-Therefore `UP_TO_DATE`, `UPDATE_AVAILABLE`, and `CHECK_FAILED` are results for the current Settings visit only. Leaving Settings and returning presents `Check for updates` again, forcing the next explicit check to query current GitHub Releases rather than reusing an old result.
+Therefore `UP_TO_DATE`, `UPDATE_AVAILABLE`, `CHECK_FAILED`, and `DOWNLOAD_FAILED` remain visit-local. Leaving Settings and returning presents `Check for updates` again for those states. Active download work and a successfully verified `DOWNLOADED` artifact are intentionally retained across Settings navigation within the current application process.
 
-Configuration changes, Activity recreation, recomposition, Settings subscreen navigation, and Settings-tab reselection while already in Settings remain the same visit and must not clear a completed result. The active check is application-owned and continues across destination changes. If it completes while Settings is away, its completed result is normalized back to `IDLE` on the next actual Settings navigation entry.
+Configuration changes, Activity recreation, recomposition, Settings subscreen navigation, and Settings-tab reselection while already in Settings remain the same visit and must not clear update state. Check/download jobs are application-owned and continue across destination changes.
 
-Only one check may be active at a time. The checking presentation has no second Check/Retry action.
+Only one check or download may be active at a time. The active presentation exposes no duplicate action.
 
-No update result is persisted, so this slice does not change the `Reset AALyrics` contract.
+The verified APK is an app-owned cache artifact rather than persisted user data. Process death does not restore the download state; stale update-cache artifacts are cleaned on runtime initialization. `Reset AALyrics` cancels active update work, deletes partial/verified update artifacts, clears the selected release, and restores update presentation to `IDLE`.
 
 ### Changelog
 
