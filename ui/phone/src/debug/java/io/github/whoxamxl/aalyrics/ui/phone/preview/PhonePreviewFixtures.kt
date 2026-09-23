@@ -459,7 +459,7 @@ internal object PhonePreviewFixtures {
             availableVersionName = "0.1.2",
         ),
     )
-    val settingsInstallFailed = settingsTypical.copy(
+    val settingsInstallFailedSigningMismatch = settingsTypical.copy(
         appUpdate = AppUpdateUiState(
             phase = AppUpdateUiPhase.INSTALL_FAILED,
             availableVersionName = "0.1.2",
