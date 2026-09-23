@@ -42,6 +42,8 @@ fun SettingsScreen(
     onAndroidAutoCompatibilitySetup: () -> Unit,
     onCheckForUpdates: () -> Unit,
     onDownloadUpdate: () -> Unit,
+    onInstallUpdate: () -> Unit,
+    onOpenInstallSettings: () -> Unit,
     onOpenGitHub: () -> Unit,
     onHelpFeedback: (HelpFeedbackDestination) -> Unit,
     onSupportAALyrics: () -> Unit,
@@ -140,6 +142,8 @@ fun SettingsScreen(
             onAndroidAutoCompatibilitySetup = onAndroidAutoCompatibilitySetup,
             onCheckForUpdates = onCheckForUpdates,
             onDownloadUpdate = onDownloadUpdate,
+            onInstallUpdate = onInstallUpdate,
+            onOpenInstallSettings = onOpenInstallSettings,
             onChangelogRequested = { activeSubscreen = SettingsSubscreen.CHANGELOG },
             onPrivacyPolicyRequested = {
                 activeSubscreen = SettingsSubscreen.PRIVACY_POLICY
@@ -176,6 +180,8 @@ internal fun SettingsScreenContent(
     onAndroidAutoCompatibilitySetup: () -> Unit,
     onCheckForUpdates: () -> Unit,
     onDownloadUpdate: () -> Unit,
+    onInstallUpdate: () -> Unit,
+    onOpenInstallSettings: () -> Unit,
     onChangelogRequested: () -> Unit,
     onPrivacyPolicyRequested: () -> Unit,
     onTermsOfUseRequested: () -> Unit,
@@ -287,16 +293,30 @@ internal fun SettingsScreenContent(
                     stringResource(R.string.settings_preparing_update_download),
                 downloadingLabel = stringResource(R.string.settings_downloading_update),
                 downloadedLabel = stringResource(R.string.settings_update_downloaded),
+                installLabel = stringResource(R.string.settings_install_update),
+                preparingInstallLabel =
+                    stringResource(R.string.settings_preparing_update_install),
+                installPermissionRequiredLabel =
+                    stringResource(R.string.settings_install_permission_required),
+                openInstallSettingsLabel =
+                    stringResource(R.string.settings_open_install_settings),
+                installingLabel = stringResource(R.string.settings_installing_update),
                 retryLabel = stringResource(R.string.settings_retry),
                 checkFailedLabel = stringResource(R.string.settings_update_check_failed),
                 downloadFailedLabel = stringResource(R.string.settings_update_download_failed),
+                installFailedLabel =
+                    stringResource(R.string.settings_update_install_failed),
                 failureInfoContentDescription =
                     stringResource(R.string.settings_update_failure_info),
                 genericFailureReason =
                     stringResource(R.string.settings_update_failure_generic),
+                installFailureReason =
+                    stringResource(R.string.settings_update_install_failure_generic),
                 unavailableLabel = stringResource(R.string.settings_not_available_yet),
                 onCheckForUpdates = onCheckForUpdates,
                 onDownloadUpdate = onDownloadUpdate,
+                onInstallUpdate = onInstallUpdate,
+                onOpenInstallSettings = onOpenInstallSettings,
             )
 
             SettingsDivider()
