@@ -284,6 +284,8 @@ class AALyricsApplication : Application() {
     override fun onCreate() {
         super.onCreate()
         val updateUserAgent = "AALyrics/${BuildConfig.VERSION_NAME}"
+        AndroidUpdateInstallerSessionRecovery(this)
+            .cleanupInterruptedSessions()
         val updateReleaseClient = HttpGitHubReleaseClient(
             userAgent = updateUserAgent,
         )
