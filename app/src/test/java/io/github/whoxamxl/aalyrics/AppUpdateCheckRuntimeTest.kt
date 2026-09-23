@@ -561,6 +561,133 @@ class AppUpdateCheckRuntimeTest {
     }
 
     @Test
+    fun `pending update is recorded before installer commit and survives success callback`() = runTest {
+        val root = createTempDirectory("aalyrics-install-runtime").toFile()
+        retainedUpdate(root, "0.2.0-alpha.2")
+        val installer = FakeUpdatePackageInstaller()
+        val recoveryStore = FakeUpdateRecoveryStore()
+        try {
+            val runtime = runtime(
+                installedVersionName = "0.2.0-alpha.1",
+                releases = emptyList(),
+                downloadFileStore = updateStore(root),
+                installPreparation = installPreparation(
+                    installedVersionName = "0.2.0-alpha.1",
+                    releases = listOf(
+                        release("v0.2.0-alpha.2", prerelease = true),
+                    ),
+                    preflightResult =
+                        UpdateApkPreflightResult.Ready(targetVersionCode = 42L),
+                ),
+                installSourceTrustChecker = InstallSourceTrustChecker { true },
+                packageInstaller = installer,
+                updateRecoveryStore = recoveryStore,
+            )
+
+            runtime.installUpdate()
+            runCurrent()
+
+            val pending = PendingUpdate(
+                targetVersion = "0.2.0-alpha.2",
+                targetVersionCode = 42L,
+                resumeAfterUpdate = true,
+            )
+            assertEquals(1, installer.beforeCommitCount)
+            assertEquals(1, recoveryStore.recordCount)
+            assertEquals(pending, recoveryStore.pendingUpdate())
+
+            installer.emit(UpdatePackageInstallerStatus.Success)
+
+            assertEquals(pending, recoveryStore.pendingUpdate())
+            assertEquals(0, recoveryStore.clearCount)
+        } finally {
+            root.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun `pending update persistence failure prevents installer commit`() = runTest {
+        val root = createTempDirectory("aalyrics-install-runtime").toFile()
+        retainedUpdate(root, "0.2.0-alpha.2")
+        val installer = FakeUpdatePackageInstaller()
+        val recoveryStore = FakeUpdateRecoveryStore(
+            recordFailure = IllegalStateException("storage unavailable"),
+        )
+        try {
+            val runtime = runtime(
+                installedVersionName = "0.2.0-alpha.1",
+                releases = emptyList(),
+                downloadFileStore = updateStore(root),
+                installPreparation = installPreparation(
+                    installedVersionName = "0.2.0-alpha.1",
+                    releases = listOf(
+                        release("v0.2.0-alpha.2", prerelease = true),
+                    ),
+                ),
+                installSourceTrustChecker = InstallSourceTrustChecker { true },
+                packageInstaller = installer,
+                updateRecoveryStore = recoveryStore,
+            )
+
+            runtime.installUpdate()
+            runCurrent()
+
+            assertEquals(
+                AppUpdateCheckState.InstallFailed("0.2.0-alpha.2"),
+                runtime.state.value,
+            )
+            assertEquals(0, installer.beforeCommitCount)
+            assertNull(recoveryStore.pendingUpdate())
+        } finally {
+            root.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun `terminal installer failure clears pending update marker`() = runTest {
+        val root = createTempDirectory("aalyrics-install-runtime").toFile()
+        retainedUpdate(root, "0.2.0-alpha.2")
+        val installer = FakeUpdatePackageInstaller()
+        val recoveryStore = FakeUpdateRecoveryStore()
+        try {
+            val runtime = runtime(
+                installedVersionName = "0.2.0-alpha.1",
+                releases = emptyList(),
+                downloadFileStore = updateStore(root),
+                installPreparation = installPreparation(
+                    installedVersionName = "0.2.0-alpha.1",
+                    releases = listOf(
+                        release("v0.2.0-alpha.2", prerelease = true),
+                    ),
+                ),
+                installSourceTrustChecker = InstallSourceTrustChecker { true },
+                packageInstaller = installer,
+                updateRecoveryStore = recoveryStore,
+            )
+
+            runtime.installUpdate()
+            runCurrent()
+            assertNotNull(recoveryStore.pendingUpdate())
+
+            installer.emit(
+                UpdatePackageInstallerStatus.Failure(
+                    statusCode = -2,
+                    message = "cancelled",
+                ),
+            )
+
+            assertEquals(
+                AppUpdateCheckState.InstallFailed("0.2.0-alpha.2"),
+                runtime.state.value,
+            )
+            assertNull(recoveryStore.pendingUpdate())
+            assertEquals(1, recoveryStore.clearCount)
+        } finally {
+            root.deleteRecursively()
+        }
+    }
+
+    @Test
     fun `install redirects to newer eligible release before package installer`() = runTest {
         val root = createTempDirectory("aalyrics-install-runtime").toFile()
         val retained = retainedUpdate(root, "0.2.0-alpha.2")
