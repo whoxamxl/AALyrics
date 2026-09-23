@@ -164,6 +164,20 @@ jobs:
           printf '%s' "$RELEASE_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/aalyrics-release.keystore"
           chmod 600 "$RUNNER_TEMP/aalyrics-release.keystore"
 
+      - name: Build release-signed update-test APK
+        if: github.event_name == 'workflow_dispatch' && inputs.update_test_release_signed
+        env:
+          AALYRICS_VERSION_NAME: ${{ inputs.update_test_version }}
+          AALYRICS_VERSION_CODE: ${{ inputs.update_test_version_code }}
+          AALYRICS_RELEASE_STORE_FILE: ${{ runner.temp }}/aalyrics-release.keystore
+          AALYRICS_RELEASE_STORE_PASSWORD: ${{ secrets.AALYRICS_RELEASE_STORE_PASSWORD }}
+          AALYRICS_RELEASE_KEY_ALIAS: ${{ secrets.AALYRICS_RELEASE_KEY_ALIAS }}
+          AALYRICS_RELEASE_KEY_PASSWORD: ${{ secrets.AALYRICS_RELEASE_KEY_PASSWORD }}
+        run: |
+          ./gradlew :app:clean :app:assembleRelease --stacktrace
+          mkdir -p update-test-release-signed
+          cp app/build/outputs/apk/release/app-release.apk             "update-test-release-signed/aalyrics-update-test-release-signed-${AALYRICS_VERSION_NAME}.apk"
+
       - name: Build update-test debug APK
         if: github.event_name == 'workflow_dispatch' && inputs.update_test_version != ''
         env:
