@@ -13,6 +13,7 @@ import android.os.SystemClock
 import android.util.Log
 import android.util.LruCache
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -87,6 +88,14 @@ internal fun PhoneRuntimeHost(
     val ignoreNonAudioApps by application.ignoreNonAudioApps.collectAsStateWithLifecycle()
     val allowUnclassifiedApps by application.allowUnclassifiedApps.collectAsStateWithLifecycle()
     val appUpdateCheckState by application.appUpdateCheckState.collectAsStateWithLifecycle()
+    val installPermissionPrompt by
+        application.installPermissionPrompt.collectAsStateWithLifecycle()
+
+    DisposableEffect(application) {
+        onDispose {
+            application.dismissInstallPermissionPrompt()
+        }
+    }
 
     val queueArtworkCache = remember {
         QueueArtworkCache(maxEntries = QUEUE_ARTWORK_CACHE_ENTRIES)
@@ -170,6 +179,7 @@ internal fun PhoneRuntimeHost(
         thirdPartyLicensesText = application.thirdPartyLicensesText,
         translationModelCleanupState = translationModelCleanupState,
         appUpdateCheckState = appUpdateCheckState,
+        installPermissionPrompt = installPermissionPrompt,
     )
 
     PhoneAppShell(
@@ -183,12 +193,18 @@ internal fun PhoneRuntimeHost(
             playbackSurface = playbackSurface,
         ),
         onDestinationSelected = { destination ->
+            if (destination != PhoneDestination.Settings) {
+                application.dismissInstallPermissionPrompt()
+            }
             if (isSettingsNavigationEntry(selectedDestination, destination)) {
                 application.onSettingsEntered()
             }
             selectedDestination = destination
         },
         onDestinationReselected = { destination ->
+            if (destination == PhoneDestination.Settings) {
+                application.dismissInstallPermissionPrompt()
+            }
             destinationRootResetKey += 1
             if (destination == PhoneDestination.Lyrics) {
                 lyricsInteractionMode = LyricsViewportInteractionMode.FOLLOW
