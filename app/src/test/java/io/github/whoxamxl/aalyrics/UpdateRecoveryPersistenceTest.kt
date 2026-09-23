@@ -7,120 +7,184 @@ import kotlin.test.assertNull
 
 class UpdateRecoveryPersistenceTest {
     @Test
-    fun `complete pending update round trips`() {
-        var stored: PendingUpdate? = null
+    fun `pending update round trips`() {
+        var pending: PendingUpdate? = null
         val persistence = persistence(
-            read = { stored },
-            write = {
-                stored = it
-                true
-            },
-            clear = {
-                stored = null
+            readPending = { pending },
+            writePending = {
+                pending = it
                 true
             },
         )
 
-        val pending = PendingUpdate(
+        val value = PendingUpdate(
             targetVersion = "0.3.0-alpha.1",
             targetVersionCode = 3L,
             resumeAfterUpdate = true,
         )
 
-        persistence.recordPendingUpdate(pending)
+        persistence.recordPendingUpdate(value)
 
-        assertEquals(pending, persistence.pendingUpdate())
+        assertEquals(value, persistence.pendingUpdate())
     }
 
     @Test
-    fun `incomplete or invalid pending state is ignored`() {
-        assertNull(
-            persistence(
-                readTargetVersion = { null },
-                readTargetVersionCode = { 3L },
-                readResumeAfterUpdate = { true },
-            ).pendingUpdate(),
+    fun `successful update round trips after promotion`() {
+        var pending: PendingUpdate? = PendingUpdate(
+            targetVersion = "0.3.0-alpha.1",
+            targetVersionCode = 3L,
+            resumeAfterUpdate = true,
         )
-        assertNull(
-            persistence(
-                readTargetVersion = { "0.3.0-alpha.1" },
-                readTargetVersionCode = { null },
-                readResumeAfterUpdate = { true },
-            ).pendingUpdate(),
-        )
-        assertNull(
-            persistence(
-                readTargetVersion = { "0.3.0-alpha.1" },
-                readTargetVersionCode = { 0L },
-                readResumeAfterUpdate = { true },
-            ).pendingUpdate(),
-        )
-        assertNull(
-            persistence(
-                readTargetVersion = { "0.3.0-alpha.1" },
-                readTargetVersionCode = { 3L },
-                readResumeAfterUpdate = { null },
-            ).pendingUpdate(),
-        )
-    }
-
-    @Test
-    fun `failed durable write fails closed`() {
+        var successful: SuccessfulUpdate? = null
         val persistence = persistence(
-            write = { false },
+            readPending = { pending },
+            readSuccessful = { successful },
+            promote = {
+                pending = null
+                successful = it
+                true
+            },
         )
 
+        val value = SuccessfulUpdate(
+            installedVersion = "0.3.0-alpha.1",
+            installedVersionCode = 3L,
+            resumeAfterUpdate = true,
+        )
+
+        persistence.promotePendingUpdateToSuccess(value)
+
+        assertNull(persistence.pendingUpdate())
+        assertEquals(value, persistence.successfulUpdate())
+    }
+
+    @Test
+    fun `incomplete pending or successful state is ignored`() {
+        assertNull(
+            persistence(
+                readPendingTargetVersion = { null },
+                readPendingTargetVersionCode = { 3L },
+                readPendingResumeAfterUpdate = { true },
+            ).pendingUpdate(),
+        )
+        assertNull(
+            persistence(
+                readSuccessfulInstalledVersion = { "0.3.0-alpha.1" },
+                readSuccessfulInstalledVersionCode = { null },
+                readSuccessfulResumeAfterUpdate = { true },
+            ).successfulUpdate(),
+        )
+    }
+
+    @Test
+    fun `failed durable writes fail closed`() {
+        val pendingFailure = persistence(
+            writePending = { false },
+        )
         assertFailsWith<IllegalStateException> {
-            persistence.recordPendingUpdate(
+            pendingFailure.recordPendingUpdate(
                 PendingUpdate(
                     targetVersion = "0.3.0-alpha.1",
                     targetVersionCode = 3L,
                 ),
             )
         }
+
+        val promotionFailure = persistence(
+            promote = { false },
+        )
+        assertFailsWith<IllegalStateException> {
+            promotionFailure.promotePendingUpdateToSuccess(
+                SuccessfulUpdate(
+                    installedVersion = "0.3.0-alpha.1",
+                    installedVersionCode = 3L,
+                    resumeAfterUpdate = true,
+                ),
+            )
+        }
     }
 
     @Test
-    fun `clear removes pending update and failed clear is surfaced`() {
-        var stored: PendingUpdate? = PendingUpdate(
-            targetVersion = "0.3.0-alpha.1",
-            targetVersionCode = 3L,
+    fun `pending successful and full clear scopes are independent`() {
+        var pending: PendingUpdate? = PendingUpdate(
+            targetVersion = "0.3.0-alpha.2",
+            targetVersionCode = 4L,
+        )
+        var successful: SuccessfulUpdate? = SuccessfulUpdate(
+            installedVersion = "0.3.0-alpha.1",
+            installedVersionCode = 3L,
+            resumeAfterUpdate = true,
         )
         val persistence = persistence(
-            read = { stored },
-            clear = {
-                stored = null
+            readPending = { pending },
+            readSuccessful = { successful },
+            clearPending = {
+                pending = null
+                true
+            },
+            clearSuccessful = {
+                successful = null
+                true
+            },
+            clearAll = {
+                pending = null
+                successful = null
                 true
             },
         )
 
-        persistence.clear()
+        persistence.clearPendingUpdate()
         assertNull(persistence.pendingUpdate())
+        assertEquals("0.3.0-alpha.1", persistence.successfulUpdate()?.installedVersion)
 
-        val failing = persistence(clear = { false })
-        assertFailsWith<IllegalStateException> {
-            failing.clear()
-        }
+        pending = PendingUpdate("0.3.0-alpha.2", 4L)
+        persistence.clearSuccessfulUpdate()
+        assertEquals("0.3.0-alpha.2", persistence.pendingUpdate()?.targetVersion)
+        assertNull(persistence.successfulUpdate())
+
+        successful = SuccessfulUpdate("0.3.0-alpha.1", 3L, true)
+        persistence.clearAll()
+        assertNull(persistence.pendingUpdate())
+        assertNull(persistence.successfulUpdate())
     }
 
     private fun persistence(
-        read: (() -> PendingUpdate?)? = null,
-        readTargetVersion: () -> String? = {
-            read?.invoke()?.targetVersion
+        readPending: (() -> PendingUpdate?)? = null,
+        readSuccessful: (() -> SuccessfulUpdate?)? = null,
+        readPendingTargetVersion: () -> String? = {
+            readPending?.invoke()?.targetVersion
         },
-        readTargetVersionCode: () -> Long? = {
-            read?.invoke()?.targetVersionCode
+        readPendingTargetVersionCode: () -> Long? = {
+            readPending?.invoke()?.targetVersionCode
         },
-        readResumeAfterUpdate: () -> Boolean? = {
-            read?.invoke()?.resumeAfterUpdate
+        readPendingResumeAfterUpdate: () -> Boolean? = {
+            readPending?.invoke()?.resumeAfterUpdate
         },
-        write: (PendingUpdate) -> Boolean = { true },
-        clear: () -> Boolean = { true },
+        readSuccessfulInstalledVersion: () -> String? = {
+            readSuccessful?.invoke()?.installedVersion
+        },
+        readSuccessfulInstalledVersionCode: () -> Long? = {
+            readSuccessful?.invoke()?.installedVersionCode
+        },
+        readSuccessfulResumeAfterUpdate: () -> Boolean? = {
+            readSuccessful?.invoke()?.resumeAfterUpdate
+        },
+        writePending: (PendingUpdate) -> Boolean = { true },
+        promote: (SuccessfulUpdate) -> Boolean = { true },
+        clearPending: () -> Boolean = { true },
+        clearSuccessful: () -> Boolean = { true },
+        clearAll: () -> Boolean = { true },
     ) = UpdateRecoveryPersistence(
-        readTargetVersion = readTargetVersion,
-        readTargetVersionCode = readTargetVersionCode,
-        readResumeAfterUpdate = readResumeAfterUpdate,
-        writePendingUpdate = write,
-        clearAll = clear,
+        readPendingTargetVersion = readPendingTargetVersion,
+        readPendingTargetVersionCode = readPendingTargetVersionCode,
+        readPendingResumeAfterUpdate = readPendingResumeAfterUpdate,
+        readSuccessfulInstalledVersion = readSuccessfulInstalledVersion,
+        readSuccessfulInstalledVersionCode = readSuccessfulInstalledVersionCode,
+        readSuccessfulResumeAfterUpdate = readSuccessfulResumeAfterUpdate,
+        writePendingUpdate = writePending,
+        promotePendingUpdateToSuccess = promote,
+        clearPending = clearPending,
+        clearSuccessful = clearSuccessful,
+        clearAllState = clearAll,
     )
 }
