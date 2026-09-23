@@ -124,10 +124,10 @@
     <string name="settings_clear_translation_models_failed_body">Some downloaded translation models could not be removed. Try again when the model download or system operation has finished.</string>
     <string name="settings_section_reset">RESET</string>
     <string name="settings_reset_aalyrics">Reset AALyrics</string>
-    <string name="settings_reset_aalyrics_info">Restores AALyrics settings and onboarding state to their defaults, cancels app-owned update work, and removes downloaded app update files. Downloaded translation models, Android permissions, install-source permission, and Android Auto system settings are not changed.</string>
+    <string name="settings_reset_aalyrics_info">Restores AALyrics settings and onboarding state to their defaults, cancels app-owned update work, clears pending update recovery state, and removes downloaded app update files. Downloaded translation models, Android permissions, install-source permission, and Android Auto system settings are not changed.</string>
     <string name="settings_reset_aalyrics_info_description">About resetting AALyrics</string>
     <string name="settings_reset_aalyrics_dialog_title">Reset AALyrics?</string>
-    <string name="settings_reset_aalyrics_dialog_body">AALyrics settings and onboarding state will be restored to their defaults, active app-owned update work will be cancelled, and downloaded app update files will be removed. Downloaded translation models and system settings, including install-source permission, will not be changed.</string>
+    <string name="settings_reset_aalyrics_dialog_body">AALyrics settings and onboarding state will be restored to their defaults, active app-owned update work will be cancelled, pending update recovery state will be cleared, and downloaded app update files will be removed. Downloaded translation models and system settings, including install-source permission, will not be changed.</string>
     <string name="settings_reset">Reset</string>
     <string name="settings_cancel">Cancel</string>
     <string name="settings_done">Done</string>
