@@ -109,14 +109,15 @@ The implemented pending marker is:
 PendingUpdate
   targetVersion
   targetVersionCode
+  installerSessionId
   resumeAfterUpdate = true
 ```
 
 `targetVersionCode` comes from the APK package metadata that already passed package/version/signing preflight; it is not inferred from the release tag or filename.
 
-The marker is stored in dedicated app-owned SharedPreferences using synchronous persistence. The write happens after the PackageInstaller session has received and fsynced the APK and immediately before `PackageInstaller.Session.commit()`. If the durable write fails, AALyrics fails closed and does not commit the installer session.
+The marker is stored in dedicated app-owned SharedPreferences using synchronous persistence. The write happens after the PackageInstaller session has received and fsynced the APK and immediately before `PackageInstaller.Session.commit()`. It also stores the exact PackageInstaller session ID so recovery cleanup can act only on the marker that belongs to the abandoned or failed session. If the durable write fails, AALyrics fails closed and does not commit the installer session.
 
-The old binary must not clear this marker merely because PackageInstaller reports success. Successful package replacement may terminate that process, so the new binary owns final reconciliation. Terminal installer failure clears only the pending marker; `Reset AALyrics` clears all app-owned update recovery state. Reset does not change Android-owned install-source trust.
+The old binary must not clear this marker merely because PackageInstaller reports success. Successful package replacement may terminate that process, so the new binary owns final reconciliation. Terminal installer failure clears the pending marker only when its persisted `installerSessionId` matches the failed session, including when the original process and in-memory status sink are gone. Startup recovery likewise clears the matching pending marker only after it successfully abandons an owned unsealed session left behind before commit. A marker for another session is never cleared by either path. `Reset AALyrics` clears all app-owned update recovery state. Reset does not change Android-owned install-source trust.
 
 The new binary now registers a non-exported `ACTION_MY_PACKAGE_REPLACED` receiver. Its reconciliation step compares the durable pending target with the version actually running after replacement:
 
