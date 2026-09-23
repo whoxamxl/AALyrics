@@ -22,7 +22,7 @@ Validated baseline:
 - [x] Installer cancellation/failure preserves the verified APK for retry.
 - [x] Reset invalidates app-owned install work/artifacts without revoking Android-owned source trust.
 - [x] Process-death recovery abandons interrupted unsealed sessions and can recover a valid sealed pending-user-action handoff.
-- [x] Phone presentation and Preview coverage exist for the current split Download / Install flow.
+- [x] Phone presentation and Preview coverage exist for the validated split Download / Install baseline.
 - [x] Same-release-signing manual Actions fixture is implemented.
 
 Validation evidence:
@@ -37,9 +37,9 @@ Known validation limit:
 
 The published `v0.2.0-alpha.1` target predates the current download/installer runtime. It can prove Android's same-signing self-update path, but cannot fully exercise the new binary's post-update retained-APK cleanup on next launch. That cleanup remains covered by the current runtime contract/tests until a release containing this runtime is available as the update target.
 
-## Current user-visible baseline
+## Validated pre-UX baseline
 
-The validated baseline remains intentionally explicit:
+The validated pre-UX baseline was intentionally explicit:
 
 ```text
 Check for updates
@@ -63,7 +63,7 @@ Approved follow-up direction:
 4. attempt post-update return to AALyrics only on a best-effort basis and never depend on background Activity launch for correctness;
 5. add `Automatically check for updates` as a release-notification/check preference, while keeping manual `Check for updates`;
 6. show a `New release available` dialog for automatic discovery;
-7. eventually compose Download + Install into one user-facing `Update` action while retaining the existing internal download/verify/preflight/install state machine.
+7. compose Download + Install into one user-facing `Update` action while retaining the existing internal download/verify/preflight/install state machine.
 
 ## Scope guardrails
 
