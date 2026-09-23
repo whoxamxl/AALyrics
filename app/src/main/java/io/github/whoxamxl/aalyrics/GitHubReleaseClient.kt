@@ -10,6 +10,7 @@ import org.json.JSONArray
 internal data class GitHubReleaseAsset(
     val name: String,
     val downloadUrl: String,
+    val sizeBytes: Long? = null,
 )
 
 internal data class GitHubRelease(
@@ -86,10 +87,13 @@ internal class HttpGitHubReleaseClient(
                             val downloadUrl = asset.optString("browser_download_url")
                                 .takeIf { it.isNotBlank() }
                                 ?: continue
+                            val sizeBytes = asset.optLong("size", -1L)
+                                .takeIf { it >= 0L }
                             add(
                                 GitHubReleaseAsset(
                                     name = name,
                                     downloadUrl = downloadUrl,
+                                    sizeBytes = sizeBytes,
                                 ),
                             )
                         }
