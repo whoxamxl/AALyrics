@@ -319,7 +319,7 @@ class AALyricsApplication : Application() {
         updateSuccessFeedbackRuntime.refresh()
         translationSettingsStore.resetToDefaults()
         phonePresentationSettingsStore.resetToDefaults()
-        updateCheckCadenceStore.clear()
+        automaticUpdateCheckRuntime.resetCadence()
         applyCurrentPlaybackSourceEligibility()
     }
 
