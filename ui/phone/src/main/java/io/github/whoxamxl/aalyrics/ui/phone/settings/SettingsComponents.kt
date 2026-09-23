@@ -33,6 +33,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
@@ -378,6 +379,7 @@ internal fun AppUpdateRow(
     upToDateLabel: String,
     updateAvailableLabel: String,
     downloadLabel: String,
+    preparingDownloadLabel: String,
     downloadingLabel: String,
     downloadedLabel: String,
     retryLabel: String,
@@ -463,8 +465,12 @@ internal fun AppUpdateRow(
                 )
             }
 
+            AppUpdateUiPhase.PREPARING_DOWNLOAD -> {
+                AppUpdateProgressRow(label = preparingDownloadLabel)
+            }
+
             AppUpdateUiPhase.DOWNLOADING -> {
-                AppUpdateProgressRow(
+                AppUpdateDownloadProgressRow(
                     label = if (state.availableVersionName.isNullOrBlank()) {
                         downloadingLabel
                     } else {
@@ -587,6 +593,32 @@ private fun AppUpdateProgressRow(
             modifier = Modifier.size(AALyricsSpacing.Space20),
             color = AALyricsColors.AccentCyan,
             strokeWidth = AALyricsStroke.Strong,
+        )
+    }
+}
+
+@Composable
+private fun AppUpdateDownloadProgressRow(
+    label: String,
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = AALyricsSpacing.Space48),
+        verticalArrangement = Arrangement.Center,
+    ) {
+        Text(
+            text = label,
+            style = AALyricsTypography.TrackArtist,
+            color = AALyricsColors.TextSecondary,
+        )
+
+        Spacer(Modifier.height(AALyricsSpacing.Space8))
+
+        LinearProgressIndicator(
+            modifier = Modifier.fillMaxWidth(),
+            color = AALyricsColors.AccentCyan,
+            trackColor = AALyricsColors.OverlaySoft,
         )
     }
 }
