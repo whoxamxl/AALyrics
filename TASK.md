@@ -178,3 +178,5 @@ The asset-resolution, checksum/file-boundary, and runtime-orchestration checkpoi
 Production wiring is now complete: `AALyricsApplication` owns the download client/file store, Settings Download/Retry is connected, Reset cancels update work and clears update cache, and Preview/docs are aligned.
 
 Remaining work is final architecture/build/unit/CI validation, real-device verified-download testing, bounded review, and merge readiness. Package Installer remains deferred.
+
+For real-device validation only, PR #71 temporarily builds an additional debug APK with `AALYRICS_VERSION_NAME=0.1.0-alpha.1` so the public `v0.2.0-alpha.1` Release is discoverable as a newer update. This CI-only scaffolding must be removed after device validation and before merge.
