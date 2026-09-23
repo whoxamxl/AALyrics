@@ -561,6 +561,193 @@ class AppUpdateCheckRuntimeTest {
     }
 
     @Test
+    fun `install redirects to newer eligible release before package installer`() = runTest {
+        val root = createTempDirectory("aalyrics-install-runtime").toFile()
+        val retained = retainedUpdate(root, "0.2.0-alpha.2")
+        val installer = FakeUpdatePackageInstaller()
+        try {
+            val runtime = runtime(
+                installedVersionName = "0.2.0-alpha.1",
+                releases = emptyList(),
+                downloadFileStore = updateStore(root),
+                installPreparation = installPreparation(
+                    installedVersionName = "0.2.0-alpha.1",
+                    releases = listOf(
+                        release("v0.2.0-beta.1", prerelease = true),
+                        release("v0.2.0-alpha.2", prerelease = true),
+                    ),
+                ),
+                installSourceTrustChecker = InstallSourceTrustChecker { true },
+                packageInstaller = installer,
+            )
+
+            assertTrue(runtime.state.value is AppUpdateCheckState.Downloaded)
+            runtime.installUpdate()
+            assertEquals(
+                AppUpdateCheckState.PreparingInstall("0.2.0-alpha.2"),
+                runtime.state.value,
+            )
+            runCurrent()
+
+            assertEquals(
+                AppUpdateCheckState.UpdateAvailable("0.2.0-beta.1"),
+                runtime.state.value,
+            )
+            assertEquals(0, installer.installCount)
+            assertTrue(retained.isFile)
+        } finally {
+            root.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun `install waits for source trust and rechecks after settings return`() = runTest {
+        val root = createTempDirectory("aalyrics-install-runtime").toFile()
+        retainedUpdate(root, "0.2.0-alpha.2")
+        val installer = FakeUpdatePackageInstaller()
+        var sourceTrusted = false
+        try {
+            val runtime = runtime(
+                installedVersionName = "0.2.0-alpha.1",
+                releases = emptyList(),
+                downloadFileStore = updateStore(root),
+                installPreparation = installPreparation(
+                    installedVersionName = "0.2.0-alpha.1",
+                    releases = listOf(
+                        release("v0.2.0-alpha.2", prerelease = true),
+                    ),
+                ),
+                installSourceTrustChecker = InstallSourceTrustChecker { sourceTrusted },
+                packageInstaller = installer,
+            )
+
+            runtime.installUpdate()
+            runCurrent()
+            assertEquals(
+                AppUpdateCheckState.InstallPermissionRequired("0.2.0-alpha.2"),
+                runtime.state.value,
+            )
+            assertEquals(0, installer.installCount)
+
+            runtime.onInstallSourceTrustReturned()
+            runCurrent()
+            assertEquals(
+                AppUpdateCheckState.InstallPermissionRequired("0.2.0-alpha.2"),
+                runtime.state.value,
+            )
+            assertEquals(0, installer.installCount)
+
+            sourceTrusted = true
+            runtime.onInstallSourceTrustReturned()
+            runCurrent()
+
+            assertEquals(
+                AppUpdateCheckState.Installing("0.2.0-alpha.2"),
+                runtime.state.value,
+            )
+            assertEquals(1, installer.installCount)
+        } finally {
+            root.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun `installer failure preserves verified APK and settings reentry restores downloaded state`() = runTest {
+        val root = createTempDirectory("aalyrics-install-runtime").toFile()
+        val retained = retainedUpdate(root, "0.2.0-alpha.2")
+        val installer = FakeUpdatePackageInstaller()
+        try {
+            val runtime = runtime(
+                installedVersionName = "0.2.0-alpha.1",
+                releases = emptyList(),
+                downloadFileStore = updateStore(root),
+                installPreparation = installPreparation(
+                    installedVersionName = "0.2.0-alpha.1",
+                    releases = listOf(
+                        release("v0.2.0-alpha.2", prerelease = true),
+                    ),
+                ),
+                installSourceTrustChecker = InstallSourceTrustChecker { true },
+                packageInstaller = installer,
+            )
+
+            runtime.installUpdate()
+            runCurrent()
+            assertEquals(
+                AppUpdateCheckState.Installing("0.2.0-alpha.2"),
+                runtime.state.value,
+            )
+
+            installer.emit(
+                UpdatePackageInstallerStatus.Failure(
+                    statusCode = -2,
+                    message = "cancelled",
+                ),
+            )
+
+            assertEquals(
+                AppUpdateCheckState.InstallFailed("0.2.0-alpha.2"),
+                runtime.state.value,
+            )
+            assertTrue(retained.isFile)
+
+            runtime.onSettingsEntered()
+
+            val restored = runtime.state.value as AppUpdateCheckState.Downloaded
+            assertEquals("0.2.0-alpha.2", restored.versionName)
+            assertEquals(retained.canonicalFile, restored.apkFile.canonicalFile)
+        } finally {
+            root.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun `reset abandons active install session and clears retained APK`() = runTest {
+        val root = createTempDirectory("aalyrics-install-runtime").toFile()
+        retainedUpdate(root, "0.2.0-alpha.2")
+        val installer = FakeUpdatePackageInstaller(sessionId = 88)
+        try {
+            val runtime = runtime(
+                installedVersionName = "0.2.0-alpha.1",
+                releases = emptyList(),
+                downloadFileStore = updateStore(root),
+                installPreparation = installPreparation(
+                    installedVersionName = "0.2.0-alpha.1",
+                    releases = listOf(
+                        release("v0.2.0-alpha.2", prerelease = true),
+                    ),
+                ),
+                installSourceTrustChecker = InstallSourceTrustChecker { true },
+                packageInstaller = installer,
+            )
+
+            runtime.installUpdate()
+            runCurrent()
+            assertEquals(
+                AppUpdateCheckState.Installing("0.2.0-alpha.2"),
+                runtime.state.value,
+            )
+
+            runtime.reset()
+            runCurrent()
+
+            assertEquals(AppUpdateCheckState.Idle, runtime.state.value)
+            assertEquals(listOf(88), installer.abandonedSessions)
+            assertFalse(verifiedRoot(root).exists())
+
+            installer.emit(
+                UpdatePackageInstallerStatus.Failure(
+                    statusCode = -2,
+                    message = "late",
+                ),
+            )
+            assertEquals(AppUpdateCheckState.Idle, runtime.state.value)
+        } finally {
+            root.deleteRecursively()
+        }
+    }
+
+    @Test
     fun `reset suppresses check result when client converts cancellation to failure`() = runTest {
         val gate = CompletableDeferred<Unit>()
         val runtime = AppUpdateCheckRuntime(
@@ -950,6 +1137,18 @@ class AppUpdateCheckRuntimeTest {
 
     private fun verifiedRoot(root: File): File =
         root.resolve("files/updates")
+
+    private fun retainedUpdate(
+        root: File,
+        versionName: String,
+    ): File {
+        verifiedRoot(root).mkdirs()
+        return verifiedRoot(root)
+            .resolve("AALyrics-v$versionName.apk")
+            .apply {
+                writeText("verified update")
+            }
+    }
 
     private fun kotlinx.coroutines.test.TestScope.runtime(
         installedVersionName: String,
