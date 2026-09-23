@@ -487,7 +487,7 @@ The top-right close button and system Back dismiss only the dialog. Outside-tap 
 
 The UI emits `onCheckForUpdates`, `onDownloadUpdate`, `onInstallUpdate`, an automatic-update-preference callback, and an install-permission-settings callback. It does not perform GitHub HTTP requests, APK/package inspection, file I/O, signing checks, Android settings navigation, or PackageInstaller session work directly.
 
-The APP section places a durable `Automatically check for updates` switch above the Version/update row. Its supporting text is always visible:
+The APP section places a durable `Automatically check for updates` switch above the Version/update row. It uses the shared `SettingInfoTooltip` pattern rather than permanently rendering subtitle text. The tooltip explains:
 
 ```text
 Check for new releases and notify you when one is available.
