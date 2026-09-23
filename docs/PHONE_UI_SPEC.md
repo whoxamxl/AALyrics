@@ -103,7 +103,10 @@ The production Settings contract is defined in `docs/PHONE_SETTINGS.md`. The `fe
 - Translation target language;
 - Android Auto compatibility acknowledgement/status and setup re-entry;
 - `APP`:
-  - installed version plus explicit unavailable Update presentation until release-network runtime exists;
+  - durable `Automatically check for updates` switch (default ON) with shared info tooltip;
+  - installed version plus the application-owned update runtime: manual Check/Retry, verified Download, retained Downloaded/Install, typed install-failure reasons, and permission-required re-entry;
+  - automatic-only `New release available` dialog for cadence-eligible discovery; manual and install-refresh checks do not open it;
+  - #74 recovery surfaces: install-permission explanation dialog and one-time `AALyrics updated` feedback after durable replacement reconciliation;
   - in-app Changelog backed by repository-root `CHANGELOG.md`;
   - external Source code entry;
 - `ABOUT & SUPPORT`:
@@ -115,8 +118,10 @@ The production Settings contract is defined in `docs/PHONE_SETTINGS.md`. The `fe
   - functional `Verbose details` presentation preference;
   - disabled/unwired `Karaoke mode` future affordance;
   - `Storage > Clear translation models`, which keeps built-in English, turns Translation off, and restores English as the target;
-  - `Reset > Reset AALyrics`, which resets AALyrics-owned settings/onboarding without deleting translation models or changing Android/system settings;
+  - `Reset > Reset AALyrics`, which resets AALyrics-owned settings/onboarding/update state, clears app-owned update recovery/cadence state and retained update artifacts, without deleting translation models or changing Android/system settings such as install-source trust;
 - permanent AALyrics branding/GitHub footer after Advanced.
+
+The Phone update surfaces follow the shared dismissible-dialog contract introduced by #74: install permission, update successful, and automatic new-release dialogs use `PhoneDialogHeader` for one consistent trailing X position, 24dp icon, and 48dp touch target. The update UI may simplify user-facing actions, but release discovery, SHA-256 verification, retained-artifact ownership, install-time refresh, package/version/signing preflight, source trust, PackageInstaller, and Android confirmation remain application/platform-owned boundaries.
 
 The approved support flow does not embed checkout, handle payment credentials/state, or unlock app functionality. Browser/Custom-Tab launching remains application-owned. Provider preferences, appearance/theme selection, log export, functional Karaoke wiring, and other future taxonomy remain deferred until separately approved.
 
