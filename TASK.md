@@ -81,7 +81,7 @@ A partial or checksum-failed APK must not remain as an accepted final artifact.
 Update artifacts are application-owned distribution files, not user documents.
 
 - use app-private storage only; do not request shared-storage permission;
-- partial `.part` files live under cache staging and are cleaned on failure/cancellation/restart;
+- partial `.part` files live under cache staging, use operation-owned filenames, and are cleaned on failure/cancellation/restart;
 - verified APKs live under app-private no-backup persistent storage;
 - promotion uses a transient persistent `.promoting` file so interrupted promotion cannot become a completed APK;
 - retain at most one verified update APK;
