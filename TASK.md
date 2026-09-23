@@ -120,6 +120,8 @@ failure
     ↓
 DOWNLOAD_FAILED
     ↓ Retry
+PREPARING_DOWNLOAD
+    ↓ APK transfer begins
 DOWNLOADING
 ```
 
