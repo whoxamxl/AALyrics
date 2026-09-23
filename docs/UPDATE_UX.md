@@ -62,6 +62,19 @@ The dialog has an explicit close affordance. System Back has the same dismissal 
 
 The durable/runtime fact that install-source trust is missing must remain separate from transient dialog visibility. If the user dismisses the explanation, it stays dismissed until the user explicitly invokes Update/Install again while permission is still missing.
 
+### State ownership checkpoint
+
+The separation layer is implemented before the dialog itself:
+
+- `AppUpdateCheckState.InstallPermissionRequired` remains the durable process-runtime fact that Android source trust is missing for the retained install target;
+- `UpdateInstallPermissionPromptRuntime` owns a separate process-local, non-persisted prompt request;
+- entering the permission-required state requests the prompt once;
+- explicitly invoking Install/Update again while permission is still required re-requests the prompt without repeating download or install preparation;
+- dismissing the prompt does not clear `InstallPermissionRequired`;
+- Settings root reset, leaving Settings for another primary destination, Activity/composition disposal, Reset AALyrics, and returning from Android source-trust Settings clear only the transient prompt.
+
+The Phone presentation model carries the prompt separately from `AppUpdateUiPhase.INSTALL_PERMISSION_REQUIRED`. The large explanatory dialog is intentionally the next implementation checkpoint; this state-ownership checkpoint does not yet change the rendered Settings UI.
+
 ## Successful-update feedback
 
 Before PackageInstaller handoff, AALyrics may persist an app-owned pending-update marker containing enough information to reconcile the requested target after package replacement.
