@@ -30,6 +30,12 @@ private fun SettingsScreenTypicalPreview() {
     SettingsScreenPreview(PhonePreviewFixtures.settingsTypical)
 }
 
+@Preview(name = "Automatic updates off", group = "SettingsScreen", widthDp = 412, heightDp = 900)
+@Composable
+private fun SettingsAutomaticUpdatesOffPreview() {
+    SettingsScreenPreview(PhonePreviewFixtures.settingsAutomaticUpdateOff)
+}
+
 @Preview(name = "Non-audio filter off", group = "SettingsScreen", widthDp = 412, heightDp = 760)
 @Composable
 private fun SettingsScreenNonAudioFilterOffPreview() {
@@ -382,6 +388,9 @@ private fun SettingsScreenContentPreview(
                 },
                 onIgnoreNonAudioAppsChanged = {
                     state = state.copy(ignoreNonAudioApps = it)
+                },
+                onAutomaticallyCheckForUpdatesChanged = {
+                    state = state.copy(automaticallyCheckForUpdates = it)
                 },
                 onTranslationEnabledChanged = {
                     state = state.copy(translationEnabled = it)
