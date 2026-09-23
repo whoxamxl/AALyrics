@@ -454,6 +454,24 @@ If Android does not trust AALyrics as an install source, presentation moves to `
 
 If the AALyrics process dies during installer handoff, startup abandons any AALyrics-owned PackageInstaller session that was never committed. A committed/sealed self-update session is preserved. When Android later returns `STATUS_PENDING_USER_ACTION`, the receiver can resume the system confirmation even without the previous process's in-memory callback registration, but only after revalidating that the sealed session is owned by AALyrics and targets the AALyrics package.
 
+#### Validated update-UI baseline
+
+The current Phone presentation has been validated on-device through the full same-release-signing self-update handoff. Its user-visible checkpoint remains deliberately explicit:
+
+```text
+Check for updates
+    -> Download
+    -> Downloaded / Install
+    -> install-source permission state when required
+    -> Android confirmation
+```
+
+Cancellation/retry preserves the retained verified APK, and successful replacement is handled by Android's installer boundary. This split flow is now the regression baseline for subsequent UX work.
+
+The follow-up UX may replace the compact install-permission-required row treatment with an explanatory modal, add post-update success feedback, add optional automatic update checks, and compose Download + Install into one user-facing Update action. Those presentation changes must preserve the existing application-owned states and safety boundaries until each replacement behavior is implemented and tested.
+
+The approved follow-up contract is defined in `docs/UPDATE_UX.md`. Merely adding that contract does not change current runtime or Phone behavior.
+
 The UI emits `onCheckForUpdates`, `onDownloadUpdate`, `onInstallUpdate`, and an install-permission-settings callback. It does not perform GitHub HTTP requests, APK/package inspection, file I/O, signing checks, Android settings navigation, or PackageInstaller session work directly.
 
 Application/runtime wiring owns the check:
