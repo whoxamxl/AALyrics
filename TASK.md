@@ -164,7 +164,7 @@ CHECK_FAILED
 - [x] Integrate Reset AALyrics cleanup/cancellation.
 - [x] Align Previews and `docs/RELEASES.md` / `docs/PHONE_SETTINGS.md`.
 - [x] Complete real-device verified-download, determinate-progress, and process-restart validation.
-- [ ] Complete final architecture/build/unit/CI validation and bounded review before merge.
+- [x] Complete final architecture/build/unit/CI validation and bounded review before merge.
 
 ## Current checkpoint
 
@@ -190,6 +190,16 @@ The download presentation now separates preparation from transfer: `PREPARING_DO
 
 12. verified APK retention survives process restart without persisting a separate state record: runtime startup derives `DOWNLOADED` from the retained canonical APK and removes it once the installed version catches up.
 
-Remaining work is final architecture/build/unit/CI validation, bounded review, and merge readiness. Package Installer remains deferred. Its explicit Install action must re-check the latest eligible Release before handoff so a retained older verified APK is not installed first when a newer update has appeared.
+Final regression review is complete. The branch remains Draft pending the normal PR review/merge decision. Package Installer remains deferred. Its explicit Install action must re-check the latest eligible Release before handoff so a retained older verified APK is not installed first when a newer update has appeared.
 
 Real-device update-download validation uses the reusable manual `Build` workflow input `update_test_version`. Run the workflow against the branch/ref under test and supply an older published version such as `0.1.0-alpha.1`; CI then emits both ZIP and direct-APK debug test artifacts with that VERSION_NAME override. The reusable version-override fixture is intentionally retained as a base for the follow-up Package Installer slice instead of being tied to PR #71. Because these Build-workflow artifacts use the debug signing identity, the Installer slice must extend the fixture with a controlled same-release-signing test path before treating it as proof of a successful self-update installation.
+
+Regression review hardening completed before merge readiness:
+
+- throttle byte-progress state updates to percentage changes instead of every 16 KiB read;
+- suppress late check/download results after Reset cancellation;
+- replace verified APKs without deleting the previous retained APK before replacement succeeds;
+- enforce installed-channel eligibility when restoring a retained APK;
+- store verified APKs under `noBackupFilesDir/updates` so update payloads are not included in Auto Backup;
+- clean the earlier branch-test `filesDir/updates` location on startup/reset;
+- retain a reusable manual version-override workflow fixture for later update testing.
