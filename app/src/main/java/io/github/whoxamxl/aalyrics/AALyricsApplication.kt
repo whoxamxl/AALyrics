@@ -84,6 +84,7 @@ class AALyricsApplication : Application() {
     private lateinit var phonePlaybackSourceCanOpenAppStateFlow: StateFlow<Boolean>
     private lateinit var phoneDetailsStateFlow: StateFlow<DetailsScreenUiState>
     private lateinit var appUpdateCheckRuntime: AppUpdateCheckRuntime
+    private lateinit var automaticUpdateCheckRuntime: AutomaticUpdateCheckRuntime
     private lateinit var updateRecoveryStore: UpdateRecoveryStore
     private lateinit var updateSuccessFeedbackRuntime: UpdateSuccessFeedbackRuntime
     private val installPermissionPromptRuntime = UpdateInstallPermissionPromptRuntime()
@@ -182,6 +183,9 @@ class AALyricsApplication : Application() {
     internal val allowUnclassifiedApps: StateFlow<Boolean>
         get() = phonePresentationSettingsStore.allowUnclassifiedApps
 
+    internal val automaticallyCheckForUpdates: StateFlow<Boolean>
+        get() = phonePresentationSettingsStore.automaticallyCheckForUpdates
+
     val translationModelStates: StateFlow<Map<String, TranslationModelState>>
         get() = translationModelManager.states
 
@@ -198,7 +202,15 @@ class AALyricsApplication : Application() {
         get() = updateSuccessFeedbackRuntime.successfulUpdate
 
     internal fun checkForUpdates() {
-        appUpdateCheckRuntime.checkForUpdates()
+        appUpdateCheckRuntime.checkForUpdates(
+            origin = UpdateCheckOrigin.MANUAL,
+        )
+    }
+
+    internal fun onPhoneReadyForAutomaticUpdateCheck() {
+        automaticUpdateCheckRuntime.requestIfEnabled(
+            phonePresentationSettingsStore.automaticallyCheckForUpdates.value,
+        )
     }
 
     internal fun downloadUpdate() {
@@ -270,6 +282,11 @@ class AALyricsApplication : Application() {
     internal fun setAllowUnclassifiedApps(enabled: Boolean) {
         phonePresentationSettingsStore.setAllowUnclassifiedApps(enabled)
         applyCurrentPlaybackSourceEligibility()
+    }
+
+    internal fun setAutomaticallyCheckForUpdates(enabled: Boolean) {
+        phonePresentationSettingsStore.setAutomaticallyCheckForUpdates(enabled)
+        automaticUpdateCheckRuntime.requestIfEnabled(enabled)
     }
 
     fun clearDownloadedTranslationModels() {
@@ -358,6 +375,11 @@ class AALyricsApplication : Application() {
         )
         translationSettingsStore = SharedPreferencesTranslationSettingsStore(this)
         phonePresentationSettingsStore = SharedPreferencesPhonePresentationSettingsStore(this)
+        automaticUpdateCheckRuntime = AutomaticUpdateCheckRuntime {
+            appUpdateCheckRuntime.checkForUpdates(
+                origin = UpdateCheckOrigin.AUTOMATIC,
+            )
+        }
         playbackAppLauncher = SelectedPlaybackAppLauncher(this)
         playbackSourceAppInfoResolver = PlaybackSourceAppInfoResolver(this)
         graph = createProductionApplicationGraph(applicationScope)
