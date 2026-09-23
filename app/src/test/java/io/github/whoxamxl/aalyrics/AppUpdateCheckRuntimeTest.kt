@@ -1459,6 +1459,7 @@ class AppUpdateCheckRuntimeTest {
         private val recordFailure: Throwable? = null,
     ) : UpdateRecoveryStore {
         private var pending: PendingUpdate? = null
+        private var successful: SuccessfulUpdate? = null
         var recordCount: Int = 0
             private set
         var clearCount: Int = 0
@@ -1466,15 +1467,33 @@ class AppUpdateCheckRuntimeTest {
 
         override fun pendingUpdate(): PendingUpdate? = pending
 
+        override fun successfulUpdate(): SuccessfulUpdate? = successful
+
         override fun recordPendingUpdate(pendingUpdate: PendingUpdate) {
             recordFailure?.let { throw it }
             recordCount += 1
             pending = pendingUpdate
         }
 
-        override fun clear() {
+        override fun promotePendingUpdateToSuccess(successfulUpdate: SuccessfulUpdate) {
+            pending = null
+            successful = successfulUpdate
+        }
+
+        override fun clearPendingUpdate() {
             clearCount += 1
             pending = null
+        }
+
+        override fun clearSuccessfulUpdate() {
+            clearCount += 1
+            successful = null
+        }
+
+        override fun clearAll() {
+            clearCount += 1
+            pending = null
+            successful = null
         }
     }
 
