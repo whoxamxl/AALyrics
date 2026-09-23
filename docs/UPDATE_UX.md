@@ -114,7 +114,7 @@ The marker is stored in dedicated app-owned SharedPreferences using synchronous 
 
 The old binary must not clear this marker merely because PackageInstaller reports success. Successful package replacement may terminate that process, so the new binary owns final reconciliation. Terminal installer failure clears only the pending marker; `Reset AALyrics` clears all app-owned update recovery state. Reset does not change Android-owned install-source trust.
 
-The new binary now registers a non-exported `ACTION_MY_PACKAGE_REPLACED` receiver. The receiver does not start an Activity. It compares the durable pending target with the version actually running after replacement:
+The new binary now registers a non-exported `ACTION_MY_PACKAGE_REPLACED` receiver. Its reconciliation step compares the durable pending target with the version actually running after replacement:
 
 - installed `versionCode` greater than the target is treated as target reached;
 - equal `versionCode` requires an exact `versionName` match;
@@ -130,7 +130,7 @@ SuccessfulUpdate
   resumeAfterUpdate
 ```
 
-The success marker stores the new binary's actual version and carries forward the pending resume intent. Promotion removes the pending keys in the same synchronous SharedPreferences commit. A receiver/persistence failure does not attempt to launch presentation and leaves recovery for a later valid path.
+The success marker stores the new binary's actual version and carries forward the pending resume intent. Promotion removes the pending keys in the same synchronous SharedPreferences commit. If reconciliation or durable promotion fails, no resume request is attempted and recovery remains available for a later valid path.
 
 A successful package replacement may terminate the old process. The new binary therefore owns durable success reconciliation.
 
