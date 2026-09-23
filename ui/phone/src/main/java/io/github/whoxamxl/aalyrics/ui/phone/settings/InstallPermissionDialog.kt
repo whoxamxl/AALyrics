@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -70,8 +69,7 @@ internal fun InstallPermissionDialog(
                 onDownloadFromGitHub = onDownloadFromGitHub,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .widthIn(max = 520.dp)
-                    .fillMaxHeight(0.86f),
+                    .widthIn(max = 520.dp),
             )
         }
     }
@@ -96,36 +94,22 @@ internal fun InstallPermissionDialogContent(
     ) {
         Column(
             modifier = Modifier
-                .fillMaxSize()
+                .fillMaxWidth()
                 .verticalScroll(rememberScrollState())
                 .padding(AALyricsSpacing.Space24),
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.Top,
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                Column(
+                Text(
+                    text = stringResource(
+                        R.string.settings_install_permission_dialog_eyebrow,
+                    ),
+                    style = AALyricsTypography.Label,
+                    color = AALyricsColors.AccentCyan,
                     modifier = Modifier.weight(1f),
-                ) {
-                    Text(
-                        text = stringResource(
-                            R.string.settings_install_permission_dialog_eyebrow,
-                        ),
-                        style = AALyricsTypography.Label,
-                        color = AALyricsColors.AccentCyan,
-                    )
-
-                    Spacer(Modifier.height(AALyricsSpacing.Space8))
-
-                    Text(
-                        text = stringResource(
-                            R.string.settings_install_permission_dialog_version,
-                            state.versionName,
-                        ),
-                        style = AALyricsTypography.Label,
-                        color = AALyricsColors.TextTertiary,
-                    )
-                }
+                )
 
                 IconButton(
                     onClick = onDismissRequest,
@@ -142,7 +126,16 @@ internal fun InstallPermissionDialogContent(
                 }
             }
 
-            Spacer(Modifier.height(AALyricsSpacing.Space16))
+            Text(
+                text = stringResource(
+                    R.string.settings_install_permission_dialog_version,
+                    state.versionName,
+                ),
+                style = AALyricsTypography.Label,
+                color = AALyricsColors.TextSecondary,
+            )
+
+            Spacer(Modifier.height(AALyricsSpacing.Space20))
 
             Text(
                 text = stringResource(
