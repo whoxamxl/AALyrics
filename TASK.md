@@ -250,6 +250,7 @@ next launch removes stale retained APK
 - [x] Add install-time Release refresh and stale-retained-release handling.
 - [x] Add source-trust permission/settings handoff.
 - [x] Add PackageInstaller session boundary and status handling.
+- [x] Recover PackageInstaller handoff safely across application-process death.
 - [x] Add runtime states and Phone Install/Retry actions.
 - [x] Integrate Reset with installer/session lifecycle.
 - [x] Add/update Previews and presentation coverage.
@@ -261,6 +262,8 @@ next launch removes stale retained APK
 
 Implementation is wired through Phone Settings and Android PackageInstaller handoff. Completed checkpoints now include fail-closed APK package/version/signing preflight, explicit Install-time eligible-Release refresh, per-source install trust handling with return/recheck, PackageInstaller.Session write/fsync/commit and status callback handling, Reset/session cleanup, stale-callback suppression, Phone presentation/Previews, and the opt-in same-release-signing Actions fixture.
 
-CI run #884 passed architecture checks, debug APK build, unit tests, and ordinary debug artifact upload for the substantive implementation. The release-signed fixture steps are intentionally skipped on pull-request CI and still require an explicit workflow_dispatch run with signing secrets.
+Process-death recovery now also has an explicit contract: startup abandons AALyrics-owned unsealed sessions left before commit, preserves sealed sessions, and STATUS_PENDING_USER_ACTION can resume Android's system confirmation after process recreation only when the sealed session is still owned by AALyrics and targets the AALyrics package.
 
-Next checkpoint: run the release-signed older-version fixture manually, complete real-device permission/cancel/retry/successful-self-update validation, then perform final Doc/Preview/regression review before merge readiness.
+The previous full implementation checkpoint passed architecture checks, debug APK build, unit tests, and ordinary debug artifact upload. The new process-recovery commits now require the pull-request CI/build/unit run to complete before proceeding. The release-signed fixture steps are intentionally skipped on pull-request CI and still require an explicit workflow_dispatch run with signing secrets.
+
+Next checkpoint after CI succeeds: run the release-signed older-version fixture manually, complete real-device permission/cancel/retry/successful-self-update validation, then perform final Doc/Preview/regression review before merge readiness.
