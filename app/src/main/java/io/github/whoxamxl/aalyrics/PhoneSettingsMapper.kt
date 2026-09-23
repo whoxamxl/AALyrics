@@ -7,6 +7,7 @@ import io.github.whoxamxl.aalyrics.translation.api.TranslationSettings
 import io.github.whoxamxl.aalyrics.ui.phone.settings.AndroidAutoCompatibilityUiStatus
 import io.github.whoxamxl.aalyrics.ui.phone.settings.AppUpdateUiPhase
 import io.github.whoxamxl.aalyrics.ui.phone.settings.AppUpdateUiState
+import io.github.whoxamxl.aalyrics.ui.phone.settings.InstallPermissionDialogUiState
 import io.github.whoxamxl.aalyrics.ui.phone.settings.SettingsLanguageOptionUiState
 import io.github.whoxamxl.aalyrics.ui.phone.settings.SettingsScreenUiState
 import io.github.whoxamxl.aalyrics.ui.phone.settings.TranslationModelCleanupUiState
@@ -32,6 +33,7 @@ internal fun mapPhoneSettingsState(
     translationModelCleanupState: TranslationModelCleanupState =
         TranslationModelCleanupState.IDLE,
     appUpdateCheckState: AppUpdateCheckState = AppUpdateCheckState.Idle,
+    installPermissionPrompt: UpdateInstallPermissionPrompt? = null,
     displayLocale: Locale = Locale.getDefault(),
 ): SettingsScreenUiState {
     val targets = TranslationLanguages.supportedTargets.map { languageTag ->
@@ -78,6 +80,11 @@ internal fun mapPhoneSettingsState(
         privacyPolicyText = privacyPolicyText,
         termsOfUseText = termsOfUseText,
         thirdPartyLicensesText = thirdPartyLicensesText,
+        installPermissionDialog = installPermissionPrompt?.let { prompt ->
+            InstallPermissionDialogUiState(
+                versionName = prompt.versionName,
+            )
+        },
         appUpdate = when (appUpdateCheckState) {
             AppUpdateCheckState.Idle ->
                 AppUpdateUiState(phase = AppUpdateUiPhase.IDLE)
