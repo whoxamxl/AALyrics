@@ -102,12 +102,16 @@ Completed in this checkpoint:
 - explanatory copy is stored in the shared Settings info tooltip and explicitly states that updates are never installed without confirmation;
 - manual `Check for updates` remains available regardless of toggle state;
 - automatic checking is deferred until the normal Phone entry reaches `READY`, so onboarding/permission entry gates remain authoritative;
-- an enabled preference consumes at most one automatic check attempt per app process;
-- enabling the preference later in the same process may use that still-unused process attempt;
+- automatic discovery is governed by a durable 7-day cadence rather than app-process frequency;
+- starting an automatic check records the cadence timestamp immediately, so failed automatic network requests are not retried on every process restart;
+- a successful manual GitHub Releases query refreshes the same cadence timestamp, while manual Check remains available regardless of cadence;
+- enabling the preference later in the same process requests automatic discovery only when the durable cadence is due;
+- the existing process-local attempt guard remains as secondary duplicate protection;
+- `Reset AALyrics` clears the durable cadence timestamp and process-local attempt guard while restoring the preference to ON;
 - automatic checks only start from update-runtime `IDLE` and do not replace retained verified APK/download/install state;
 - update discovery now records internal origin as `MANUAL`, `AUTOMATIC`, or `INSTALL_REFRESH` so later presentation can distinguish automatic discovery safely;
 - install-time latest-release refresh is explicitly not classified as automatic discovery;
-- focused tests cover durable preference/default/reset behavior, process-scoped automatic attempts, automatic-origin propagation, retained-update protection, and mapper propagation;
+- focused tests cover durable preference/default/reset behavior, seven-day cadence boundaries, process-scoped duplicate protection, successful manual-query cadence refresh, automatic-origin propagation, retained-update protection, and mapper propagation;
 - Settings Previews cover the default ON state and explicit OFF state;
 - Update UX and Phone Settings documentation are aligned.
 
