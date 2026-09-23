@@ -182,7 +182,7 @@ class UpdateRecoveryPersistenceTest {
         readSuccessfulInstalledVersionCode = readSuccessfulInstalledVersionCode,
         readSuccessfulResumeAfterUpdate = readSuccessfulResumeAfterUpdate,
         writePendingUpdate = writePending,
-        promotePendingUpdateToSuccess = promote,
+        persistSuccessfulPromotion = promote,
         clearPending = clearPending,
         clearSuccessful = clearSuccessful,
         clearAllState = clearAll,
