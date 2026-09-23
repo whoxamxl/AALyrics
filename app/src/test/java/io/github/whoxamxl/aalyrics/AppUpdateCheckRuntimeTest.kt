@@ -592,6 +592,7 @@ class AppUpdateCheckRuntimeTest {
             val pending = PendingUpdate(
                 targetVersion = "0.2.0-alpha.2",
                 targetVersionCode = 42L,
+                installerSessionId = 77,
                 resumeAfterUpdate = true,
             )
             assertEquals(1, installer.beforeCommitCount)
