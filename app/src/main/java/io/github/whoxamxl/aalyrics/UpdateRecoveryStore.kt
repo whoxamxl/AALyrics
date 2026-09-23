@@ -38,7 +38,7 @@ internal class UpdateRecoveryPersistence(
     private val readSuccessfulInstalledVersionCode: () -> Long?,
     private val readSuccessfulResumeAfterUpdate: () -> Boolean?,
     private val writePendingUpdate: (PendingUpdate) -> Boolean,
-    private val promotePendingUpdateToSuccess: (SuccessfulUpdate) -> Boolean,
+    private val persistSuccessfulPromotion: (SuccessfulUpdate) -> Boolean,
     private val clearPending: () -> Boolean,
     private val clearSuccessful: () -> Boolean,
     private val clearAllState: () -> Boolean,
@@ -96,7 +96,7 @@ internal class UpdateRecoveryPersistence(
         require(successfulUpdate.installedVersionCode > 0L) {
             "Successful update versionCode must be positive"
         }
-        check(promotePendingUpdateToSuccess(successfulUpdate)) {
+        check(persistSuccessfulPromotion(successfulUpdate)) {
             "Unable to persist successful update"
         }
     }
@@ -156,7 +156,7 @@ internal class SharedPreferencesUpdateRecoveryStore(
                 )
                 .commit()
         },
-        promotePendingUpdateToSuccess = { successfulUpdate ->
+        persistSuccessfulPromotion = { successfulUpdate ->
             preferences.edit()
                 .remove(PENDING_TARGET_VERSION_KEY)
                 .remove(PENDING_TARGET_VERSION_CODE_KEY)
