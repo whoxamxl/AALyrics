@@ -13,7 +13,9 @@ internal data class UpdateApkPreflightFacts(
 )
 
 internal sealed interface UpdateApkPreflightResult {
-    data object Ready : UpdateApkPreflightResult
+    data class Ready(
+        val targetVersionCode: Long,
+    ) : UpdateApkPreflightResult
 
     data class Rejected(
         val reason: UpdateApkPreflightRejection,
@@ -66,7 +68,9 @@ internal object UpdateApkPreflight {
         return when (facts.signingIdentityCompatible) {
             null -> rejected(UpdateApkPreflightRejection.SIGNING_IDENTITY_UNAVAILABLE)
             false -> rejected(UpdateApkPreflightRejection.SIGNING_IDENTITY_MISMATCH)
-            true -> UpdateApkPreflightResult.Ready
+            true -> UpdateApkPreflightResult.Ready(
+                targetVersionCode = archiveVersionCode,
+            )
         }
     }
 
