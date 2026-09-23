@@ -18,7 +18,6 @@ class UpdateInstallStatusReceiver : BroadcastReceiver() {
             INVALID_SESSION_ID,
         )
         if (sessionId == INVALID_SESSION_ID) return
-        if (!UpdatePackageInstallerStatusRegistry.isRegistered(sessionId)) return
 
         val status = intent.getIntExtra(
             PackageInstaller.EXTRA_STATUS,
@@ -28,33 +27,35 @@ class UpdateInstallStatusReceiver : BroadcastReceiver() {
 
         when (status) {
             PackageInstaller.STATUS_PENDING_USER_ACTION -> {
-                val confirmationIntent = confirmationIntent(intent)
-                if (confirmationIntent == null) {
-                    failPendingSession(
-                        context = context,
-                        sessionId = sessionId,
-                        message = "Missing installer confirmation intent",
-                    )
-                    return
-                }
+                UpdatePackageInstallerStatusRegistry.withRegisteredSession(sessionId) {
+                    val confirmationIntent = confirmationIntent(intent)
+                    if (confirmationIntent == null) {
+                        failPendingSession(
+                            context = context,
+                            sessionId = sessionId,
+                            message = "Missing installer confirmation intent",
+                        )
+                        return@withRegisteredSession
+                    }
 
-                val launched = runCatching {
-                    confirmationIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    context.startActivity(confirmationIntent)
-                }.isSuccess
+                    val launched = runCatching {
+                        confirmationIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        context.startActivity(confirmationIntent)
+                    }.isSuccess
 
-                if (launched) {
-                    UpdatePackageInstallerStatusRegistry.dispatch(
-                        sessionId = sessionId,
-                        status = UpdatePackageInstallerStatus.PendingUserAction,
-                        terminal = false,
-                    )
-                } else {
-                    failPendingSession(
-                        context = context,
-                        sessionId = sessionId,
-                        message = "Unable to launch installer confirmation",
-                    )
+                    if (launched) {
+                        UpdatePackageInstallerStatusRegistry.dispatch(
+                            sessionId = sessionId,
+                            status = UpdatePackageInstallerStatus.PendingUserAction,
+                            terminal = false,
+                        )
+                    } else {
+                        failPendingSession(
+                            context = context,
+                            sessionId = sessionId,
+                            message = "Unable to launch installer confirmation",
+                        )
+                    }
                 }
             }
 
