@@ -485,7 +485,7 @@ Configuration changes, Activity recreation, recomposition, Settings subscreen na
 
 Only one check or download may be active at a time. The active presentation exposes no duplicate action.
 
-Partial APK bytes live only in app-private cache storage. A SHA-256-verified APK is promoted into app-private persistent files storage and becomes the source of truth for `DOWNLOADED`. On process restart, the runtime removes transient staging/promotion files and restores `DOWNLOADED` when the retained APK has a canonical AALyrics release filename and is still newer than the installed version. Once the installed app reaches or passes that retained release, the stale verified APK is deleted and update state returns to `IDLE`.
+Partial APK bytes live only in app-private cache storage. A SHA-256-verified APK is promoted into app-private no-backup persistent storage and becomes the source of truth for `DOWNLOADED`. On process restart, the runtime removes transient staging/promotion files and restores `DOWNLOADED` when the retained APK has a canonical AALyrics release filename and is still newer than the installed version. Once the installed app reaches or passes that retained release, the stale verified APK is deleted and update state returns to `IDLE`.
 
 `Reset AALyrics` cancels active update work, deletes both transient and verified update artifacts, clears the selected release, and restores update presentation to `IDLE`.
 
