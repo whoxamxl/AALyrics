@@ -389,7 +389,7 @@ Version                v0.2.0-alpha.1-dev+abcdef0
                               Check for updates
 ```
 
-The production lifecycle now includes both explicit update discovery and verified download:
+The production lifecycle covers explicit update discovery, verified download, and user-triggered install handoff:
 
 ```text
 IDLE
@@ -401,6 +401,10 @@ PREPARING_DOWNLOAD
 DOWNLOADING
 DOWNLOADED
 DOWNLOAD_FAILED
+PREPARING_INSTALL
+INSTALL_PERMISSION_REQUIRED
+INSTALLING
+INSTALL_FAILED
 ```
 
 Expected presentation:
@@ -421,16 +425,34 @@ Preparing download…
 Downloading v0.2.0-alpha.2                  64%
 [determinate 0–100% linear progress]
 
-Update downloaded v0.2.0-alpha.2                ✓
+Update downloaded v0.2.0-alpha.2             Install
+
+Preparing installation…
+[indeterminate linear progress]
+
+Installation permission required      Open settings
+
+Installing update…
+[indeterminate linear progress / system confirmation handoff]
+
+Installation failed                   ⓘ   ↻ Retry
 
 Download failed                       ⓘ   ↻ Retry
 
 Update check failed                   ⓘ   ↻ Retry
 ```
 
-Every update-state row keeps the same trailing-edge alignment used by the installed version value. Retry and Download remain compact inline actions. A download Retry re-enters `PREPARING_DOWNLOAD` before any APK byte transfer begins. `UPDATE_AVAILABLE` exposes Download only because APK download and SHA-256 verification are now application-owned and functional. After the user presses Download, `PREPARING_DOWNLOAD` uses an indeterminate horizontal progress bar while the runtime resolves assets, fetches/parses the checksum, and prepares app-private staging. Immediately before APK bytes are transferred, the runtime moves to `DOWNLOADING`. GitHub Release asset metadata supplies the expected APK byte size, and the download client reports received bytes so Settings renders a determinate 0–100% horizontal progress bar and percentage. If the received byte count does not match the published asset size, the transfer fails closed. `DOWNLOADED` remains informational; Install is intentionally absent until Package Installer handoff is implemented.
+Every update-state row keeps the same trailing-edge alignment used by the installed version value. Retry, Download, Install, and Open settings remain compact inline actions. A download Retry re-enters `PREPARING_DOWNLOAD` before APK transfer. `UPDATE_AVAILABLE` exposes Download because APK download and SHA-256 verification are application-owned and functional.
 
-The UI emits `onCheckForUpdates` and `onDownloadUpdate`; it does not perform GitHub HTTP requests, release comparison, file I/O, or checksum verification directly.
+After the user presses Download, `PREPARING_DOWNLOAD` uses an indeterminate horizontal progress bar while the runtime resolves assets, fetches/parses the checksum, and prepares app-private staging. Immediately before APK bytes are transferred, the runtime moves to `DOWNLOADING`. GitHub Release asset metadata supplies the expected APK byte size, and the download client reports received bytes so Settings renders determinate 0–100% progress. A size mismatch fails closed.
+
+`DOWNLOADED` now exposes an explicit Install action. Install first enters `PREPARING_INSTALL`; application/runtime wiring refreshes the latest eligible GitHub Release and validates the retained APK package/version/signing identity before any PackageInstaller session is committed. If a newer eligible release has appeared, AALyrics returns to the ordinary newer-release download path instead of intentionally installing the retained older release first.
+
+If Android does not trust AALyrics as an install source, presentation moves to `INSTALL_PERMISSION_REQUIRED`. `Open settings` emits a semantic callback only; `:app` opens Android's per-app unknown-source settings and re-checks `PackageManager.canRequestPackageInstalls()` when control returns. The UI never reads or changes that system setting directly.
+
+`INSTALLING` represents PackageInstaller session handoff and any required system confirmation. The system confirmation UI remains Android-owned. Installer cancellation or terminal failure maps to `INSTALL_FAILED` while preserving an otherwise-valid verified APK so Retry does not require a second download. Successful self-update may replace the current process; next-launch installed-version reconciliation remains the durable cleanup path.
+
+The UI emits `onCheckForUpdates`, `onDownloadUpdate`, `onInstallUpdate`, and an install-permission-settings callback. It does not perform GitHub HTTP requests, APK/package inspection, file I/O, signing checks, Android settings navigation, or PackageInstaller session work directly.
 
 Application/runtime wiring owns the check:
 
@@ -465,29 +487,32 @@ The check path is public and unauthenticated. Do not embed a GitHub token or rep
 
 ### Update state lifetime
 
-Completed check results and recoverable download failures are intentionally visit-local so Settings does not keep presenting stale GitHub Release information. A successfully verified `DOWNLOADED` artifact is the exception: it represents an actual retained APK and remains present while that artifact is still valid for the installed update channel.
+Completed check results plus recoverable download/install failures are intentionally visit-local so Settings does not keep presenting stale transient results. A successfully verified `DOWNLOADED` artifact is the exception: it represents an actual retained APK and remains present while that artifact is still valid for the installed update channel. Active install preparation/session handoff is also application-owned rather than composable-owned.
 
 The Phone navigation host owns Settings-visit entry detection. A transition from any non-Settings destination into Settings starts a new Settings visit. The presentation `SettingsScreen` itself does not emit an entry callback from composition.
 
 On an actual Settings navigation entry, application/runtime wiring applies these lifetime rules:
 
 ```text
-CHECKING        -> keep
-PREPARING_DOWNLOAD -> keep
-DOWNLOADING     -> keep
-DOWNLOADED      -> keep
-other completed check/download states -> IDLE
+CHECKING                  -> keep
+PREPARING_DOWNLOAD        -> keep
+DOWNLOADING               -> keep
+DOWNLOADED                -> keep
+PREPARING_INSTALL         -> keep
+INSTALL_PERMISSION_REQUIRED -> keep while the install flow is awaiting platform trust; revalidate on return
+INSTALLING                -> keep
+other completed check/download/install states -> IDLE
 ```
 
-Therefore `UP_TO_DATE`, `UPDATE_AVAILABLE`, `CHECK_FAILED`, and `DOWNLOAD_FAILED` remain visit-local. Leaving Settings and returning presents `Check for updates` again for those states. Active preparation/download work is retained while the process is alive, and a successfully verified `DOWNLOADED` artifact is retained beyond the current Settings visit.
+Therefore `UP_TO_DATE`, `UPDATE_AVAILABLE`, `CHECK_FAILED`, `DOWNLOAD_FAILED`, and `INSTALL_FAILED` remain visit-local. Leaving Settings and returning presents the ordinary retained-artifact/check state rather than preserving a stale failure banner. Active download/install work is retained while the process is alive, and a successfully verified `DOWNLOADED` artifact is retained beyond the current Settings visit. `INSTALL_PERMISSION_REQUIRED` is revalidated after returning from Android settings instead of assuming the user granted trust.
 
-Configuration changes, Activity recreation, recomposition, Settings subscreen navigation, and Settings-tab reselection while already in Settings remain the same visit and must not clear update state. Check/download jobs are application-owned and continue across destination changes.
+Configuration changes, Activity recreation, recomposition, Settings subscreen navigation, and Settings-tab reselection while already in Settings remain the same visit and must not clear active update/install state. Check/download/install orchestration is application-owned and continues across ordinary destination changes where the platform operation permits it.
 
-Only one check or download may be active at a time. The active presentation exposes no duplicate action.
+Only one check, download, or install preparation/session handoff may be active at a time. The active presentation exposes no duplicate action.
 
 Partial APK bytes live only in app-private cache storage. A SHA-256-verified APK is promoted into app-private no-backup persistent storage and becomes the source of truth for `DOWNLOADED`. On process restart, the runtime removes transient staging/promotion files and restores `DOWNLOADED` only when the retained APK has a canonical AALyrics release filename, remains eligible for the installed update channel, and is still newer than the installed version. Stable installed builds therefore do not restore a retained prerelease APK. Once the installed app reaches or passes that retained release, or the retained release is no longer channel-eligible, the stale verified APK is deleted and update state returns to `IDLE`.
 
-`Reset AALyrics` cancels active update work, deletes both transient and verified update artifacts, clears the selected release, and restores update presentation to `IDLE`.
+`Reset AALyrics` cancels app-owned update/install preparation, abandons any PackageInstaller session still under AALyrics control when practical, deletes transient and verified update artifacts, clears the selected release, and restores presentation to `IDLE`. Reset does not revoke Android's per-source install trust and does not undo a package already installed by Android.
 
 ### Changelog
 
