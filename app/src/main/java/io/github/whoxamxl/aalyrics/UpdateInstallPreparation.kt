@@ -3,7 +3,9 @@ package io.github.whoxamxl.aalyrics
 import java.io.File
 
 internal sealed interface UpdateInstallPreparationResult {
-    data object Ready : UpdateInstallPreparationResult
+    data class Ready(
+        val targetVersionCode: Long,
+    ) : UpdateInstallPreparationResult
 
     data class NewerReleaseAvailable(
         val candidate: AALyricsReleaseCandidate,
@@ -47,8 +49,10 @@ internal class UpdateInstallPreparation(
                         expectedVersionName = retainedVersionName,
                     )
                 ) {
-                    UpdateApkPreflightResult.Ready ->
-                        UpdateInstallPreparationResult.Ready
+                    is UpdateApkPreflightResult.Ready ->
+                        UpdateInstallPreparationResult.Ready(
+                            targetVersionCode = preflight.targetVersionCode,
+                        )
 
                     is UpdateApkPreflightResult.Rejected ->
                         UpdateInstallPreparationResult.ApkPreflightRejected(
