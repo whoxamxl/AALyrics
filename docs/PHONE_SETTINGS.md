@@ -397,6 +397,7 @@ CHECKING
 UP_TO_DATE
 UPDATE_AVAILABLE
 CHECK_FAILED
+PREPARING_DOWNLOAD
 DOWNLOADING
 DOWNLOADED
 DOWNLOAD_FAILED
@@ -414,7 +415,10 @@ Up to date                                    ✓
 
 Update available: v0.2.0-alpha.2         Download
 
-Downloading v0.2.0-alpha.2                     ◌
+Preparing download…                             ◌
+
+Downloading v0.2.0-alpha.2
+[indeterminate linear progress]
 
 Update downloaded v0.2.0-alpha.2                ✓
 
@@ -423,7 +427,7 @@ Download failed                       ⓘ   ↻ Retry
 Update check failed                   ⓘ   ↻ Retry
 ```
 
-Every update-state row keeps the same trailing-edge alignment used by the installed version value. Retry and Download remain compact inline actions. `UPDATE_AVAILABLE` exposes Download only because APK download and SHA-256 verification are now application-owned and functional. `DOWNLOADED` remains informational; Install is intentionally absent until Package Installer handoff is implemented.
+Every update-state row keeps the same trailing-edge alignment used by the installed version value. Retry and Download remain compact inline actions. `UPDATE_AVAILABLE` exposes Download only because APK download and SHA-256 verification are now application-owned and functional. After the user presses Download, `PREPARING_DOWNLOAD` uses the compact circular activity indicator while the runtime resolves assets, fetches/parses the checksum, and prepares app-private staging. Immediately before APK bytes are transferred, the runtime moves to `DOWNLOADING`, which uses an indeterminate horizontal progress bar. No fabricated percentage is shown because byte-level progress is not yet part of the runtime contract. `DOWNLOADED` remains informational; Install is intentionally absent until Package Installer handoff is implemented.
 
 The UI emits `onCheckForUpdates` and `onDownloadUpdate`; it does not perform GitHub HTTP requests, release comparison, file I/O, or checksum verification directly.
 
@@ -468,12 +472,13 @@ On an actual Settings navigation entry, application/runtime wiring applies these
 
 ```text
 CHECKING        -> keep
+PREPARING_DOWNLOAD -> keep
 DOWNLOADING     -> keep
 DOWNLOADED      -> keep
 other completed check/download states -> IDLE
 ```
 
-Therefore `UP_TO_DATE`, `UPDATE_AVAILABLE`, `CHECK_FAILED`, and `DOWNLOAD_FAILED` remain visit-local. Leaving Settings and returning presents `Check for updates` again for those states. Active download work and a successfully verified `DOWNLOADED` artifact are intentionally retained across Settings navigation within the current application process.
+Therefore `UP_TO_DATE`, `UPDATE_AVAILABLE`, `CHECK_FAILED`, and `DOWNLOAD_FAILED` remain visit-local. Leaving Settings and returning presents `Check for updates` again for those states. Active preparation/download work and a successfully verified `DOWNLOADED` artifact are intentionally retained across Settings navigation within the current application process.
 
 Configuration changes, Activity recreation, recomposition, Settings subscreen navigation, and Settings-tab reselection while already in Settings remain the same visit and must not clear update state. Check/download jobs are application-owned and continue across destination changes.
 
