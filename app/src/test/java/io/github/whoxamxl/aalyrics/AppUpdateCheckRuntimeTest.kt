@@ -361,7 +361,11 @@ class AppUpdateCheckRuntimeTest {
             runCurrent()
 
             assertEquals(
-                AppUpdateCheckState.Downloading("0.2.0-alpha.2"),
+                AppUpdateCheckState.Downloading(
+                    versionName = "0.2.0-alpha.2",
+                    downloadedBytes = 8L,
+                    totalBytes = 16L,
+                ),
                 runtime.state.value,
             )
             assertEquals(1, downloadClient.downloadCount)
@@ -370,6 +374,54 @@ class AppUpdateCheckRuntimeTest {
             runCurrent()
             assertTrue(runtime.state.value is AppUpdateCheckState.Downloaded)
         } finally {
+            root.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun `apk transfer reports determinate byte progress`() = runTest {
+        val apkBytes = "signed apk bytes".encodeToByteArray()
+        val release = downloadableRelease(
+            tagName = "v0.2.0-alpha.2",
+            apkSizeBytes = apkBytes.size.toLong(),
+        )
+        val gate = CompletableDeferred<Unit>()
+        val root = createTempDirectory("aalyrics-update-runtime").toFile()
+        try {
+            val runtime = runtime(
+                installedVersionName = "0.2.0-alpha.1",
+                releases = listOf(release),
+                assetDownloadClient = FakeUpdateAssetDownloadClient(
+                    checksumPayload = checksumPayload(apkBytes, release.assets.first().name),
+                    apkBytes = apkBytes,
+                    downloadGate = gate,
+                ),
+                downloadFileStore = updateStore(root),
+            )
+
+            runtime.checkForUpdates()
+            runCurrent()
+            runtime.downloadUpdate()
+            assertEquals(
+                AppUpdateCheckState.PreparingDownload("0.2.0-alpha.2"),
+                runtime.state.value,
+            )
+
+            runCurrent()
+            assertEquals(
+                AppUpdateCheckState.Downloading(
+                    versionName = "0.2.0-alpha.2",
+                    downloadedBytes = 8L,
+                    totalBytes = 16L,
+                ),
+                runtime.state.value,
+            )
+
+            gate.complete(Unit)
+            runCurrent()
+            assertTrue(runtime.state.value is AppUpdateCheckState.Downloaded)
+        } finally {
+            gate.complete(Unit)
             root.deleteRecursively()
         }
     }
@@ -409,7 +461,11 @@ class AppUpdateCheckRuntimeTest {
             runCurrent()
             runtime.onSettingsEntered()
             assertEquals(
-                AppUpdateCheckState.Downloading("0.2.0-alpha.2"),
+                AppUpdateCheckState.Downloading(
+                    versionName = "0.2.0-alpha.2",
+                    downloadedBytes = 8L,
+                    totalBytes = 16L,
+                ),
                 runtime.state.value,
             )
 
@@ -450,7 +506,11 @@ class AppUpdateCheckRuntimeTest {
             runtime.downloadUpdate()
             runCurrent()
             assertEquals(
-                AppUpdateCheckState.Downloading("0.2.0-alpha.2"),
+                AppUpdateCheckState.Downloading(
+                    versionName = "0.2.0-alpha.2",
+                    downloadedBytes = 8L,
+                    totalBytes = 16L,
+                ),
                 runtime.state.value,
             )
 
@@ -612,21 +672,28 @@ class AppUpdateCheckRuntimeTest {
         assets = assets,
     )
 
-    private fun downloadableRelease(tagName: String): GitHubRelease {
+    private fun downloadableRelease(
+        tagName: String,
+        apkSizeBytes: Long = 16L,
+    ): GitHubRelease {
         val apkName = "AALyrics-$tagName.apk"
         return release(
             tagName = tagName,
             prerelease = '-' in tagName,
             assets = listOf(
-                asset(apkName),
-                asset("$apkName.sha256"),
+                asset(apkName, sizeBytes = apkSizeBytes),
+                asset("$apkName.sha256", sizeBytes = 128L),
             ),
         )
     }
 
-    private fun asset(name: String) = GitHubReleaseAsset(
+    private fun asset(
+        name: String,
+        sizeBytes: Long? = null,
+    ) = GitHubReleaseAsset(
         name = name,
         downloadUrl = "https://example.com/$name",
+        sizeBytes = sizeBytes,
     )
 
     private fun checksumPayload(
@@ -662,8 +729,11 @@ class AppUpdateCheckRuntimeTest {
             asset: GitHubReleaseAsset,
             destination: File,
             maxBytes: Long,
+            onProgress: (downloadedBytes: Long) -> Unit,
         ): Result<Long> {
             downloadCount += 1
+            val halfway = apkBytes.size.toLong() / 2L
+            onProgress(halfway)
             downloadGate?.await()
             if (failDownloads > 0) {
                 failDownloads -= 1
@@ -671,6 +741,7 @@ class AppUpdateCheckRuntimeTest {
             }
             destination.parentFile?.mkdirs()
             destination.writeBytes(apkBytes)
+            onProgress(apkBytes.size.toLong())
             return Result.success(apkBytes.size.toLong())
         }
     }
