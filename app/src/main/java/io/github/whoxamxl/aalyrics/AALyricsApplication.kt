@@ -85,6 +85,8 @@ class AALyricsApplication : Application() {
     private lateinit var phoneDetailsStateFlow: StateFlow<DetailsScreenUiState>
     private lateinit var appUpdateCheckRuntime: AppUpdateCheckRuntime
     private lateinit var automaticUpdateCheckRuntime: AutomaticUpdateCheckRuntime
+    private val automaticUpdateReleasePromptRuntime =
+        AutomaticUpdateReleasePromptRuntime()
     private lateinit var updateCheckCadenceStore: UpdateCheckCadenceStore
     private lateinit var updateRecoveryStore: UpdateRecoveryStore
     private lateinit var updateSuccessFeedbackRuntime: UpdateSuccessFeedbackRuntime
@@ -202,6 +204,10 @@ class AALyricsApplication : Application() {
     internal val successfulUpdate: StateFlow<SuccessfulUpdate?>
         get() = updateSuccessFeedbackRuntime.successfulUpdate
 
+    internal val automaticUpdateReleasePrompt:
+        StateFlow<AutomaticUpdateReleasePrompt?>
+        get() = automaticUpdateReleasePromptRuntime.prompt
+
     internal fun checkForUpdates() {
         appUpdateCheckRuntime.checkForUpdates(
             origin = UpdateCheckOrigin.MANUAL,
@@ -215,6 +221,16 @@ class AALyricsApplication : Application() {
     }
 
     internal fun downloadUpdate() {
+        appUpdateCheckRuntime.downloadUpdate()
+    }
+
+    internal fun dismissAutomaticUpdateReleasePrompt() {
+        automaticUpdateReleasePromptRuntime.dismiss()
+    }
+
+    internal fun acceptAutomaticUpdateReleasePrompt() {
+        val prompt = automaticUpdateReleasePromptRuntime.consumeForUpdate()
+            ?: return
         appUpdateCheckRuntime.downloadUpdate()
     }
 
@@ -315,6 +331,7 @@ class AALyricsApplication : Application() {
 
     fun resetAppOwnedSettings() {
         installPermissionPromptRuntime.dismiss()
+        automaticUpdateReleasePromptRuntime.reset()
         appUpdateCheckRuntime.reset()
         updateSuccessFeedbackRuntime.refresh()
         translationSettingsStore.resetToDefaults()
@@ -389,6 +406,11 @@ class AALyricsApplication : Application() {
                 )
             },
         )
+        applicationScope.launch {
+            appUpdateCheckRuntime.state.collect(
+                automaticUpdateReleasePromptRuntime::onUpdateState,
+            )
+        }
         playbackAppLauncher = SelectedPlaybackAppLauncher(this)
         playbackSourceAppInfoResolver = PlaybackSourceAppInfoResolver(this)
         graph = createProductionApplicationGraph(applicationScope)
