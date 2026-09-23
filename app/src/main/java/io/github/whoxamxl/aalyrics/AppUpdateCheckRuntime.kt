@@ -55,7 +55,7 @@ internal class AppUpdateCheckRuntime(
     private var availableCandidate: AALyricsReleaseCandidate? = null
 
     init {
-        downloadFileStore?.clearAll()
+        mutableState.value = restoreVerifiedDownload()
     }
 
     fun checkForUpdates() {
@@ -102,10 +102,10 @@ internal class AppUpdateCheckRuntime(
             mutableState.value = try {
                 resolveDownloadState(candidate)
             } catch (error: CancellationException) {
-                downloadFileStore?.clearAll()
+                downloadFileStore?.clearStaging()
                 throw error
             } catch (_: Exception) {
-                downloadFileStore?.clearAll()
+                downloadFileStore?.clearStaging()
                 AppUpdateCheckState.DownloadFailed(versionName)
             }
         }
@@ -162,7 +162,7 @@ internal class AppUpdateCheckRuntime(
         val fileStore = downloadFileStore
             ?: return downloadFailed(candidate)
         val assets = AALyricsReleaseAssetResolver.resolve(candidate.release).getOrElse {
-            fileStore.clearAll()
+            fileStore.clearStaging()
             return downloadFailed(candidate)
         }
 
@@ -170,14 +170,14 @@ internal class AppUpdateCheckRuntime(
             asset = assets.checksum,
             maxBytes = MAX_CHECKSUM_BYTES,
         ).getOrElse {
-            fileStore.clearAll()
+            fileStore.clearStaging()
             return downloadFailed(candidate)
         }
         val expectedDigest = AALyricsSha256.parsePublishedChecksum(
             payload = checksumPayload,
             expectedFileName = assets.apk.name,
         ).getOrElse {
-            fileStore.clearAll()
+            fileStore.clearStaging()
             return downloadFailed(candidate)
         }
 
@@ -213,6 +213,35 @@ internal class AppUpdateCheckRuntime(
         )
     }
 
+    private fun restoreVerifiedDownload(): AppUpdateCheckState {
+        val fileStore = downloadFileStore ?: return AppUpdateCheckState.Idle
+        fileStore.cleanupTransientArtifacts()
+
+        val apkFile = fileStore.retainedVerifiedApk()
+            ?: return AppUpdateCheckState.Idle
+        val match = VERIFIED_APK_NAME.matchEntire(apkFile.name)
+        val releaseTag = match?.groupValues?.getOrNull(1)
+        val releaseVersion = releaseTag?.let(AALyricsVersionParser::parseReleaseTag)
+        val installedVersion = AALyricsVersionParser.parseInstalledVersion(installedVersionName)
+
+        if (
+            releaseTag == null ||
+            releaseVersion == null ||
+            installedVersion == null ||
+            apkFile.length() <= 0L ||
+            apkFile.name != "AALyrics-${releaseVersion.toCanonicalReleaseTag()}.apk" ||
+            releaseVersion.compareReleasePrecedenceTo(installedVersion) <= 0
+        ) {
+            fileStore.clearVerified()
+            return AppUpdateCheckState.Idle
+        }
+
+        return AppUpdateCheckState.Downloaded(
+            versionName = releaseVersion.toCanonicalReleaseTag().removePrefix("v"),
+            apkFile = apkFile,
+        )
+    }
+
     private fun checkFailed(): AppUpdateCheckState {
         availableCandidate = null
         return AppUpdateCheckState.Failed
@@ -226,6 +255,8 @@ internal class AppUpdateCheckRuntime(
         )
 
     private companion object {
+        val VERIFIED_APK_NAME = Regex("^AALyrics-(v.+)\\.apk$")
+
         const val MAX_CHECKSUM_BYTES = 4L * 1024L
         const val MAX_APK_BYTES = 512L * 1024L * 1024L
     }
