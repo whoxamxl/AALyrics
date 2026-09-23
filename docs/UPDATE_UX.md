@@ -158,17 +158,30 @@ If automatic return succeeds, normal entry handling still decides what is displa
 
 ## Automatic update checks
 
-Settings should expose an opt-in product control named for what it actually does, for example:
+Settings now exposes:
 
 ```text
-Automatically check for updates        [toggle]
+Automatically check for updates        [ON/OFF]
+
+Check for new releases and notify you when one is available.
+Updates are never installed without your confirmation.
 ```
 
-It checks for a newer eligible release and may notify/prompt the user. It does not silently install an update.
+The preference is app-owned and durable. Its default is **ON**, including users whose existing preferences do not yet contain the key. `Reset AALyrics` restores it to ON.
 
-The existing `Check for updates` action remains available as the explicit manual path regardless of the automatic-check setting.
+Automatic checking is deliberately bounded:
 
-When an automatic check discovers a newer eligible release, Phone UI may show a `New release available` dialog with an Update action and a dismiss/not-now action. Dismissing a release prompt must not cause the same prompt to reappear repeatedly during ordinary navigation in the same app session.
+- no automatic network check occurs before the normal Phone entry gates reach `READY`;
+- when enabled, the first valid Phone entry may request one automatic check per app process;
+- if the setting was OFF at entry and is switched ON later in the same process, that enables the still-unused one-process attempt;
+- once an automatic attempt has been consumed, ordinary recomposition, Activity recreation, navigation, or repeated READY rendering does not trigger another automatic check in that process;
+- an automatic check starts only from the update runtime's idle state and does not overwrite a retained verified APK or active download/install state.
+
+The existing `Check for updates` action remains available as the explicit manual path regardless of the preference and retains its existing behavior.
+
+Check results now carry an internal origin: `MANUAL`, `AUTOMATIC`, or `INSTALL_REFRESH`. Presentation of ordinary Settings update state does not depend on that origin yet. The distinction is reserved so the next checkpoint can show a `New release available` dialog **only** for automatic discovery without accidentally prompting for manual checks or install-time latest-release refreshes.
+
+This checkpoint does not yet show the new-release dialog.
 
 ## One-step user update action
 
@@ -194,7 +207,7 @@ If permission is missing after the APK has already been verified, dismissing the
 
 Every durable state introduced by this UX follow-up must explicitly re-evaluate `Reset AALyrics`.
 
-Both implemented recovery markers — `PendingUpdate` and `SuccessfulUpdate` — are app-owned and are deleted by `Reset AALyrics`, together with active app-owned update work and retained update artifacts. Future automatic-check preferences must make the same explicit keep/delete/default decision when introduced. Android's per-source install trust remains system-owned and must not be revoked by Reset.
+Both implemented recovery markers — `PendingUpdate` and `SuccessfulUpdate` — are app-owned and are deleted by `Reset AALyrics`, together with active app-owned update work and retained update artifacts. The durable automatic-update-check preference is also app-owned and resets to its default value, ON. Android's per-source install trust remains system-owned and must not be revoked by Reset.
 
 ## Implementation order
 
@@ -206,8 +219,9 @@ Implement in bounded checkpoints:
 4. reconcile `ACTION_MY_PACKAGE_REPLACED` into durable update-success state;
 5. present one-time `Update successful` feedback on the next valid app entry;
 6. add best-effort resume-after-update behavior without relying on it for correctness;
-7. add the automatic update-check preference and release-available dialog;
-8. compose Download + Install into one user-facing Update action while preserving the existing internal state machine;
-9. align Previews, Reset behavior, docs, tests, CI, and real-device regression validation.
+7. add the durable automatic update-check preference and bounded automatic checking;
+8. add the automatic-discovery-only release-available dialog and session suppression;
+9. compose Download + Install into one user-facing Update action while preserving the existing internal state machine;
+10. align Previews, Reset behavior, docs, tests, CI, and real-device regression validation.
 
 Do not combine these checkpoints into one large implementation change.
