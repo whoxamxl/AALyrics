@@ -12,6 +12,7 @@ internal data class UpdateDownloadFiles(
 internal class UpdateDownloadFileStore(
     private val stagingDirectory: File,
     private val verifiedDirectory: File,
+    private val legacyVerifiedDirectory: File? = null,
 ) {
     fun prepare(apkFileName: String): UpdateDownloadFiles {
         requireSafeFileName(apkFileName)
@@ -64,6 +65,7 @@ internal class UpdateDownloadFileStore(
     }
 
     fun cleanupTransientArtifacts() {
+        clearLegacyVerified()
         clearStaging()
         if (!verifiedDirectory.isDirectory) return
         verifiedDirectory.listFiles()?.forEach { child ->
@@ -107,8 +109,15 @@ internal class UpdateDownloadFileStore(
     }
 
     fun clearAll() {
+        clearLegacyVerified()
         clearStaging()
         clearVerified()
+    }
+
+    private fun clearLegacyVerified() {
+        legacyVerifiedDirectory
+            ?.takeIf { it.canonicalFile != verifiedDirectory.canonicalFile }
+            ?.let(::clearDirectory)
     }
 
     private fun replaceVerifiedTarget(
