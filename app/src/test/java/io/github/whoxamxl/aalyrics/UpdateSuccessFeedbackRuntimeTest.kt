@@ -2,7 +2,6 @@ package io.github.whoxamxl.aalyrics
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertFailsWith
 import kotlin.test.assertNull
 
 class UpdateSuccessFeedbackRuntimeTest {
@@ -18,7 +17,7 @@ class UpdateSuccessFeedbackRuntimeTest {
 
         assertEquals(successful, runtime.successfulUpdate.value)
 
-        runtime.dismiss()
+        assertEquals(true, runtime.dismiss())
 
         assertNull(runtime.successfulUpdate.value)
         assertNull(store.successfulUpdate())
@@ -56,9 +55,7 @@ class UpdateSuccessFeedbackRuntimeTest {
         )
         val runtime = UpdateSuccessFeedbackRuntime(store)
 
-        assertFailsWith<IllegalStateException> {
-            runtime.dismiss()
-        }
+        assertEquals(false, runtime.dismiss())
 
         assertEquals(successful, runtime.successfulUpdate.value)
         assertEquals(successful, store.successfulUpdate())
