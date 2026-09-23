@@ -12,6 +12,9 @@ internal object UpdatePackageInstallerStatusRegistry {
         sinks[sessionId] = sink
     }
 
+    fun isRegistered(sessionId: Int): Boolean =
+        sinks.containsKey(sessionId)
+
     fun dispatch(
         sessionId: Int,
         status: UpdatePackageInstallerStatus,
