@@ -468,7 +468,7 @@ Check for updates
 
 Cancellation/retry preserves the retained verified APK, and successful replacement is handled by Android's installer boundary. This split flow is now the regression baseline for subsequent UX work.
 
-The Update UX follow-up now replaces the direct install-permission Settings handoff with an explanatory modal while retaining the compact permission-required row as an explicit `Install` re-entry affordance. Post-update success feedback, optional automatic update checks, and one-step Download + Install remain later checkpoints. Every presentation change must preserve the existing application-owned states and safety boundaries until its replacement behavior is implemented and tested.
+The Update UX follow-up now replaces the direct install-permission Settings handoff with an explanatory modal while retaining the compact permission-required row as an explicit `Install` re-entry affordance. Post-update success feedback, durable automatic update checking, and best-effort post-update resume are implemented; the automatic-discovery release dialog and one-step Download + Install remain later checkpoints. Every presentation change must preserve the existing application-owned states and safety boundaries until its replacement behavior is implemented and tested.
 
 The approved follow-up contract is defined in `docs/UPDATE_UX.md`. Merely adding that contract does not change current runtime or Phone behavior.
 
@@ -485,17 +485,28 @@ Download from GitHub  ↗
 
 The top-right close button and system Back dismiss only the dialog. Outside-tap dismissal is disabled. `Grant permission` dismisses the prompt and hands off to Android's per-app unknown-source Settings. `Download from GitHub` dismisses the prompt and opens the matching GitHub Release page externally. The compact update row stays in `INSTALL_PERMISSION_REQUIRED` after dismissal and shows `Install` as the explicit re-entry action; it no longer bypasses the explanation by jumping directly to Android Settings. If source trust is still denied when Android Settings returns, the row remains permission-required and the dialog stays dismissed until the user explicitly presses `Install` again. If source trust is granted, the runtime resumes installation from the retained verified APK without reopening the explanation dialog.
 
-The UI emits `onCheckForUpdates`, `onDownloadUpdate`, `onInstallUpdate`, and an install-permission-settings callback. It does not perform GitHub HTTP requests, APK/package inspection, file I/O, signing checks, Android settings navigation, or PackageInstaller session work directly.
+The UI emits `onCheckForUpdates`, `onDownloadUpdate`, `onInstallUpdate`, an automatic-update-preference callback, and an install-permission-settings callback. It does not perform GitHub HTTP requests, APK/package inspection, file I/O, signing checks, Android settings navigation, or PackageInstaller session work directly.
 
-Application/runtime wiring owns the check:
+The APP section places a durable `Automatically check for updates` switch above the Version/update row. Its supporting text is always visible:
 
-1. explicitly start work only when the user presses Check/Retry;
-2. query the public AALyrics GitHub Releases collection;
-3. ignore Draft releases and tags outside the AALyrics release grammar;
-4. parse the installed `BuildConfig.VERSION_NAME`;
-5. select the highest release eligible for the installed channel;
-6. compare the candidate against the installed/base development version;
-7. map the result to `UP_TO_DATE`, `UPDATE_AVAILABLE`, or `CHECK_FAILED`.
+```text
+Check for new releases and notify you when one is available.
+Updates are never installed without your confirmation.
+```
+
+The default is ON. Manual `Check for updates` remains directly available below it regardless of toggle state.
+
+Application/runtime wiring owns both manual and automatic discovery:
+
+1. manual Check/Retry explicitly requests a `MANUAL` check and retains its existing behavior;
+2. after normal entry gates reach `READY`, an enabled preference may request one `AUTOMATIC` check per app process;
+3. enabling the preference later in a process may consume that process's still-unused automatic attempt;
+4. automatic discovery only starts from update-runtime `IDLE` and never displaces a retained verified APK or active download/install flow;
+5. install-time latest-release refresh is tagged separately as `INSTALL_REFRESH`;
+6. all origins use the same public AALyrics GitHub Releases query, release grammar, channel eligibility, and version comparison;
+7. results still map to the existing update states; origin is retained internally for the later automatic-discovery dialog.
+
+An automatic attempt is process-scoped rather than composition-scoped, so recomposition, Activity recreation, destination changes, or repeated READY rendering do not generate duplicate automatic requests. This checkpoint does not yet present `New release available`; that dialog consumes only `AUTOMATIC` discovery in the next checkpoint.
 
 Do not use publication timestamp alone as version ordering. Stable installed builds consider stable releases only. Alpha/beta/RC builds consider prerelease and stable releases. Development builds inherit the channel and comparison base embedded in their generated version name.
 
@@ -857,6 +868,7 @@ After confirmation, reset restores:
 - Ignore non-audio apps -> ON;
 - Allow unclassified apps -> OFF;
 - Android Auto compatibility acknowledgement -> Not reviewed;
+- Automatically check for updates -> ON;
 - pending/success update recovery state -> cleared.
 
 Reset does **not**:
@@ -961,6 +973,7 @@ Deterministic debug Previews should cover at least:
 - app up-to-date state;
 - app update available state;
 - app update failure/retry state;
+- automatic update checking ON and OFF;
 - install-permission explanation dialog at typical, narrow, and enlarged-font configurations;
 - install-permission Settings return with trust denied and trust granted;
 - update-success dialog at typical, narrow, and enlarged-font configurations;
