@@ -498,15 +498,19 @@ The default is ON. Manual `Check for updates` remains directly available below i
 
 Application/runtime wiring owns both manual and automatic discovery:
 
-1. manual Check/Retry explicitly requests a `MANUAL` check and retains its existing behavior;
-2. after normal entry gates reach `READY`, an enabled preference may request one `AUTOMATIC` check per app process;
-3. enabling the preference later in a process may consume that process's still-unused automatic attempt;
-4. automatic discovery only starts from update-runtime `IDLE` and never displaces a retained verified APK or active download/install flow;
-5. install-time latest-release refresh is tagged separately as `INSTALL_REFRESH`;
-6. all origins use the same public AALyrics GitHub Releases query, release grammar, channel eligibility, and version comparison;
-7. results still map to the existing update states; origin is retained internally for the later automatic-discovery dialog.
+1. manual Check/Retry explicitly requests a `MANUAL` check and remains available at all times;
+2. automatic discovery uses a durable **7-day cadence** rather than app-launch frequency;
+3. after normal entry gates reach `READY`, an enabled preference may request an `AUTOMATIC` check only when no cadence timestamp exists or at least seven full days have elapsed;
+4. starting an automatic check records the cadence timestamp immediately, so network failure does not create repeated automatic retries after process restarts during the same seven-day window;
+5. a successful manual GitHub Releases query refreshes the same timestamp and therefore suppresses redundant automatic discovery for seven days;
+6. enabling the preference later in a process requests automatic discovery only when that durable cadence is due;
+7. a process-local attempt guard remains as secondary duplicate protection against recomposition, Activity recreation, destination changes, or repeated READY rendering;
+8. automatic discovery only starts from update-runtime `IDLE` and never displaces a retained verified APK or active download/install flow;
+9. install-time latest-release refresh is tagged separately as `INSTALL_REFRESH`;
+10. all origins use the same public AALyrics GitHub Releases query, release grammar, channel eligibility, and version comparison;
+11. results still map to the existing update states; origin is retained internally for the later automatic-discovery dialog.
 
-An automatic attempt is process-scoped rather than composition-scoped, so recomposition, Activity recreation, destination changes, or repeated READY rendering do not generate duplicate automatic requests. This checkpoint does not yet present `New release available`; that dialog consumes only `AUTOMATIC` discovery in the next checkpoint.
+`Reset AALyrics` clears the durable cadence timestamp and process-local attempt guard in addition to restoring the automatic-check toggle to ON. This checkpoint does not yet present `New release available`; that dialog consumes only `AUTOMATIC` discovery in the next checkpoint.
 
 Do not use publication timestamp alone as version ordering. Stable installed builds consider stable releases only. Alpha/beta/RC builds consider prerelease and stable releases. Development builds inherit the channel and comparison base embedded in their generated version name.
 
@@ -869,6 +873,7 @@ After confirmation, reset restores:
 - Allow unclassified apps -> OFF;
 - Android Auto compatibility acknowledgement -> Not reviewed;
 - Automatically check for updates -> ON;
+- automatic update-check 7-day cadence -> cleared;
 - pending/success update recovery state -> cleared.
 
 Reset does **not**:
