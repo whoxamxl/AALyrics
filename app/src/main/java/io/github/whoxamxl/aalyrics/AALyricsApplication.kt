@@ -85,6 +85,7 @@ class AALyricsApplication : Application() {
     private lateinit var phoneDetailsStateFlow: StateFlow<DetailsScreenUiState>
     private lateinit var appUpdateCheckRuntime: AppUpdateCheckRuntime
     private lateinit var automaticUpdateCheckRuntime: AutomaticUpdateCheckRuntime
+    private lateinit var updateCheckCadenceStore: UpdateCheckCadenceStore
     private lateinit var updateRecoveryStore: UpdateRecoveryStore
     private lateinit var updateSuccessFeedbackRuntime: UpdateSuccessFeedbackRuntime
     private val installPermissionPromptRuntime = UpdateInstallPermissionPromptRuntime()
@@ -318,6 +319,7 @@ class AALyricsApplication : Application() {
         updateSuccessFeedbackRuntime.refresh()
         translationSettingsStore.resetToDefaults()
         phonePresentationSettingsStore.resetToDefaults()
+        updateCheckCadenceStore.clear()
         applyCurrentPlaybackSourceEligibility()
     }
 
@@ -352,6 +354,7 @@ class AALyricsApplication : Application() {
             ),
         )
         updateRecoveryStore = SharedPreferencesUpdateRecoveryStore(this)
+        updateCheckCadenceStore = SharedPreferencesUpdateCheckCadenceStore(this)
         updateSuccessFeedbackRuntime = UpdateSuccessFeedbackRuntime(updateRecoveryStore)
         appUpdateCheckRuntime = AppUpdateCheckRuntime(
             installedVersionName = BuildConfig.VERSION_NAME,
@@ -371,15 +374,21 @@ class AALyricsApplication : Application() {
             ),
             packageInstaller = AndroidUpdatePackageInstaller(this),
             updateRecoveryStore = updateRecoveryStore,
+            onReleaseQuerySucceeded = {
+                automaticUpdateCheckRuntime.recordSuccessfulReleaseQuery()
+            },
             onInstallPermissionRequired = installPermissionPromptRuntime::request,
         )
         translationSettingsStore = SharedPreferencesTranslationSettingsStore(this)
         phonePresentationSettingsStore = SharedPreferencesPhonePresentationSettingsStore(this)
-        automaticUpdateCheckRuntime = AutomaticUpdateCheckRuntime {
-            appUpdateCheckRuntime.checkForUpdates(
-                origin = UpdateCheckOrigin.AUTOMATIC,
-            )
-        }
+        automaticUpdateCheckRuntime = AutomaticUpdateCheckRuntime(
+            cadenceStore = updateCheckCadenceStore,
+            requestAutomaticCheck = {
+                appUpdateCheckRuntime.checkForUpdates(
+                    origin = UpdateCheckOrigin.AUTOMATIC,
+                )
+            },
+        )
         playbackAppLauncher = SelectedPlaybackAppLauncher(this)
         playbackSourceAppInfoResolver = PlaybackSourceAppInfoResolver(this)
         graph = createProductionApplicationGraph(applicationScope)
