@@ -386,7 +386,6 @@ internal fun AppUpdateRow(
     installLabel: String,
     preparingInstallLabel: String,
     installPermissionRequiredLabel: String,
-    openInstallSettingsLabel: String,
     installingLabel: String,
     retryLabel: String,
     checkFailedLabel: String,
@@ -399,7 +398,6 @@ internal fun AppUpdateRow(
     onCheckForUpdates: () -> Unit,
     onDownloadUpdate: () -> Unit,
     onInstallUpdate: () -> Unit,
-    onOpenInstallSettings: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -519,8 +517,8 @@ internal fun AppUpdateRow(
             AppUpdateUiPhase.INSTALL_PERMISSION_REQUIRED -> {
                 AppUpdateActionRow(
                     status = installPermissionRequiredLabel,
-                    actionLabel = openInstallSettingsLabel,
-                    onAction = onOpenInstallSettings,
+                    actionLabel = installLabel,
+                    onAction = onInstallUpdate,
                 )
             }
 
