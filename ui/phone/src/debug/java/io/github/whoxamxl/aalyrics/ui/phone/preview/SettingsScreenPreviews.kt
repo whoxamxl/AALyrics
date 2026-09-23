@@ -400,7 +400,6 @@ private fun SettingsScreenContentPreview(
                 onCheckForUpdates = {},
                 onDownloadUpdate = {},
                 onInstallUpdate = {},
-                onOpenInstallSettings = {},
                 onChangelogRequested = {},
                 onPrivacyPolicyRequested = {},
                 onTermsOfUseRequested = {},
