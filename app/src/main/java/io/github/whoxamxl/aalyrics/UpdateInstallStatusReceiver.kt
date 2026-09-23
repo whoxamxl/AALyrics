@@ -18,6 +18,7 @@ class UpdateInstallStatusReceiver : BroadcastReceiver() {
             INVALID_SESSION_ID,
         )
         if (sessionId == INVALID_SESSION_ID) return
+        if (!UpdatePackageInstallerStatusRegistry.isRegistered(sessionId)) return
 
         val status = intent.getIntExtra(
             PackageInstaller.EXTRA_STATUS,
