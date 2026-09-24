@@ -86,8 +86,7 @@ class AALyricsApplication : Application() {
     private lateinit var phoneDetailsStateFlow: StateFlow<DetailsScreenUiState>
     private lateinit var appUpdateCheckRuntime: AppUpdateCheckRuntime
     private lateinit var automaticUpdateCheckRuntime: AutomaticUpdateCheckRuntime
-    private val automaticUpdateReleasePromptRuntime =
-        AutomaticUpdateReleasePromptRuntime()
+    private val updateReleasePromptRuntime = UpdateReleasePromptRuntime()
     private lateinit var updateCheckCadenceStore: UpdateCheckCadenceStore
     private lateinit var updateRecoveryStore: UpdateRecoveryStore
     private lateinit var updateSuccessFeedbackRuntime: UpdateSuccessFeedbackRuntime
@@ -205,9 +204,8 @@ class AALyricsApplication : Application() {
     internal val successfulUpdate: StateFlow<SuccessfulUpdate?>
         get() = updateSuccessFeedbackRuntime.successfulUpdate
 
-    internal val automaticUpdateReleasePrompt:
-        StateFlow<AutomaticUpdateReleasePrompt?>
-        get() = automaticUpdateReleasePromptRuntime.prompt
+    internal val updateReleasePrompt: StateFlow<UpdateReleasePrompt?>
+        get() = updateReleasePromptRuntime.prompt
 
     internal fun checkForUpdates() {
         appUpdateCheckRuntime.checkForUpdates(
@@ -228,12 +226,12 @@ class AALyricsApplication : Application() {
         appUpdateCheckRuntime.downloadUpdate()
     }
 
-    internal fun dismissAutomaticUpdateReleasePrompt() {
-        automaticUpdateReleasePromptRuntime.dismiss()
+    internal fun dismissUpdateReleasePrompt() {
+        updateReleasePromptRuntime.dismiss()
     }
 
-    internal fun acceptAutomaticUpdateReleasePrompt() {
-        automaticUpdateReleasePromptRuntime.consumeForUpdate()
+    internal fun acceptUpdateReleasePrompt() {
+        updateReleasePromptRuntime.consumeForUpdate()
             ?: return
         appUpdateCheckRuntime.downloadUpdate()
     }
@@ -335,7 +333,7 @@ class AALyricsApplication : Application() {
 
     fun resetAppOwnedSettings() {
         installPermissionPromptRuntime.dismiss()
-        automaticUpdateReleasePromptRuntime.reset()
+        updateReleasePromptRuntime.reset()
         appUpdateCheckRuntime.reset()
         updateSuccessFeedbackRuntime.refresh()
         translationSettingsStore.resetToDefaults()
@@ -423,9 +421,9 @@ class AALyricsApplication : Application() {
             ) { updateState, automaticChecksEnabled ->
                 updateState to automaticChecksEnabled
             }.collect { (updateState, automaticChecksEnabled) ->
-                automaticUpdateReleasePromptRuntime.onUpdateState(
+                updateReleasePromptRuntime.onUpdateState(
                     state = updateState,
-                    enabled = automaticChecksEnabled,
+                    automaticChecksEnabled = automaticChecksEnabled,
                 )
             }
         }
