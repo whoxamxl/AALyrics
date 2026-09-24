@@ -5,7 +5,7 @@
 - Branch: `feature/translation-runtime`.
 - Base: `main` at `4083588a250092e47f1efeb01e06a099b72a3604`.
 - Classification: TRANSLATION / PHONE PRESENTATION / RUNTIME COMPOSITION.
-- Status: Phone Translation implementation checkpoints 1–5 complete; local validation pending.
+- Status: Phone Translation implementation and local validation complete. Physical-device smoke testing remains before merge.
 - Authoritative references: `AGENTS.md`, `docs/TRANSLATION_ARCHITECTURE.md`, `docs/PHONE_LYRICS_VIEWPORT.md`, `docs/PHONE_RUNTIME_HOST.md`, `docs/PHONE_UI_SPEC.md`, `docs/PRESENTATION_STATE_ARCHITECTURE.md`, and the current production code/tests on this branch.
 
 ## Goal
@@ -198,6 +198,16 @@ Use small, reviewable commits and keep each checkpoint independently coherent.
    - inspect the complete branch diff for scope/regressions;
    - run bounded Codex review under `AGENTS.md`;
    - perform a physical-device smoke test for Translation ON/OFF and at least one actual translated song before merge.
+
+Local validation on the implementation head:
+
+- [x] `scripts/verify-architecture.sh` passed.
+- [x] Focused `PhoneLyricsMapperTest` passed.
+- [x] Repository `test` task passed.
+- [x] `:app:assembleDebug` passed.
+- [x] Final implementation diff and commit-message CI gate checked; no accidental scope expansion found.
+- [x] One bounded local Codex review found no actionable correctness issue.
+- [ ] Physical-device Translation ON/OFF and actual translated-song smoke test (no device connected locally; required before merge).
 
 Do not merge without explicit user authorization.
 
