@@ -137,15 +137,40 @@ Active branch: `feature/unified-update-dialog`, created fresh from the current `
 
 ### #78 — one-step Update orchestration
 
-Start only from the validated #77 baseline:
+Start only from the validated #77 baseline.
 
-- [ ] Keep `DOWNLOADED` as a real internal/recovery state even when normal production UX auto-continues through it.
-- [ ] Keep `downloadUpdate()` and `installUpdate()` independently testable and reusable.
-- [ ] Add one-step continuation intent/coordinator above the existing operations rather than replacing them with a monolithic update routine.
-- [ ] Automatically continue from verified `DOWNLOADED` into the existing install stage only when one-step continuation intent is present.
-- [ ] Prevent duplicate install continuation across recomposition, Activity recreation, process recovery, and permission return.
-- [ ] Preserve retained verified APK recovery without requiring a second download.
-- [ ] Remove the second user-facing Install action only after focused tests and separate real-device E2E prove the one-step orchestration.
+#### Legacy #76 reference policy for #78
+
+Adopt the **concepts**, not the old implementation wholesale:
+
+- Reuse the old #76 idea of a user-originated **one-step continuation intent** that means "continue from download into the existing install stage when the verified artifact boundary is reached".
+- Reuse the old #76 idea of a thin **coordinator / single user-facing Update entry point** above the existing `downloadUpdate()` and `installUpdate()` operations.
+- Reuse the old #76 scenario coverage for:
+  - normal Update -> download/verify -> install continuation;
+  - download failure -> explicit Retry -> continuation;
+  - install-source trust required -> pause -> permission return -> resume without redownload;
+  - install-refresh finds a newer release -> retarget the same user operation to the newer candidate instead of installing the stale retained APK;
+  - retained verified APK reuse.
+- Do **not** copy the old process-local `oneStepUpdateRequested: Boolean` as the final #78 design. #78 continuation state must be owned explicitly enough to survive the recovery/lifecycle cases required by the current runtime contract and must be cleared by Reset.
+- Do **not** copy the old #76 Settings-owned one-action presentation, old automatic-only release prompt ownership, stale mapper states, or old one-step documentation.
+- Do **not** replace `downloadUpdate()` + `DOWNLOADED` + `installUpdate()` with a monolithic update routine.
+
+#### Ordered #78 implementation plan
+
+1. [ ] Freeze the fully validated #77 two-stage route as the pre-#78 baseline. No #78 orchestration work starts before this checkpoint is recorded.
+2. [ ] Introduce an explicit one-step continuation intent/coordinator above the existing operations. The intent is created only by an explicit user Update/Retry action and is application-owned rather than composable-owned.
+3. [ ] Keep `downloadUpdate()` and `installUpdate()` independently callable/testable. The coordinator may invoke them but must not absorb their download, verification, preflight, permission, PackageInstaller, or recovery logic.
+4. [ ] Route the normal user-facing Update action through the coordinator: arm continuation intent, then invoke the existing download stage.
+5. [ ] At verified `DOWNLOADED`, automatically invoke the existing install stage **only** when valid continuation intent exists and no install/preflight/session handoff is already active.
+6. [ ] Add an idempotent continuation claim/guard so recomposition, duplicate state collection, Activity recreation, permission return, process recovery, or restored `DOWNLOADED` cannot start installation twice.
+7. [ ] Preserve continuation across recoverable source-trust handoff: permission-required pauses the operation, Grant permission / return re-checks Android trust, and a valid retained APK resumes the existing install stage without redownload.
+8. [ ] Preserve install-refresh retargeting: if preflight discovers a newer eligible release, never install the stale retained APK. While one-step continuation remains valid, retarget the same operation to the newer candidate and reuse the existing download -> verify -> `DOWNLOADED` -> install boundaries.
+9. [ ] Stop automatic progression on recoverable Download/Install failure. An explicit Retry is a new user action that re-arms or resumes continuation; never create an automatic failure loop.
+10. [ ] Define process-recovery semantics for continuation intent. If a valid retained `DOWNLOADED` artifact and continuation intent are restored, resume at most once from the authoritative runtime state; never duplicate an active/pending PackageInstaller operation. Reset AALyrics clears the continuation intent.
+11. [ ] Add focused tests adapted from old #76 scenario coverage, but assert the current #77/#78 runtime contract rather than old Settings presentation or stale failure models.
+12. [ ] Only after those tests are stable, remove the second user-facing `Install` action from the normal production path. Keep `DOWNLOADED` and the independently callable two-stage route in runtime/tests/recovery.
+13. [ ] Align Unified Update Dialog Previews/docs for the one-step production path; do not restore old #76 Settings process Previews.
+14. [ ] Complete a separate real-device #78 E2E proving that the only intended UX change from validated #77 is automatic continuation across `DOWNLOADED`, while Android source trust and final PackageInstaller confirmation remain explicit/system-owned.
 
 ## Current checkpoint
 
