@@ -518,7 +518,7 @@ It must not prematurely implement:
 - Phone/Android Auto Translation presentation;
 - persistent Translation Cache.
 
-Those exclusions defined Phase 11.2a. Phase 11.2b implements the execution responsibilities described in "Current execution implementation" while preserving the scaffold's settings and model-lifecycle ownership.
+Those exclusions defined Phase 11.2a only. Phase 11.2b subsequently implemented the execution responsibilities described in "Current execution implementation" while preserving the scaffold's settings and model-lifecycle ownership. The active Phase 11.2c now explicitly authorizes **Phone** Translation presentation integration under the downstream rules above; Android Auto Translation presentation remains deferred.
 
 ## Invariants
 
