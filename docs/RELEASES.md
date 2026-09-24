@@ -318,7 +318,23 @@ In **#75**, that `INSTALL_REFRESH` result is surfaced through the existing Setti
 
 In **#77**, once process presentation belongs to the Unified Update Dialog, the same retarget returns the active dialog to its available state for the newer release instead. Install refresh is an install-process boundary, not background discovery, and does not alter the automatic discovery cadence.
 
-Only after the #77 two-stage route is validated on-device may **#78** remove the second user-facing Install action. #78 must reuse the existing `downloadUpdate()` -> `DOWNLOADED` -> `installUpdate()` boundaries rather than replacing them with a new monolithic update operation. One-step UX is an orchestration layer that automatically continues from verified `DOWNLOADED` into the existing install stage when continuation intent is present. The independent download/install stages, retained-artifact recovery, and `DOWNLOADED` state remain testable and authoritative.
+Only after the #77 two-stage route is validated on-device may **#78** remove the second user-facing Install action. #78 must reuse the existing `downloadUpdate()` -> `DOWNLOADED` -> `installUpdate()` boundaries rather than replacing them with a new monolithic update operation.
+
+Old #76 is a reference for the one-step **scenario**, not for final implementation structure. #78 may reuse the ideas of user-originated continuation intent, permission pause/resume without redownload, explicit Retry continuation, and install-refresh retargeting, but must reimplement them against the current runtime/recovery contract.
+
+The #78 orchestration contract is:
+
+- explicit Update/Retry establishes continuation intent;
+- verified `DOWNLOADED` may continue into the existing install stage at most once;
+- active install preparation, an active PackageInstaller session, or durable pending install state prevents duplicate continuation;
+- missing source trust pauses the operation and preserves the retained verified APK;
+- install-refresh discovery of a newer candidate never installs the stale retained APK; the same one-step operation retargets through download/verify for the newer release;
+- recoverable failure stops automatic progression until explicit Retry;
+- restored retained APK + valid continuation intent may resume only from authoritative recovered state;
+- Reset AALyrics clears continuation intent;
+- Android's source-trust decision and final PackageInstaller confirmation remain explicit/system-owned.
+
+The independent download/install stages, retained-artifact recovery, and `DOWNLOADED` state remain testable and authoritative even after the normal production path becomes one-step.
 
 Before any PackageInstaller session is created, application-owned preflight validates the retained APK as an update of the installed AALyrics package. The retained file must still be the canonical verified artifact, archive metadata must be readable, the package name must match `io.github.whoxamxl.aalyrics`, the archive version must be newer than the installed Android package version, and its signing identity must be update-compatible with the installed AALyrics package. SHA-256 verification proves Release-asset integrity; package/version/signing validation separately proves that Android package handoff is appropriate.
 
