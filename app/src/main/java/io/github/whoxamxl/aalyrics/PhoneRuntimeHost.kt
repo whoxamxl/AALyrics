@@ -99,8 +99,6 @@ internal fun PhoneRuntimeHost(
     val automaticallyCheckForUpdates by
         application.automaticallyCheckForUpdates.collectAsStateWithLifecycle()
     val appUpdateCheckState by application.appUpdateCheckState.collectAsStateWithLifecycle()
-    val installPermissionPrompt by
-        application.installPermissionPrompt.collectAsStateWithLifecycle()
     val successfulUpdate by
         application.successfulUpdate.collectAsStateWithLifecycle()
     val updateReleasePrompt by
@@ -208,6 +206,10 @@ internal fun PhoneRuntimeHost(
         appUpdateCheckState = appUpdateCheckState,
     )
 
+    val updateProcessDialogState = updateDialogState?.takeIf { state ->
+        state.isAppOwnedUpdateProcessPresentation()
+    }
+
     PhoneAppShell(
         state = PhoneShellUiState(
             selectedDestination = selectedDestination,
@@ -310,17 +312,19 @@ internal fun PhoneRuntimeHost(
                     onResetAALyrics()
                 },
                 onAndroidAutoCompatibilitySetup = onAndroidAutoCompatibilitySetup,
-                onCheckForUpdates = application::checkForUpdates,
+                onCheckForUpdates = {
+                    if (shouldReenterUpdateProcess(updateProcessDialogState)) {
+                        updateProcessDialogDismissed = false
+                    } else {
+                        application.checkForUpdates()
+                    }
+                },
                 onOpenGitHub = onOpenSourceCode,
                 onHelpFeedback = onOpenHelpFeedback,
                 onSupportAALyrics = onOpenSupportAALyrics,
                 bottomOverlayInset = bottomOverlayInset,
             )
         }
-    }
-
-    val updateProcessDialogState = updateDialogState?.takeIf { state ->
-        state.isAppOwnedUpdateProcessPresentation()
     }
 
     LaunchedEffect(updateProcessDialogState == null) {
@@ -337,11 +341,8 @@ internal fun PhoneRuntimeHost(
             onDismissRequest = application::dismissSuccessfulUpdate,
         )
     } else {
-        val visibleUpdateProcessDialogState = updateProcessDialogState?.takeIf { state ->
-            val permissionPromptVisible =
-                state.phase != UpdateDialogPhase.PERMISSION_REQUIRED ||
-                    installPermissionPrompt?.versionName == state.versionName
-            !updateProcessDialogDismissed && permissionPromptVisible
+        val visibleUpdateProcessDialogState = updateProcessDialogState?.takeIf {
+            !updateProcessDialogDismissed
         }
         if (visibleUpdateProcessDialogState != null) {
             UnifiedUpdateDialog(
@@ -400,6 +401,10 @@ internal fun UpdateDialogUiState.isAppOwnedUpdateProcessPresentation(): Boolean 
 
 internal fun UpdateDialogUiState.isDismissibleUpdateProcessPresentation(): Boolean =
     isAppOwnedUpdateProcessPresentation()
+
+internal fun shouldReenterUpdateProcess(
+    state: UpdateDialogUiState?,
+): Boolean = state?.isAppOwnedUpdateProcessPresentation() == true
 
 @Composable
 private fun QueueItemArtwork(
