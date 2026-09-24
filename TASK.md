@@ -5,7 +5,7 @@
 - Branch: `feature/translation-runtime`.
 - Base: `main` at `4083588a250092e47f1efeb01e06a099b72a3604`.
 - Classification: TRANSLATION / PHONE PRESENTATION / RUNTIME COMPOSITION.
-- Status: Phone Translation implementation in progress; mapper checkpoint complete.
+- Status: Phone Translation implementation checkpoints 1–5 complete; local validation pending.
 - Authoritative references: `AGENTS.md`, `docs/TRANSLATION_ARCHITECTURE.md`, `docs/PHONE_LYRICS_VIEWPORT.md`, `docs/PHONE_RUNTIME_HOST.md`, `docs/PHONE_UI_SPEC.md`, `docs/PRESENTATION_STATE_ARCHITECTURE.md`, and the current production code/tests on this branch.
 
 ## Goal
@@ -185,7 +185,7 @@ Use small, reviewable commits and keep each checkpoint independently coherent.
    - include long wrapping and narrow/enlarged-font cases where the current Preview structure supports them;
    - verify the secondary hierarchy does not overpower canonical lyrics.
 
-5. [ ] **Regression and documentation alignment**
+5. [x] **Regression and documentation alignment**
    - re-check Phone lyrics mapper/viewport behavior with Translation OFF and unavailable;
    - align implementation details back into the Translation/Phone docs only where implementation evidence required a change;
    - verify no stale documentation still describes Phone Translation presentation as unimplemented after the code lands.

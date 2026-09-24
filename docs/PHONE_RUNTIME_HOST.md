@@ -181,7 +181,7 @@ This slice does not change media-session selection policy.
 
 ## Lyrics destination
 
-`LyricsScreen` and the canonical Phone lyrics mapper are production Compose/runtime behavior. The remaining Translation-specific gap is downstream of the already-running `TranslationCoordinator`: `AALyricsApplication.translationState` is exposed but is not yet consumed by `PhoneRuntimeHost` or `mapPhoneLyricsState`.
+`LyricsScreen` and the canonical Phone lyrics mapper are production Compose/runtime behavior. `PhoneRuntimeHost` now collects the already-running `TranslationCoordinator` output through `AALyricsApplication.translationState`, and `mapPhoneLyricsState` projects eligible translated lines without changing canonical lyrics ownership.
 
 The active `feature/translation-runtime` slice closes that gap with the minimal application-owned presentation composition:
 

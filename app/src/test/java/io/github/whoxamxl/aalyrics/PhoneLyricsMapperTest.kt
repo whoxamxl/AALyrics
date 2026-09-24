@@ -69,8 +69,10 @@ class PhoneLyricsMapperTest {
         val staleLyrics = lyrics.copy(lyrics = lyrics.lyrics.copy(
             lines = listOf(TimedLyricLine("Changed", 0L)),
         ))
+        val newLookup = lyrics.copy(lookup = lyrics.lookup.copy(id = LyricsLookupId(99L)))
         val cases = listOf(
             Triple(staleLyrics, artifact, enabledTranslation),
+            Triple(newLookup, artifact, enabledTranslation),
             Triple(lyrics, artifact, TranslationSettings(enabled = true, targetLanguage = "ja")),
             Triple(lyrics, artifact, enabledTranslation.copy(enabled = false)),
         )
@@ -82,6 +84,19 @@ class PhoneLyricsMapperTest {
             )
             assertNull(result.viewport.lines.single().translatedText)
         }
+    }
+
+    @Test
+    fun `blank translated text leaves a plain canonical row unchanged`() {
+        val playback = PlaybackSnapshot(track = track(), source = PlaybackSource("com.spotify.music"))
+        val lyrics = ready(playback, listOf(TimedLyricLine("Original", 0L)))
+        val result = mapPhoneLyricsState(
+            playback, lyrics, true, LyricsViewportInteractionMode.FOLLOW, 1_000L,
+            translationState = translated(lyrics, listOf("  " to true)),
+            translationSettings = enabledTranslation,
+        )
+        assertEquals("Original", result.viewport.lines.single().text)
+        assertNull(result.viewport.lines.single().translatedText)
     }
 
     @Test

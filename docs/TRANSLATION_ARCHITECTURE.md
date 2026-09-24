@@ -22,7 +22,7 @@ The Translation execution slice implements the approved design through three bou
   ML Kit language evidence, model preparation, and Translation sessions
 ```
 
-`:app` observes completed canonical `LyricsState` plus persisted Translation settings, assigns the exact lookup/content identity, and hands that input to `TranslationCoordinator`. It exposes the coordinator's atomic `TranslationState` for later presentation work without changing Phone or Android Auto UI in this slice.
+`:app` observes completed canonical `LyricsState` plus persisted Translation settings, assigns the exact lookup/content identity, and hands that input to `TranslationCoordinator`. It exposes the coordinator's atomic `TranslationState` for Phone presentation without changing Android Auto UI.
 
 The default `LanguageProfilerPolicy` is named and testable:
 
@@ -41,18 +41,18 @@ Block text uses indexed `AALYRICS_LINE` markers. Results are accepted only when 
 
 `TranslationCoordinator` cancels superseded work and guards completion by canonical identity, target language, and a monotonic request id. A completed artifact records exactly one Translation Provider id. If one provider cannot prepare every required route or produce any acceptable translated line, the whole candidate is rejected before the next provider is tried.
 
-## Active Phone presentation integration
+## Phone presentation integration
 
-The next authorized Translation slice is Phone presentation integration on `feature/translation-runtime`. It consumes the execution architecture above; it does not redesign it.
+The Phone presentation integration on `feature/translation-runtime` consumes the execution architecture above; it does not redesign it.
 
-Current production gap:
+Production presentation path:
 
 ```text
 AALyricsApplication.translationState
              ↓
-        [not yet mapped]
+       Phone lyrics mapper
              ↓
-    Phone lyrics presentation
+   LyricsViewport lyric rows
 ```
 
 The Phone integration closes only that downstream gap:
@@ -62,7 +62,7 @@ The Phone integration closes only that downstream gap:
 - `:ui:phone` receives only optional presentation-ready translated text per canonical lyric row;
 - `:ui:phone` does not import Translation core, ML Kit, persistence, or provider execution types.
 
-A `TranslationState.Ready` artifact is eligible for display only when current Translation settings are enabled, its `request.targetLanguage` equals the current normalized target language, and its `request.canonicalLyrics` exactly matches the canonical lyrics currently being projected. The Phone mapping should reuse or extract the same canonical-identity construction used by `TranslationExecutionRuntime` rather than reimplementing owner/fingerprint semantics independently. Disabled state, target mismatch, or canonical-identity mismatch fails closed to original-only presentation. This extra downstream gate prevents brief propagation windows from surfacing an old-target Ready artifact while settings changes are reaching the coordinator.
+A `TranslationState.Ready` artifact is eligible for display only when current Translation settings are enabled, its `request.targetLanguage` equals the current normalized target language, and its `request.canonicalLyrics` exactly matches the canonical lyrics currently being projected. The Phone mapping reuses the canonical-identity construction from `TranslationExecutionRuntime` rather than reimplementing owner/fingerprint semantics independently. Disabled state, target mismatch, or canonical-identity mismatch fails closed to original-only presentation. This extra downstream gate prevents brief propagation windows from surfacing an old-target Ready artifact while settings changes are reaching the coordinator.
 
 Artifact projection rules:
 
