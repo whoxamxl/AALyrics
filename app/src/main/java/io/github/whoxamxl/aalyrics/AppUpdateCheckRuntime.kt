@@ -48,6 +48,10 @@ internal sealed interface AppUpdateCheckState {
         val totalBytes: Long,
     ) : AppUpdateCheckState
 
+    data class VerifyingDownload(
+        val versionName: String,
+    ) : AppUpdateCheckState
+
     data class Downloaded(
         val versionName: String,
         val apkFile: File,
@@ -153,6 +157,7 @@ internal class AppUpdateCheckRuntime(
             mutableState.value is AppUpdateCheckState.Checking ||
             mutableState.value is AppUpdateCheckState.PreparingDownload ||
             mutableState.value is AppUpdateCheckState.Downloading ||
+            mutableState.value is AppUpdateCheckState.VerifyingDownload ||
             mutableState.value is AppUpdateCheckState.PreparingInstall ||
             mutableState.value is AppUpdateCheckState.InstallPermissionRequired ||
             mutableState.value is AppUpdateCheckState.Installing ||
@@ -492,6 +497,7 @@ internal class AppUpdateCheckRuntime(
             is AppUpdateCheckState.Checking,
             is AppUpdateCheckState.PreparingDownload,
             is AppUpdateCheckState.Downloading,
+            is AppUpdateCheckState.VerifyingDownload,
             is AppUpdateCheckState.Downloaded,
             is AppUpdateCheckState.DownloadFailed,
             is AppUpdateCheckState.PreparingInstall,
@@ -641,6 +647,7 @@ internal class AppUpdateCheckRuntime(
         }
 
         ensureCurrentOperation(generation)
+        mutableState.value = AppUpdateCheckState.VerifyingDownload(versionName)
         val verified = files.partialApk.inputStream().buffered().use { input ->
             AALyricsSha256.verify(
                 expected = expectedDigest,
