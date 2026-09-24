@@ -56,7 +56,6 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import kotlin.math.roundToInt
 import io.github.whoxamxl.aalyrics.ui.designsystem.icon.AALyricsIcons
 import io.github.whoxamxl.aalyrics.ui.phone.component.PhonePopupMenu
 import io.github.whoxamxl.aalyrics.ui.phone.component.VersionChip
@@ -381,8 +380,6 @@ internal fun AppUpdateRow(
     upToDateLabel: String,
     updateAvailableLabel: String,
     downloadLabel: String,
-    preparingDownloadLabel: String,
-    downloadingLabel: String,
     downloadedLabel: String,
     installLabel: String,
     preparingInstallLabel: String,
@@ -460,18 +457,6 @@ internal fun AppUpdateRow(
                     failureInfoContentDescription = failureInfoContentDescription,
                     retryLabel = retryLabel,
                     onRetry = onCheckForUpdates,
-                )
-            }
-
-            AppUpdateUiPhase.PREPARING_DOWNLOAD -> {
-                AppUpdateIndeterminateBarRow(label = preparingDownloadLabel)
-            }
-
-            AppUpdateUiPhase.DOWNLOADING -> {
-                AppUpdateDownloadProgressRow(
-                    label = downloadingLabel,
-                    versionName = state.availableVersionName,
-                    progress = state.downloadProgress ?: 0f,
                 )
             }
 
@@ -643,54 +628,6 @@ private fun AppUpdateIndeterminateBarRow(
         Spacer(Modifier.height(AALyricsSpacing.Space8))
 
         LinearProgressIndicator(
-            modifier = Modifier.fillMaxWidth(),
-            color = AALyricsColors.AccentCyan,
-            trackColor = AALyricsColors.OverlaySoft,
-        )
-    }
-}
-
-@Composable
-private fun AppUpdateDownloadProgressRow(
-    label: String,
-    versionName: String?,
-    progress: Float,
-) {
-    val boundedProgress = progress.coerceIn(0f, 1f)
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .heightIn(min = AALyricsSpacing.Space48),
-        verticalArrangement = Arrangement.Center,
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Column(
-                modifier = Modifier.weight(1f),
-            ) {
-                Text(
-                    text = label,
-                    style = AALyricsTypography.TrackArtist,
-                    color = AALyricsColors.TextSecondary,
-                )
-                if (!versionName.isNullOrBlank()) {
-                    Spacer(Modifier.height(AALyricsSpacing.Space4))
-                    VersionChip(versionName = versionName)
-                }
-            }
-            Text(
-                text = "${(boundedProgress * 100f).roundToInt()}%",
-                style = AALyricsTypography.TrackArtist,
-                color = AALyricsColors.TextSecondary,
-            )
-        }
-
-        Spacer(Modifier.height(AALyricsSpacing.Space8))
-
-        LinearProgressIndicator(
-            progress = { boundedProgress },
             modifier = Modifier.fillMaxWidth(),
             color = AALyricsColors.AccentCyan,
             trackColor = AALyricsColors.OverlaySoft,
