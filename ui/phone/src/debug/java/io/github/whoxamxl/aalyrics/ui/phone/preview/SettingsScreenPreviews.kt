@@ -106,12 +106,6 @@ private fun SettingsInstallRefreshUpdateAvailablePreview() {
     SettingsScreenPreview(PhonePreviewFixtures.settingsInstallRefreshUpdateAvailable)
 }
 
-@Preview(name = "Update · downloaded", group = "SettingsScreen", widthDp = 412, heightDp = 900)
-@Composable
-private fun SettingsUpdateDownloadedPreview() {
-    SettingsScreenPreview(PhonePreviewFixtures.settingsDownloadedUpdate)
-}
-
 @Preview(name = "Update · download failed", group = "SettingsScreen", widthDp = 412, heightDp = 900)
 @Composable
 private fun SettingsUpdateDownloadFailedPreview() {
@@ -273,20 +267,10 @@ internal fun SettingsScreenPreview(
                     }
                 },
                 onDownloadUpdate = {
-                    val version = state.appUpdate.availableVersionName ?: "0.1.2"
+                    // Download / verify / ready-to-install presentation is global dialog-owned.
                     state = state.copy(
                         appUpdate = AppUpdateUiState(phase = AppUpdateUiPhase.IDLE),
                     )
-                    scope.launch {
-                        // Active download progress is owned by UnifiedUpdateDialog.
-                        delay(2000)
-                        state = state.copy(
-                            appUpdate = AppUpdateUiState(
-                                phase = AppUpdateUiPhase.DOWNLOADED,
-                                availableVersionName = version,
-                            ),
-                        )
-                    }
                 },
                 onInstallUpdate = {
                     val version = state.appUpdate.availableVersionName ?: "0.1.2"
