@@ -91,7 +91,8 @@ Approved follow-up direction:
 - [x] Add durable automatic update checking preference and bounded automatic discovery.
 - [x] Add automatic-discovery new-release dialog and session suppression.
 - [ ] Compose Download + Install into one user-facing Update action.
-- [ ] Align #75 Previews, Reset behavior, docs, tests, CI, and real-device regression validation.
+- [x] Align #75 Previews, Reset behavior, docs, tests, and CI.
+- [ ] Complete focused #75 real-device regression for automatic-check toggle / prompt / dismissal behavior.
 
 ## Current checkpoint
 
@@ -118,6 +119,7 @@ Completed in this checkpoint:
 - Update UX and Phone Settings documentation are aligned.
 - inherited #74 recovery hardening remains preserved: process-death cleanup is session-bound and Reset cannot race a stale pending marker past the PackageInstaller commit boundary.
 - Codex review identified a valid Reset/cadence race; successful release-query callbacks are now serialized with update generation invalidation so pre-Reset query work cannot restore the 7-day cadence timestamp after Reset clears it.
+- Preview/Doc audit confirmed the production automatic-update surfaces are covered by default-ON and explicit-OFF Settings Previews, typical/narrow/enlarged-font new-release dialog Previews, and the shared VersionChip channel matrix; stale manual-only release documentation and the Settings structure map were corrected.
 
 No end-to-end one-step Download + Install composition has been implemented yet. The `Update` action currently enters the already-validated download/verification state machine and leaves installation as the existing explicit follow-up.
 
