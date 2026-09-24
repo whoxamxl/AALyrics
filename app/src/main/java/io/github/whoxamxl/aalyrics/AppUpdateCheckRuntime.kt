@@ -114,6 +114,7 @@ internal class AppUpdateCheckRuntime(
     private var installTarget: InstallTarget? = null
     private var availableCandidate: AALyricsReleaseCandidate? = null
     private val operationGeneration = AtomicLong(0L)
+    private val releaseQueryCallbackLock = Any()
 
     init {
         mutableState.value = restoreVerifiedDownload()
@@ -432,7 +433,9 @@ internal class AppUpdateCheckRuntime(
     }
 
     fun reset() {
-        operationGeneration.incrementAndGet()
+        synchronized(releaseQueryCallbackLock) {
+            operationGeneration.incrementAndGet()
+        }
         checkJob?.cancel()
         downloadJob?.cancel()
         installJob?.cancel()
@@ -476,9 +479,10 @@ internal class AppUpdateCheckRuntime(
             return checkFailed(generation)
         }
         ensureCurrentOperation(generation)
-        runCatching {
-            onReleaseQuerySucceeded(origin)
-        }
+        notifyReleaseQuerySucceeded(
+            generation = generation,
+            origin = origin,
+        )
         val candidate = AALyricsReleaseSelector.selectLatestEligible(
             installedVersion = installedVersion,
             releases = releases,
@@ -673,6 +677,20 @@ internal class AppUpdateCheckRuntime(
     ): AppUpdateCheckState {
         clearCandidateIfCurrent(generation)
         return AppUpdateCheckState.Failed
+    }
+
+    private fun notifyReleaseQuerySucceeded(
+        generation: Long,
+        origin: UpdateCheckOrigin,
+    ) {
+        synchronized(releaseQueryCallbackLock) {
+            if (operationGeneration.get() != generation) {
+                throw CancellationException("Update operation is stale")
+            }
+            runCatching {
+                onReleaseQuerySucceeded(origin)
+            }
+        }
     }
 
     private fun clearCandidateIfCurrent(generation: Long) {
