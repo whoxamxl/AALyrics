@@ -38,6 +38,12 @@ internal fun mapPhoneUpdateDialogState(
                 },
             )
 
+        is AppUpdateCheckState.VerifyingDownload ->
+            UpdateDialogUiState(
+                phase = UpdateDialogPhase.VERIFYING_DOWNLOAD,
+                versionName = updateState.versionName,
+            )
+
         is AppUpdateCheckState.Downloaded ->
             UpdateDialogUiState(
                 phase = UpdateDialogPhase.DOWNLOADED,
