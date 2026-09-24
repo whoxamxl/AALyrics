@@ -380,10 +380,6 @@ internal fun AppUpdateRow(
     upToDateLabel: String,
     updateAvailableLabel: String,
     downloadLabel: String,
-    installLabel: String,
-    preparingInstallLabel: String,
-    installPermissionRequiredLabel: String,
-    installingLabel: String,
     retryLabel: String,
     checkFailedLabel: String,
     installFailedLabel: String,
@@ -456,22 +452,6 @@ internal fun AppUpdateRow(
                     retryLabel = retryLabel,
                     onRetry = onCheckForUpdates,
                 )
-            }
-
-            AppUpdateUiPhase.PREPARING_INSTALL -> {
-                AppUpdateIndeterminateBarRow(label = preparingInstallLabel)
-            }
-
-            AppUpdateUiPhase.INSTALL_PERMISSION_REQUIRED -> {
-                AppUpdateActionRow(
-                    status = installPermissionRequiredLabel,
-                    actionLabel = installLabel,
-                    onAction = onInstallUpdate,
-                )
-            }
-
-            AppUpdateUiPhase.INSTALLING -> {
-                AppUpdateIndeterminateBarRow(label = installingLabel)
             }
 
             AppUpdateUiPhase.INSTALL_FAILED -> {
