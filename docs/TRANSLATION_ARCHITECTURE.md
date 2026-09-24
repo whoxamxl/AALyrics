@@ -41,6 +41,43 @@ Block text uses indexed `AALYRICS_LINE` markers. Results are accepted only when 
 
 `TranslationCoordinator` cancels superseded work and guards completion by canonical identity, target language, and a monotonic request id. A completed artifact records exactly one Translation Provider id. If one provider cannot prepare every required route or produce any acceptable translated line, the whole candidate is rejected before the next provider is tried.
 
+## Active Phone presentation integration
+
+The next authorized Translation slice is Phone presentation integration on `feature/translation-runtime`. It consumes the execution architecture above; it does not redesign it.
+
+Current production gap:
+
+```text
+AALyricsApplication.translationState
+             ↓
+        [not yet mapped]
+             ↓
+    Phone lyrics presentation
+```
+
+The Phone integration closes only that downstream gap:
+
+- `PhoneRuntimeHost` observes the existing application-owned `TranslationState`;
+- the app-owned Phone lyrics mapper combines canonical lyrics with Translation presentation facts;
+- `:ui:phone` receives only optional presentation-ready translated text per canonical lyric row;
+- `:ui:phone` does not import Translation core, ML Kit, persistence, or provider execution types.
+
+A `TranslationState.Ready` artifact is eligible for display only when its `request.canonicalLyrics` exactly matches the canonical lyrics currently being projected. The Phone mapping should reuse or extract the same canonical-identity construction used by `TranslationExecutionRuntime` rather than reimplementing owner/fingerprint semantics independently. Identity mismatch fails closed to original-only presentation.
+
+Artifact projection rules:
+
+- canonical/source text always remains the primary displayed lyric;
+- only artifact lines with `translated == true` and nonblank translated text create secondary translated presentation;
+- a preserved artifact line with `translated == false` must not duplicate its canonical text;
+- `Disabled`, `Idle`, `Translating`, `NotRequired`, and `Failed` all leave usable canonical lyrics visible without a Translation-specific Lyrics failure state;
+- no partial line map is exposed. Phone consumes the existing atomically published `Ready` artifact only.
+
+The translated text is additive content inside the same logical Phone lyric row. Canonical timing/current-line ownership remains unchanged. The canonical + translated pair is measured and moved as one viewport row so the existing Follow/Browse geometry remains the only scrolling authority. Translated text does not gain independent WORD progress, current-line calculation, or timing.
+
+This slice intentionally does **not** add Android Auto Translation presentation, Musixmatch native Translation, persistent Translation Cache, new Translation algorithms, or Translation-specific Lyrics error chrome.
+
+The executable scope and acceptance criteria are recorded in `TASK.md`; the visual row contract is defined in `docs/PHONE_LYRICS_VIEWPORT.md`.
+
 ## Stable ownership rules
 
 Translation is not part of lyrics retrieval or cross-provider candidate ranking.
