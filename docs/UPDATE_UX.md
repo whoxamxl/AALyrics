@@ -272,8 +272,8 @@ The existing progress semantics move from the Settings row into the dialog rathe
 - `PREPARING_DOWNLOAD` now renders as indeterminate progress in the Unified Update Dialog while assets/checksum/staging are prepared;
 - `DOWNLOADING` now renders the existing determinate byte-based 0–100% progress in the Unified Update Dialog;
 - Settings no longer renders either of those active download phases and its corresponding progress fixtures/copy have been removed;
-- `VerifyingDownload(versionName)` is an explicit application-owned runtime state entered immediately before SHA-256 verification. Its presentation ownership is already on the Unified Update Dialog so the dialog does not disappear after transfer completion, but it temporarily reuses the preparing-style indeterminate presentation;
-- the next #77 checkpoint gives `VerifyingDownload` dedicated verification copy/presentation so 100% transfer does not appear stalled or ambiguously return to preparation; checksum verification and verified-artifact promotion semantics remain unchanged;
+- `VerifyingDownload(versionName)` is an explicit application-owned runtime state entered immediately before SHA-256 verification. It now has dedicated `Verifying update` / `Checking download integrity…` copy with indeterminate progress in the Unified Update Dialog, so 100% transfer no longer appears stalled or ambiguously returns to preparation;
+- verification presentation is intentionally limited to download-integrity checking at this stage; checksum verification and verified-artifact promotion semantics remain unchanged, while package/version/signing preflight remains a later install boundary;
 - install preparation retains the latest-release refresh and APK package/version/signing preflight;
 - missing Android install-source trust is explained in the update flow without bypassing Android Settings or final confirmation;
 - recoverable download/install failures remain typed and expose Retry from the update flow;
