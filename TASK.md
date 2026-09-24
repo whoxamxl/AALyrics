@@ -2,8 +2,9 @@
 
 ## Branch and baseline
 
-- Branch: `feature/automatic-update-check`.
-- Base: `feature/package-installer` at `e97894c0920d40cd3f01f3dd719dd0b52d3b6ad7` (`#74` squash-merged recovery UX baseline).
+- Branch: `feature/unified-update-dialog` (PR #77).
+- Base: `feature/package-installer` at `1e0b28cff9ea772db5d46765cd4fe72092e3ef11`.
+- Validated pre-auto-install checkpoint: `d5de6a46a442eec0d1e293812475b51b57d572a0` (Build #1118 passed; latest Codex review found no major issue; corrected two-stage route validated on-device).
 - Parent installer PR: #72.
 - Classification: SETTINGS / UPDATE UX / ANDROID PACKAGE INSTALLER.
 - Authoritative references: `AGENTS.md`, `docs/UPDATE_UX.md`, `docs/RELEASES.md`, `docs/PHONE_SETTINGS.md`, and the validated package-installer runtime/tests inherited from the parent branch.
@@ -65,9 +66,9 @@ Approved follow-up direction:
 6. make Settings own manual discovery only: Idle / Checking / Up to date / Check failed;
 7. route MANUAL and AUTOMATIC newer-release results into the same shared release-available dialog;
 8. keep PR #76 / `feature/one-step-update` as a legacy/reference prototype only; it is not the baseline for new implementation work;
-9. in #77, move existing preparing/download progress, verification, downloaded/install, permission, failure/Retry, install-refresh retargeting, and install presentation out of Settings and into the Unified Update Dialog while preserving the validated two-stage `Update -> Download/Verify -> DOWNLOADED/Ready to install -> Install` interaction;
-10. in #77, complete full real-device E2E validation of that two-stage route before changing its transition contract;
-11. in #78, compose the validated Download + Install stages behind one user-facing `Update` intent by adding automatic continuation above the existing internal download/verify/`DOWNLOADED`/preflight/install state machine.
+9. in #77, move existing preparing/download progress, verification, downloaded/install, permission, failure/Retry, install-refresh retargeting, and install presentation out of Settings and into the Unified Update Dialog while preserving the explicit two-stage `Update -> Download/Verify -> DOWNLOADED/Ready to install -> Install` interaction;
+10. freeze the corrected two-stage route as the validated #77 checkpoint after Build #1118, latest Codex review, and real-device validation;
+11. finish #77 with a narrowly scoped UX connection: when the existing download/verification path reaches authoritative `DOWNLOADED`, automatically dispatch the existing `installUpdate()` path once. Keep `downloadUpdate()`, `DOWNLOADED`, and `installUpdate()` as separate runtime boundaries; do not create a monolithic Download+Install operation or a separate #78 development phase.
 
 ## Scope guardrails
 
@@ -110,13 +111,13 @@ Approved follow-up direction:
 
 PR #76 / `feature/one-step-update` is intentionally retained as a **legacy/reference branch and Draft PR**.
 
-- Do not use #76 as the base for #77 or #78.
+- Do not use #76 as the active base for #77; it remains historical/reference material only.
 - Do not rebase or continue #76 as the active implementation path.
 - It may be consulted for prior UI/component ideas, tests, or implementation approaches.
 - Any code reused from #76 must be re-evaluated against the current `feature/package-installer` baseline and the #77 two-stage contract.
 - The explicit `VerifyingDownload` runtime boundary is the only #76 implementation concept intentionally adopted early into #77.
 - #76's Settings-owned `VERIFYING` presentation and its Settings Preview fixtures must **not** be copied. Recreate equivalent verification coverage against the #77 Unified Update Dialog when that presentation layer exists.
-- #76's one-step runtime tests remain reference material for #78. For #77, reuse only the scenario coverage ideas that also apply to the explicit two-stage route: verification, retained-artifact reuse, permission stop/resume, failure/Retry, and install-refresh retargeting.
+- #76's one-step runtime tests remain scenario reference material only. Any useful continuation scenario must be re-evaluated against the current #77 runtime; do not revive the old #76 orchestration wholesale.
 - Keeping #76 open also preserves its branch as a stable historical reference.
 
 ### #77 — Unified Update Dialog and validated two-stage E2E
@@ -169,50 +170,26 @@ Complete these items before the final two-stage real-device validation:
    - [x] Active permission-first download survives Settings re-entry without restart/cancellation and completes once the existing transfer resumes.
 10. [x] Align Unified Update Dialog Previews so all process phases visibly use the shared dismissible header while outside-tap dismissal stays disabled; the existing Preview matrix inherits the shared header directly from `UnifiedUpdateDialogContent`.
 
-- [ ] Complete full real-device E2E of the corrected two-stage route:
+- [x] Complete real-device validation of the corrected two-stage route:
   `Update -> permission gate if required -> Download/Verify -> DOWNLOADED/Ready to install -> Install -> install refresh/preflight -> PackageInstaller -> replacement/recovery -> Update successful`.
-- [ ] Record that corrected route as the validated baseline before #77 is considered complete.
+- [x] Record `d5de6a46a442eec0d1e293812475b51b57d572a0` as the validated pre-auto-install #77 checkpoint. Build #1118 passed and the latest Codex review reported no major issue.
 
-### #78 — one-step Update orchestration
+### #77 final slice — automatic install continuation
 
-Start only from the validated #77 baseline.
+This is intentionally a small continuation change on top of the validated checkpoint above, not a new update architecture and not a separate #78 development phase.
 
-#### Legacy #76 reference policy for #78
-
-Adopt the **concepts**, not the old implementation wholesale:
-
-- Reuse the old #76 idea of a user-originated **one-step continuation intent** that means "continue from download into the existing install stage when the verified artifact boundary is reached".
-- Reuse the old #76 idea of a thin **coordinator / single user-facing Update entry point** above the existing `downloadUpdate()` and `installUpdate()` operations.
-- Reuse the old #76 scenario coverage for:
-  - normal Update -> download/verify -> install continuation;
-  - download failure -> explicit Retry -> continuation;
-  - install-source trust required -> pause -> permission return -> resume without redownload;
-  - install-refresh finds a newer release -> retarget the same user operation to the newer candidate instead of installing the stale retained APK;
-  - retained verified APK reuse.
-- Do **not** copy the old process-local `oneStepUpdateRequested: Boolean` as the final #78 design. #78 continuation state must be owned explicitly enough to survive the recovery/lifecycle cases required by the current runtime contract and must be cleared by Reset.
-- Do **not** copy the old #76 Settings-owned one-action presentation, old automatic-only release prompt ownership, stale mapper states, or old one-step documentation.
-- Do **not** replace `downloadUpdate()` + `DOWNLOADED` + `installUpdate()` with a monolithic update routine.
-
-#### Ordered #78 implementation plan
-
-1. [ ] Freeze the fully validated #77 two-stage route as the pre-#78 baseline. No #78 orchestration work starts before this checkpoint is recorded.
-2. [ ] Introduce an explicit one-step continuation intent/coordinator above the existing operations. The intent is created only by an explicit user Update/Retry action and is application-owned rather than composable-owned.
-3. [ ] Keep `downloadUpdate()` and `installUpdate()` independently callable/testable. The coordinator may invoke them but must not absorb their download, verification, preflight, permission, PackageInstaller, or recovery logic.
-4. [ ] Route the normal user-facing Update action through the coordinator: arm continuation intent, then invoke the existing download stage.
-5. [ ] At verified `DOWNLOADED`, automatically invoke the existing install stage **only** when valid continuation intent exists and no install/preflight/session handoff is already active.
-6. [ ] Add an idempotent continuation claim/guard so recomposition, duplicate state collection, Activity recreation, permission return, process recovery, or restored `DOWNLOADED` cannot start installation twice.
-7. [ ] Preserve continuation across recoverable source-trust handoff: permission-required pauses the operation, Grant permission / return re-checks Android trust, and a valid retained APK resumes the existing install stage without redownload.
-8. [ ] Preserve install-refresh retargeting: if preflight discovers a newer eligible release, never install the stale retained APK. While one-step continuation remains valid, retarget the same operation to the newer candidate and reuse the existing download -> verify -> `DOWNLOADED` -> install boundaries.
-9. [ ] Stop automatic progression on recoverable Download/Install failure. An explicit Retry is a new user action that re-arms or resumes continuation; never create an automatic failure loop.
-10. [ ] Define process-recovery semantics for continuation intent. If a valid retained `DOWNLOADED` artifact and continuation intent are restored, resume at most once from the authoritative runtime state; never duplicate an active/pending PackageInstaller operation. Reset AALyrics clears the continuation intent.
-11. [ ] Add focused tests adapted from old #76 scenario coverage, but assert the current #77/#78 runtime contract rather than old Settings presentation or stale failure models.
-12. [ ] Only after those tests are stable, remove the second user-facing `Install` action from the normal production path. Keep `DOWNLOADED` and the independently callable two-stage route in runtime/tests/recovery.
-13. [ ] Align Unified Update Dialog Previews/docs for the one-step production path; do not restore old #76 Settings process Previews.
-14. [ ] Complete a separate real-device #78 E2E proving that the only intended UX change from validated #77 is automatic continuation across `DOWNLOADED`, while Android source trust and final PackageInstaller confirmation remain explicit/system-owned.
+1. [ ] Keep the existing independent `downloadUpdate()` and `installUpdate()` operations unchanged in responsibility.
+2. [ ] Keep `DOWNLOADED` as the authoritative verified-artifact/recovery checkpoint.
+3. [ ] When the normal app-managed download/verification flow reaches `DOWNLOADED`, automatically dispatch the existing `installUpdate()` path exactly once instead of waiting for the ordinary second user-facing Install press.
+4. [ ] Do not infer success from the external GitHub fallback. Opening `Download from GitHub` remains presentation dismissal/external navigation and must never arm or trigger automatic installation.
+5. [ ] Preserve the existing permission gate, install refresh, package/version/signing preflight, retained-APK retry, PackageInstaller handoff, and Android-owned final confirmation.
+6. [ ] Preserve explicit recovery behavior on failure; automatic continuation must not create an automatic retry loop.
+7. [ ] Remove the normal production Install button only after the automatic continuation path is covered by focused tests; keep the underlying `DOWNLOADED` state and independently callable install path available to runtime/tests/recovery.
+8. [ ] Align Unified Update Dialog Previews and update documentation with the final production path, then run the bounded validation appropriate to this small change.
 
 ## Current checkpoint
 
-**#75 is merged into `feature/package-installer`. PR #76 remains legacy/reference only. #77 process-presentation migration is now complete through install-refresh retarget; runtime/build/review and real-device validation remain before #77 can close. One-step orchestration stays deferred to #78.**
+**#75 is merged into `feature/package-installer`. PR #76 remains legacy/reference only. PR #77 has a validated corrected two-stage checkpoint at `d5de6a46a442eec0d1e293812475b51b57d572a0`: Build #1118 passed, the latest Codex review found no major issue, and real-device validation succeeded for the corrected route. The only planned behavior change before #77 closes is the narrow automatic handoff from verified `DOWNLOADED` into the existing `installUpdate()` path.**
 
 The #75 production behavior is:
 
@@ -240,13 +217,13 @@ Additional #75 invariants:
 - If MANUAL discovery is requested while an AUTOMATIC query is already in flight, the existing query is promoted to MANUAL presentation semantics: Settings immediately shows Checking, no duplicate release request is started, and the eventual result is surfaced as MANUAL.
 - `INSTALL_REFRESH` remains internal and does not create a MANUAL/AUTOMATIC discovery prompt in this #75 scope. If install preparation finds a newer eligible release, the existing Settings process surface shows `Newer update available -> Download` and preserves that retarget state across Settings re-entry.
 - Settings does not present `UpdateAvailable` for MANUAL/AUTOMATIC discovery; after the user presses `Update`, the existing download/install presentation remains unchanged from the validated pre-unification baseline until #77 moves that same two-stage process, including install-refresh retargeting, into the Unified Update Dialog.
-- #77 must preserve the explicit `DOWNLOADED / Ready to install -> Install` user checkpoint and prove it end-to-end on-device.
-- #78 alone may remove that second user action by automatically continuing across the already-validated `DOWNLOADED` boundary.
+- The explicit `DOWNLOADED / Ready to install -> Install` route is now the validated #77 checkpoint.
+- The final #77 slice may remove only the ordinary second user action by automatically dispatching the existing install path after verified `DOWNLOADED`; the internal boundary remains.
 - The existing download, SHA-256 verification, retained APK, install refresh, package/version/signing preflight, source trust, PackageInstaller, durable recovery, and Reset boundaries are unchanged by #75.
 
 A temporary process-presentation implementation was intentionally reverted from the #75 branch before #75 was finalized. The older PR #76 separately retains a legacy one-step prototype for reference, but it is not part of the active stack.
 
-The active #77 branch starts from the post-#75 `feature/package-installer` baseline and preserves the explicit two-stage route. Settings now owns only Idle / manual Checking / manual Up to date / manual Check failed. The Unified Update Dialog owns the post-Update process, including install-refresh `Newer update available -> Download`, while MANUAL/AUTOMATIC discovery still uses the separate dismissible release-available dialog. The next #77 work is validation rather than additional process-presentation migration.
+The active #77 branch starts from the post-#75 `feature/package-installer` baseline. Settings owns only Idle / manual Checking / manual Up to date / manual Check failed. The Unified Update Dialog owns the post-Update process, including install-refresh `Newer update available -> Download`, while MANUAL/AUTOMATIC discovery still uses the separate dismissible release-available dialog. The corrected explicit two-stage route is now the validated checkpoint; the next #77 work is only the small automatic `DOWNLOADED -> installUpdate()` handoff.
 
 Pre-Draft regression audit:
 
@@ -263,5 +240,7 @@ Post-contract regression audit before Build / CI:
 - [x] Semantic state-machine audit rerun across normal Update, permission deny/grant, Download Retry, dismiss/re-entry, explicit Ready-to-install -> Install, install-refresh retarget, fail-safe source-trust re-check, retained-artifact retry, and PackageInstaller handoff.
 - [x] Fix audit finding: all user-started APK download paths now share the source-trust gate. Install-refresh replacement Download and Download Retry can no longer bypass the pre-transfer permission gate.
 - [x] Add focused install-refresh coverage proving replacement Download is blocked until source trust is granted and resumes the selected replacement candidate afterward.
-- [ ] Build / CI intentionally remain unrun after this audit checkpoint.
+- [x] Build / architecture checks / unit tests / CI passed on Build #1118 for checkpoint `d5de6a46a4`.
+- [x] Latest Codex review on `d5de6a46a4` reported no major issue.
+- [x] Corrected explicit two-stage route validated on-device and accepted as the pre-auto-install checkpoint.
 

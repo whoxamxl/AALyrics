@@ -551,19 +551,19 @@ If install-time latest-release refresh discovers a newer eligible release, the s
 
 Every app-owned Unified Update Dialog phase is dismissible through the shared close affordance and System Back; outside-tap dismissal remains disabled. Dismissal is presentation-only and must not cancel active work or silently destroy authoritative runtime/artifact state.
 
-#### #78 one-step orchestration
+#### Final #77 automatic install continuation
 
-Only after the #77 two-stage route has passed focused tests and full real-device E2E validation may #78 remove the second user-facing Install action.
+The corrected #77 two-stage route has now passed the checkpoint validation gate. The final #77 slice may remove the ordinary second user-facing Install action only by automatically dispatching the existing install stage after verified `DOWNLOADED`.
 
-#78 does not replace the validated core stages. It keeps:
+#77 automatic continuation does not replace the validated core stages. It keeps:
 
 - `downloadUpdate()` as the download/verify operation;
 - `DOWNLOADED` as the verified-artifact and recovery boundary;
 - `installUpdate()` as the existing install-refresh/preflight/permission/PackageInstaller operation.
 
-The one-step UX adds orchestration above those stages. Old #76 is reference material for the **concept** of continuation intent and for retry/permission/retarget scenarios, but its process-local `oneStepUpdateRequested` flag and Settings-owned presentation are not the #78 implementation contract.
+The one-step UX adds orchestration above those stages. Old #76 is reference material for the **concept** of continuation intent and for retry/permission/retarget scenarios, but its process-local `oneStepUpdateRequested` flag and Settings-owned presentation are not the final #77 implementation contract.
 
-The #78 coordinator follows this order:
+The final #77 continuation follows this order:
 
 1. explicit Update/Retry arms application-owned continuation intent;
 2. the existing download operation runs unchanged;
@@ -575,7 +575,7 @@ The #78 coordinator follows this order:
 8. restored `DOWNLOADED` plus valid continuation intent may resume at most once, while active/pending installer work blocks duplicate continuation;
 9. Reset AALyrics clears continuation intent.
 
-Production UX may therefore become one-step in #78 while the independently validated two-stage route remains preserved in runtime boundaries, tests, and recovery behavior. The second user-facing Install action is removed only after focused orchestration tests prove the above contract.
+Production UX may therefore become one-step in the final #77 slice while the independently validated two-stage route remains preserved in runtime boundaries, tests, and recovery behavior. The second user-facing Install action is removed only after focused orchestration tests prove the above contract.
 
 #### Version presentation
 
@@ -595,7 +595,7 @@ After the migration, Settings Previews should cover:
 - manual Up to date;
 - manual Check failed / Retry.
 
-Update-process Previews belong to the Unified Update Dialog. The current #77 checkpoint covers preparing download, downloading/progress, dedicated verification presentation, Ready to install / explicit Install, Download failed / Retry, Preparing installation, Permission required, and Installing. Permission required includes narrow-phone and enlarged-font coverage because it carries the longest explanatory copy. Install-failure/retry and install-refresh-retarget Previews are added with their corresponding ownership migrations rather than keeping parallel Settings fixtures. #77 Preview coverage must ultimately demonstrate the full two-stage route; #78 may later change only the normal user-facing continuation behavior.
+Update-process Previews belong to the Unified Update Dialog. The current #77 checkpoint covers preparing download, downloading/progress, dedicated verification presentation, Ready to install / explicit Install, Download failed / Retry, Preparing installation, Permission required, and Installing. Permission required includes narrow-phone and enlarged-font coverage because it carries the longest explanatory copy. Install-failure/retry and install-refresh-retarget Previews are added with their corresponding ownership migrations rather than keeping parallel Settings fixtures. #77 Preview coverage must ultimately demonstrate the full two-stage route; #77's final slice may change only the normal user-facing continuation behavior.
 
 The Phone UI remains presentation-only. It emits semantic discovery/update actions and renders application-owned state; it does not perform GitHub HTTP requests, file I/O, checksum verification, package inspection, signing checks, Android settings mutation, or PackageInstaller session work directly.
 

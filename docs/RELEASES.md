@@ -326,11 +326,11 @@ In **#75**, that `INSTALL_REFRESH` result is surfaced through the existing Setti
 
 In **#77**, that retarget returns the Unified Update Dialog to its process-owned available state for the newer release. Install refresh is an install-process boundary, not background discovery, so the dialog offers Download without `Not now` and the refresh does not alter automatic-discovery cadence. The shared close/System Back action only hides the process presentation; it does not convert retargeting into discovery dismissal or discard the newer candidate.
 
-Only after the #77 two-stage route is validated on-device may **#78** remove the second user-facing Install action. #78 must reuse the existing `downloadUpdate()` -> `DOWNLOADED` -> `installUpdate()` boundaries rather than replacing them with a new monolithic update operation.
+The corrected #77 two-stage route is now the validated on-device checkpoint. The final #77 slice may remove the ordinary second user-facing Install action, but it must reuse the existing `downloadUpdate()` -> `DOWNLOADED` -> `installUpdate()` boundaries rather than replacing them with a monolithic update operation.
 
-Old #76 is a reference for the one-step **scenario**, not for final implementation structure. #78 may reuse the ideas of user-originated continuation intent, permission pause/resume without redownload, explicit Retry continuation, and install-refresh retargeting, but must reimplement them against the current runtime/recovery contract.
+Old #76 is a reference for the one-step **scenario**, not for final implementation structure. #77's final continuation slice may reuse the ideas of user-originated continuation intent, permission pause/resume without redownload, explicit Retry continuation, and install-refresh retargeting, but must reimplement them against the current runtime/recovery contract.
 
-The #78 orchestration contract is:
+The final #77 continuation contract is:
 
 - explicit Update/Retry establishes continuation intent;
 - verified `DOWNLOADED` may continue into the existing install stage at most once;
@@ -403,7 +403,7 @@ install older same-release-signed fixture
     -> durable Update successful reconciliation
 ```
 
-This validation must complete before #78 introduces automatic continuation from verified `DOWNLOADED` into the existing install stage.
+This validation is now the recorded pre-auto-install checkpoint. Automatic continuation from verified `DOWNLOADED` into the existing install stage is the final narrow #77 behavior slice.
 
 The debug-signed fixture remains unsuitable for proving successful replacement because Android update compatibility requires the same signing identity.
 

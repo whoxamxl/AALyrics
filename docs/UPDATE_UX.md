@@ -336,10 +336,10 @@ The approved stacked implementation is:
 
 2. **#76 — legacy/reference one-step prototype**
    - retain PR #76 / `feature/one-step-update` as a historical implementation reference;
-   - do not use it as the active base for #77 or #78;
+   - do not use it as the active base for #77;
    - any reused idea or code must be re-evaluated against the current post-#75 baseline;
    - #77 has intentionally adopted the explicit `VerifyingDownload` runtime boundary, but not #76's Settings-owned verification UI;
-   - use #76's verification/permission/retry/retarget tests and Previews only as scenario references: recreate applicable cases against #77's two-stage Unified Update Dialog, while one-step assertions belong exclusively to #78.
+   - use #76's verification/permission/retry/retarget tests and Previews only as scenario references. Any continuation assertions must be recreated against the current #77 runtime rather than reviving the old prototype.
 
 3. **#77 — unify the complete update-process presentation while preserving the validated two-stage route**
    - move the existing preparing/downloading progress presentation into the Unified Update Dialog;
@@ -365,7 +365,7 @@ The approved stacked implementation is:
      -> Update successful
    ```
 
-4. **#78 — compose the validated two-stage route into one-step UX**
+4. **Final #77 slice — automatically hand verified download into the existing install stage**
    - start from the validated #77 implementation;
    - treat old #76 as a scenario/design reference only: its continuation-intent idea, retry/permission/retarget scenarios, and single user-facing Update concept are useful, but its process-local boolean, Settings-owned presentation, stale prompt ownership, and outdated mapper/runtime details are not authoritative;
    - keep `DOWNLOADED` as a real internal/recovery state even if it is transient in normal production UX;
@@ -378,7 +378,7 @@ The approved stacked implementation is:
    - if install refresh finds a newer release, retarget the same one-step operation to the newer candidate rather than installing the stale retained APK;
    - stop automatic progression on recoverable failure and require explicit Retry to re-arm/resume the one-step operation;
    - define process-recovery semantics for continuation intent and clear it under Reset AALyrics;
-   - adapt old #76 one-step tests only as scenario references against the current #77/#78 runtime contract;
+   - adapt old #76 one-step tests only as scenario references against the current #77 runtime contract;
    - remove the second user-facing Install action only after focused tests pass, then validate the one-step UX separately on-device.
 
 Typical, narrow-phone, and enlarged-font Previews must cover the shared release-available dialog and representative #77 process states, including `Ready to install`. Settings Previews should cover only the manual discovery states plus automatic-check preference ON/OFF; they should not retain parallel update-process fixtures after #77 migration.
@@ -412,9 +412,9 @@ The recovery/install safety checkpoints are already established. Continue in bou
 8. align Previews, Reset behavior, docs, and focused tests;
 9. complete full real-device E2E validation of the two-stage route from Update through Downloaded -> Install -> Android confirmation -> replacement/recovery.
 
-### #78
+### Final #77 automatic-continuation slice
 
-1. freeze the validated #77 two-stage route as the immutable pre-#78 comparison baseline;
+1. freeze the validated #77 two-stage route as the immutable pre-auto-install comparison baseline;
 2. define application-owned continuation intent/coordinator semantics, using old #76's one-step intent only as a conceptual reference;
 3. route explicit Update/Retry actions through the coordinator while preserving independently callable `downloadUpdate()` and `installUpdate()`;
 4. auto-continue only after verified `DOWNLOADED`, guarded by an idempotent single-consumer/active-install check;
