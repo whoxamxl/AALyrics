@@ -1,5 +1,6 @@
 package io.github.whoxamxl.aalyrics
 
+import io.github.whoxamxl.aalyrics.ui.phone.update.UpdateDialogAvailabilityContext
 import io.github.whoxamxl.aalyrics.ui.phone.update.UpdateDialogInstallFailureUiReason
 import io.github.whoxamxl.aalyrics.ui.phone.update.UpdateDialogPhase
 import io.github.whoxamxl.aalyrics.ui.phone.update.UpdateDialogUiState
@@ -19,6 +20,8 @@ internal fun mapPhoneUpdateDialogState(
                 UpdateDialogUiState(
                     phase = UpdateDialogPhase.AVAILABLE,
                     versionName = updateState.versionName,
+                    availabilityContext =
+                        UpdateDialogAvailabilityContext.INSTALL_REFRESH_RETARGET,
                 )
             } else {
                 null
@@ -107,6 +110,7 @@ internal fun mapPhoneUpdateDialogState(
             UpdateDialogUiState(
                 phase = UpdateDialogPhase.AVAILABLE,
                 versionName = prompt.versionName,
+                availabilityContext = UpdateDialogAvailabilityContext.DISCOVERY,
             )
         }
     }
