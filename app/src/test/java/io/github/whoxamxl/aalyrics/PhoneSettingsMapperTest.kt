@@ -187,9 +187,22 @@ class PhoneSettingsMapperTest {
         ).appUpdate
 
         assertEquals(AppUpdateUiPhase.IDLE, mapped(AppUpdateCheckState.Idle).phase)
-        assertEquals(AppUpdateUiPhase.CHECKING, mapped(AppUpdateCheckState.Checking).phase)
-        assertEquals(AppUpdateUiPhase.UP_TO_DATE, mapped(AppUpdateCheckState.UpToDate).phase)
-        assertEquals(AppUpdateUiPhase.CHECK_FAILED, mapped(AppUpdateCheckState.Failed).phase)
+        assertEquals(AppUpdateUiPhase.CHECKING, mapped(AppUpdateCheckState.Checking()).phase)
+        assertEquals(AppUpdateUiPhase.UP_TO_DATE, mapped(AppUpdateCheckState.UpToDate()).phase)
+        assertEquals(AppUpdateUiPhase.CHECK_FAILED, mapped(AppUpdateCheckState.Failed()).phase)
+
+        assertEquals(
+            AppUpdateUiPhase.IDLE,
+            mapped(AppUpdateCheckState.Checking(UpdateCheckOrigin.AUTOMATIC)).phase,
+        )
+        assertEquals(
+            AppUpdateUiPhase.IDLE,
+            mapped(AppUpdateCheckState.UpToDate(UpdateCheckOrigin.AUTOMATIC)).phase,
+        )
+        assertEquals(
+            AppUpdateUiPhase.IDLE,
+            mapped(AppUpdateCheckState.Failed(UpdateCheckOrigin.AUTOMATIC)).phase,
+        )
 
         val manualAvailable = mapped(
             AppUpdateCheckState.UpdateAvailable(
