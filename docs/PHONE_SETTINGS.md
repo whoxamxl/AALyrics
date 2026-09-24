@@ -31,6 +31,7 @@ Settings
 ├─ Android Auto
 │  └─ Compatibility setup            <status> >
 ├─ App
+│  ├─ Automatically check for updates [switch]  ⓘ
 │  ├─ Version / update
 │  │  ├─ Version                    <version>
 │  │  └─ <stateful update action>
