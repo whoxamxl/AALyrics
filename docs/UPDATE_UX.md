@@ -216,7 +216,7 @@ The internal origin remains meaningful for cadence and notification-suppression 
 
 ### Shared release-available dialog handoff
 
-Both user-visible discovery origins converge at the same presentation boundary:
+Both user-visible discovery origins converge at the same presentation boundary. Release-prompt acceptance and dismissal have different semantics: `Update` consumes the prompt into an update process, while `Not now` / close / Back are actual discovery dismissal and may suppress redisplay according to origin policy:
 
 ```text
 MANUAL UpdateAvailable ───────┐
@@ -249,21 +249,27 @@ In #75, pressing `Update` leaves the release-available dialog and enters the exi
 
 In #77, accepting `Update` promotes the shared release-available presentation into the Unified Update Dialog, which becomes the presentation owner for the app-owned update process. Settings stops mirroring those process states.
 
-The target user-visible progression is:
+The corrected #77 target progression, to be implemented before final real-device E2E, is:
 
 ```text
 New release available
     -> Update
+    -> install-source trust check
+        -> Permission required only when trust is missing
+        -> Android Settings
+        -> return / re-check trust
     -> Preparing download…
     -> Downloading…                    0–100%
     -> Verifying / preparing…
     -> DOWNLOADED / Ready to install
     -> Install
-    -> Preparing installation…
-    -> install-source permission explanation only if required
+    -> Preparing installation / install refresh / APK preflight
+    -> source-trust re-check as a fail-safe
     -> PackageInstaller / Android confirmation
     -> Update successful
 ```
+
+The source-trust check before download is a UX gate, not a replacement for install-time security checks. It avoids downloading the APK before asking for a permission known to be required for the normal self-update path. A second `canRequestPackageInstalls()` check remains required immediately before PackageInstaller handoff so revocation, recovery, or long-lived state cannot bypass Android's current trust state.
 
 The first #77 implementation checkpoint defined this as a **pure presentation contract only**. The second checkpoint now moves the active download preparation/transfer presentation into the Unified Update Dialog while leaving download/install runtime semantics unchanged. Discovery availability and install-refresh retarget availability remain explicitly distinguished because `Not now` / ordinary pre-update dismissal semantics apply only to discovery availability; an install-refresh retarget occurs after app-owned update work has already started.
 
@@ -277,31 +283,42 @@ The existing progress semantics move from the Settings row into the dialog rathe
 - verified `DOWNLOADED` now stays on the Unified Update Dialog as `Ready to install`, with the verified version shown via `VersionChip` and an explicit `Install` button;
 - pressing `Install` calls the existing independent `installUpdate()` operation; #77 intentionally preserves this user checkpoint and does not auto-continue from verification into install preparation;
 - `PREPARING_INSTALL` is now dialog-owned and renders install preparation while the existing latest-release refresh and APK package/version/signing preflight run unchanged;
-- `PERMISSION_REQUIRED` is now dialog-owned. The Unified Update Dialog explains Android install-source trust, keeps explicit `Grant permission` and `Download from GitHub` actions, and still hands the trust decision to Android Settings without bypassing final PackageInstaller confirmation;
+- `PERMISSION_REQUIRED` remains dialog-owned, but the corrected #77 contract moves its normal entry point ahead of download: after `Update`, missing install-source trust shows the explanation before any APK transfer begins. `Grant permission` opens Android Settings and download starts only after return confirms trust. The install path still re-checks trust immediately before PackageInstaller handoff as a fail-safe;
+- `Download from GitHub` is an external manual-download fallback, not an alternate successful update state. Opening it has the same presentation effect as dismissing the permission dialog: AALyrics does not assume the user downloaded anything, does not mark permission as granted, and does not advance or clear the authoritative update process;
 - `INSTALLING` is now dialog-owned and remains an indeterminate handoff/waiting state while Android owns final installation confirmation;
 - `DOWNLOAD_FAILED` now remains on the Unified Update Dialog with `Download failed` presentation and an explicit `Retry` action wired to the existing `downloadUpdate()`; the current download runtime still exposes one generic failure state rather than inventing presentation-only failure typing;
 - typed `INSTALL_FAILED` now remains on the Unified Update Dialog with its reason-specific explanation and explicit `Retry` wired to the existing `installUpdate()`; Settings no longer owns that failure state;
 - a valid retained verified APK remains reusable, so retry/permission return must not force a second download;
 - Android's final installation confirmation remains system-owned.
 
-`INSTALL_REFRESH` remains an internal update-process origin. In #75, a newer eligible release found during install refresh was handed back to the existing Settings process surface as `Newer update available -> Download`. In the current #77 implementation, that state is now dialog-owned: the non-dismissible Unified Update Dialog returns to `Newer update available`, shows the replacement version, and exposes only `Download`, wired to the existing `downloadUpdate()`. It does not gain discovery-only `Not now`, close, or ordinary Back dismissal semantics.
+`INSTALL_REFRESH` remains an internal update-process origin. In #75, a newer eligible release found during install refresh was handed back to the existing Settings process surface as `Newer update available -> Download`. In #77, that state remains dialog-owned: the Unified Update Dialog returns to `Newer update available`, shows the replacement version, and exposes `Download`, wired to the existing `downloadUpdate()`. It does not gain discovery-only `Not now`, but under the corrected dismissal contract it does gain the same shared close/System Back presentation dismissal as every other app-owned process phase. Dismissal does not discard the replacement candidate or change install-refresh semantics.
 
 The Unified Update Dialog is therefore the single app-owned process-presentation surface after the user accepts Update, while the separate release-available dialog remains the discovery surface before update work begins. Settings is now limited to Idle / manual Checking / manual Up to date / manual Check failed. `UpdateSuccessfulDialog` remains a separate post-replacement acknowledgement because successful package replacement may terminate the old process and the new binary reconstructs that feedback from durable `SuccessfulUpdate` state.
 
-### Dismissal boundary
+### Dismissal and re-entry boundary
 
-Availability and active update work have different dismissal semantics.
+Discovery dismissal and process dismissal remain semantically different, but **every app-owned Unified Update Dialog process phase is dismissible** in the corrected #77 target.
 
-Before `Update` starts, `Not now`, close, and Back are ordinary dismissal actions. Once app-owned update work starts, `Not now` is no longer part of the process UI. Active-work, permission-required, and recoverable-failure dismissal/re-entry behavior must preserve the application-owned operation/artifact state and must never require Settings to become a second progress/install surface.
+Before `Update` starts, `Not now`, close, and Back dismiss the release-available discovery prompt. After `Update` starts, `Not now` is no longer shown, but the shared close affordance and System Back may hide the Unified Update Dialog during any process phase, including active download, verification, install preparation, install-refresh retargeting, permission-required, installing, and recoverable failure states. Outside-tap dismissal remains disabled.
 
-The current #77 implementation keeps active work and install-refresh retargeting non-dismissible, but allows paused/recoverable process states to release the modal surface. `READY_TO_INSTALL`, `DOWNLOAD_FAILED`, `PERMISSION_REQUIRED`, and `INSTALL_FAILED` expose the shared `PhoneDialogHeader` close action and System Back dismissal; outside-tap dismissal remains disabled. Dismissal hides presentation only and does not mutate the authoritative runtime state or retained artifact. Permission-required visibility continues to use the existing process-local permission-prompt runtime, so dismissing the explanation does not clear `InstallPermissionRequired` or the verified APK.
+Process-dialog dismissal is presentation-only. It must not cancel or restart active work and must not clear release candidates, install targets, retained verified APKs, progress state, failure state, or PackageInstaller recovery state. Work that can safely continue without UI, such as an already-running download or verification, continues under the application-owned runtime.
 
-The implementation may evolve the exact close/Back affordance per process phase, but it must satisfy these invariants:
+Settings remains manual-discovery-only; it does not regain Download/Install/progress rows. Instead, its existing `Check for updates` action becomes the single user-facing re-entry point:
 
-- dismissing presentation never corrupts or silently discards an active operation;
-- dismissing permission explanation preserves a valid verified APK;
-- recoverable failures preserve reusable artifacts where the existing runtime already does so;
-- reopening or retrying resumes from the authoritative application-owned runtime state;
+- if an active or resumable app-owned update process exists, `Check for updates` reopens the Unified Update Dialog at the current authoritative state and does **not** start a duplicate GitHub query, download, verification, install preparation, or PackageInstaller handoff;
+- if no update process exists, `Check for updates` performs the ordinary MANUAL discovery query;
+- accepting a release prompt with `Update` is not equivalent to dismissing that MANUAL prompt and must not poison later explicit re-entry;
+- `Not now`, close, and Back on the discovery prompt remain true discovery dismissal actions.
+
+For the permission UI specifically, `Download from GitHub` is treated as presentation dismissal plus external navigation. Returning to AALyrics does not imply that a manual APK was downloaded or installed. The authoritative update state remains recoverable, and `Check for updates` re-enters it.
+
+Required invariants:
+
+- dialog dismissal never corrupts or silently discards an active operation;
+- active work is not duplicated when the dialog is reopened;
+- permission dismissal preserves the relevant update target and does not fabricate a granted permission;
+- retained verified artifacts survive presentation dismissal where the existing runtime already preserves them;
+- re-entry resumes presentation from the authoritative application-owned runtime state;
 - no process phase reintroduces Download/Install/progress actions into the Settings row.
 
 ## Implementation split

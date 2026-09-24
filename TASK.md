@@ -123,6 +123,13 @@ PR #76 / `feature/one-step-update` is intentionally retained as a **legacy/refer
 
 Active branch: `feature/unified-update-dialog`, created fresh from the current `feature/package-installer` baseline after #75 was merged.
 
+Pre-redesign checkpoint frozen before the next #77 runtime-contract slice:
+
+- checkpoint commit: `2f25d0b9ad3e72685c66192ac6b92e8c7cb36e99`;
+- PR #77 remains Draft against `feature/package-installer`;
+- Build #1091 passed the complete workflow on that checkpoint;
+- this checkpoint still has the old sequencing where source-trust permission is first requested during install preparation, only paused/recoverable dialog states are dismissible, and a dismissed process does not yet have a reliable `Check for updates` re-entry path.
+
 - [x] Reduce the Settings Version/update presentation to only Idle / Checking / Up to date / Check failed for the complete update lifecycle.
 - [x] Introduce explicit application-owned `VerifyingDownload(versionName)` immediately before SHA-256 verification.
 - [x] Define the pure Unified Update Dialog presentation contract and mapper without changing runtime ownership: `UpdateDialogUiState` / `UpdateDialogPhase`, discovery-vs-install-refresh availability context, bounded download progress, explicit `VERIFYING` / `READY_TO_INSTALL`, typed install-failure mapping, and focused mapper coverage.
@@ -138,9 +145,25 @@ Active branch: `feature/unified-update-dialog`, created fresh from the current `
 - [x] Preserve independent `downloadUpdate()` and `installUpdate()` operations and all existing SHA-256, retained-artifact, install-refresh, package/version/signing preflight, source-trust, PackageInstaller, and recovery behavior.
 - [x] Remove process presentation from Settings only when the corresponding dialog presentation exists.
 - [x] Align process-state Previews and focused tests with Unified Update Dialog ownership, including `Ready to install`, typed install failure, and install-refresh retarget.
-- [ ] Complete full real-device E2E of the two-stage route:
-  `Update -> Download/Verify -> DOWNLOADED/Ready to install -> Install -> Android confirmation -> replacement/recovery -> Update successful`.
-- [ ] Record that route as the validated baseline before #77 is considered complete.
+
+#### #77 pre-E2E contract correction
+
+Complete these items before the final two-stage real-device validation:
+
+1. [ ] Separate Unified Update Dialog visibility from authoritative update-process state for every app-owned process phase.
+2. [ ] Make every app-owned Unified Update Dialog phase dismissible through the shared close affordance and System Back, including active download/verification/install-preparation states and install-refresh retarget. Outside-tap dismissal remains disabled.
+3. [ ] Dismissing the dialog must hide presentation only: do not cancel an active check/download/install operation, clear candidate/target state, delete a retained verified APK, abandon a PackageInstaller handoff, or otherwise mutate the authoritative runtime operation.
+4. [ ] Make Settings `Check for updates` the single re-entry path after process-dialog dismissal. If an app-owned update process already exists, reopen its current authoritative dialog state without starting a duplicate GitHub query or operation; only perform ordinary MANUAL discovery when no resumable/active process state exists.
+5. [ ] Separate release-prompt acceptance from dismissal suppression. Accepting `Update` must not be recorded as if the MANUAL release prompt were dismissed; `Not now` / close / Back remain actual discovery-prompt dismissal.
+6. [ ] Move the Android install-source trust gate ahead of APK download. After the user accepts `Update`, check `PackageManager.canRequestPackageInstalls()` before starting download; when trust is missing, show `PERMISSION_REQUIRED` first and start download only after Android Settings return confirms trust.
+7. [ ] Keep a second source-trust check immediately before PackageInstaller handoff as a fail-safe in case permission was revoked or state was restored after the pre-download gate.
+8. [ ] Treat `Download from GitHub` in the permission UI as an external manual-download fallback **and as presentation dismissal**. Opening GitHub must not imply that the user actually downloaded anything, must not mark permission as granted, and must not advance or clear the authoritative update process. A later `Check for updates` re-enters that process.
+9. [ ] Add focused coverage for pre-download permission gating, denied/granted return, all-phase dismissal without runtime cancellation, `Check for updates` re-entry, duplicate-operation prevention, and manual GitHub fallback dismissal semantics.
+10. [ ] Align Unified Update Dialog Previews so all process phases visibly use the shared dismissible header while outside-tap dismissal stays disabled.
+
+- [ ] Complete full real-device E2E of the corrected two-stage route:
+  `Update -> permission gate if required -> Download/Verify -> DOWNLOADED/Ready to install -> Install -> install refresh/preflight -> PackageInstaller -> replacement/recovery -> Update successful`.
+- [ ] Record that corrected route as the validated baseline before #77 is considered complete.
 
 ### #78 — one-step Update orchestration
 

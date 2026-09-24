@@ -537,11 +537,15 @@ GitHub Release asset size remains the expected total, downloaded bytes remain th
 
 `DOWNLOADED` remains an authoritative application-owned safety and recovery boundary. It is now dialog-owned in #77 and renders as `Ready to install` with the verified version and an explicit user-facing `Install` action. Settings no longer owns the Downloaded/Install row. Pressing Install invokes the existing `installUpdate()` operation; #77 must not automatically continue into installation merely because verification completed.
 
-Install preparation is now also dialog-owned. `PREPARING_INSTALL` shows indeterminate preparation while the existing install-refresh and package/version/signing preflight run unchanged. If Android install-source trust is missing, `PERMISSION_REQUIRED` stays on the Unified Update Dialog with the existing explanation, `Grant permission`, and `Download from GitHub` fallback. Granting permission still hands off to Android's per-app source-trust Settings and re-checks `PackageManager.canRequestPackageInstalls()` on return. `INSTALLING` then remains on the Unified Update Dialog while Android owns final package-install confirmation. Typed `INSTALL_FAILED` is also dialog-owned: the dialog shows the mapped failure reason and an explicit Retry action that calls the existing `installUpdate()` operation. The old Settings-owned permission/install-failure presentation and standalone permission dialog are removed.
+The corrected #77 contract moves the normal Android install-source trust gate ahead of download. After the user accepts `Update`, AALyrics checks `PackageManager.canRequestPackageInstalls()`; when trust is missing, `PERMISSION_REQUIRED` appears before any APK transfer begins. `Grant permission` hands off to Android's per-app source-trust Settings, and download starts only after return confirms trust. The install path still re-checks source trust immediately before PackageInstaller handoff as a fail-safe against revocation, recovery, or long-lived state.
 
-In #75, install-time latest-release refresh belonged to the existing Settings-owned process presentation. In the current #77 implementation, the active Unified Update Dialog owns this handoff: when refresh discovers a newer eligible release it returns to `Newer update available`, shows the replacement version, and exposes `Download` without discovery-only dismissal actions. The action reuses the existing `downloadUpdate()` operation.
+`Download from GitHub` in the permission UI is an external manual-download fallback. Selecting it dismisses the AALyrics permission presentation and opens GitHub, but AALyrics must not assume that the user actually downloads or installs anything. It must not mark trust as granted, advance the runtime, or clear the current update target merely because the external page opened.
 
-A valid verified APK remains reusable across permission handling and recoverable retry. Presentation dismissal must not silently destroy the runtime's authoritative operation/artifact state.
+Install preparation remains dialog-owned. `PREPARING_INSTALL` shows indeterminate preparation while install-refresh and package/version/signing preflight run unchanged. `INSTALLING` remains on the Unified Update Dialog while Android owns final package-install confirmation. Typed `INSTALL_FAILED` remains dialog-owned with its mapped reason and explicit Retry through the existing `installUpdate()`.
+
+If install-time latest-release refresh discovers a newer eligible release, the same Unified Update Dialog returns to `Newer update available`, shows the replacement version, and exposes `Download` without discovery-only `Not now`. Like every app-owned process phase under the corrected contract, this presentation may still be closed with the shared X/System Back without discarding the replacement candidate.
+
+Every app-owned Unified Update Dialog phase is dismissible through the shared close affordance and System Back; outside-tap dismissal remains disabled. Dismissal is presentation-only and must not cancel active work or silently destroy authoritative runtime/artifact state.
 
 #### #78 one-step orchestration
 
@@ -614,7 +618,9 @@ The check path is public and unauthenticated. Do not embed a GitHub token or rep
 
 ### Update state lifetime
 
-Manual discovery presentation is Settings-visit scoped, while update-process state is application/process owned.
+Manual discovery presentation is Settings-visit scoped, while update-process state is application/process owned. The Version row's `Check for updates` action is also the single re-entry affordance after a Unified Update Dialog has been dismissed.
+
+Before starting a MANUAL network query, the application must inspect authoritative update-process state. If active or resumable update work exists, `Check for updates` reopens that current process state in the Unified Update Dialog without starting a duplicate release query or operation. Only when no update process exists does the action perform normal MANUAL discovery.
 
 On entering Settings, only the manual-discovery presentation is relevant:
 
@@ -625,7 +631,7 @@ MANUAL CHECK_FAILED  -> visit-local
 IDLE                 -> ordinary Version / Check for updates presentation
 ```
 
-A MANUAL/AUTOMATIC newer-release discovery result leaves Settings presentation ownership immediately and is represented by the shared release-available dialog instead. In the current #77 checkpoint, accepting `Update` continues on the Unified Update Dialog through download, verification, Ready to install, install preparation, install-refresh retargeting, permission handling, PackageInstaller handoff, and recoverable download/install failures. Settings therefore owns only Idle / manual Checking / manual Up to date / manual Check failed for updates. Active download/install work, retained verified artifacts, permission-required state, and install handoff are not reset merely because the user changes primary destination or Settings visit.
+A MANUAL/AUTOMATIC newer-release discovery result leaves Settings presentation ownership immediately and is represented by the shared release-available dialog instead. In the corrected #77 target, accepting `Update` first resolves install-source trust if required, then continues on the Unified Update Dialog through download, verification, Ready to install, install preparation, install-refresh retargeting, PackageInstaller handoff, and recoverable failures. Settings therefore owns only Idle / manual Checking / manual Up to date / manual Check failed for updates. Active download/install work, retained verified artifacts, permission-required state, and install handoff are not reset merely because the user changes primary destination or Settings visit.
 
 Automatic Checking / Up to date / Failed never become Settings presentation states.
 
