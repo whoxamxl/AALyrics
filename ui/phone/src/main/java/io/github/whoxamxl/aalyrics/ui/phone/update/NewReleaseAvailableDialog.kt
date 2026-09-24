@@ -1,8 +1,10 @@
 package io.github.whoxamxl.aalyrics.ui.phone.update
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -108,17 +110,27 @@ fun NewReleaseAvailableDialogContent(
 
             Spacer(Modifier.height(AALyricsSpacing.Space16))
 
-            VersionChip(versionName = state.versionName)
-
-            Spacer(Modifier.height(AALyricsSpacing.Space16))
-
-            Text(
-                text = stringResource(
-                    R.string.update_release_available_body,
-                ),
-                style = AALyricsTypography.TrackArtist,
-                color = AALyricsColors.TextSecondary,
-            )
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(AALyricsSpacing.Space4),
+                verticalArrangement = Arrangement.spacedBy(AALyricsSpacing.Space4),
+            ) {
+                Text(
+                    text = stringResource(R.string.update_release_available_body_prefix),
+                    style = AALyricsTypography.TrackArtist,
+                    color = AALyricsColors.TextSecondary,
+                    modifier = Modifier.align(Alignment.CenterVertically),
+                )
+                VersionChip(
+                    versionName = state.versionName,
+                    modifier = Modifier.align(Alignment.CenterVertically),
+                )
+                Text(
+                    text = stringResource(R.string.update_release_available_body_suffix),
+                    style = AALyricsTypography.TrackArtist,
+                    color = AALyricsColors.TextSecondary,
+                    modifier = Modifier.align(Alignment.CenterVertically),
+                )
+            }
 
             Spacer(Modifier.height(AALyricsSpacing.Space32))
 

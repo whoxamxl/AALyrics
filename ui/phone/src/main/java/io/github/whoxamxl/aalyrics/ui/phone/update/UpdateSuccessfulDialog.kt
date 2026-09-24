@@ -1,13 +1,16 @@
 package io.github.whoxamxl.aalyrics.ui.phone.update
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
@@ -104,17 +107,28 @@ fun UpdateSuccessfulDialogContent(
 
             Spacer(Modifier.height(AALyricsSpacing.Space16))
 
-            VersionChip(versionName = state.versionName)
-
-            Spacer(Modifier.height(AALyricsSpacing.Space16))
-
-            Text(
-                text = stringResource(
-                    R.string.update_successful_body,
-                ),
-                style = AALyricsTypography.TrackArtist,
-                color = AALyricsColors.TextSecondary,
-            )
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(AALyricsSpacing.Space4),
+                verticalArrangement = Arrangement.spacedBy(AALyricsSpacing.Space4),
+            ) {
+                Text(
+                    text = stringResource(R.string.update_successful_body),
+                    style = AALyricsTypography.TrackArtist,
+                    color = AALyricsColors.TextSecondary,
+                    modifier = Modifier.align(Alignment.CenterVertically),
+                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.align(Alignment.CenterVertically),
+                ) {
+                    VersionChip(versionName = state.versionName)
+                    Text(
+                        text = ".",
+                        style = AALyricsTypography.TrackArtist,
+                        color = AALyricsColors.TextSecondary,
+                    )
+                }
+            }
 
             Spacer(Modifier.height(AALyricsSpacing.Space32))
 

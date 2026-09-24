@@ -144,16 +144,14 @@ On the next valid Phone entry after the installed package is confirmed to have r
 ```text
 AALyrics updated
 
-[ v0.x.x ]
-
-You're now running this version.
+You're now running [ v0.x.x ].
 
 Done
 ```
 
 No update-specific navigation override is applied. The dialog appears only once the normal entry gates have reached `READY`, so Notification Access and Android Auto compatibility onboarding remain authoritative.
 
-The durable `SuccessfulUpdate` marker is loaded into a process-level feedback runtime. It is not cleared when the dialog is first shown. The success dialog uses the same shared `PhoneDialogHeader` X geometry as the permission dialog, so the close affordance remains fixed at the same trailing header position across dismissible custom update dialogs. Done, the top-right close button, and system Back all request the same dismissal. Dismissal clears the durable success marker first and removes the dialog from process state only when that clear succeeds. Outside-tap dismissal is disabled. If the process dies before dismissal, the marker remains and the dialog is shown again on the next valid Phone entry.
+The installed version is presented inline with the supporting copy (`You're now running [version]`) rather than as a separate metadata row; the shared `VersionChip` remains the version visual. The durable `SuccessfulUpdate` marker is loaded into a process-level feedback runtime. It is not cleared when the dialog is first shown. The success dialog uses the same shared `PhoneDialogHeader` X geometry as the permission dialog, so the close affordance remains fixed at the same trailing header position across dismissible custom update dialogs. Done, the top-right close button, and system Back all request the same dismissal. Dismissal clears the durable success marker first and removes the dialog from process state only when that clear succeeds. Outside-tap dismissal is disabled. If the process dies before dismissal, the marker remains and the dialog is shown again on the next valid Phone entry.
 
 Typical, narrow-phone, and enlarged-font Previews cover the success dialog.
 
@@ -201,15 +199,13 @@ Automatic discovery presents:
 ```text
 New release available
 
-[ v0.x.x ]
-
-A new AALyrics release is available.
+AALyrics [ v0.x.x ] is ready to download.
 
 Update
 Not now
 ```
 
-The dialog also has a top-right close action. It reuses the same `PhoneDialogHeader` introduced by #74 for the install-permission and successful-update dialogs, preserving one trailing close position, a 24dp icon, and a 48dp touch target across dismissible custom update surfaces. System Back, close, and `Not now` share the same dismissal semantics. Outside-tap dismissal is disabled.
+The release version is part of the supporting sentence rather than a standalone metadata row, avoiding repetition between the title and body while keeping the shared `VersionChip` treatment. The phrase uses a wrapping flow layout so text and chip remain readable at narrow widths and enlarged font scales. The dialog also has a top-right close action. It reuses the same `PhoneDialogHeader` introduced by #74 for the install-permission and successful-update dialogs, preserving one trailing close position, a 24dp icon, and a 48dp touch target across dismissible custom update surfaces. System Back, close, and `Not now` share the same dismissal semantics. Outside-tap dismissal is disabled.
 
 Dismissal records the target version in process-local suppression state. The same version is not prompted again during that app-process session, including after ordinary navigation, recomposition, or Activity recreation. A different automatically discovered version remains eligible. While `Automatically check for updates` is OFF, an in-flight automatic query may finish but its result must not open or retain the automatic release dialog. Re-enabling the preference may present an already-known automatic result if it remains current. `Reset AALyrics` clears this process-local suppression together with the transient prompt.
 

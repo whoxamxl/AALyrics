@@ -71,13 +71,14 @@
     <string name="settings_installing_update">Installing update…</string>
     <string name="update_release_available_eyebrow">UPDATE AVAILABLE</string>
     <string name="update_release_available_title">New release available</string>
-    <string name="update_release_available_body">A new AALyrics release is available.</string>
+    <string name="update_release_available_body_prefix">AALyrics</string>
+    <string name="update_release_available_body_suffix">is ready to download.</string>
     <string name="update_release_available_update">Update</string>
     <string name="update_release_available_not_now">Not now</string>
     <string name="update_release_available_close">Close new release dialog</string>
     <string name="update_successful_eyebrow">UPDATE COMPLETE</string>
     <string name="update_successful_title">AALyrics updated</string>
-    <string name="update_successful_body">You’re now running this version.</string>
+    <string name="update_successful_body">You’re now running</string>
     <string name="update_successful_done">Done</string>
     <string name="update_successful_close">Close update successful dialog</string>
     <string name="settings_update_install_failed">Installation failed</string>
