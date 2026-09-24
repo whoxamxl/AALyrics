@@ -285,7 +285,7 @@ Connect the already-implemented atomic Translation result to the Phone Lyrics su
 This slice:
 
 - lifecycle-observes `AALyricsApplication.translationState` in the Phone runtime host;
-- projects only a `TranslationState.Ready` artifact that matches the exact current canonical lyrics identity;
+- projects only a `TranslationState.Ready` artifact when Translation is currently enabled, its request target matches the current normalized target setting, and its canonical lyrics identity matches exactly;
 - keeps canonical/source text primary and adds actual translated lines as secondary text within the same logical viewport row;
 - keeps pending/not-required/failed Translation original-only and never converts Translation failure into lyrics failure;
 - preserves canonical timing, sync/current-line ownership, provider attribution, Lyrics Provider selection, and the existing LyricsViewport Follow/Browse geometry;
