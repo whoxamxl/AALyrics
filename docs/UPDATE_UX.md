@@ -62,40 +62,47 @@ The dialog has an explicit close affordance. System Back has the same dismissal 
 
 The durable/runtime fact that install-source trust is missing must remain separate from transient dialog visibility. If the user dismisses the explanation, it stays dismissed until the user explicitly invokes Update/Install again while permission is still missing.
 
-### State ownership checkpoint
+### Permission-state ownership
 
-The separation layer is implemented before the dialog itself:
+Missing install-source trust remains an application/runtime fact, not a Settings-row state.
 
-- `AppUpdateCheckState.InstallPermissionRequired` remains the durable process-runtime fact that Android source trust is missing for the retained install target;
-- `UpdateInstallPermissionPromptRuntime` owns a separate process-local, non-persisted prompt request;
-- entering the permission-required state requests the prompt once;
-- explicitly invoking Install/Update again while permission is still required re-requests the prompt without repeating download or install preparation;
-- dismissing the prompt does not clear `InstallPermissionRequired`;
-- Settings root reset, leaving Settings for another primary destination, Activity stop/background, Activity/composition disposal, Reset AALyrics, and returning from Android source-trust Settings clear only the transient prompt.
+Required ownership:
 
-The Phone presentation model carries the prompt separately from `AppUpdateUiPhase.INSTALL_PERMISSION_REQUIRED`.
+- `AppUpdateCheckState.InstallPermissionRequired` remains the authoritative runtime fact that Android source trust is missing for the retained install target;
+- the Unified Update Dialog owns user-facing permission-required presentation;
+- entering permission-required state must not discard or redownload a valid retained APK;
+- `Grant permission` opens Android's per-app source-trust Settings;
+- returning from Android Settings re-checks platform trust rather than assuming permission was granted;
+- granted trust resumes the same retained-artifact update flow;
+- denied trust leaves the update recoverable without creating a Settings `Install` action;
+- `Download from GitHub` remains an explicit external fallback and never bypasses Android confirmation;
+- Reset clears app-owned update state/artifacts but does not revoke Android-owned install-source trust.
 
-### Permission dialog checkpoint
+The existing `UpdateInstallPermissionPromptRuntime` is a validated implementation checkpoint, not a requirement to preserve a separate permission-dialog owner forever. During unified-flow implementation it may be folded into or coordinated by the Unified Update Dialog presentation owner, provided the durable/runtime permission fact remains separate from transient presentation visibility.
 
-The large explanation dialog is now implemented as a modal Phone surface rather than a full-screen setup destination.
+### Permission-required presentation
 
-Required behavior:
+When the active update reaches missing source trust, the Unified Update Dialog transitions to the permission explanation rather than sending the user back to Settings.
 
-- right-side close button dismisses only the transient prompt;
-- system Back has the same dismissal behavior;
-- tapping outside the dialog does not dismiss it;
-- leaving Settings for another primary destination, Settings root reset, Activity stop/background, Activity/composition disposal, Reset, or returning from Android source-trust Settings clears the transient prompt;
-- foreground return does not recreate the prompt merely because `INSTALL_PERMISSION_REQUIRED` is still true;
-- returning from Android source-trust Settings re-checks platform trust only: refusal keeps `INSTALL_PERMISSION_REQUIRED` with the prompt dismissed, while granted trust resumes the retained-APK install without reopening the explanation;
-- dismissing the dialog does not clear `INSTALL_PERMISSION_REQUIRED` or the retained verified APK;
-- the compact Settings update row remains in the permission-required phase and exposes `Install` as the explicit way to reopen the explanation;
-- `Grant permission` dismisses the explanation and opens Android's per-app source-trust Settings;
-- `Download from GitHub` dismisses the explanation and opens the matching GitHub Release page externally;
-- neither action bypasses Android's final installation confirmation.
+The explanation must state:
 
-The dialog explains why sideload-distributed AALyrics needs the per-source permission and explicitly states that the permission does not grant silent-install capability. Typical, narrow-width, and enlarged-font Previews cover the shared dialog content. Settings Previews also pin the permission-return outcomes: denied returns to the permission-required row with no modal, while granted proceeds to the installing presentation. Runtime tests independently cover the denied and granted source-trust return paths.
+- AALyrics is distributed outside Google Play;
+- Android requires per-source permission before AALyrics may hand the verified APK to the system installer;
+- this permission does not allow silent installation;
+- Android still owns final installation confirmation.
 
-The permission dialog is content-height driven rather than reserving a fixed percentage of the Phone viewport. Normal content therefore ends shortly after the secondary GitHub action instead of leaving unused lower-panel space. The surrounding dialog viewport still constrains oversized content, and the content remains vertically scrollable for narrow or enlarged-font configurations. Its `INSTALL UPDATES` eyebrow/X header uses the shared `PhoneDialogHeader`: one vertically centered row, a 24dp close icon inside the standard 48dp touch target at the trailing edge, and no dialog-specific X offset. The target version is presented immediately below with normal secondary-text contrast.
+Actions remain:
+
+```text
+Grant permission
+Download from GitHub  ↗
+```
+
+Dismissing permission presentation must not clear `InstallPermissionRequired` or the retained verified APK. Any later re-entry/retry resumes from authoritative application-owned runtime state. The implementation must not reintroduce a compact Settings `Install` row merely to reopen the explanation.
+
+Typical, narrow-width, and enlarged-font Previews should cover the permission-required dialog state as part of the Unified Update Dialog suite. Runtime tests continue to cover denied and granted source-trust return paths.
+
+The permission presentation remains content-height driven and scrollable when necessary. Its dismissible form uses the shared `PhoneDialogHeader` geometry: one vertically centered row, a 24dp close icon inside the standard 48dp touch target at the trailing edge, and no phase-specific X offset.
 
 Install preparation failures remain distinct from missing source trust. The runtime carries a typed install-failure reason through Phone mapping, and the `Installation failed` info tooltip presents a reason-specific explanation for release refresh, retained APK/preflight, package/version/signing, durable recovery persistence, PackageInstaller handoff, and installer rejection/cancellation failures. A failure that occurs before source-trust evaluation must not show the permission dialog. For example, a downloaded APK whose signing identity differs from the installed AALyrics app fails at preflight and reports that signing mismatch explicitly.
 
