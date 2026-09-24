@@ -329,18 +329,29 @@ internal fun PhoneRuntimeHost(
             onDismissRequest = application::dismissSuccessfulUpdate,
         )
     } else {
-        val downloadProcessDialogState = updateDialogState?.takeIf { state ->
+        val updateProcessDialogState = updateDialogState?.takeIf { state ->
             state.phase == UpdateDialogPhase.PREPARING_DOWNLOAD ||
                 state.phase == UpdateDialogPhase.DOWNLOADING ||
                 state.phase == UpdateDialogPhase.VERIFYING ||
                 state.phase == UpdateDialogPhase.READY_TO_INSTALL ||
-                state.phase == UpdateDialogPhase.DOWNLOAD_FAILED
+                state.phase == UpdateDialogPhase.DOWNLOAD_FAILED ||
+                state.phase == UpdateDialogPhase.PREPARING_INSTALL ||
+                state.phase == UpdateDialogPhase.PERMISSION_REQUIRED ||
+                state.phase == UpdateDialogPhase.INSTALLING
         }
-        if (downloadProcessDialogState != null) {
+        if (updateProcessDialogState != null) {
             UnifiedUpdateDialog(
-                state = downloadProcessDialogState,
+                state = updateProcessDialogState,
                 onInstall = application::installUpdate,
                 onRetryDownload = application::downloadUpdate,
+                onGrantInstallPermission = {
+                    application.dismissInstallPermissionPrompt()
+                    onOpenInstallSettings()
+                },
+                onDownloadFromGitHub = {
+                    application.dismissInstallPermissionPrompt()
+                    onOpenUpdateRelease(updateProcessDialogState.versionName)
+                },
             )
         } else {
             updateReleasePrompt?.let { prompt ->
