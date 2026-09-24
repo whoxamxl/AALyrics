@@ -415,13 +415,6 @@ internal object PhonePreviewFixtures {
             availableVersionName = "0.2.0-beta.1",
         ),
     )
-    val settingsDownloadFailed = settingsTypical.copy(
-        appUpdate = AppUpdateUiState(
-            phase = AppUpdateUiPhase.DOWNLOAD_FAILED,
-            availableVersionName = "0.1.2",
-            failureReason = "The APK could not be downloaded or verified.",
-        ),
-    )
     val settingsPreparingInstall = settingsTypical.copy(
         appUpdate = AppUpdateUiState(
             phase = AppUpdateUiPhase.PREPARING_INSTALL,
