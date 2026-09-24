@@ -379,8 +379,6 @@ internal fun AppUpdateRow(
     checkLabel: String,
     checkingLabel: String,
     upToDateLabel: String,
-    updateAvailableLabel: String,
-    downloadLabel: String,
     preparingDownloadLabel: String,
     downloadingLabel: String,
     downloadedLabel: String,
@@ -395,7 +393,6 @@ internal fun AppUpdateRow(
     failureInfoContentDescription: String,
     genericFailureReason: String,
     installFailureReason: String,
-    unavailableLabel: String,
     onCheckForUpdates: () -> Unit,
     onDownloadUpdate: () -> Unit,
     onInstallUpdate: () -> Unit,
@@ -426,10 +423,6 @@ internal fun AppUpdateRow(
         Spacer(Modifier.height(AALyricsSpacing.Space12))
 
         when (state.phase) {
-            AppUpdateUiPhase.UNAVAILABLE -> {
-                AppUpdateStatusTextRow(label = unavailableLabel)
-            }
-
             AppUpdateUiPhase.IDLE -> {
                 AppUpdateActionRow(
                     actionLabel = checkLabel,
@@ -446,15 +439,6 @@ internal fun AppUpdateRow(
                     label = upToDateLabel,
                     icon = AALyricsIcons.Check,
                     iconTint = AALyricsColors.Success,
-                )
-            }
-
-            AppUpdateUiPhase.UPDATE_AVAILABLE -> {
-                AppUpdateActionRow(
-                    status = updateAvailableLabel,
-                    versionName = state.availableVersionName,
-                    actionLabel = downloadLabel,
-                    onAction = onDownloadUpdate,
                 )
             }
 
