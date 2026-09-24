@@ -21,8 +21,10 @@ internal class AutomaticUpdateCheckRuntime(
         return started
     }
 
-    fun recordSuccessfulReleaseQuery() {
-        cadenceStore.recordCheckAtMillis(nowMillis())
+    fun recordSuccessfulReleaseQuery(origin: UpdateCheckOrigin) {
+        if (origin == UpdateCheckOrigin.MANUAL) {
+            cadenceStore.recordCheckAtMillis(nowMillis())
+        }
     }
 
     fun resetCadence() {
