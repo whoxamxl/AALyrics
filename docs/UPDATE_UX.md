@@ -263,12 +263,17 @@ New release available
     -> Preparing download…
     -> Downloading…                    0–100%
     -> Verifying / preparing…
-    -> DOWNLOADED / Ready to install
-    -> Install
+    -> DOWNLOADED                      internal verified checkpoint
+    -> installUpdate()                 automatic for the accepted-update path
     -> Preparing installation / install refresh / APK preflight
     -> source-trust re-check as a fail-safe
     -> PackageInstaller / Android confirmation
     -> Update successful
+
+Recovery/direct two-stage use:
+    restored/direct DOWNLOADED
+    -> Ready to install
+    -> Install
 ```
 
 The source-trust check before download is a UX gate, not a replacement for install-time security checks. It avoids downloading the APK before asking for a permission known to be required for the normal self-update path. A second `canRequestPackageInstalls()` check remains required immediately before PackageInstaller handoff so revocation, recovery, or long-lived state cannot bypass Android's current trust state.
@@ -282,8 +287,8 @@ The existing progress semantics move from the Settings row into the dialog rathe
 - Settings no longer renders either of those active download phases and its corresponding progress fixtures/copy have been removed;
 - `VerifyingDownload(versionName)` is an explicit application-owned runtime state entered immediately before SHA-256 verification. It now has dedicated `Verifying update` / `Checking download integrity…` copy with indeterminate progress in the Unified Update Dialog, so 100% transfer no longer appears stalled or ambiguously returns to preparation;
 - verification presentation is intentionally limited to download-integrity checking at this stage; checksum verification and verified-artifact promotion semantics remain unchanged, while package/version/signing preflight remains a later install boundary;
-- verified `DOWNLOADED` now stays on the Unified Update Dialog as `Ready to install`, with the verified version shown via `VersionChip` and an explicit `Install` button;
-- pressing `Install` calls the existing independent `installUpdate()` operation; #77 intentionally preserves this user checkpoint and does not auto-continue from verification into install preparation;
+- verified `DOWNLOADED` remains the authoritative boundary. In the normal accepted-update path it is usually transient and automatically dispatches the existing `installUpdate()`; for direct/restarted recovery it remains visible as `Ready to install` with the verified version and explicit `Install` fallback;
+- pressing the fallback `Install` still calls the same independent `installUpdate()` operation; no download/install responsibilities are merged;
 - `PREPARING_INSTALL` is now dialog-owned and renders install preparation while the existing latest-release refresh and APK package/version/signing preflight run unchanged;
 - `PERMISSION_REQUIRED` remains dialog-owned, but the corrected #77 contract moves its normal entry point ahead of download: after `Update`, missing install-source trust shows the explanation before any APK transfer begins. `Grant permission` opens Android Settings and download starts only after return confirms trust. The install path still re-checks trust immediately before PackageInstaller handoff as a fail-safe;
 - `Download from GitHub` is an external manual-download fallback, not an alternate successful update state. Opening it has the same presentation effect as dismissing the permission dialog: AALyrics does not assume the user downloaded anything, does not mark permission as granted, and does not advance or clear the authoritative update process;

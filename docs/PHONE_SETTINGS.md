@@ -485,9 +485,9 @@ Durable `SuccessfulUpdate` feedback retains modal priority and is not merged int
 
 **#75 current:** after the user chooses `Update`, the release-available dialog closes and the existing Settings-owned download/install process presentation continues unchanged.
 
-**#77 target:** after the user accepts `Update` in the shared release-available dialog, the Unified Update Dialog becomes the presentation owner for that same update process, and Settings stops mirroring process states.
+**#77 final:** after the user accepts `Update` in the shared release-available dialog, the Unified Update Dialog becomes the presentation owner for that same update process, and Settings stops mirroring process states.
 
-#77 deliberately preserves the validated **two-stage user action** while moving its presentation into the dialog and correcting permission ordering:
+The validated explicit two-stage route remains the safety/recovery baseline, while the normal accepted-update path now automatically continues across `DOWNLOADED`:
 
 ```text
 Update
@@ -495,11 +495,15 @@ Update
   -> PREPARING_DOWNLOAD
   -> DOWNLOADING
   -> VERIFYING / PREPARING
-  -> DOWNLOADED / Ready to install
-  -> Install
+  -> DOWNLOADED
+  -> existing installUpdate() automatically
   -> PREPARING_INSTALL / install refresh / APK preflight
   -> INSTALL_PERMISSION_REQUIRED only if the fail-safe re-check finds trust missing
   -> INSTALLING / Android confirmation
+
+Direct/restart recovery:
+  -> DOWNLOADED / Ready to install
+  -> explicit Install
 ```
 
 Target #77 presentation states include:
@@ -518,7 +522,7 @@ VERIFYING / PREPARING
 [indeterminate progress]
 
 DOWNLOADED / READY_TO_INSTALL
-[verified version + explicit Install action]
+[normal accepted-update path: transient checkpoint / recovery-direct path: verified version + explicit Install fallback]
 
 PREPARING_INSTALL
 [indeterminate progress]
@@ -628,7 +632,7 @@ MANUAL CHECK_FAILED  -> visit-local
 IDLE                 -> ordinary Version / Check for updates presentation
 ```
 
-A MANUAL/AUTOMATIC newer-release discovery result leaves Settings presentation ownership immediately and is represented by the shared release-available dialog instead. In the corrected #77 target, accepting `Update` first resolves install-source trust if required, then continues on the Unified Update Dialog through download, verification, Ready to install, install preparation, install-refresh retargeting, PackageInstaller handoff, and recoverable failures. Settings therefore owns only Idle / manual Checking / manual Up to date / manual Check failed for updates. Active download/install work, retained verified artifacts, permission-required state, and install handoff are not reset merely because the user changes primary destination or Settings visit.
+A MANUAL/AUTOMATIC newer-release discovery result leaves Settings presentation ownership immediately and is represented by the shared release-available dialog instead. In the final #77 contract, accepting `Update` first resolves install-source trust if required, then continues on the Unified Update Dialog through download and verification, automatically crosses the internal `DOWNLOADED` checkpoint into install preparation, and continues through install-refresh retargeting, PackageInstaller handoff, and recoverable failures. `Ready to install` remains the direct/restart recovery presentation. Settings therefore owns only Idle / manual Checking / manual Up to date / manual Check failed for updates. Active download/install work, retained verified artifacts, permission-required state, and install handoff are not reset merely because the user changes primary destination or Settings visit.
 
 Automatic Checking / Up to date / Failed never become Settings presentation states.
 

@@ -187,11 +187,12 @@ This is intentionally a small continuation change on top of the validated checkp
 7. [x] Keep `Ready to install -> Install` as a recovery/fallback presentation rather than deleting it. Normal accepted-update flow auto-continues through `DOWNLOADED`, but a verified APK restored after process restart is not auto-installed without a fresh in-process user intent.
 8. [x] Keep the GitHub manual-download fallback dismissal-only. Opening GitHub does not arm, trigger, or imply successful AALyrics-managed installation.
 9. [x] Add focused coverage for normal auto-continuation, duplicate start/source-trust protection, Download Retry continuation, install-refresh replacement continuation, and the still-independent direct `downloadUpdate()` path.
-10. [x] Align update docs and rename the `Ready to install` Preview as a recovery fallback. Full Build/CI remains the validation gate for the new HEAD.
+10. [x] Align update docs and rename the `Ready to install` Preview as a recovery fallback.
+11. [x] Validate the auto-continuation HEAD with Build #1123: branch/commit checks, architecture boundaries, debug APK build, unit tests, and artifact upload all passed.
 
 ## Current checkpoint
 
-**#75 is merged into `feature/package-installer`. PR #76 remains legacy/reference only. PR #77 keeps the validated two-stage checkpoint at `d5de6a46a442eec0d1e293812475b51b57d572a0` and now implements the narrow automatic handoff on top: accepted Update flows auto-dispatch the existing `installUpdate()` after verified `DOWNLOADED`, while direct/recovered `DOWNLOADED` remains available as the explicit recovery fallback. Build/CI for the new auto-continuation HEAD is the remaining validation gate.**
+**#75 is merged into `feature/package-installer`. PR #76 remains legacy/reference only. PR #77 keeps the validated two-stage checkpoint at `d5de6a46a442eec0d1e293812475b51b57d572a0` and implements the narrow automatic handoff on top: accepted Update flows auto-dispatch the existing `installUpdate()` after verified `DOWNLOADED`, while direct/recovered `DOWNLOADED` remains available as the explicit recovery fallback. Build #1123 passed the auto-continuation HEAD; the static/semantic alignment audit found no remaining blocking regression.**
 
 The #75 production behavior is:
 
@@ -225,7 +226,7 @@ Additional #75 invariants:
 
 A temporary process-presentation implementation was intentionally reverted from the #75 branch before #75 was finalized. The older PR #76 separately retains a legacy one-step prototype for reference, but it is not part of the active stack.
 
-The active #77 branch starts from the post-#75 `feature/package-installer` baseline. Settings owns only Idle / manual Checking / manual Up to date / manual Check failed. The Unified Update Dialog owns the post-Update process, including install-refresh `Newer update available -> Download`, while MANUAL/AUTOMATIC discovery still uses the separate dismissible release-available dialog. The corrected explicit two-stage route is now the validated checkpoint; the next #77 work is only the small automatic `DOWNLOADED -> installUpdate()` handoff.
+The active #77 branch starts from the post-#75 `feature/package-installer` baseline. Settings owns only Idle / manual Checking / manual Up to date / manual Check failed. The Unified Update Dialog owns the post-Update process, including install-refresh `Newer update available -> Download`, while MANUAL/AUTOMATIC discovery still uses the separate dismissible release-available dialog. The corrected explicit two-stage route remains the validated checkpoint, and the final automatic `DOWNLOADED -> installUpdate()` handoff is implemented and Build-validated.
 
 Pre-Draft regression audit:
 
@@ -246,3 +247,17 @@ Post-contract regression audit before Build / CI:
 - [x] Latest Codex review on `d5de6a46a4` reported no major issue.
 - [x] Corrected explicit two-stage route validated on-device and accepted as the pre-auto-install checkpoint.
 
+
+
+### Final #77 auto-continuation audit
+
+- [x] Build #1123 passed on auto-continuation HEAD `adecc16cc16d2608a725c616b135c2a418a37780`.
+- [x] Normal accepted Update reaches verified `DOWNLOADED` and dispatches the existing install path exactly once.
+- [x] Duplicate Update acceptance and duplicate source-trust return remain bounded to one transfer/install path.
+- [x] Direct `downloadUpdate()` without armed continuation still stops at `DOWNLOADED`.
+- [x] Download failure requires explicit Retry; successful Retry preserves the original in-process update intent and then continues into install.
+- [x] Install-refresh replacement Download preserves continuation without installing the stale retained APK.
+- [x] Process restart restores a retained verified APK only as `DOWNLOADED / Ready to install`; continuation is process-local and is not restored.
+- [x] Install failures stop automatic progression; explicit Install/Retry remains the recovery action.
+- [x] GitHub manual fallback remains dismissal/navigation only and cannot imply or trigger an AALyrics-managed install.
+- [x] Runtime, focused tests, Preview labeling, TASK, update docs, and PR description are aligned to the same final contract.
