@@ -44,9 +44,6 @@ fun SettingsScreen(
     onCheckForUpdates: () -> Unit,
     onDownloadUpdate: () -> Unit,
     onInstallUpdate: () -> Unit,
-    onOpenInstallSettings: () -> Unit,
-    onDismissInstallPermissionDialog: () -> Unit = {},
-    onDownloadUpdateFromGitHub: (String) -> Unit = {},
     onOpenGitHub: () -> Unit,
     onHelpFeedback: (HelpFeedbackDestination) -> Unit,
     onSupportAALyrics: () -> Unit,
@@ -169,20 +166,6 @@ fun SettingsScreen(
         )
     }
 
-    state.installPermissionDialog?.let { dialogState ->
-        InstallPermissionDialog(
-            state = dialogState,
-            onDismissRequest = onDismissInstallPermissionDialog,
-            onGrantPermission = {
-                onDismissInstallPermissionDialog()
-                onOpenInstallSettings()
-            },
-            onDownloadFromGitHub = {
-                onDismissInstallPermissionDialog()
-                onDownloadUpdateFromGitHub(dialogState.versionName)
-            },
-        )
-    }
 }
 
 @Composable
