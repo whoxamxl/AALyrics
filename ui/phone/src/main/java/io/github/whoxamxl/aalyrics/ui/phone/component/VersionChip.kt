@@ -82,9 +82,9 @@ private fun versionChipPresentation(versionName: String): VersionChipPresentatio
     }
 
     val accent = when (channel) {
-        VersionChannel.DEV -> AALyricsColors.AccentCyan
+        VersionChannel.DEV -> AALyricsColors.TextSecondary
         VersionChannel.ALPHA -> AALyricsColors.Error
-        VersionChannel.BETA -> AALyricsColors.Warning
+        VersionChannel.BETA -> AALyricsColors.AccentCyan
         VersionChannel.RC -> AALyricsColors.AccentBlue
         VersionChannel.STABLE -> AALyricsColors.Success
     }
