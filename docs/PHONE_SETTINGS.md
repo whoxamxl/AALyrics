@@ -549,9 +549,21 @@ Only after the #77 two-stage route has passed focused tests and full real-device
 - `DOWNLOADED` as the verified-artifact and recovery boundary;
 - `installUpdate()` as the existing install-refresh/preflight/permission/PackageInstaller operation.
 
-The one-step UX adds orchestration above those stages: an Update operation carrying one-step continuation intent may automatically call the existing install stage after verified `DOWNLOADED`. The coordinator must prevent duplicate continuation across recomposition, Activity recreation, process recovery, and permission return.
+The one-step UX adds orchestration above those stages. Old #76 is reference material for the **concept** of continuation intent and for retry/permission/retarget scenarios, but its process-local `oneStepUpdateRequested` flag and Settings-owned presentation are not the #78 implementation contract.
 
-Production UX may therefore become one-step in #78 while the independently validated two-stage route remains preserved in runtime boundaries, tests, and recovery behavior.
+The #78 coordinator follows this order:
+
+1. explicit Update/Retry arms application-owned continuation intent;
+2. the existing download operation runs unchanged;
+3. verified `DOWNLOADED` is claimed at most once for continuation;
+4. the existing install operation runs unchanged;
+5. permission-required pauses continuation without discarding the retained APK; permission return re-checks Android trust and resumes without redownload;
+6. install-refresh newer-release retargeting keeps the same user operation alive but moves it back through the existing download/verify boundary for the newer candidate;
+7. recoverable failure stops automatic progression; explicit Retry is required to re-arm/resume;
+8. restored `DOWNLOADED` plus valid continuation intent may resume at most once, while active/pending installer work blocks duplicate continuation;
+9. Reset AALyrics clears continuation intent.
+
+Production UX may therefore become one-step in #78 while the independently validated two-stage route remains preserved in runtime boundaries, tests, and recovery behavior. The second user-facing Install action is removed only after focused orchestration tests prove the above contract.
 
 #### Version presentation
 
