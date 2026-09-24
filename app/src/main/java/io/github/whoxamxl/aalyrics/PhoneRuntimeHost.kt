@@ -356,6 +356,7 @@ internal fun PhoneRuntimeHost(
                     onOpenInstallSettings()
                 },
                 onDownloadFromGitHub = {
+                    updateProcessDialogDismissed = true
                     application.dismissInstallPermissionPrompt()
                     onOpenUpdateRelease(visibleUpdateProcessDialogState.versionName)
                 },
