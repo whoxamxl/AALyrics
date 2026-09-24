@@ -50,7 +50,7 @@ class PhoneUpdateDialogDismissalTest {
             UpdateDialogUiState(
                 phase = UpdateDialogPhase.DOWNLOADING,
                 versionName = "0.3.0-alpha.1",
-                progress = 0.5f,
+                downloadProgress = 0.5f,
             ),
             UpdateDialogUiState(
                 phase = UpdateDialogPhase.VERIFYING,
