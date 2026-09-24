@@ -312,6 +312,8 @@ Update
   -> install refresh / preflight / permission / PackageInstaller
 ```
 
+In the current **#77** checkpoint, `PREPARING_INSTALL`, `PERMISSION_REQUIRED`, and `INSTALLING` presentation are owned by the Unified Update Dialog rather than Settings. This is presentation migration only: the same install-refresh/preflight operation runs before source-trust handling, Android Settings still owns the per-app trust decision, and PackageInstaller still owns final installation confirmation.
+
 Before installation continues from the verified artifact, AALyrics must refresh eligible GitHub Releases using the same release grammar and installed-channel rules used by ordinary update discovery. If the retained verified release is still the latest eligible release, installation preparation may continue. If a newer eligible release has appeared, AALyrics must not intentionally install the older retained APK first.
 
 In **#75**, that `INSTALL_REFRESH` result is surfaced through the existing Settings-owned process route as `Newer update available` with Download. The replacement candidate remains available for `downloadUpdate()`, and Settings re-entry must preserve the retarget state rather than collapsing it to Idle. This is not a MANUAL/AUTOMATIC discovery result and does not open the shared discovery prompt.
