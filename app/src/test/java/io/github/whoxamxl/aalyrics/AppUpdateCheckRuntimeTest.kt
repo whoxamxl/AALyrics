@@ -119,6 +119,105 @@ class AppUpdateCheckRuntimeTest {
     }
 
     @Test
+    fun `manual check promotes in-flight automatic up-to-date query without refetching`() = runTest {
+        val gate = CompletableDeferred<Unit>()
+        var fetchCount = 0
+        val runtime = AppUpdateCheckRuntime(
+            installedVersionName = "0.2.0-alpha.1",
+            releaseClient = GitHubReleaseClient {
+                fetchCount += 1
+                gate.await()
+                Result.success(
+                    listOf(
+                        release("v0.2.0-alpha.1", prerelease = true),
+                    ),
+                )
+            },
+            applicationScope = this,
+        )
+
+        assertTrue(runtime.checkForUpdates(UpdateCheckOrigin.AUTOMATIC))
+        assertEquals(
+            AppUpdateCheckState.Checking(UpdateCheckOrigin.AUTOMATIC),
+            runtime.state.value,
+        )
+
+        assertTrue(runtime.checkForUpdates(UpdateCheckOrigin.MANUAL))
+        assertEquals(
+            AppUpdateCheckState.Checking(UpdateCheckOrigin.MANUAL),
+            runtime.state.value,
+        )
+
+        gate.complete(Unit)
+        runCurrent()
+
+        assertEquals(1, fetchCount)
+        assertEquals(
+            AppUpdateCheckState.UpToDate(UpdateCheckOrigin.MANUAL),
+            runtime.state.value,
+        )
+    }
+
+    @Test
+    fun `manual check promotes in-flight automatic failure to visible manual failure`() = runTest {
+        val gate = CompletableDeferred<Unit>()
+        var fetchCount = 0
+        val runtime = AppUpdateCheckRuntime(
+            installedVersionName = "0.2.0-alpha.1",
+            releaseClient = GitHubReleaseClient {
+                fetchCount += 1
+                gate.await()
+                Result.failure(IllegalStateException("network unavailable"))
+            },
+            applicationScope = this,
+        )
+
+        assertTrue(runtime.checkForUpdates(UpdateCheckOrigin.AUTOMATIC))
+        assertTrue(runtime.checkForUpdates(UpdateCheckOrigin.MANUAL))
+        gate.complete(Unit)
+        runCurrent()
+
+        assertEquals(1, fetchCount)
+        assertEquals(
+            AppUpdateCheckState.Failed(UpdateCheckOrigin.MANUAL),
+            runtime.state.value,
+        )
+    }
+
+    @Test
+    fun `manual check promotes in-flight automatic update result to manual origin`() = runTest {
+        val gate = CompletableDeferred<Unit>()
+        var fetchCount = 0
+        val runtime = AppUpdateCheckRuntime(
+            installedVersionName = "0.2.0-alpha.1",
+            releaseClient = GitHubReleaseClient {
+                fetchCount += 1
+                gate.await()
+                Result.success(
+                    listOf(
+                        release("v0.2.0-alpha.2", prerelease = true),
+                    ),
+                )
+            },
+            applicationScope = this,
+        )
+
+        assertTrue(runtime.checkForUpdates(UpdateCheckOrigin.AUTOMATIC))
+        assertTrue(runtime.checkForUpdates(UpdateCheckOrigin.MANUAL))
+        gate.complete(Unit)
+        runCurrent()
+
+        assertEquals(1, fetchCount)
+        assertEquals(
+            AppUpdateCheckState.UpdateAvailable(
+                versionName = "0.2.0-alpha.2",
+                origin = UpdateCheckOrigin.MANUAL,
+            ),
+            runtime.state.value,
+        )
+    }
+
+    @Test
     fun `automatic check does not replace retained downloaded state`() = runTest {
         val root = createTempDirectory("aalyrics-update-runtime").toFile()
         try {
