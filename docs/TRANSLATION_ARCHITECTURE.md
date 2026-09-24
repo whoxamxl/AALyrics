@@ -62,7 +62,7 @@ The Phone integration closes only that downstream gap:
 - `:ui:phone` receives only optional presentation-ready translated text per canonical lyric row;
 - `:ui:phone` does not import Translation core, ML Kit, persistence, or provider execution types.
 
-A `TranslationState.Ready` artifact is eligible for display only when its `request.canonicalLyrics` exactly matches the canonical lyrics currently being projected. The Phone mapping should reuse or extract the same canonical-identity construction used by `TranslationExecutionRuntime` rather than reimplementing owner/fingerprint semantics independently. Identity mismatch fails closed to original-only presentation.
+A `TranslationState.Ready` artifact is eligible for display only when current Translation settings are enabled, its `request.targetLanguage` equals the current normalized target language, and its `request.canonicalLyrics` exactly matches the canonical lyrics currently being projected. The Phone mapping should reuse or extract the same canonical-identity construction used by `TranslationExecutionRuntime` rather than reimplementing owner/fingerprint semantics independently. Disabled state, target mismatch, or canonical-identity mismatch fails closed to original-only presentation. This extra downstream gate prevents brief propagation windows from surfacing an old-target Ready artifact while settings changes are reaching the coordinator.
 
 Artifact projection rules:
 
