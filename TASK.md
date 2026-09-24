@@ -174,7 +174,7 @@ Use small, reviewable commits and keep each checkpoint independently coherent.
    - feed it to the mapper;
    - verify no Translation execution ownership moves into Phone UI.
 
-3. [ ] **LyricsViewport rendering**
+3. [x] **LyricsViewport rendering**
    - render canonical + optional translation as one measured row;
    - preserve all existing sync/focus/browse/PLAIN behavior;
    - keep source typography/word progress unchanged;
