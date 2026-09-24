@@ -989,6 +989,64 @@ class AppUpdateCheckRuntimeTest {
     }
 
     @Test
+    fun `settings reentry does not cancel an active permission first download`() = runTest {
+        val apkBytes = "signed apk bytes".encodeToByteArray()
+        val release = downloadableRelease("v0.2.0-alpha.2")
+        val gate = CompletableDeferred<Unit>()
+        val downloadClient = FakeUpdateAssetDownloadClient(
+            checksumPayload = checksumPayload(apkBytes, release.assets.first().name),
+            apkBytes = apkBytes,
+            downloadGate = gate,
+        )
+        val root = createTempDirectory("aalyrics-update-runtime").toFile()
+        try {
+            val runtime = runtime(
+                installedVersionName = "0.2.0-alpha.1",
+                releases = listOf(release),
+                assetDownloadClient = downloadClient,
+                downloadFileStore = updateStore(root),
+                installSourceTrustChecker = InstallSourceTrustChecker { true },
+            )
+
+            runtime.checkForUpdates()
+            runCurrent()
+            runtime.startUpdate()
+            runCurrent()
+
+            assertEquals(
+                AppUpdateCheckState.Downloading(
+                    versionName = "0.2.0-alpha.2",
+                    downloadedBytes = 8L,
+                    totalBytes = 16L,
+                ),
+                runtime.state.value,
+            )
+            assertEquals(1, downloadClient.downloadCount)
+
+            runtime.onSettingsEntered()
+
+            assertEquals(
+                AppUpdateCheckState.Downloading(
+                    versionName = "0.2.0-alpha.2",
+                    downloadedBytes = 8L,
+                    totalBytes = 16L,
+                ),
+                runtime.state.value,
+            )
+            assertEquals(1, downloadClient.downloadCount)
+
+            gate.complete(Unit)
+            runCurrent()
+
+            assertTrue(runtime.state.value is AppUpdateCheckState.Downloaded)
+            assertEquals(1, downloadClient.downloadCount)
+        } finally {
+            gate.complete(Unit)
+            root.deleteRecursively()
+        }
+    }
+
+    @Test
     fun `duplicate download request is ignored while download is active`() = runTest {
         val apkBytes = "signed apk bytes".encodeToByteArray()
         val release = downloadableRelease("v0.2.0-alpha.2")
