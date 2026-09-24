@@ -169,7 +169,7 @@ Use small, reviewable commits and keep each checkpoint independently coherent.
    - add mapper tests;
    - do not change Compose rendering yet.
 
-2. [ ] **Runtime connection**
+2. [x] **Runtime connection**
    - lifecycle-collect `application.translationState` in `PhoneRuntimeHost`;
    - feed it to the mapper;
    - verify no Translation execution ownership moves into Phone UI.
