@@ -30,6 +30,30 @@ private fun LyricsViewportLinePreview() {
     LyricsViewportPreview(PhonePreviewFixtures.viewportLineMiddle)
 }
 
+@Preview(name = "LINE · translated mixed rows", group = "LyricsViewport", widthDp = 412, heightDp = 520)
+@Composable
+private fun LyricsViewportTranslatedLinePreview() {
+    LyricsViewportPreview(PhonePreviewFixtures.viewportTranslatedLine)
+}
+
+@Preview(name = "PLAIN · translated", group = "LyricsViewport", widthDp = 412, heightDp = 520)
+@Composable
+private fun LyricsViewportTranslatedPlainPreview() {
+    LyricsViewportPreview(PhonePreviewFixtures.viewportTranslatedPlain)
+}
+
+@Preview(name = "LINE · translated narrow", group = "LyricsViewport", widthDp = 320, heightDp = 520)
+@Composable
+private fun LyricsViewportTranslatedNarrowPreview() {
+    LyricsViewportPreview(PhonePreviewFixtures.viewportTranslatedLine.copy(currentLineIndex = 6))
+}
+
+@Preview(name = "LINE · translated large font", group = "LyricsViewport", widthDp = 360, heightDp = 520, fontScale = 1.4f)
+@Composable
+private fun LyricsViewportTranslatedLargeFontPreview() {
+    LyricsViewportPreview(PhonePreviewFixtures.viewportTranslatedLine.copy(currentLineIndex = 6))
+}
+
 @Preview(
     name = "LINE · transition demo (Interactive)",
     group = "LyricsViewport",

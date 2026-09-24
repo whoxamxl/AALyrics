@@ -21,6 +21,18 @@ private fun LyricsScreenLinePreview() {
     LyricsScreenPreview(PhonePreviewFixtures.lyricsScreenLine)
 }
 
+@Preview(name = "LINE · translated", group = "LyricsScreen", widthDp = 412, heightDp = 650)
+@Composable
+private fun LyricsScreenTranslatedLinePreview() {
+    LyricsScreenPreview(PhonePreviewFixtures.lyricsScreenTranslatedLine)
+}
+
+@Preview(name = "PLAIN · translated", group = "LyricsScreen", widthDp = 412, heightDp = 650)
+@Composable
+private fun LyricsScreenTranslatedPlainPreview() {
+    LyricsScreenPreview(PhonePreviewFixtures.lyricsScreenTranslatedPlain)
+}
+
 @Preview(name = "WORD", group = "LyricsScreen", widthDp = 412, heightDp = 650)
 @Composable
 private fun LyricsScreenWordPreview() {

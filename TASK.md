@@ -180,7 +180,7 @@ Use small, reviewable commits and keep each checkpoint independently coherent.
    - keep source typography/word progress unchanged;
    - add focused viewport helper tests if geometry helpers change.
 
-4. [ ] **Preview coverage**
+4. [x] **Preview coverage**
    - add deterministic translated LINE/PLAIN and mixed translated/preserved fixtures;
    - include long wrapping and narrow/enlarged-font cases where the current Preview structure supports them;
    - verify the secondary hierarchy does not overpower canonical lyrics.

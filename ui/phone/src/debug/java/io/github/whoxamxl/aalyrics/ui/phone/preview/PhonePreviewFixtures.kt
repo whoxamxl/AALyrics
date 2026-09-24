@@ -122,6 +122,30 @@ internal object PhonePreviewFixtures {
     )
     val viewportPlainNoDuration = viewportPlain.copy(playbackProgress = null)
 
+    private val translatedViewportLines = viewportLines.mapIndexed { index, line ->
+        line.copy(
+            translatedText = when (index) {
+                1 -> null // A preserved source line must not appear twice.
+                6 -> "A long translated annotation wraps naturally below its canonical lyric while the two remain one focused and measured row in the document."
+                else -> listOf(
+                    "街灯が通りに灯る",
+                    "",
+                    "窓の光が星座になる",
+                    "街が動く間もリズムを保つ",
+                    "静かなこだまがすぐ後を追う",
+                    "雨がガラスに銀の線を描く",
+                    "",
+                    "一歩ずつ温かくなる",
+                    "雑音を遠くに置いていく",
+                    "朝の色が空に集まる",
+                    "夜明けが私たちを見つける",
+                )[index]
+            },
+        )
+    }
+    val viewportTranslatedLine = viewportLineMiddle.copy(lines = translatedViewportLines)
+    val viewportTranslatedPlain = viewportPlain.copy(lines = translatedViewportLines)
+
     val viewportBrowsePlaybackBelow = viewportLineMiddle.copy(
         currentLineIndex = 8,
         interactionMode = LyricsViewportInteractionMode.BROWSE,
@@ -146,6 +170,8 @@ internal object PhonePreviewFixtures {
         ),
         viewport = viewportPlain,
     )
+    val lyricsScreenTranslatedLine = lyricsScreenLine.copy(viewport = viewportTranslatedLine)
+    val lyricsScreenTranslatedPlain = lyricsScreenPlain.copy(viewport = viewportTranslatedPlain)
     val lyricsScreenLongMetadata = LyricsScreenUiState(
         trackCard = trackCardLongTitleAndArtist,
         viewport = viewportLineMiddle,
