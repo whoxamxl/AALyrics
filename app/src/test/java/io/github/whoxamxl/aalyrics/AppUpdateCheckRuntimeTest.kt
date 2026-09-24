@@ -1099,7 +1099,7 @@ class AppUpdateCheckRuntimeTest {
     }
 
     @Test
-    fun `installer failure preserves verified APK and settings reentry restores downloaded state`() = runTest {
+    fun `installer failure and retry state survive settings reentry`() = runTest {
         val root = createTempDirectory("aalyrics-install-runtime").toFile()
         val retained = retainedUpdate(root, "0.2.0-alpha.2")
         val installer = FakeUpdatePackageInstaller()
@@ -1143,9 +1143,14 @@ class AppUpdateCheckRuntimeTest {
 
             runtime.onSettingsEntered()
 
-            val restored = runtime.state.value as AppUpdateCheckState.Downloaded
-            assertEquals("0.2.0-alpha.2", restored.versionName)
-            assertEquals(retained.canonicalFile, restored.apkFile.canonicalFile)
+            assertEquals(
+                AppUpdateCheckState.InstallFailed(
+                    versionName = "0.2.0-alpha.2",
+                    reason = AppUpdateInstallFailureReason.INSTALLER_REJECTED,
+                ),
+                runtime.state.value,
+            )
+            assertTrue(retained.isFile)
         } finally {
             root.deleteRecursively()
         }
