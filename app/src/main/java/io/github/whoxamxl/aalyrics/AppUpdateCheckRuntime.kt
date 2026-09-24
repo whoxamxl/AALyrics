@@ -498,6 +498,13 @@ internal class AppUpdateCheckRuntime(
             is AppUpdateCheckState.InstallPermissionRequired,
             is AppUpdateCheckState.Installing -> current
 
+            is AppUpdateCheckState.UpdateAvailable ->
+                if (current.origin == UpdateCheckOrigin.INSTALL_REFRESH) {
+                    current
+                } else {
+                    AppUpdateCheckState.Idle
+                }
+
             is AppUpdateCheckState.InstallFailed -> restoreVerifiedDownload()
             else -> AppUpdateCheckState.Idle
         }
