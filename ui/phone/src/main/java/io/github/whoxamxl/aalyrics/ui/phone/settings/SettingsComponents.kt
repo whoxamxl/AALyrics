@@ -204,6 +204,8 @@ internal fun SettingsNavigationRow(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     valueColor: Color = AALyricsColors.TextSecondary,
+    infoText: String? = null,
+    infoContentDescription: String? = null,
 ) {
     Row(
         modifier = modifier
@@ -231,6 +233,13 @@ internal fun SettingsNavigationRow(
             },
             modifier = Modifier.weight(1f),
         )
+
+        if (infoText != null && infoContentDescription != null) {
+            SettingInfoTooltip(
+                text = infoText,
+                contentDescription = infoContentDescription,
+            )
+        }
 
         value?.let {
             Text(

@@ -27,7 +27,7 @@ Settings
 │  └─ Ignore non-audio apps          [switch]  ⓘ
 ├─ Translation
 │  ├─ Translation                    [switch]
-│  └─ Target language                <value>  >
+│  └─ Target language             ⓘ  <value>  >
 ├─ Android Auto
 │  └─ Compatibility setup            <status> >
 ├─ App
@@ -221,10 +221,16 @@ Translation is opt-in. When no persisted user choice exists, the application-own
 Presentation:
 
 ```text
-Target language              Japanese  >
+Target language           ⓘ  Japanese  >
 ```
 
-The row shows the selected display name and opens a compact picker.
+The row shows the selected display name and opens a compact picker. Its info affordance explains the route-model requirement without adding a permanent subtitle.
+
+Approved tooltip copy:
+
+> Translation requires language models for both the source and target languages. English is built in and does not need a download. AALyrics detects the source language from the current lyrics.
+
+This distinction is important: readiness of the selected target alone does not guarantee that a translation route is ready. For example, Japanese → English still requires the Japanese source-language model even though English itself is built in.
 
 The picker receives presentation-ready options rather than reading `TranslationLanguages` directly from `:translation:api`. This preserves the UI dependency boundary.
 

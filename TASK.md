@@ -5,7 +5,7 @@
 - Branch: `feature/translation-runtime`.
 - Base: `main` at `4083588a250092e47f1efeb01e06a099b72a3604`.
 - Classification: TRANSLATION / PHONE PRESENTATION / RUNTIME COMPOSITION.
-- Status: Phone Translation implementation and local validation complete. Physical-device smoke testing remains before merge.
+- Status: Phone Translation presentation works on-device once the required route models are available. Target-language model-requirement tooltip is implemented; missing-route-model prompting remains pending before merge.
 - Authoritative references: `AGENTS.md`, `docs/TRANSLATION_ARCHITECTURE.md`, `docs/PHONE_LYRICS_VIEWPORT.md`, `docs/PHONE_RUNTIME_HOST.md`, `docs/PHONE_UI_SPEC.md`, `docs/PRESENTATION_STATE_ARCHITECTURE.md`, and the current production code/tests on this branch.
 
 ## Goal
@@ -207,7 +207,9 @@ Local validation on the implementation head:
 - [x] `:app:assembleDebug` passed.
 - [x] Final implementation diff and commit-message CI gate checked; no accidental scope expansion found.
 - [x] One bounded local Codex review found no actionable correctness issue.
-- [ ] Physical-device Translation ON/OFF and actual translated-song smoke test (no device connected locally; required before merge).
+- [x] Physical-device Translation ON/OFF and actual translated-song smoke test confirmed translated rows appear once the required source/target route models are available.
+- [x] Device finding documented and Target language info tooltip added: both source and target language models are required for a route; English is built in.
+- [ ] Missing-route-model prompt/dialog remains to be designed and implemented as the next checkpoint.
 
 Do not merge without explicit user authorization.
 
