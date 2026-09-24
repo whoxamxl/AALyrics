@@ -188,7 +188,8 @@ The active `feature/translation-runtime` slice closes that gap with the minimal 
 ```text
 PlaybackSnapshot ----------------------┐
 LyricsState ---------------------------┤
-TranslationState ----------------------┼─> Phone lyrics mapper
+TranslationState ----------------------┤
+TranslationSettings -------------------┼─> Phone lyrics mapper
 Phone presentation preference state ---┘
                                             ↓
                                    LyricsScreenUiState
@@ -196,12 +197,12 @@ Phone presentation preference state ---┘
                                      LyricsScreen
 ```
 
-The host lifecycle-collects the existing `translationState` and passes it to the mapper. It does not start, retry, cancel, or otherwise own Translation execution.
+The host lifecycle-collects the existing `translationState` and combines it for presentation with the already-observed current `translationSettings`. It does not start, retry, cancel, or otherwise own Translation execution.
 
 The mapper must preserve existing approved semantics:
 
 - canonical lyrics ownership stays in `:core:lyrics`;
-- a Ready Translation artifact is used only when its canonical identity exactly matches the canonical lyrics being mapped;
+- a Ready Translation artifact is used only when Translation is currently enabled, its request target equals the current normalized target setting, and its canonical identity exactly matches the canonical lyrics being mapped;
 - preserved artifact lines are not duplicated as translated text;
 - pending/not-required/failed Translation stays original-only and never becomes Lyrics failure;
 - current-line timing is derived from existing playback/lyrics facts rather than a new timing algorithm;
