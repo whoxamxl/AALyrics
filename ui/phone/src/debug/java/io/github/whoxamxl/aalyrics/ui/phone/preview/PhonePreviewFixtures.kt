@@ -406,12 +406,6 @@ internal object PhonePreviewFixtures {
     val settingsUpToDate = settingsTypical.copy(
         appUpdate = AppUpdateUiState(phase = AppUpdateUiPhase.UP_TO_DATE),
     )
-    val settingsUpdateAvailable = settingsTypical.copy(
-        appUpdate = AppUpdateUiState(
-            phase = AppUpdateUiPhase.UPDATE_AVAILABLE,
-            availableVersionName = "0.1.2",
-        ),
-    )
     val settingsUpdateFailed = settingsTypical.copy(
         appUpdate = AppUpdateUiState(
             phase = AppUpdateUiPhase.CHECK_FAILED,
