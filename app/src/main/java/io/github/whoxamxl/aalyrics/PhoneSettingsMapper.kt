@@ -91,14 +91,26 @@ internal fun mapPhoneSettingsState(
         appUpdate = when (appUpdateCheckState) {
             AppUpdateCheckState.Idle ->
                 AppUpdateUiState(phase = AppUpdateUiPhase.IDLE)
-            AppUpdateCheckState.Checking ->
-                AppUpdateUiState(phase = AppUpdateUiPhase.CHECKING)
-            AppUpdateCheckState.UpToDate ->
-                AppUpdateUiState(phase = AppUpdateUiPhase.UP_TO_DATE)
+            is AppUpdateCheckState.Checking ->
+                if (appUpdateCheckState.origin == UpdateCheckOrigin.MANUAL) {
+                    AppUpdateUiState(phase = AppUpdateUiPhase.CHECKING)
+                } else {
+                    AppUpdateUiState(phase = AppUpdateUiPhase.IDLE)
+                }
+            is AppUpdateCheckState.UpToDate ->
+                if (appUpdateCheckState.origin == UpdateCheckOrigin.MANUAL) {
+                    AppUpdateUiState(phase = AppUpdateUiPhase.UP_TO_DATE)
+                } else {
+                    AppUpdateUiState(phase = AppUpdateUiPhase.IDLE)
+                }
             is AppUpdateCheckState.UpdateAvailable ->
                 AppUpdateUiState(phase = AppUpdateUiPhase.IDLE)
-            AppUpdateCheckState.Failed ->
-                AppUpdateUiState(phase = AppUpdateUiPhase.CHECK_FAILED)
+            is AppUpdateCheckState.Failed ->
+                if (appUpdateCheckState.origin == UpdateCheckOrigin.MANUAL) {
+                    AppUpdateUiState(phase = AppUpdateUiPhase.CHECK_FAILED)
+                } else {
+                    AppUpdateUiState(phase = AppUpdateUiPhase.IDLE)
+                }
             is AppUpdateCheckState.PreparingDownload ->
                 AppUpdateUiState(
                     phase = AppUpdateUiPhase.PREPARING_DOWNLOAD,
