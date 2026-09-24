@@ -380,7 +380,6 @@ internal fun AppUpdateRow(
     upToDateLabel: String,
     updateAvailableLabel: String,
     downloadLabel: String,
-    downloadedLabel: String,
     installLabel: String,
     preparingInstallLabel: String,
     installPermissionRequiredLabel: String,
@@ -457,15 +456,6 @@ internal fun AppUpdateRow(
                     failureInfoContentDescription = failureInfoContentDescription,
                     retryLabel = retryLabel,
                     onRetry = onCheckForUpdates,
-                )
-            }
-
-            AppUpdateUiPhase.DOWNLOADED -> {
-                AppUpdateActionRow(
-                    status = downloadedLabel,
-                    versionName = state.availableVersionName,
-                    actionLabel = installLabel,
-                    onAction = onInstallUpdate,
                 )
             }
 
