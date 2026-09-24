@@ -29,11 +29,9 @@ data class SettingsLanguageOptionUiState(
 
 /** Presentation lifecycle for checking/downloading an AALyrics GitHub Release update. */
 enum class AppUpdateUiPhase {
-    UNAVAILABLE,
     IDLE,
     CHECKING,
     UP_TO_DATE,
-    UPDATE_AVAILABLE,
     CHECK_FAILED,
     PREPARING_DOWNLOAD,
     DOWNLOADING,
