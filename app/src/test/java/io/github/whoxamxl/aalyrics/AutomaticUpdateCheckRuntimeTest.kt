@@ -94,7 +94,7 @@ class AutomaticUpdateCheckRuntimeTest {
             request = { true },
         )
 
-        runtime.recordSuccessfulReleaseQuery()
+        runtime.recordSuccessfulReleaseQuery(UpdateCheckOrigin.MANUAL)
         assertEquals(DAY_10, store.lastCheckAtMillis())
 
         now += AutomaticUpdateCheckRuntime.DEFAULT_INTERVAL_MILLIS - 1L
@@ -102,6 +102,24 @@ class AutomaticUpdateCheckRuntimeTest {
 
         now += 1L
         assertTrue(runtime.requestIfEnabled(true))
+    }
+
+    @Test
+    fun `automatic and install refresh success do not shift cadence timestamp`() {
+        val store = FakeCadenceStore(lastCheckAt = DAY_10)
+        var now = DAY_10 + 1_000L
+        val runtime = runtime(
+            store = store,
+            nowMillis = { now },
+            request = { true },
+        )
+
+        runtime.recordSuccessfulReleaseQuery(UpdateCheckOrigin.AUTOMATIC)
+        assertEquals(DAY_10, store.lastCheckAtMillis())
+
+        now += 1_000L
+        runtime.recordSuccessfulReleaseQuery(UpdateCheckOrigin.INSTALL_REFRESH)
+        assertEquals(DAY_10, store.lastCheckAtMillis())
     }
 
     @Test
