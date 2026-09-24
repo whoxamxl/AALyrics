@@ -41,6 +41,8 @@ import io.github.whoxamxl.aalyrics.ui.phone.state.PlaybackQueueItemUiState
 import io.github.whoxamxl.aalyrics.ui.phone.sync.SyncScreen
 import io.github.whoxamxl.aalyrics.ui.phone.update.NewReleaseAvailableDialog
 import io.github.whoxamxl.aalyrics.ui.phone.update.NewReleaseAvailableDialogUiState
+import io.github.whoxamxl.aalyrics.ui.phone.update.UnifiedUpdateDialog
+import io.github.whoxamxl.aalyrics.ui.phone.update.UpdateDialogPhase
 import io.github.whoxamxl.aalyrics.ui.phone.update.UpdateSuccessfulDialog
 import io.github.whoxamxl.aalyrics.ui.phone.update.UpdateSuccessfulDialogUiState
 import kotlinx.coroutines.CancellationException
@@ -101,6 +103,10 @@ internal fun PhoneRuntimeHost(
         application.successfulUpdate.collectAsStateWithLifecycle()
     val updateReleasePrompt by
         application.updateReleasePrompt.collectAsStateWithLifecycle()
+    val updateDialogState = mapPhoneUpdateDialogState(
+        updateState = appUpdateCheckState,
+        releasePrompt = updateReleasePrompt,
+    )
 
     DisposableEffect(application) {
         onDispose {
@@ -323,15 +329,24 @@ internal fun PhoneRuntimeHost(
             onDismissRequest = application::dismissSuccessfulUpdate,
         )
     } else {
-        updateReleasePrompt?.let { prompt ->
-            NewReleaseAvailableDialog(
-                state = NewReleaseAvailableDialogUiState(
-                    versionName = prompt.versionName,
-                ),
-                onUpdate = application::acceptUpdateReleasePrompt,
-                onDismissRequest =
-                    application::dismissUpdateReleasePrompt,
-            )
+        val downloadProcessDialogState = updateDialogState?.takeIf { state ->
+            state.phase == UpdateDialogPhase.PREPARING_DOWNLOAD ||
+                state.phase == UpdateDialogPhase.DOWNLOADING ||
+                state.phase == UpdateDialogPhase.VERIFYING
+        }
+        if (downloadProcessDialogState != null) {
+            UnifiedUpdateDialog(state = downloadProcessDialogState)
+        } else {
+            updateReleasePrompt?.let { prompt ->
+                NewReleaseAvailableDialog(
+                    state = NewReleaseAvailableDialogUiState(
+                        versionName = prompt.versionName,
+                    ),
+                    onUpdate = application::acceptUpdateReleasePrompt,
+                    onDismissRequest =
+                        application::dismissUpdateReleasePrompt,
+                )
+            }
         }
     }
 }
