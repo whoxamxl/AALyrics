@@ -62,6 +62,9 @@
     <string name="update_release_available_not_now">Not now</string>
     <string name="update_release_available_close">Close new release dialog</string>
     <string name="update_process_eyebrow">UPDATE IN PROGRESS</string>
+    <string name="update_process_retarget_title">Newer update available</string>
+    <string name="update_process_retarget_body_suffix">is newer than the downloaded release and must be downloaded before installation can continue.</string>
+    <string name="update_process_download">Download</string>
     <string name="update_process_preparing_title">Preparing update</string>
     <string name="update_process_downloading_title">Downloading update</string>
     <string name="update_process_downloading_label">Downloading</string>

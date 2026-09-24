@@ -42,6 +42,7 @@ import io.github.whoxamxl.aalyrics.ui.phone.sync.SyncScreen
 import io.github.whoxamxl.aalyrics.ui.phone.update.NewReleaseAvailableDialog
 import io.github.whoxamxl.aalyrics.ui.phone.update.NewReleaseAvailableDialogUiState
 import io.github.whoxamxl.aalyrics.ui.phone.update.UnifiedUpdateDialog
+import io.github.whoxamxl.aalyrics.ui.phone.update.UpdateDialogAvailabilityContext
 import io.github.whoxamxl.aalyrics.ui.phone.update.UpdateDialogPhase
 import io.github.whoxamxl.aalyrics.ui.phone.update.UpdateSuccessfulDialog
 import io.github.whoxamxl.aalyrics.ui.phone.update.UpdateSuccessfulDialogUiState
@@ -322,7 +323,12 @@ internal fun PhoneRuntimeHost(
         )
     } else {
         val updateProcessDialogState = updateDialogState?.takeIf { state ->
-            state.phase == UpdateDialogPhase.PREPARING_DOWNLOAD ||
+            (
+                state.phase == UpdateDialogPhase.AVAILABLE &&
+                    state.availabilityContext ==
+                    UpdateDialogAvailabilityContext.INSTALL_REFRESH_RETARGET
+                ) ||
+                state.phase == UpdateDialogPhase.PREPARING_DOWNLOAD ||
                 state.phase == UpdateDialogPhase.DOWNLOADING ||
                 state.phase == UpdateDialogPhase.VERIFYING ||
                 state.phase == UpdateDialogPhase.READY_TO_INSTALL ||
@@ -336,6 +342,7 @@ internal fun PhoneRuntimeHost(
             UnifiedUpdateDialog(
                 state = updateProcessDialogState,
                 onInstall = application::installUpdate,
+                onDownloadUpdate = application::downloadUpdate,
                 onRetryDownload = application::downloadUpdate,
                 onRetryInstall = application::installUpdate,
                 onGrantInstallPermission = {

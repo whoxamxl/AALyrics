@@ -44,13 +44,14 @@ import kotlin.math.roundToInt
 fun UnifiedUpdateDialog(
     state: UpdateDialogUiState,
     onInstall: () -> Unit,
+    onDownloadUpdate: () -> Unit,
     onRetryDownload: () -> Unit,
     onRetryInstall: () -> Unit,
     onGrantInstallPermission: () -> Unit,
     onDownloadFromGitHub: () -> Unit,
 ) {
-    require(state.phase.isUnifiedProcessPhase()) {
-        "UnifiedUpdateDialog cannot render ${state.phase}"
+    require(state.isUnifiedUpdateDialogState()) {
+        "UnifiedUpdateDialog cannot render ${state.phase} / ${state.availabilityContext}"
     }
 
     Dialog(
@@ -73,6 +74,7 @@ fun UnifiedUpdateDialog(
             UnifiedUpdateDialogContent(
                 state = state,
                 onInstall = onInstall,
+                onDownloadUpdate = onDownloadUpdate,
                 onRetryDownload = onRetryDownload,
                 onRetryInstall = onRetryInstall,
                 onGrantInstallPermission = onGrantInstallPermission,
@@ -89,14 +91,15 @@ fun UnifiedUpdateDialog(
 internal fun UnifiedUpdateDialogContent(
     state: UpdateDialogUiState,
     onInstall: () -> Unit,
+    onDownloadUpdate: () -> Unit,
     onRetryDownload: () -> Unit,
     onRetryInstall: () -> Unit,
     onGrantInstallPermission: () -> Unit,
     onDownloadFromGitHub: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    require(state.phase.isUnifiedProcessPhase()) {
-        "UnifiedUpdateDialog cannot render ${state.phase}"
+    require(state.isUnifiedUpdateDialogState()) {
+        "UnifiedUpdateDialog cannot render ${state.phase} / ${state.availabilityContext}"
     }
 
     Surface(
@@ -124,6 +127,8 @@ internal fun UnifiedUpdateDialogContent(
             Text(
                 text = stringResource(
                     when (state.phase) {
+                        UpdateDialogPhase.AVAILABLE ->
+                            R.string.update_process_retarget_title
                         UpdateDialogPhase.DOWNLOADING ->
                             R.string.update_process_downloading_title
                         UpdateDialogPhase.VERIFYING ->
@@ -165,6 +170,17 @@ internal fun UnifiedUpdateDialogContent(
                     modifier = Modifier.align(Alignment.CenterVertically),
                 )
                 when (state.phase) {
+                    UpdateDialogPhase.AVAILABLE -> {
+                        Text(
+                            text = stringResource(
+                                R.string.update_process_retarget_body_suffix,
+                            ),
+                            style = AALyricsTypography.TrackArtist,
+                            color = AALyricsColors.TextSecondary,
+                            modifier = Modifier.align(Alignment.CenterVertically),
+                        )
+                    }
+
                     UpdateDialogPhase.READY_TO_INSTALL -> {
                         Text(
                             text = stringResource(R.string.update_process_ready_body_suffix),
@@ -203,6 +219,17 @@ internal fun UnifiedUpdateDialogContent(
             Spacer(Modifier.height(AALyricsSpacing.Space24))
 
             when (state.phase) {
+                UpdateDialogPhase.AVAILABLE -> {
+                    Button(
+                        onClick = onDownloadUpdate,
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Text(
+                            text = stringResource(R.string.update_process_download),
+                        )
+                    }
+                }
+
                 UpdateDialogPhase.DOWNLOADING -> {
                     val progress = (state.downloadProgress ?: 0f).coerceIn(0f, 1f)
                     Row(
@@ -457,6 +484,13 @@ private fun updateDialogInstallFailureReasonText(
             stringResource(R.string.update_process_install_failure_installer_rejected)
         null -> stringResource(R.string.update_process_install_failure_generic)
     }
+
+internal fun UpdateDialogUiState.isUnifiedUpdateDialogState(): Boolean =
+    phase.isUnifiedProcessPhase() ||
+        (
+            phase == UpdateDialogPhase.AVAILABLE &&
+                availabilityContext == UpdateDialogAvailabilityContext.INSTALL_REFRESH_RETARGET
+            )
 
 internal fun UpdateDialogPhase.isUnifiedProcessPhase(): Boolean =
     this == UpdateDialogPhase.PREPARING_DOWNLOAD ||
