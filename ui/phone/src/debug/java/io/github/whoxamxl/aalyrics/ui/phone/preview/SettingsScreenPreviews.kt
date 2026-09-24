@@ -95,17 +95,6 @@ private fun SettingsUpdateFailedPreview() {
     SettingsScreenPreview(PhonePreviewFixtures.settingsUpdateFailed)
 }
 
-@Preview(
-    name = "Install refresh · newer release",
-    group = "SettingsScreen",
-    widthDp = 412,
-    heightDp = 900,
-)
-@Composable
-private fun SettingsInstallRefreshUpdateAvailablePreview() {
-    SettingsScreenPreview(PhonePreviewFixtures.settingsInstallRefreshUpdateAvailable)
-}
-
 @Preview(name = "Narrow · 320dp", group = "SettingsScreen", widthDp = 320, heightDp = 700)
 @Composable
 private fun SettingsScreenNarrowPreview() {
@@ -223,12 +212,6 @@ internal fun SettingsScreenPreview(
                         )
                     }
                 },
-                onDownloadUpdate = {
-                    // Download / verify / ready-to-install presentation is global dialog-owned.
-                    state = state.copy(
-                        appUpdate = AppUpdateUiState(phase = AppUpdateUiPhase.IDLE),
-                    )
-                },
                 onOpenGitHub = {},
                 onHelpFeedback = {},
                 onSupportAALyrics = {},
@@ -283,7 +266,6 @@ private fun SettingsScreenContentPreview(
                 },
                 onAndroidAutoCompatibilitySetup = {},
                 onCheckForUpdates = {},
-                onDownloadUpdate = {},
                 onChangelogRequested = {},
                 onPrivacyPolicyRequested = {},
                 onTermsOfUseRequested = {},

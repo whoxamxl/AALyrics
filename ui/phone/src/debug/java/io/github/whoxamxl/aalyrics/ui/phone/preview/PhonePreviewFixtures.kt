@@ -408,12 +408,6 @@ internal object PhonePreviewFixtures {
             failureReason = "GitHub Releases could not be reached.",
         ),
     )
-    val settingsInstallRefreshUpdateAvailable = settingsTypical.copy(
-        appUpdate = AppUpdateUiState(
-            phase = AppUpdateUiPhase.UPDATE_AVAILABLE,
-            availableVersionName = "0.2.0-beta.1",
-        ),
-    )
     val settingsTranslationOn = settingsTypical.copy(translationEnabled = true)
     val settingsAndroidAutoSkipped = settingsTypical.copy(
         androidAutoCompatibilityStatus = AndroidAutoCompatibilityUiStatus.SKIPPED,

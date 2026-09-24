@@ -10,7 +10,6 @@ import io.github.whoxamxl.aalyrics.ui.phone.settings.TranslationModelUiState
 import java.util.Locale
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertNull
 
 class PhoneSettingsMapperTest {
     @Test
@@ -209,7 +208,6 @@ class PhoneSettingsMapperTest {
             ),
         )
         assertEquals(AppUpdateUiPhase.IDLE, manualAvailable.phase)
-        assertNull(manualAvailable.availableVersionName)
 
         val automaticAvailable = mapped(
             AppUpdateCheckState.UpdateAvailable(
@@ -218,7 +216,6 @@ class PhoneSettingsMapperTest {
             ),
         )
         assertEquals(AppUpdateUiPhase.IDLE, automaticAvailable.phase)
-        assertNull(automaticAvailable.availableVersionName)
 
         val installRefreshAvailable = mapped(
             AppUpdateCheckState.UpdateAvailable(
@@ -226,12 +223,10 @@ class PhoneSettingsMapperTest {
                 origin = UpdateCheckOrigin.INSTALL_REFRESH,
             ),
         )
-        assertEquals(AppUpdateUiPhase.UPDATE_AVAILABLE, installRefreshAvailable.phase)
-        assertEquals("0.2.0-beta.1", installRefreshAvailable.availableVersionName)
+        assertEquals(AppUpdateUiPhase.IDLE, installRefreshAvailable.phase)
 
         val preparing = mapped(AppUpdateCheckState.PreparingDownload("0.2.0-alpha.2"))
         assertEquals(AppUpdateUiPhase.IDLE, preparing.phase)
-        assertNull(preparing.availableVersionName)
 
         val downloading = mapped(
             AppUpdateCheckState.Downloading(
@@ -241,11 +236,9 @@ class PhoneSettingsMapperTest {
             ),
         )
         assertEquals(AppUpdateUiPhase.IDLE, downloading.phase)
-        assertNull(downloading.availableVersionName)
 
         val verifying = mapped(AppUpdateCheckState.VerifyingDownload("0.2.0-alpha.2"))
         assertEquals(AppUpdateUiPhase.IDLE, verifying.phase)
-        assertNull(verifying.availableVersionName)
 
         val downloaded = mapped(
             AppUpdateCheckState.Downloaded(
@@ -254,24 +247,19 @@ class PhoneSettingsMapperTest {
             ),
         )
         assertEquals(AppUpdateUiPhase.IDLE, downloaded.phase)
-        assertNull(downloaded.availableVersionName)
 
         val downloadFailed = mapped(AppUpdateCheckState.DownloadFailed("0.2.0-alpha.2"))
         assertEquals(AppUpdateUiPhase.IDLE, downloadFailed.phase)
-        assertNull(downloadFailed.availableVersionName)
 
         val preparingInstall = mapped(AppUpdateCheckState.PreparingInstall("0.2.0-alpha.2"))
         assertEquals(AppUpdateUiPhase.IDLE, preparingInstall.phase)
-        assertNull(preparingInstall.availableVersionName)
 
         val permissionRequired =
             mapped(AppUpdateCheckState.InstallPermissionRequired("0.2.0-alpha.2"))
         assertEquals(AppUpdateUiPhase.IDLE, permissionRequired.phase)
-        assertNull(permissionRequired.availableVersionName)
 
         val installing = mapped(AppUpdateCheckState.Installing("0.2.0-alpha.2"))
         assertEquals(AppUpdateUiPhase.IDLE, installing.phase)
-        assertNull(installing.availableVersionName)
 
         val installFailed = mapped(
             AppUpdateCheckState.InstallFailed(
@@ -280,7 +268,6 @@ class PhoneSettingsMapperTest {
             ),
         )
         assertEquals(AppUpdateUiPhase.IDLE, installFailed.phase)
-        assertNull(installFailed.availableVersionName)
     }
 
     @Test

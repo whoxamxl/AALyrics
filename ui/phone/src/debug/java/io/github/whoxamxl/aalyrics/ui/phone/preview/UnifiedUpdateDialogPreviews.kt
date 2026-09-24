@@ -15,9 +15,65 @@ import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsColors
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsSpacing
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsTheme
 import io.github.whoxamxl.aalyrics.ui.phone.update.UnifiedUpdateDialogContent
+import io.github.whoxamxl.aalyrics.ui.phone.update.UpdateDialogAvailabilityContext
 import io.github.whoxamxl.aalyrics.ui.phone.update.UpdateDialogInstallFailureUiReason
 import io.github.whoxamxl.aalyrics.ui.phone.update.UpdateDialogPhase
 import io.github.whoxamxl.aalyrics.ui.phone.update.UpdateDialogUiState
+
+@Preview(
+    name = "Install refresh · newer release",
+    group = "UnifiedUpdateDialog",
+    widthDp = 412,
+    heightDp = 892,
+    showBackground = true,
+)
+@Composable
+private fun UnifiedUpdateInstallRefreshRetargetPreview() {
+    UnifiedUpdateDialogPreview(
+        state = UpdateDialogUiState(
+            phase = UpdateDialogPhase.AVAILABLE,
+            versionName = "0.3.0-beta.1",
+            availabilityContext = UpdateDialogAvailabilityContext.INSTALL_REFRESH_RETARGET,
+        ),
+    )
+}
+
+@Preview(
+    name = "Install refresh · narrow phone",
+    group = "UnifiedUpdateDialog",
+    widthDp = 320,
+    heightDp = 720,
+    showBackground = true,
+)
+@Composable
+private fun UnifiedUpdateInstallRefreshRetargetNarrowPreview() {
+    UnifiedUpdateDialogPreview(
+        state = UpdateDialogUiState(
+            phase = UpdateDialogPhase.AVAILABLE,
+            versionName = "0.3.0-beta.1",
+            availabilityContext = UpdateDialogAvailabilityContext.INSTALL_REFRESH_RETARGET,
+        ),
+    )
+}
+
+@Preview(
+    name = "Install refresh · large font",
+    group = "UnifiedUpdateDialog",
+    widthDp = 412,
+    heightDp = 892,
+    fontScale = 1.3f,
+    showBackground = true,
+)
+@Composable
+private fun UnifiedUpdateInstallRefreshRetargetLargeFontPreview() {
+    UnifiedUpdateDialogPreview(
+        state = UpdateDialogUiState(
+            phase = UpdateDialogPhase.AVAILABLE,
+            versionName = "0.3.0-beta.1",
+            availabilityContext = UpdateDialogAvailabilityContext.INSTALL_REFRESH_RETARGET,
+        ),
+    )
+}
 
 @Preview(
     name = "Preparing download",
@@ -409,6 +465,7 @@ private fun UnifiedUpdateDialogPreview(
             UnifiedUpdateDialogContent(
                 state = state,
                 onInstall = {},
+                onDownloadUpdate = {},
                 onRetryDownload = {},
                 onRetryInstall = {},
                 onGrantInstallPermission = {},
