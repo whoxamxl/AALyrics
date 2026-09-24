@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Button
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -35,9 +36,10 @@ import kotlin.math.roundToInt
 @Composable
 fun UnifiedUpdateDialog(
     state: UpdateDialogUiState,
+    onInstall: () -> Unit,
 ) {
-    require(state.phase.isDownloadProgressPhase()) {
-        "UnifiedUpdateDialog download checkpoint cannot render ${state.phase}"
+    require(state.phase.isDownloadFlowPhase()) {
+        "UnifiedUpdateDialog download flow cannot render ${state.phase}"
     }
 
     Dialog(
@@ -59,6 +61,7 @@ fun UnifiedUpdateDialog(
         ) {
             UnifiedUpdateDialogContent(
                 state = state,
+                onInstall = onInstall,
                 modifier = Modifier
                     .fillMaxWidth()
                     .widthIn(max = 420.dp),
@@ -70,10 +73,11 @@ fun UnifiedUpdateDialog(
 @Composable
 internal fun UnifiedUpdateDialogContent(
     state: UpdateDialogUiState,
+    onInstall: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    require(state.phase.isDownloadProgressPhase()) {
-        "UnifiedUpdateDialog download checkpoint cannot render ${state.phase}"
+    require(state.phase.isDownloadFlowPhase()) {
+        "UnifiedUpdateDialog download flow cannot render ${state.phase}"
     }
 
     Surface(
@@ -103,6 +107,8 @@ internal fun UnifiedUpdateDialogContent(
                             R.string.update_process_downloading_title
                         UpdateDialogPhase.VERIFYING ->
                             R.string.update_process_verifying_title
+                        UpdateDialogPhase.READY_TO_INSTALL ->
+                            R.string.update_process_ready_title
                         else ->
                             R.string.update_process_preparing_title
                     },
@@ -127,6 +133,14 @@ internal fun UnifiedUpdateDialogContent(
                     versionName = state.versionName,
                     modifier = Modifier.align(Alignment.CenterVertically),
                 )
+                if (state.phase == UpdateDialogPhase.READY_TO_INSTALL) {
+                    Text(
+                        text = stringResource(R.string.update_process_ready_body_suffix),
+                        style = AALyricsTypography.TrackArtist,
+                        color = AALyricsColors.TextSecondary,
+                        modifier = Modifier.align(Alignment.CenterVertically),
+                    )
+                }
             }
 
             Spacer(Modifier.height(AALyricsSpacing.Space24))
@@ -185,13 +199,25 @@ internal fun UnifiedUpdateDialogContent(
                     )
                 }
 
+                UpdateDialogPhase.READY_TO_INSTALL -> {
+                    Button(
+                        onClick = onInstall,
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Text(
+                            text = stringResource(R.string.update_process_install),
+                        )
+                    }
+                }
+
                 else -> Unit
             }
         }
     }
 }
 
-internal fun UpdateDialogPhase.isDownloadProgressPhase(): Boolean =
+internal fun UpdateDialogPhase.isDownloadFlowPhase(): Boolean =
     this == UpdateDialogPhase.PREPARING_DOWNLOAD ||
         this == UpdateDialogPhase.DOWNLOADING ||
-        this == UpdateDialogPhase.VERIFYING
+        this == UpdateDialogPhase.VERIFYING ||
+        this == UpdateDialogPhase.READY_TO_INSTALL
