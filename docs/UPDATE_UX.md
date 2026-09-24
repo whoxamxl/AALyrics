@@ -313,14 +313,38 @@ The approved stacked implementation is:
    - allow explicit manual discovery to present a release even when its prior automatic prompt was suppressed;
    - remove Settings as the presentation owner of `UpdateAvailable`.
 
-2. **#76 — unify the complete update process**
-   - move the existing preparing/downloading progress presentation into the Update Dialog;
-   - chain verified download into install preparation behind the same user-facing `Update` intent;
-   - present verification, install preparation, permission-required, installing, typed failure, and Retry states through the dialog;
+2. **#76 — unify the complete update-process presentation while preserving the validated two-stage route**
+   - move the existing preparing/downloading progress presentation into the Unified Update Dialog;
+   - add explicit verification/preparation presentation around the existing SHA-256 boundary without changing verification semantics;
+   - keep `DOWNLOADED` as the verified-artifact boundary and render a clear `Ready to install` state;
+   - keep an explicit user-facing `Install` action after `DOWNLOADED`;
+   - present install refresh, install preparation, permission-required, installing, typed failure, and Retry states through the dialog;
    - remove Download / Downloaded / Install / update-process progress and failure presentation from Settings;
-   - preserve all existing download, SHA-256, retained-artifact, install-refresh, preflight, source-trust, PackageInstaller, and recovery boundaries.
+   - preserve the existing independent `downloadUpdate()` and `installUpdate()` stages and all existing download, SHA-256, retained-artifact, install-refresh, preflight, source-trust, PackageInstaller, and recovery boundaries;
+   - complete real-device E2E validation of the full two-stage route before any automatic Download -> Install continuation is introduced.
 
-Typical, narrow-phone, and enlarged-font Previews must cover the release-available dialog and representative update-process states. Settings Previews should cover only the manual discovery states plus automatic-check preference ON/OFF; they should not retain parallel update-process fixtures after the migration.
+   #76's validated user-facing baseline is therefore:
+
+   ```text
+   Update
+     -> Preparing / Downloading / Verify
+     -> Downloaded / Ready to install
+     -> Install
+     -> Install refresh / Preflight / Permission if required
+     -> Android PackageInstaller confirmation
+     -> Update successful
+   ```
+
+3. **#77 — compose the validated two-stage route into one-step UX**
+   - start from the validated #76 implementation;
+   - keep `DOWNLOADED` as a real internal/recovery state even if it is transient in normal production UX;
+   - keep `downloadUpdate()` and `installUpdate()` independently testable and reusable;
+   - add only the orchestration needed to continue from verified `DOWNLOADED` into the existing install stage when the operation carries one-step continuation intent;
+   - guard against duplicate continuation across recomposition, Activity recreation, process recovery, and permission return;
+   - retain recovery from a durable verified APK without forcing a second download;
+   - remove the second user-facing Install action only after the two-stage route has been proven on-device and the automatic continuation has its own focused tests and E2E validation.
+
+Typical, narrow-phone, and enlarged-font Previews must cover the release-available dialog and representative #76 process states, including `Ready to install`. Settings Previews should cover only the manual discovery states plus automatic-check preference ON/OFF; they should not retain parallel update-process fixtures after #76 migration.
 
 ## Reset contract
 
@@ -330,14 +354,32 @@ Both implemented recovery markers — `PendingUpdate` and `SuccessfulUpdate` —
 
 ## Implementation order
 
-The recovery/install safety checkpoints are already established. For the remaining presentation unification work, implement in bounded checkpoints:
+The recovery/install safety checkpoints are already established. Continue in bounded PR-scoped checkpoints:
 
-1. freeze this unified discovery/update presentation contract in docs;
-2. generalize the release-prompt owner from automatic-only presentation to a unified update-dialog presentation owner;
+### #75
+
+1. freeze the discovery/presentation contract in docs;
+2. generalize the release-prompt owner from automatic-only presentation to a unified release-dialog owner;
 3. route MANUAL and AUTOMATIC newer-release results into the same available-state dialog while preserving origin-specific cadence/suppression semantics;
-4. reduce Settings Version/update presentation to Idle / Checking / Up to date / Check failed;
-5. move preparing/download progress, verification, retained-artifact, install-preparation, permission-required, installing, typed failure, and Retry presentation into the Update Dialog;
-6. compose the existing internal Download + Install stages behind the dialog's one user-facing `Update` action;
-7. align Previews, Reset behavior, docs, tests, CI, and focused real-device regression.
+4. validate the final #75 discovery behavior without changing update-process ownership.
 
-Do not weaken or bypass the validated internal update boundaries while changing presentation ownership.
+### #76
+
+1. move preparing/download progress from Settings into the Unified Update Dialog;
+2. expose verification/preparation presentation without changing the existing verification boundary;
+3. render verified `DOWNLOADED` as `Ready to install` with an explicit `Install` action;
+4. move install preparation, permission-required, installing, typed failure, and Retry presentation into the dialog;
+5. remove update-process presentation from Settings in the same migration checkpoint;
+6. align Previews, Reset behavior, docs, and focused tests;
+7. complete full real-device E2E validation of the two-stage route from Update through Downloaded -> Install -> Android confirmation -> replacement/recovery.
+
+### #77
+
+1. preserve the validated #76 core stages and `DOWNLOADED` boundary;
+2. add a one-step continuation intent/coordinator above the existing `downloadUpdate()` and `installUpdate()` operations;
+3. auto-continue only after verified `DOWNLOADED`, with duplicate-continuation protection;
+4. keep recovery and retained-artifact tests for the independent download/install stages;
+5. validate the one-step production UX separately on-device.
+
+Do not weaken, bypass, or collapse the validated internal update boundaries merely to simplify user-facing presentation.
+
