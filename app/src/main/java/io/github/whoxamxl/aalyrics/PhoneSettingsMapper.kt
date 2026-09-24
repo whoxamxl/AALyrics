@@ -125,10 +125,7 @@ internal fun mapPhoneSettingsState(
             is AppUpdateCheckState.Downloaded ->
                 AppUpdateUiState(phase = AppUpdateUiPhase.IDLE)
             is AppUpdateCheckState.DownloadFailed ->
-                AppUpdateUiState(
-                    phase = AppUpdateUiPhase.DOWNLOAD_FAILED,
-                    availableVersionName = appUpdateCheckState.versionName,
-                )
+                AppUpdateUiState(phase = AppUpdateUiPhase.IDLE)
             is AppUpdateCheckState.PreparingInstall ->
                 AppUpdateUiState(
                     phase = AppUpdateUiPhase.PREPARING_INSTALL,
