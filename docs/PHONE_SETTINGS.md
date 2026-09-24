@@ -487,23 +487,27 @@ Durable `SuccessfulUpdate` feedback retains modal priority and is not merged int
 
 **#77 target:** after the user accepts `Update` in the shared release-available dialog, the Unified Update Dialog becomes the presentation owner for that same update process, and Settings stops mirroring process states.
 
-#77 deliberately preserves the validated **two-stage user action** while moving its presentation into the dialog:
+#77 deliberately preserves the validated **two-stage user action** while moving its presentation into the dialog and correcting permission ordering:
 
 ```text
 Update
+  -> INSTALL_PERMISSION_REQUIRED if source trust is missing
   -> PREPARING_DOWNLOAD
   -> DOWNLOADING
   -> VERIFYING / PREPARING
   -> DOWNLOADED / Ready to install
   -> Install
-  -> PREPARING_INSTALL
-  -> INSTALL_PERMISSION_REQUIRED if needed
+  -> PREPARING_INSTALL / install refresh / APK preflight
+  -> INSTALL_PERMISSION_REQUIRED only if the fail-safe re-check finds trust missing
   -> INSTALLING / Android confirmation
 ```
 
 Target #77 presentation states include:
 
 ```text
+INSTALL_PERMISSION_REQUIRED
+[pre-download permission explanation / Grant permission / GitHub fallback]
+
 PREPARING_DOWNLOAD
 [indeterminate progress]
 
@@ -520,7 +524,7 @@ PREPARING_INSTALL
 [indeterminate progress]
 
 INSTALL_PERMISSION_REQUIRED
-[permission explanation / Grant permission / GitHub fallback]
+[may recur only as the pre-PackageInstaller fail-safe gate]
 
 INSTALLING
 [handoff / waiting presentation]
