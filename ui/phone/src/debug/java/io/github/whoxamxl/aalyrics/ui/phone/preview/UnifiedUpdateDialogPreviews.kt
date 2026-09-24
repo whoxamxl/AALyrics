@@ -246,6 +246,92 @@ private fun UnifiedUpdateDownloadFailedLargeFontPreview() {
     )
 }
 
+@Preview(
+    name = "Preparing installation",
+    group = "UnifiedUpdateDialog",
+    widthDp = 412,
+    heightDp = 892,
+    showBackground = true,
+)
+@Composable
+private fun UnifiedUpdatePreparingInstallPreview() {
+    UnifiedUpdateDialogPreview(
+        state = UpdateDialogUiState(
+            phase = UpdateDialogPhase.PREPARING_INSTALL,
+            versionName = "0.3.0-alpha.1",
+        ),
+    )
+}
+
+@Preview(
+    name = "Permission required",
+    group = "UnifiedUpdateDialog",
+    widthDp = 412,
+    heightDp = 892,
+    showBackground = true,
+)
+@Composable
+private fun UnifiedUpdatePermissionRequiredPreview() {
+    UnifiedUpdateDialogPreview(
+        state = UpdateDialogUiState(
+            phase = UpdateDialogPhase.PERMISSION_REQUIRED,
+            versionName = "0.3.0-alpha.1",
+        ),
+    )
+}
+
+@Preview(
+    name = "Permission required · narrow phone",
+    group = "UnifiedUpdateDialog",
+    widthDp = 320,
+    heightDp = 720,
+    showBackground = true,
+)
+@Composable
+private fun UnifiedUpdatePermissionRequiredNarrowPreview() {
+    UnifiedUpdateDialogPreview(
+        state = UpdateDialogUiState(
+            phase = UpdateDialogPhase.PERMISSION_REQUIRED,
+            versionName = "0.3.0-alpha.1",
+        ),
+    )
+}
+
+@Preview(
+    name = "Permission required · large font",
+    group = "UnifiedUpdateDialog",
+    widthDp = 412,
+    heightDp = 892,
+    fontScale = 1.3f,
+    showBackground = true,
+)
+@Composable
+private fun UnifiedUpdatePermissionRequiredLargeFontPreview() {
+    UnifiedUpdateDialogPreview(
+        state = UpdateDialogUiState(
+            phase = UpdateDialogPhase.PERMISSION_REQUIRED,
+            versionName = "0.3.0-alpha.1",
+        ),
+    )
+}
+
+@Preview(
+    name = "Installing update",
+    group = "UnifiedUpdateDialog",
+    widthDp = 412,
+    heightDp = 892,
+    showBackground = true,
+)
+@Composable
+private fun UnifiedUpdateInstallingPreview() {
+    UnifiedUpdateDialogPreview(
+        state = UpdateDialogUiState(
+            phase = UpdateDialogPhase.INSTALLING,
+            versionName = "0.3.0-alpha.1",
+        ),
+    )
+}
+
 @Composable
 private fun UnifiedUpdateDialogPreview(
     state: UpdateDialogUiState,
@@ -265,6 +351,8 @@ private fun UnifiedUpdateDialogPreview(
                 state = state,
                 onInstall = {},
                 onRetryDownload = {},
+                onGrantInstallPermission = {},
+                onDownloadFromGitHub = {},
                 modifier = Modifier
                     .fillMaxWidth()
                     .widthIn(max = 420.dp),
