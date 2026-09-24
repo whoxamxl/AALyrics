@@ -410,39 +410,39 @@ INSTALL_FAILED
 Expected presentation:
 
 ```text
-Version                v0.2.0-alpha.1-dev+abcdef0
-                              Check for updates
+Version                     [ v0.2.0-alpha.1-dev+abcdef0 ]
+                                   Check for updates
 
-Checking for updates…                         ◌
+Checking for updates…                              ◌
 
-Up to date                                    ✓
+Up to date                                         ✓
 
-Update available: v0.2.0-alpha.2         Download
+Update available              [ v0.2.0-alpha.2 ]   Download
 
 Preparing download…
 [indeterminate linear progress]
 
-Downloading v0.2.0-alpha.2                  64%
+Downloading                    [ v0.2.0-alpha.2 ]       64%
 [determinate 0–100% linear progress]
 
-Update downloaded v0.2.0-alpha.2             Install
+Downloaded                     [ v0.2.0-alpha.2 ]   Install
 
 Preparing installation…
 [indeterminate linear progress]
 
-Installation permission required      Install
+Installation permission required               Install
 
 Installing update…
 [indeterminate linear progress / system confirmation handoff]
 
-Installation failed                   ⓘ   ↻ Retry
+Installation failed                        ⓘ   ↻ Retry
 
-Download failed                       ⓘ   ↻ Retry
+Download failed                            ⓘ   ↻ Retry
 
-Update check failed                   ⓘ   ↻ Retry
+Update check failed                        ⓘ   ↻ Retry
 ```
 
-Every update-state row keeps the same trailing-edge alignment used by the installed version value. Retry, Download, Install, and Open settings remain compact inline actions. A download Retry re-enters `PREPARING_DOWNLOAD` before APK transfer. `UPDATE_AVAILABLE` exposes Download because APK download and SHA-256 verification are application-owned and functional.
+Update actions keep the established trailing-edge alignment while semantic application/release version values render through the shared `VersionChip`. Retry, Download, and Install remain compact inline actions. Missing install-source trust is represented by the retained permission-required state; explicit `Install` reopens the explanation dialog, and only that dialog's `Grant permission` action opens Android Settings. A download Retry re-enters `PREPARING_DOWNLOAD` before APK transfer. `UPDATE_AVAILABLE` exposes Download because APK download and SHA-256 verification are application-owned and functional.
 
 After the user presses Download, `PREPARING_DOWNLOAD` uses an indeterminate horizontal progress bar while the runtime resolves assets, fetches/parses the checksum, and prepares app-private staging. Immediately before APK bytes are transferred, the runtime moves to `DOWNLOADING`. GitHub Release asset metadata supplies the expected APK byte size, and the download client reports received bytes so Settings renders determinate 0–100% progress. A size mismatch fails closed.
 
