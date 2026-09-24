@@ -415,19 +415,6 @@ internal object PhonePreviewFixtures {
             availableVersionName = "0.2.0-beta.1",
         ),
     )
-    val settingsPreparingUpdateDownload = settingsTypical.copy(
-        appUpdate = AppUpdateUiState(
-            phase = AppUpdateUiPhase.PREPARING_DOWNLOAD,
-            availableVersionName = "0.1.2",
-        ),
-    )
-    val settingsDownloadingUpdate = settingsTypical.copy(
-        appUpdate = AppUpdateUiState(
-            phase = AppUpdateUiPhase.DOWNLOADING,
-            availableVersionName = "0.1.2",
-            downloadProgress = 0.64f,
-        ),
-    )
     val settingsDownloadedUpdate = settingsTypical.copy(
         appUpdate = AppUpdateUiState(
             phase = AppUpdateUiPhase.DOWNLOADED,
