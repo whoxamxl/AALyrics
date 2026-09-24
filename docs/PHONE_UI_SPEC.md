@@ -106,7 +106,9 @@ The production Settings contract is defined in `docs/PHONE_SETTINGS.md`. The `fe
   - durable `Automatically check for updates` switch (default ON) with shared info tooltip;
   - installed version plus manual update discovery only: Check/Retry, Checking, Up to date, and Check failed;
   - one global Unified Update Dialog shared by MANUAL and AUTOMATIC newer-release discovery;
-  - dialog-owned update-process presentation for preparing/download progress, verification, install preparation, permission-required handling, typed failure/Retry, and PackageInstaller handoff;
+  - #76 dialog-owned update-process presentation for preparing/download progress, verification, explicit `Ready to install` / Install, install preparation, permission-required handling, typed failure/Retry, and PackageInstaller handoff;
+  - #76 preserves the validated two-stage Update -> Download/Verify -> Downloaded -> Install interaction while moving that process out of Settings;
+  - #77 may later remove the second user-facing Install action by orchestrating automatic continuation across the same validated runtime stages; `DOWNLOADED` remains the verified-artifact/recovery boundary;
   - #74 recovery behavior preserved underneath the unified presentation, plus one-time `AALyrics updated` feedback after durable replacement reconciliation;
   - in-app Changelog backed by repository-root `CHANGELOG.md`;
   - external Source code entry;
@@ -122,7 +124,7 @@ The production Settings contract is defined in `docs/PHONE_SETTINGS.md`. The `fe
   - `Reset > Reset AALyrics`, which resets AALyrics-owned settings/onboarding/update state, clears app-owned update recovery/cadence state and retained update artifacts, without deleting translation models or changing Android/system settings such as install-source trust;
 - permanent AALyrics branding/GitHub footer after Advanced.
 
-The Phone update surfaces follow the shared dialog-header contract introduced by #74. The Unified Update Dialog uses `PhoneDialogHeader` in dismissible phases such as release-available presentation, and the post-replacement update-success dialog uses the same trailing X position, 24dp icon, and 48dp touch target. Update-process phases may intentionally restrict dismissal, but must not create a second Settings-based progress/install surface.
+The Phone update surfaces follow the shared dialog-header contract introduced by #74. The Unified Update Dialog uses `PhoneDialogHeader` in dismissible phases such as release-available presentation, and the post-replacement update-success dialog uses the same trailing X position, 24dp icon, and 48dp touch target. Update-process phases may intentionally restrict dismissal, but must not create a second Settings-based progress/install surface. In #76, `Downloaded / Ready to install` remains an explicit dialog phase with an Install action; #77 changes only the normal continuation UX and does not erase the internal verified-download boundary.
 
 ### Version presentation
 
