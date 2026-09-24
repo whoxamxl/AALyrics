@@ -96,7 +96,7 @@ Typical, narrow-width, and enlarged-font Previews should cover this permission-r
 
 The permission presentation remains content-height driven and scrollable when necessary. Its dismissible form uses the shared `PhoneDialogHeader` geometry: one vertically centered row, a 24dp close icon inside the standard 48dp touch target at the trailing edge, and no phase-specific X offset.
 
-Install preparation failures remain distinct from missing source trust. The runtime carries a typed install-failure reason through Phone mapping, and the `Installation failed` info tooltip presents a reason-specific explanation for release refresh, retained APK/preflight, package/version/signing, durable recovery persistence, PackageInstaller handoff, and installer rejection/cancellation failures. A failure that occurs before source-trust evaluation must not show the permission dialog. For example, a downloaded APK whose signing identity differs from the installed AALyrics app fails at preflight and reports that signing mismatch explicitly.
+Install preparation failures remain distinct from missing source trust. The runtime carries a typed install-failure reason through Phone mapping, and the Unified Update Dialog now presents `Installation failed` with a reason-specific explanation for release refresh, retained APK/preflight, package/version/signing, durable recovery persistence, PackageInstaller handoff, and installer rejection/cancellation failures. Its explicit Retry action calls the existing independent `installUpdate()` operation; Settings no longer owns install-failure presentation. A failure that occurs before source-trust evaluation must not show the permission dialog. For example, a downloaded APK whose signing identity differs from the installed AALyrics app fails at preflight and reports that signing mismatch explicitly.
 
 ## Successful-update feedback
 
@@ -280,7 +280,7 @@ The existing progress semantics move from the Settings row into the dialog rathe
 - `PERMISSION_REQUIRED` is now dialog-owned. The Unified Update Dialog explains Android install-source trust, keeps explicit `Grant permission` and `Download from GitHub` actions, and still hands the trust decision to Android Settings without bypassing final PackageInstaller confirmation;
 - `INSTALLING` is now dialog-owned and remains an indeterminate handoff/waiting state while Android owns final installation confirmation;
 - `DOWNLOAD_FAILED` now remains on the Unified Update Dialog with `Download failed` presentation and an explicit `Retry` action wired to the existing `downloadUpdate()`; the current download runtime still exposes one generic failure state rather than inventing presentation-only failure typing;
-- typed install failures remain a later migration target and will expose Retry from the same update flow;
+- typed `INSTALL_FAILED` now remains on the Unified Update Dialog with its reason-specific explanation and explicit `Retry` wired to the existing `installUpdate()`; Settings no longer owns that failure state;
 - a valid retained verified APK remains reusable, so retry/permission return must not force a second download;
 - Android's final installation confirmation remains system-owned.
 

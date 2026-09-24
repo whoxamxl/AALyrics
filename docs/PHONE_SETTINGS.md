@@ -537,7 +537,7 @@ GitHub Release asset size remains the expected total, downloaded bytes remain th
 
 `DOWNLOADED` remains an authoritative application-owned safety and recovery boundary. It is now dialog-owned in #77 and renders as `Ready to install` with the verified version and an explicit user-facing `Install` action. Settings no longer owns the Downloaded/Install row. Pressing Install invokes the existing `installUpdate()` operation; #77 must not automatically continue into installation merely because verification completed.
 
-Install preparation is now also dialog-owned. `PREPARING_INSTALL` shows indeterminate preparation while the existing install-refresh and package/version/signing preflight run unchanged. If Android install-source trust is missing, `PERMISSION_REQUIRED` stays on the Unified Update Dialog with the existing explanation, `Grant permission`, and `Download from GitHub` fallback. Granting permission still hands off to Android's per-app source-trust Settings and re-checks `PackageManager.canRequestPackageInstalls()` on return. `INSTALLING` then remains on the Unified Update Dialog while Android owns final package-install confirmation. The old Settings-owned permission row and standalone permission dialog are removed.
+Install preparation is now also dialog-owned. `PREPARING_INSTALL` shows indeterminate preparation while the existing install-refresh and package/version/signing preflight run unchanged. If Android install-source trust is missing, `PERMISSION_REQUIRED` stays on the Unified Update Dialog with the existing explanation, `Grant permission`, and `Download from GitHub` fallback. Granting permission still hands off to Android's per-app source-trust Settings and re-checks `PackageManager.canRequestPackageInstalls()` on return. `INSTALLING` then remains on the Unified Update Dialog while Android owns final package-install confirmation. Typed `INSTALL_FAILED` is also dialog-owned: the dialog shows the mapped failure reason and an explicit Retry action that calls the existing `installUpdate()` operation. The old Settings-owned permission/install-failure presentation and standalone permission dialog are removed.
 
 In #75, install-time latest-release refresh still belongs to the existing Settings-owned process presentation. If it discovers a newer eligible release, Settings shows `Newer update available` with Download and preserves that retarget state across Settings re-entry. In #77, the active Unified Update Dialog takes over this handoff and returns to its release-available state instead of sending the user back to Settings.
 
@@ -625,7 +625,7 @@ MANUAL CHECK_FAILED  -> visit-local
 IDLE                 -> ordinary Version / Check for updates presentation
 ```
 
-A MANUAL/AUTOMATIC newer-release discovery result leaves Settings presentation ownership immediately and is represented by the shared release-available dialog instead. In the current baseline, accepting `Update` then hands back to the existing Settings-owned process presentation. `INSTALL_REFRESH` retargeting also remains part of that Settings-owned process route until #77. Active download/install work, retained verified artifacts, permission-required state, and install handoff are not reset merely because the user changes primary destination or Settings visit.
+A MANUAL/AUTOMATIC newer-release discovery result leaves Settings presentation ownership immediately and is represented by the shared release-available dialog instead. In the current #77 checkpoint, accepting `Update` continues on the Unified Update Dialog through download, verification, Ready to install, install preparation, permission handling, PackageInstaller handoff, and recoverable download/install failures. `INSTALL_REFRESH` retargeting is the remaining process state still surfaced through Settings until its dedicated #77 migration. Active download/install work, retained verified artifacts, permission-required state, and install handoff are not reset merely because the user changes primary destination or Settings visit.
 
 Automatic Checking / Up to date / Failed never become Settings presentation states.
 
@@ -1052,7 +1052,7 @@ Deterministic debug Previews should cover at least:
 - manual app update failure/retry state;
 - shared new-release dialog for MANUAL/AUTOMATIC update availability;
 - #75 install-refresh retarget state showing a newer replacement release with Download;
-- install failure with signing-identity mismatch plus the expanded reason tooltip at typical, narrow, and enlarged-font configurations;
+- Unified Update Dialog install failure with signing-identity mismatch and its reason-specific explanation at typical, narrow, and enlarged-font configurations;
 - automatic update checking ON and OFF;
 - new-release dialog at typical, narrow, and enlarged-font configurations;
 - install-permission explanation dialog at typical, narrow, and enlarged-font configurations;

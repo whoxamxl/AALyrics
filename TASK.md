@@ -131,7 +131,8 @@ Active branch: `feature/unified-update-dialog`, created fresh from the current `
 - [x] Give `VerifyingDownload` dedicated `Verifying update` / `Checking download integrity…` presentation with indeterminate progress and typical/narrow/large-font Previews, without changing SHA-256 semantics.
 - [x] Move `DOWNLOAD_FAILED` presentation and explicit `Retry` from Settings into the Unified Update Dialog. Retry calls the existing `downloadUpdate()` operation; no automatic retry loop or new download-failure runtime type is introduced.
 - [x] Move `PREPARING_INSTALL`, `PERMISSION_REQUIRED`, and `INSTALLING` presentation from Settings into the Unified Update Dialog without changing install-refresh, APK preflight, Android source-trust, PackageInstaller, or recovery semantics. Permission-required keeps `Grant permission` and GitHub fallback actions on the unified surface.
-- [ ] Connect install failure/Retry and install-refresh retarget presentation to the Unified Update Dialog.
+- [x] Connect typed install failure/Retry presentation to the Unified Update Dialog. Retry calls the existing independent `installUpdate()` operation and Settings no longer owns install-failure presentation.
+- [ ] Connect install-refresh retarget presentation to the Unified Update Dialog.
 - [x] Keep `DOWNLOADED` as the authoritative verified-artifact boundary and render it as `Ready to install` in the Unified Update Dialog.
 - [x] Keep an explicit user-facing `Install` action after `DOWNLOADED`; the button calls the existing `installUpdate()` operation and #77 does not auto-continue into installation.
 - [ ] Preserve independent `downloadUpdate()` and `installUpdate()` operations and all existing SHA-256, retained-artifact, install-refresh, package/version/signing preflight, source-trust, PackageInstaller, and recovery behavior.
