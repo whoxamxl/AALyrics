@@ -124,9 +124,12 @@ PR #76 / `feature/one-step-update` is intentionally retained as a **legacy/refer
 Active branch: `feature/unified-update-dialog`, created fresh from the current `feature/package-installer` baseline after #75 was merged.
 
 - [ ] Reduce the Settings Version/update presentation to only Idle / Checking / Up to date / Check failed for the complete update lifecycle.
-- [x] Introduce explicit application-owned `VerifyingDownload(versionName)` immediately before SHA-256 verification. Until process ownership migrates to the Unified Update Dialog, keep this runtime state temporarily folded into the existing Settings preparing presentation; do not add a new Settings verification UI.
+- [x] Introduce explicit application-owned `VerifyingDownload(versionName)` immediately before SHA-256 verification.
 - [x] Define the pure Unified Update Dialog presentation contract and mapper without changing runtime ownership: `UpdateDialogUiState` / `UpdateDialogPhase`, discovery-vs-install-refresh availability context, bounded download progress, explicit `VERIFYING` / `READY_TO_INSTALL`, typed install-failure mapping, and focused mapper coverage.
-- [ ] Connect preparing/download progress and the explicit `VerifyingDownload` presentation, permission-required, typed failure/Retry, installing, and install-refresh retarget presentation to the Unified Update Dialog.
+- [x] Move `PREPARING_DOWNLOAD` and `DOWNLOADING` presentation ownership from Settings into the Unified Update Dialog, including determinate 0–100% transfer progress, dedicated typical/narrow/large-font Previews, and Settings mapper/Preview cleanup.
+- [x] Keep `VerifyingDownload` on the Unified Update Dialog surface during the ownership transition so the dialog does not disappear between transfer completion and `DOWNLOADED`; it temporarily reuses the preparing-style indeterminate presentation.
+- [ ] Give `VerifyingDownload` its dedicated verification copy/presentation without changing SHA-256 semantics.
+- [ ] Connect permission-required, typed failure/Retry, installing, and install-refresh retarget presentation to the Unified Update Dialog.
 - [ ] Keep `DOWNLOADED` as the authoritative verified-artifact boundary and render it as `Ready to install`.
 - [ ] Keep an explicit user-facing `Install` action after `DOWNLOADED`; do not auto-continue into installation in #77.
 - [ ] Preserve independent `downloadUpdate()` and `installUpdate()` operations and all existing SHA-256, retained-artifact, install-refresh, package/version/signing preflight, source-trust, PackageInstaller, and recovery behavior.
