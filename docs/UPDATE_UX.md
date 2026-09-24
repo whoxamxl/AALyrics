@@ -265,6 +265,8 @@ New release available
     -> Update successful
 ```
 
+The first #77 implementation checkpoint defines this as a **pure presentation contract only**. `UpdateDialogUiState` / `UpdateDialogPhase` and the application-side mapper now describe the future dialog without yet changing Phone host ownership, Settings process presentation, permission prompting, or download/install actions. Discovery availability and install-refresh retarget availability are explicitly distinguished because `Not now` / ordinary pre-update dismissal semantics apply only to discovery availability; an install-refresh retarget occurs after app-owned update work has already started.
+
 The existing progress semantics move from the Settings row into the dialog rather than being discarded:
 
 - `PREPARING_DOWNLOAD` uses indeterminate progress while assets/checksum/staging are prepared;
@@ -372,13 +374,15 @@ The recovery/install safety checkpoints are already established. Continue in bou
 
 ### #77
 
-1. move preparing/download progress from Settings into the Unified Update Dialog;
-2. expose verification/preparation presentation without changing the existing verification boundary;
-3. render verified `DOWNLOADED` as `Ready to install` with an explicit `Install` action;
-4. move install preparation, permission-required, installing, typed failure, and Retry presentation into the dialog;
-5. remove update-process presentation from Settings in the same migration checkpoint;
-6. align Previews, Reset behavior, docs, and focused tests;
-7. complete full real-device E2E validation of the two-stage route from Update through Downloaded -> Install -> Android confirmation -> replacement/recovery.
+1. define the pure Unified Update Dialog presentation model and mapper without changing ownership;
+2. move preparing/download progress from Settings into the Unified Update Dialog;
+3. connect explicit `VerifyingDownload` to the dialog without changing the existing SHA-256 boundary;
+4. render verified `DOWNLOADED` as `Ready to install` with an explicit `Install` action;
+5. move install preparation, permission-required, installing, typed failure, and Retry presentation into the dialog;
+6. move install-refresh retarget presentation into the dialog using its process-retarget availability context;
+7. remove update-process presentation from Settings only after the corresponding dialog presentation is active;
+8. align Previews, Reset behavior, docs, and focused tests;
+9. complete full real-device E2E validation of the two-stage route from Update through Downloaded -> Install -> Android confirmation -> replacement/recovery.
 
 ### #78
 
