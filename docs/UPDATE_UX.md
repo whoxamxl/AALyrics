@@ -278,7 +278,8 @@ The existing progress semantics move from the Settings row into the dialog rathe
 - pressing `Install` calls the existing independent `installUpdate()` operation; #77 intentionally preserves this user checkpoint and does not auto-continue from verification into install preparation;
 - install preparation retains the latest-release refresh and APK package/version/signing preflight;
 - missing Android install-source trust is explained in the update flow without bypassing Android Settings or final confirmation;
-- recoverable download/install failures remain typed and expose Retry from the update flow;
+- `DOWNLOAD_FAILED` now remains on the Unified Update Dialog with `Download failed` presentation and an explicit `Retry` action wired to the existing `downloadUpdate()`; the current download runtime still exposes one generic failure state rather than inventing presentation-only failure typing;
+- typed install failures remain a later migration target and will expose Retry from the same update flow;
 - a valid retained verified APK remains reusable, so retry/permission return must not force a second download;
 - Android's final installation confirmation remains system-owned.
 
