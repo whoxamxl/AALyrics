@@ -21,15 +21,22 @@ internal enum class UpdateCheckOrigin {
 
 internal sealed interface AppUpdateCheckState {
     data object Idle : AppUpdateCheckState
-    data object Checking : AppUpdateCheckState
-    data object UpToDate : AppUpdateCheckState
+    data class Checking(
+        val origin: UpdateCheckOrigin = UpdateCheckOrigin.MANUAL,
+    ) : AppUpdateCheckState
+
+    data class UpToDate(
+        val origin: UpdateCheckOrigin = UpdateCheckOrigin.MANUAL,
+    ) : AppUpdateCheckState
 
     data class UpdateAvailable(
         val versionName: String,
         val origin: UpdateCheckOrigin = UpdateCheckOrigin.MANUAL,
     ) : AppUpdateCheckState
 
-    data object Failed : AppUpdateCheckState
+    data class Failed(
+        val origin: UpdateCheckOrigin = UpdateCheckOrigin.MANUAL,
+    ) : AppUpdateCheckState
 
     data class PreparingDownload(
         val versionName: String,
@@ -128,7 +135,7 @@ internal class AppUpdateCheckRuntime(
             downloadJob?.isActive == true ||
             installJob?.isActive == true ||
             activeInstallSessionId != null ||
-            mutableState.value == AppUpdateCheckState.Checking ||
+            mutableState.value is AppUpdateCheckState.Checking ||
             mutableState.value is AppUpdateCheckState.PreparingDownload ||
             mutableState.value is AppUpdateCheckState.Downloading ||
             mutableState.value is AppUpdateCheckState.PreparingInstall ||
@@ -143,7 +150,7 @@ internal class AppUpdateCheckRuntime(
         }
 
         val generation = operationGeneration.get()
-        mutableState.value = AppUpdateCheckState.Checking
+        mutableState.value = AppUpdateCheckState.Checking(origin)
         checkJob = applicationScope.launch {
             val nextState = try {
                 resolveCheckState(
@@ -154,7 +161,7 @@ internal class AppUpdateCheckRuntime(
                 throw error
             } catch (_: Exception) {
                 clearCandidateIfCurrent(generation)
-                AppUpdateCheckState.Failed
+                AppUpdateCheckState.Failed(origin)
             }
             ensureCurrentOperation(generation)
             mutableState.value = nextState
@@ -455,7 +462,7 @@ internal class AppUpdateCheckRuntime(
 
     fun onSettingsEntered() {
         mutableState.value = when (val current = mutableState.value) {
-            AppUpdateCheckState.Checking,
+            is AppUpdateCheckState.Checking,
             is AppUpdateCheckState.PreparingDownload,
             is AppUpdateCheckState.Downloading,
             is AppUpdateCheckState.Downloaded,
@@ -473,10 +480,10 @@ internal class AppUpdateCheckRuntime(
         origin: UpdateCheckOrigin,
     ): AppUpdateCheckState {
         val installedVersion = AALyricsVersionParser.parseInstalledVersion(installedVersionName)
-            ?: return checkFailed(generation)
+            ?: return checkFailed(generation, origin)
 
         val releases = releaseClient.fetchReleases().getOrElse {
-            return checkFailed(generation)
+            return checkFailed(generation, origin)
         }
         ensureCurrentOperation(generation)
         notifyReleaseQuerySucceeded(
@@ -486,7 +493,7 @@ internal class AppUpdateCheckRuntime(
         val candidate = AALyricsReleaseSelector.selectLatestEligible(
             installedVersion = installedVersion,
             releases = releases,
-        ) ?: return checkFailed(generation)
+        ) ?: return checkFailed(generation, origin)
 
         ensureCurrentOperation(generation)
         return if (AALyricsReleaseSelector.isUpdateAvailable(installedVersion, candidate)) {
@@ -499,7 +506,7 @@ internal class AppUpdateCheckRuntime(
             )
         } else {
             clearCandidateIfCurrent(generation)
-            AppUpdateCheckState.UpToDate
+            AppUpdateCheckState.UpToDate(origin)
         }
     }
 
@@ -674,9 +681,10 @@ internal class AppUpdateCheckRuntime(
 
     private fun checkFailed(
         generation: Long,
+        origin: UpdateCheckOrigin,
     ): AppUpdateCheckState {
         clearCandidateIfCurrent(generation)
-        return AppUpdateCheckState.Failed
+        return AppUpdateCheckState.Failed(origin)
     }
 
     private fun notifyReleaseQuerySucceeded(
