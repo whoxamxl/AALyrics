@@ -4,12 +4,14 @@ import io.github.whoxamxl.aalyrics.translation.api.TranslationModelPhase
 import io.github.whoxamxl.aalyrics.translation.api.TranslationModelState
 import io.github.whoxamxl.aalyrics.translation.api.TranslationSettings
 import io.github.whoxamxl.aalyrics.ui.phone.settings.AndroidAutoCompatibilityUiStatus
+import io.github.whoxamxl.aalyrics.ui.phone.settings.AppUpdateInstallFailureUiReason
 import io.github.whoxamxl.aalyrics.ui.phone.settings.AppUpdateUiPhase
 import io.github.whoxamxl.aalyrics.ui.phone.settings.TranslationModelCleanupUiState
 import io.github.whoxamxl.aalyrics.ui.phone.settings.TranslationModelUiState
 import java.util.Locale
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 
 class PhoneSettingsMapperTest {
@@ -165,7 +167,7 @@ class PhoneSettingsMapperTest {
     }
 
     @Test
-    fun `Settings owns manual discovery states only`() {
+    fun `update check runtime states map into Settings presentation`() {
         fun mapped(updateState: AppUpdateCheckState) = mapPhoneSettingsState(
             translationSettings = TranslationSettings(enabled = false),
             translationModelStates = emptyMap(),
@@ -202,35 +204,122 @@ class PhoneSettingsMapperTest {
             mapped(AppUpdateCheckState.Failed(UpdateCheckOrigin.AUTOMATIC)).phase,
         )
 
-        val processStates = listOf<AppUpdateCheckState>(
+        val manualAvailable = mapped(
             AppUpdateCheckState.UpdateAvailable(
                 versionName = "0.2.0-alpha.2",
                 origin = UpdateCheckOrigin.MANUAL,
             ),
-            AppUpdateCheckState.PreparingDownload("0.2.0-alpha.2"),
+        )
+        assertEquals(AppUpdateUiPhase.IDLE, manualAvailable.phase)
+        assertNull(manualAvailable.availableVersionName)
+
+        val automaticAvailable = mapped(
+            AppUpdateCheckState.UpdateAvailable(
+                versionName = "0.2.0-alpha.2",
+                origin = UpdateCheckOrigin.AUTOMATIC,
+            ),
+        )
+        assertEquals(AppUpdateUiPhase.IDLE, automaticAvailable.phase)
+        assertNull(automaticAvailable.availableVersionName)
+
+        val preparing = mapped(AppUpdateCheckState.PreparingDownload("0.2.0-alpha.2"))
+        assertEquals(AppUpdateUiPhase.PREPARING_DOWNLOAD, preparing.phase)
+        assertEquals("0.2.0-alpha.2", preparing.availableVersionName)
+
+        val downloading = mapped(
             AppUpdateCheckState.Downloading(
                 versionName = "0.2.0-alpha.2",
                 downloadedBytes = 25L,
                 totalBytes = 100L,
             ),
-            AppUpdateCheckState.VerifyingDownload("0.2.0-alpha.2"),
+        )
+        assertEquals(AppUpdateUiPhase.DOWNLOADING, downloading.phase)
+        assertEquals("0.2.0-alpha.2", downloading.availableVersionName)
+        assertEquals(0.25f, downloading.downloadProgress)
+
+        val downloaded = mapped(
             AppUpdateCheckState.Downloaded(
                 versionName = "0.2.0-alpha.2",
                 apkFile = java.io.File("verified.apk"),
             ),
-            AppUpdateCheckState.DownloadFailed("0.2.0-alpha.2"),
-            AppUpdateCheckState.PreparingInstall("0.2.0-alpha.2"),
-            AppUpdateCheckState.InstallPermissionRequired("0.2.0-alpha.2"),
-            AppUpdateCheckState.Installing("0.2.0-alpha.2"),
+        )
+        assertEquals(AppUpdateUiPhase.DOWNLOADED, downloaded.phase)
+        assertEquals("0.2.0-alpha.2", downloaded.availableVersionName)
+
+        val downloadFailed = mapped(AppUpdateCheckState.DownloadFailed("0.2.0-alpha.2"))
+        assertEquals(AppUpdateUiPhase.DOWNLOAD_FAILED, downloadFailed.phase)
+        assertEquals("0.2.0-alpha.2", downloadFailed.availableVersionName)
+
+        val preparingInstall = mapped(AppUpdateCheckState.PreparingInstall("0.2.0-alpha.2"))
+        assertEquals(AppUpdateUiPhase.PREPARING_INSTALL, preparingInstall.phase)
+        assertEquals("0.2.0-alpha.2", preparingInstall.availableVersionName)
+
+        val permissionRequired =
+            mapped(AppUpdateCheckState.InstallPermissionRequired("0.2.0-alpha.2"))
+        assertEquals(
+            AppUpdateUiPhase.INSTALL_PERMISSION_REQUIRED,
+            permissionRequired.phase,
+        )
+        assertEquals("0.2.0-alpha.2", permissionRequired.availableVersionName)
+
+        val installing = mapped(AppUpdateCheckState.Installing("0.2.0-alpha.2"))
+        assertEquals(AppUpdateUiPhase.INSTALLING, installing.phase)
+        assertEquals("0.2.0-alpha.2", installing.availableVersionName)
+
+        val installFailed = mapped(
             AppUpdateCheckState.InstallFailed(
                 versionName = "0.2.0-alpha.2",
                 reason = AppUpdateInstallFailureReason.SIGNING_IDENTITY_MISMATCH,
             ),
         )
+        assertEquals(AppUpdateUiPhase.INSTALL_FAILED, installFailed.phase)
+        assertEquals("0.2.0-alpha.2", installFailed.availableVersionName)
+        assertEquals(
+            AppUpdateInstallFailureUiReason.SIGNING_IDENTITY_MISMATCH,
+            installFailed.installFailureReason,
+        )
+    }
 
-        processStates.forEach { state ->
-            assertEquals(AppUpdateUiPhase.IDLE, mapped(state).phase)
-        }
+    @Test
+    fun `permission-required runtime state is independent from dialog visibility`() {
+        fun mapped(prompt: UpdateInstallPermissionPrompt?) = mapPhoneSettingsState(
+            translationSettings = TranslationSettings(enabled = false),
+            translationModelStates = emptyMap(),
+            verboseDetailsEnabled = false,
+            plainLyricsAutoScrollEnabled = true,
+            ignoreNonAudioApps = true,
+            allowUnclassifiedApps = false,
+            androidAutoStatus = AndroidAutoCompatibilityUiStatus.ENABLED,
+            appVersionName = "0.2.0-alpha.1",
+            currentYear = 2026,
+            noticeText = "notice",
+            licenseText = "license",
+            changelogText = "changelog",
+            privacyPolicyText = "privacy",
+            appUpdateCheckState =
+                AppUpdateCheckState.InstallPermissionRequired("0.2.0-alpha.2"),
+            installPermissionPrompt = prompt,
+            displayLocale = Locale.ENGLISH,
+        )
+
+        val dismissed = mapped(prompt = null)
+        assertEquals(
+            AppUpdateUiPhase.INSTALL_PERMISSION_REQUIRED,
+            dismissed.appUpdate.phase,
+        )
+        assertNull(dismissed.installPermissionDialog)
+
+        val requested = mapped(
+            prompt = UpdateInstallPermissionPrompt("0.2.0-alpha.2"),
+        )
+        assertEquals(
+            AppUpdateUiPhase.INSTALL_PERMISSION_REQUIRED,
+            requested.appUpdate.phase,
+        )
+        assertEquals(
+            "0.2.0-alpha.2",
+            assertNotNull(requested.installPermissionDialog).versionName,
+        )
     }
 
     @Test

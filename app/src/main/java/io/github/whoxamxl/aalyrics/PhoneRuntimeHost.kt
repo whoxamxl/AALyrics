@@ -13,6 +13,7 @@ import android.os.SystemClock
 import android.util.Log
 import android.util.LruCache
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -38,7 +39,8 @@ import io.github.whoxamxl.aalyrics.ui.phone.shell.PhoneAppShell
 import io.github.whoxamxl.aalyrics.ui.phone.state.PhoneShellUiState
 import io.github.whoxamxl.aalyrics.ui.phone.state.PlaybackQueueItemUiState
 import io.github.whoxamxl.aalyrics.ui.phone.sync.SyncScreen
-import io.github.whoxamxl.aalyrics.ui.phone.update.UpdateDialog
+import io.github.whoxamxl.aalyrics.ui.phone.update.NewReleaseAvailableDialog
+import io.github.whoxamxl.aalyrics.ui.phone.update.NewReleaseAvailableDialogUiState
 import io.github.whoxamxl.aalyrics.ui.phone.update.UpdateSuccessfulDialog
 import io.github.whoxamxl.aalyrics.ui.phone.update.UpdateSuccessfulDialogUiState
 import kotlinx.coroutines.CancellationException
@@ -93,10 +95,18 @@ internal fun PhoneRuntimeHost(
     val automaticallyCheckForUpdates by
         application.automaticallyCheckForUpdates.collectAsStateWithLifecycle()
     val appUpdateCheckState by application.appUpdateCheckState.collectAsStateWithLifecycle()
+    val installPermissionPrompt by
+        application.installPermissionPrompt.collectAsStateWithLifecycle()
     val successfulUpdate by
         application.successfulUpdate.collectAsStateWithLifecycle()
     val updateReleasePrompt by
         application.updateReleasePrompt.collectAsStateWithLifecycle()
+
+    DisposableEffect(application) {
+        onDispose {
+            application.dismissInstallPermissionPrompt()
+        }
+    }
 
     LaunchedEffect(application) {
         application.onPhoneReadyForAutomaticUpdateCheck()
@@ -185,11 +195,7 @@ internal fun PhoneRuntimeHost(
         thirdPartyLicensesText = application.thirdPartyLicensesText,
         translationModelCleanupState = translationModelCleanupState,
         appUpdateCheckState = appUpdateCheckState,
-    )
-
-    val updateDialogState = mapPhoneUpdateDialogState(
-        updateState = appUpdateCheckState,
-        releasePrompt = updateReleasePrompt,
+        installPermissionPrompt = installPermissionPrompt,
     )
 
     PhoneAppShell(
@@ -203,12 +209,18 @@ internal fun PhoneRuntimeHost(
             playbackSurface = playbackSurface,
         ),
         onDestinationSelected = { destination ->
+            if (destination != PhoneDestination.Settings) {
+                application.dismissInstallPermissionPrompt()
+            }
             if (isSettingsNavigationEntry(selectedDestination, destination)) {
                 application.onSettingsEntered()
             }
             selectedDestination = destination
         },
         onDestinationReselected = { destination ->
+            if (destination == PhoneDestination.Settings) {
+                application.dismissInstallPermissionPrompt()
+            }
             destinationRootResetKey += 1
             if (destination == PhoneDestination.Lyrics) {
                 lyricsInteractionMode = LyricsViewportInteractionMode.FOLLOW
@@ -289,6 +301,12 @@ internal fun PhoneRuntimeHost(
                 },
                 onAndroidAutoCompatibilitySetup = onAndroidAutoCompatibilitySetup,
                 onCheckForUpdates = application::checkForUpdates,
+                onDownloadUpdate = application::downloadUpdate,
+                onInstallUpdate = application::installUpdate,
+                onOpenInstallSettings = onOpenInstallSettings,
+                onDismissInstallPermissionDialog =
+                    application::dismissInstallPermissionPrompt,
+                onDownloadUpdateFromGitHub = onOpenUpdateRelease,
                 onOpenGitHub = onOpenSourceCode,
                 onHelpFeedback = onOpenHelpFeedback,
                 onSupportAALyrics = onOpenSupportAALyrics,
@@ -305,18 +323,14 @@ internal fun PhoneRuntimeHost(
             onDismissRequest = application::dismissSuccessfulUpdate,
         )
     } else {
-        updateDialogState?.let { dialogState ->
-            UpdateDialog(
-                state = dialogState,
+        updateReleasePrompt?.let { prompt ->
+            NewReleaseAvailableDialog(
+                state = NewReleaseAvailableDialogUiState(
+                    versionName = prompt.versionName,
+                ),
                 onUpdate = application::acceptUpdateReleasePrompt,
-                onDismissAvailable = application::dismissUpdateReleasePrompt,
-                onRetryDownload = application::downloadUpdate,
-                onInstall = application::installUpdate,
-                onGrantPermission = onOpenInstallSettings,
-                onDownloadFromGitHub = {
-                    onOpenUpdateRelease(dialogState.versionName)
-                },
-                onRetryInstall = application::installUpdate,
+                onDismissRequest =
+                    application::dismissUpdateReleasePrompt,
             )
         }
     }

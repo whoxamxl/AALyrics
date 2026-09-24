@@ -77,6 +77,12 @@ private fun SettingsUpdateIdlePreview() {
     SettingsScreenPreview(PhonePreviewFixtures.settingsIdleUpdate)
 }
 
+@Preview(name = "Update · unavailable", group = "SettingsScreen", widthDp = 412, heightDp = 900)
+@Composable
+private fun SettingsUpdateUnavailablePreview() {
+    SettingsScreenPreview(PhonePreviewFixtures.settingsUnavailableUpdate)
+}
+
 @Preview(name = "Update · checking", group = "SettingsScreen", widthDp = 412, heightDp = 900)
 @Composable
 private fun SettingsUpdateCheckingPreview() {
@@ -89,11 +95,78 @@ private fun SettingsUpdateUpToDatePreview() {
     SettingsScreenPreview(PhonePreviewFixtures.settingsUpToDate)
 }
 
+@Preview(name = "Update · available", group = "SettingsScreen", widthDp = 412, heightDp = 900)
+@Composable
+private fun SettingsUpdateAvailablePreview() {
+    SettingsScreenPreview(PhonePreviewFixtures.settingsUpdateAvailable)
+}
+
 @Preview(name = "Update · failed", group = "SettingsScreen", widthDp = 412, heightDp = 900)
 @Composable
 private fun SettingsUpdateFailedPreview() {
     SettingsScreenPreview(PhonePreviewFixtures.settingsUpdateFailed)
 }
+
+@Preview(name = "Update · preparing download", group = "SettingsScreen", widthDp = 412, heightDp = 900)
+@Composable
+private fun SettingsUpdatePreparingDownloadPreview() {
+    SettingsScreenPreview(PhonePreviewFixtures.settingsPreparingUpdateDownload)
+}
+
+@Preview(name = "Update · downloading", group = "SettingsScreen", widthDp = 412, heightDp = 900)
+@Composable
+private fun SettingsUpdateDownloadingPreview() {
+    SettingsScreenPreview(PhonePreviewFixtures.settingsDownloadingUpdate)
+}
+
+@Preview(name = "Update · downloaded", group = "SettingsScreen", widthDp = 412, heightDp = 900)
+@Composable
+private fun SettingsUpdateDownloadedPreview() {
+    SettingsScreenPreview(PhonePreviewFixtures.settingsDownloadedUpdate)
+}
+
+@Preview(name = "Update · download failed", group = "SettingsScreen", widthDp = 412, heightDp = 900)
+@Composable
+private fun SettingsUpdateDownloadFailedPreview() {
+    SettingsScreenPreview(PhonePreviewFixtures.settingsDownloadFailed)
+}
+
+@Preview(name = "Update · preparing install", group = "SettingsScreen", widthDp = 412, heightDp = 900)
+@Composable
+private fun SettingsUpdatePreparingInstallPreview() {
+    SettingsScreenPreview(PhonePreviewFixtures.settingsPreparingInstall)
+}
+
+@Preview(name = "Update · install permission", group = "SettingsScreen", widthDp = 412, heightDp = 900)
+@Composable
+private fun SettingsUpdateInstallPermissionPreview() {
+    SettingsScreenPreview(PhonePreviewFixtures.settingsInstallPermissionRequired)
+}
+
+@Preview(name = "Permission return · denied", group = "SettingsScreen", widthDp = 412, heightDp = 900)
+@Composable
+private fun SettingsPermissionReturnDeniedPreview() {
+    SettingsScreenPreview(PhonePreviewFixtures.settingsInstallPermissionRequired)
+}
+
+@Preview(name = "Permission return · granted", group = "SettingsScreen", widthDp = 412, heightDp = 900)
+@Composable
+private fun SettingsPermissionReturnGrantedPreview() {
+    SettingsScreenPreview(PhonePreviewFixtures.settingsInstallingUpdate)
+}
+
+@Preview(name = "Update · installing", group = "SettingsScreen", widthDp = 412, heightDp = 900)
+@Composable
+private fun SettingsUpdateInstallingPreview() {
+    SettingsScreenPreview(PhonePreviewFixtures.settingsInstallingUpdate)
+}
+
+@Preview(name = "Update · install failed · signing mismatch", group = "SettingsScreen", widthDp = 412, heightDp = 900)
+@Composable
+private fun SettingsUpdateInstallFailedSigningMismatchPreview() {
+    SettingsScreenPreview(PhonePreviewFixtures.settingsInstallFailedSigningMismatch)
+}
+
 
 @Preview(name = "Narrow · 320dp", group = "SettingsScreen", widthDp = 320, heightDp = 700)
 @Composable
@@ -207,7 +280,79 @@ internal fun SettingsScreenPreview(
                         delay(1200)
                         state = state.copy(
                             appUpdate = AppUpdateUiState(
-                                phase = AppUpdateUiPhase.UP_TO_DATE,
+                                phase = AppUpdateUiPhase.UPDATE_AVAILABLE,
+                                availableVersionName = "0.1.2",
+                            ),
+                        )
+                    }
+                },
+                onDownloadUpdate = {
+                    val version = state.appUpdate.availableVersionName ?: "0.1.2"
+                    state = state.copy(
+                        appUpdate = AppUpdateUiState(
+                            phase = AppUpdateUiPhase.PREPARING_DOWNLOAD,
+                            availableVersionName = version,
+                        ),
+                    )
+                    scope.launch {
+                        delay(500)
+                        state = state.copy(
+                            appUpdate = AppUpdateUiState(
+                                phase = AppUpdateUiPhase.DOWNLOADING,
+                                availableVersionName = version,
+                                downloadProgress = 0f,
+                            ),
+                        )
+                        listOf(0.18f, 0.43f, 0.71f, 1f).forEach { progress ->
+                            delay(300)
+                            state = state.copy(
+                                appUpdate = AppUpdateUiState(
+                                    phase = AppUpdateUiPhase.DOWNLOADING,
+                                    availableVersionName = version,
+                                    downloadProgress = progress,
+                                ),
+                            )
+                        }
+                        state = state.copy(
+                            appUpdate = AppUpdateUiState(
+                                phase = AppUpdateUiPhase.DOWNLOADED,
+                                availableVersionName = version,
+                            ),
+                        )
+                    }
+                },
+                onInstallUpdate = {
+                    val version = state.appUpdate.availableVersionName ?: "0.1.2"
+                    state = state.copy(
+                        appUpdate = AppUpdateUiState(
+                            phase = AppUpdateUiPhase.PREPARING_INSTALL,
+                            availableVersionName = version,
+                        ),
+                    )
+                    scope.launch {
+                        delay(600)
+                        state = state.copy(
+                            appUpdate = AppUpdateUiState(
+                                phase = AppUpdateUiPhase.INSTALL_PERMISSION_REQUIRED,
+                                availableVersionName = version,
+                            ),
+                        )
+                    }
+                },
+                onOpenInstallSettings = {
+                    val version = state.appUpdate.availableVersionName ?: "0.1.2"
+                    state = state.copy(
+                        appUpdate = AppUpdateUiState(
+                            phase = AppUpdateUiPhase.PREPARING_INSTALL,
+                            availableVersionName = version,
+                        ),
+                    )
+                    scope.launch {
+                        delay(350)
+                        state = state.copy(
+                            appUpdate = AppUpdateUiState(
+                                phase = AppUpdateUiPhase.INSTALLING,
+                                availableVersionName = version,
                             ),
                         )
                     }
@@ -266,6 +411,8 @@ private fun SettingsScreenContentPreview(
                 },
                 onAndroidAutoCompatibilitySetup = {},
                 onCheckForUpdates = {},
+                onDownloadUpdate = {},
+                onInstallUpdate = {},
                 onChangelogRequested = {},
                 onPrivacyPolicyRequested = {},
                 onTermsOfUseRequested = {},

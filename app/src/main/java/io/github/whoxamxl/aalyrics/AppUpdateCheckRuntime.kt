@@ -48,10 +48,6 @@ internal sealed interface AppUpdateCheckState {
         val totalBytes: Long,
     ) : AppUpdateCheckState
 
-    data class VerifyingDownload(
-        val versionName: String,
-    ) : AppUpdateCheckState
-
     data class Downloaded(
         val versionName: String,
         val apkFile: File,
@@ -112,6 +108,7 @@ internal class AppUpdateCheckRuntime(
     private val packageInstaller: UpdatePackageInstaller? = null,
     private val updateRecoveryStore: UpdateRecoveryStore? = null,
     private val onReleaseQuerySucceeded: (UpdateCheckOrigin) -> Unit = {},
+    private val onInstallPermissionRequired: (String) -> Unit = {},
 ) {
     private val mutableState = MutableStateFlow<AppUpdateCheckState>(AppUpdateCheckState.Idle)
     val state: StateFlow<AppUpdateCheckState> = mutableState.asStateFlow()
@@ -232,7 +229,10 @@ internal class AppUpdateCheckRuntime(
             is AppUpdateCheckState.InstallFailed ->
                 installTarget
 
-            is AppUpdateCheckState.InstallPermissionRequired -> return
+            is AppUpdateCheckState.InstallPermissionRequired -> {
+                onInstallPermissionRequired(current.versionName)
+                return
+            }
 
             else -> null
         } ?: return
@@ -337,6 +337,7 @@ internal class AppUpdateCheckRuntime(
             if (!trustChecker.canRequestPackageInstalls()) {
                 mutableState.value =
                     AppUpdateCheckState.InstallPermissionRequired(target.versionName)
+                onInstallPermissionRequired(target.versionName)
                 return@launch
             }
 
@@ -462,20 +463,15 @@ internal class AppUpdateCheckRuntime(
     fun onSettingsEntered() {
         mutableState.value = when (val current = mutableState.value) {
             is AppUpdateCheckState.Checking,
-            is AppUpdateCheckState.UpdateAvailable,
             is AppUpdateCheckState.PreparingDownload,
             is AppUpdateCheckState.Downloading,
-            is AppUpdateCheckState.VerifyingDownload,
             is AppUpdateCheckState.Downloaded,
-            is AppUpdateCheckState.DownloadFailed,
             is AppUpdateCheckState.PreparingInstall,
             is AppUpdateCheckState.InstallPermissionRequired,
-            is AppUpdateCheckState.Installing,
-            is AppUpdateCheckState.InstallFailed -> current
+            is AppUpdateCheckState.Installing -> current
 
-            AppUpdateCheckState.Idle,
-            is AppUpdateCheckState.UpToDate,
-            is AppUpdateCheckState.Failed -> AppUpdateCheckState.Idle
+            is AppUpdateCheckState.InstallFailed -> restoreVerifiedDownload()
+            else -> AppUpdateCheckState.Idle
         }
     }
 
@@ -610,7 +606,6 @@ internal class AppUpdateCheckRuntime(
         }
 
         ensureCurrentOperation(generation)
-        mutableState.value = AppUpdateCheckState.VerifyingDownload(versionName)
         val verified = files.partialApk.inputStream().buffered().use { input ->
             AALyricsSha256.verify(
                 expected = expectedDigest,
