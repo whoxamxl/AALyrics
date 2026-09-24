@@ -284,9 +284,9 @@ The existing progress semantics move from the Settings row into the dialog rathe
 - a valid retained verified APK remains reusable, so retry/permission return must not force a second download;
 - Android's final installation confirmation remains system-owned.
 
-`INSTALL_REFRESH` remains an internal update-process origin. In #75, a newer eligible release found during install refresh is handed back to the existing Settings process surface as `Newer update available -> Download`, and that state survives later Settings re-entry. In #77, after update-process ownership moves to the Unified Update Dialog, the active dialog instead returns to its release-available state for the newer release.
+`INSTALL_REFRESH` remains an internal update-process origin. In #75, a newer eligible release found during install refresh was handed back to the existing Settings process surface as `Newer update available -> Download`. In the current #77 implementation, that state is now dialog-owned: the non-dismissible Unified Update Dialog returns to `Newer update available`, shows the replacement version, and exposes only `Download`, wired to the existing `downloadUpdate()`. It does not gain discovery-only `Not now`, close, or ordinary Back dismissal semantics.
 
-The Update Dialog is therefore the single app-owned presentation surface from `UpdateAvailable` through PackageInstaller handoff. `UpdateSuccessfulDialog` remains a separate post-replacement acknowledgement because successful package replacement may terminate the old process and the new binary reconstructs that feedback from durable `SuccessfulUpdate` state.
+The Unified Update Dialog is therefore the single app-owned process-presentation surface after the user accepts Update, while the separate release-available dialog remains the discovery surface before update work begins. Settings is now limited to Idle / manual Checking / manual Up to date / manual Check failed. `UpdateSuccessfulDialog` remains a separate post-replacement acknowledgement because successful package replacement may terminate the old process and the new binary reconstructs that feedback from durable `SuccessfulUpdate` state.
 
 ### Dismissal boundary
 

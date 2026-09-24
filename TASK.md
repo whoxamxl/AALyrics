@@ -123,7 +123,7 @@ PR #76 / `feature/one-step-update` is intentionally retained as a **legacy/refer
 
 Active branch: `feature/unified-update-dialog`, created fresh from the current `feature/package-installer` baseline after #75 was merged.
 
-- [ ] Reduce the Settings Version/update presentation to only Idle / Checking / Up to date / Check failed for the complete update lifecycle.
+- [x] Reduce the Settings Version/update presentation to only Idle / Checking / Up to date / Check failed for the complete update lifecycle.
 - [x] Introduce explicit application-owned `VerifyingDownload(versionName)` immediately before SHA-256 verification.
 - [x] Define the pure Unified Update Dialog presentation contract and mapper without changing runtime ownership: `UpdateDialogUiState` / `UpdateDialogPhase`, discovery-vs-install-refresh availability context, bounded download progress, explicit `VERIFYING` / `READY_TO_INSTALL`, typed install-failure mapping, and focused mapper coverage.
 - [x] Move `PREPARING_DOWNLOAD` and `DOWNLOADING` presentation ownership from Settings into the Unified Update Dialog, including determinate 0–100% transfer progress, dedicated typical/narrow/large-font Previews, and Settings mapper/Preview cleanup.
@@ -132,12 +132,12 @@ Active branch: `feature/unified-update-dialog`, created fresh from the current `
 - [x] Move `DOWNLOAD_FAILED` presentation and explicit `Retry` from Settings into the Unified Update Dialog. Retry calls the existing `downloadUpdate()` operation; no automatic retry loop or new download-failure runtime type is introduced.
 - [x] Move `PREPARING_INSTALL`, `PERMISSION_REQUIRED`, and `INSTALLING` presentation from Settings into the Unified Update Dialog without changing install-refresh, APK preflight, Android source-trust, PackageInstaller, or recovery semantics. Permission-required keeps `Grant permission` and GitHub fallback actions on the unified surface.
 - [x] Connect typed install failure/Retry presentation to the Unified Update Dialog. Retry calls the existing independent `installUpdate()` operation and Settings no longer owns install-failure presentation.
-- [ ] Connect install-refresh retarget presentation to the Unified Update Dialog.
+- [x] Connect install-refresh retarget presentation to the Unified Update Dialog. A newer release found during install preparation remains process-owned, returns the non-dismissible Unified Update Dialog to `Newer update available`, and uses the existing `downloadUpdate()` operation.
 - [x] Keep `DOWNLOADED` as the authoritative verified-artifact boundary and render it as `Ready to install` in the Unified Update Dialog.
 - [x] Keep an explicit user-facing `Install` action after `DOWNLOADED`; the button calls the existing `installUpdate()` operation and #77 does not auto-continue into installation.
 - [ ] Preserve independent `downloadUpdate()` and `installUpdate()` operations and all existing SHA-256, retained-artifact, install-refresh, package/version/signing preflight, source-trust, PackageInstaller, and recovery behavior.
-- [ ] Remove process presentation from Settings only when the corresponding dialog presentation exists.
-- [ ] Align process-state Previews and focused tests with Unified Update Dialog ownership, including `Ready to install`.
+- [x] Remove process presentation from Settings only when the corresponding dialog presentation exists.
+- [x] Align process-state Previews and focused tests with Unified Update Dialog ownership, including `Ready to install`, typed install failure, and install-refresh retarget.
 - [ ] Complete full real-device E2E of the two-stage route:
   `Update -> Download/Verify -> DOWNLOADED/Ready to install -> Install -> Android confirmation -> replacement/recovery -> Update successful`.
 - [ ] Record that route as the validated baseline before #77 is considered complete.
@@ -181,7 +181,7 @@ Adopt the **concepts**, not the old implementation wholesale:
 
 ## Current checkpoint
 
-**#75 is merged into `feature/package-installer`. PR #76 remains legacy/reference only. Active implementation now starts fresh in #77; one-step orchestration is deferred to #78.**
+**#75 is merged into `feature/package-installer`. PR #76 remains legacy/reference only. #77 process-presentation migration is now complete through install-refresh retarget; runtime/build/review and real-device validation remain before #77 can close. One-step orchestration stays deferred to #78.**
 
 The #75 production behavior is:
 
@@ -215,4 +215,4 @@ Additional #75 invariants:
 
 A temporary process-presentation implementation was intentionally reverted from the #75 branch before #75 was finalized. The older PR #76 separately retains a legacy one-step prototype for reference, but it is not part of the active stack.
 
-The active #77 branch starts from the post-#75 `feature/package-installer` baseline and must implement only the Unified Update Dialog plus the explicit two-stage route.
+The active #77 branch starts from the post-#75 `feature/package-installer` baseline and preserves the explicit two-stage route. Settings now owns only Idle / manual Checking / manual Up to date / manual Check failed. The Unified Update Dialog owns the post-Update process, including install-refresh `Newer update available -> Download`, while MANUAL/AUTOMATIC discovery still uses the separate dismissible release-available dialog. The next #77 work is validation rather than additional process-presentation migration.
