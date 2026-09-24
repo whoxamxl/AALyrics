@@ -345,7 +345,7 @@ The approved stacked implementation is:
    - move the existing preparing/downloading progress presentation into the Unified Update Dialog;
    - add explicit verification/preparation presentation around the existing SHA-256 boundary without changing verification semantics;
    - keep `DOWNLOADED` as the verified-artifact boundary and render a clear `Ready to install` state;
-   - keep an explicit user-facing `Install` action after `DOWNLOADED`;
+   - at the validated pre-auto-install checkpoint, keep an explicit user-facing `Install` action after `DOWNLOADED`;
    - present install refresh, install preparation, permission-required, installing, typed failure, and Retry states through the dialog;
    - remove Download / Downloaded / Install / update-process progress and failure presentation from Settings;
    - preserve the existing independent `downloadUpdate()` and `installUpdate()` stages and all existing download, SHA-256, retained-artifact, install-refresh, preflight, source-trust, PackageInstaller, and recovery boundaries;
