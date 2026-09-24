@@ -206,9 +206,9 @@ CHECK_FAILED
 Update check failed                        ⓘ   ↻ Retry
 ```
 
-In #75, a manual check that finds a newer eligible release does **not** render `Update available` or a Download action in Settings. It hands the release to the shared Update Dialog immediately. Automatic Checking / Up to date / Failed remain silent, while AUTOMATIC UpdateAvailable uses that same dialog.
+In #75, a MANUAL or AUTOMATIC discovery result that finds a newer eligible release does **not** render `Update available` or a Download action in Settings. Both user-visible discovery origins use the shared release dialog. Automatic Checking / Up to date / Failed remain silent.
 
-#75 intentionally keeps the already-validated post-`Update` process presentation in Settings: Preparing download, Downloading/progress, Downloaded/Install, permission-required, installing, and process failures/Retry remain there until #76.
+#75 intentionally keeps the already-validated post-`Update` process presentation in Settings: Preparing download, Downloading/progress, Downloaded/Install, permission-required, installing, process failures/Retry, and the install-refresh retarget handoff remain there until #76. If `INSTALL_REFRESH` discovers a newer eligible release while preparing installation, Settings shows `Newer update available -> Download` for that replacement target. This is a process-recovery/retarget state, not a MANUAL/AUTOMATIC discovery presentation.
 
 #76 is the migration that makes Settings a manual-discovery-only surface for the **entire** update lifecycle by moving those post-Update process states into the Unified Update Dialog.
 
@@ -274,7 +274,7 @@ The existing progress semantics move from the Settings row into the dialog rathe
 - a valid retained verified APK remains reusable, so retry/permission return must not force a second download;
 - Android's final installation confirmation remains system-owned.
 
-`INSTALL_REFRESH` remains an internal update-process origin. If install-time refresh discovers a newer eligible release, the active dialog returns to the release-available state for that newer release rather than sending the user back to a Settings update row.
+`INSTALL_REFRESH` remains an internal update-process origin. In #75, a newer eligible release found during install refresh is handed back to the existing Settings process surface as `Newer update available -> Download`, and that state survives later Settings re-entry. In #76, after update-process ownership moves to the Unified Update Dialog, the active dialog instead returns to its release-available state for the newer release.
 
 The Update Dialog is therefore the single app-owned presentation surface from `UpdateAvailable` through PackageInstaller handoff. `UpdateSuccessfulDialog` remains a separate post-replacement acknowledgement because successful package replacement may terminate the old process and the new binary reconstructs that feedback from durable `SuccessfulUpdate` state.
 
