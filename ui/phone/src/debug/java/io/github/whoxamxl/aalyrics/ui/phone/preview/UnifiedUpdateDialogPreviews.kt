@@ -200,7 +200,7 @@ private fun UnifiedUpdateVerifyingLargeFontPreview() {
 }
 
 @Preview(
-    name = "Ready to install",
+    name = "Ready to install · recovery fallback",
     group = "UnifiedUpdateDialog",
     widthDp = 412,
     heightDp = 892,
@@ -217,7 +217,7 @@ private fun UnifiedUpdateReadyToInstallPreview() {
 }
 
 @Preview(
-    name = "Ready to install · narrow phone",
+    name = "Ready to install fallback · narrow phone",
     group = "UnifiedUpdateDialog",
     widthDp = 320,
     heightDp = 720,
@@ -234,7 +234,7 @@ private fun UnifiedUpdateReadyToInstallNarrowPreview() {
 }
 
 @Preview(
-    name = "Ready to install · large font",
+    name = "Ready to install fallback · large font",
     group = "UnifiedUpdateDialog",
     widthDp = 412,
     heightDp = 892,

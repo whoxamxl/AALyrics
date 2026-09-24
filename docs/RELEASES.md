@@ -302,15 +302,16 @@ Active downloads survive destination changes and Activity recreation because the
 
 `DOWNLOADED` means that the retained signed-release APK bytes match the Release-published SHA-256. It is a permanent internal safety/recovery boundary and must not be removed by later UX simplification.
 
-In **#77**, `DOWNLOADED` is now an explicit user-visible `Ready to install` checkpoint in the Unified Update Dialog. The user presses `Install`, which invokes the existing `installUpdate()` operation, before installation preparation begins. The old Settings-row Downloaded/Install action is removed, but the two-stage interaction itself is intentionally preserved and validated end-to-end:
+In the validated **#77 checkpoint**, `DOWNLOADED` is an explicit user-visible `Ready to install` checkpoint in the Unified Update Dialog and the explicit Install action invokes the existing `installUpdate()` operation. The final #77 implementation keeps that state as a direct/restart recovery fallback, while a normal user-accepted AALyrics update now auto-dispatches the same existing `installUpdate()` after its app-managed download reaches `DOWNLOADED`:
 
 ```text
 Update
   -> install-source trust check
      -> permission UI / Android Settings only if required
   -> Download / Verify
-  -> DOWNLOADED / Ready to install
-  -> Install
+  -> DOWNLOADED
+     -> normal accepted-update flow: existing installUpdate() automatically
+     -> direct/restart recovery: Ready to install -> Install
   -> install refresh / package-version-signing preflight
   -> source-trust re-check
   -> PackageInstaller
@@ -326,23 +327,22 @@ In **#75**, that `INSTALL_REFRESH` result is surfaced through the existing Setti
 
 In **#77**, that retarget returns the Unified Update Dialog to its process-owned available state for the newer release. Install refresh is an install-process boundary, not background discovery, so the dialog offers Download without `Not now` and the refresh does not alter automatic-discovery cadence. The shared close/System Back action only hides the process presentation; it does not convert retargeting into discovery dismissal or discard the newer candidate.
 
-The corrected #77 two-stage route is now the validated on-device checkpoint. The final #77 slice may remove the ordinary second user-facing Install action, but it must reuse the existing `downloadUpdate()` -> `DOWNLOADED` -> `installUpdate()` boundaries rather than replacing them with a monolithic update operation.
-
-Old #76 is a reference for the one-step **scenario**, not for final implementation structure. #77's final continuation slice may reuse the ideas of user-originated continuation intent, permission pause/resume without redownload, explicit Retry continuation, and install-refresh retargeting, but must reimplement them against the current runtime/recovery contract.
+The corrected #77 two-stage route remains the validated on-device checkpoint. The final #77 change reuses the same `downloadUpdate()` -> `DOWNLOADED` -> `installUpdate()` boundaries and adds only a process-local continuation marker around the normal accepted-update path.
 
 The final #77 continuation contract is:
 
-- explicit Update/Retry establishes continuation intent;
-- verified `DOWNLOADED` may continue into the existing install stage at most once;
-- active install preparation, an active PackageInstaller session, or durable pending install state prevents duplicate continuation;
-- missing source trust pauses the operation and preserves the retained verified APK;
-- install-refresh discovery of a newer candidate never installs the stale retained APK; the same one-step operation retargets through download/verify for the newer release;
-- recoverable failure stops automatic progression until explicit Retry;
-- restored retained APK + valid continuation intent may resume only from authoritative recovered state;
-- Reset AALyrics clears continuation intent;
-- Android's source-trust decision and final PackageInstaller confirmation remain explicit/system-owned.
+- accepting the normal AALyrics Update flow arms process-local automatic continuation;
+- after that download job completes successfully at verified `DOWNLOADED`, the runtime calls the existing `installUpdate()`;
+- direct `downloadUpdate()` without an armed continuation remains independently testable and stops at `DOWNLOADED`;
+- Download failure keeps the same-process continuation intent so explicit Retry can continue into install after a successful verified retry;
+- install-refresh discovery of a newer candidate never installs the stale retained APK; if the install attempt carried continuation intent, the replacement Download keeps that intent and returns to install after verification;
+- install failure/handoff completion clears automatic continuation; an explicit later Install/Retry begins a fresh install attempt;
+- continuation is not persisted across process death. Restored retained APKs return to `DOWNLOADED / Ready to install` and require explicit Install;
+- Reset AALyrics clears continuation;
+- Android source trust and final PackageInstaller confirmation remain explicit/system-owned;
+- external `Download from GitHub` remains navigation only and does not trigger or imply an AALyrics-managed install.
 
-The independent download/install stages, retained-artifact recovery, and `DOWNLOADED` state remain testable and authoritative even after the normal production path becomes one-step.
+The independent download/install stages, retained-artifact recovery, and `DOWNLOADED` state remain testable and authoritative even though the normal accepted-update path is now one-step.
 
 Before any PackageInstaller session is created, application-owned preflight validates the retained APK as an update of the installed AALyrics package. The retained file must still be the canonical verified artifact, archive metadata must be readable, the package name must match `io.github.whoxamxl.aalyrics`, the archive version must be newer than the installed Android package version, and its signing identity must be update-compatible with the installed AALyrics package. SHA-256 verification proves Release-asset integrity; package/version/signing validation separately proves that Android package handoff is appropriate.
 

@@ -539,7 +539,7 @@ GitHub Release asset size remains the expected total, downloaded bytes remain th
 
 `DOWNLOAD_FAILED` is now also dialog-owned. The Unified Update Dialog shows a generic download/verification failure message and an explicit `Retry` button that calls the existing `downloadUpdate()` operation. Settings no longer owns the download-failure row or Retry action. Because the runtime currently exposes only `DownloadFailed(versionName)`, #77 does not fabricate a more specific failure reason in presentation.
 
-`DOWNLOADED` remains an authoritative application-owned safety and recovery boundary. It is now dialog-owned in #77 and renders as `Ready to install` with the verified version and an explicit user-facing `Install` action. Settings no longer owns the Downloaded/Install row. Pressing Install invokes the existing `installUpdate()` operation; #77 must not automatically continue into installation merely because verification completed.
+`DOWNLOADED` remains an authoritative application-owned safety and recovery boundary. It is dialog-owned in #77 and still has a `Ready to install` presentation with the verified version and an explicit `Install` fallback. Settings no longer owns the Downloaded/Install row. In the final #77 path, a normal user-accepted AALyrics update automatically dispatches the existing `installUpdate()` after its app-managed download reaches `DOWNLOADED`; the explicit Install action remains available for direct/recovered two-stage use, including a verified APK restored after process restart.
 
 The corrected #77 contract moves the normal Android install-source trust gate ahead of download. After the user accepts `Update`, AALyrics checks `PackageManager.canRequestPackageInstalls()`; when trust is missing, `PERMISSION_REQUIRED` appears before any APK transfer begins. `Grant permission` hands off to Android's per-app source-trust Settings, and download starts only after return confirms trust. The install path still re-checks source trust immediately before PackageInstaller handoff as a fail-safe against revocation, recovery, or long-lived state.
 
@@ -553,29 +553,22 @@ Every app-owned Unified Update Dialog phase is dismissible through the shared cl
 
 #### Final #77 automatic install continuation
 
-The corrected #77 two-stage route has now passed the checkpoint validation gate. The final #77 slice may remove the ordinary second user-facing Install action only by automatically dispatching the existing install stage after verified `DOWNLOADED`.
+The corrected explicit two-stage route remains the safety baseline. The final #77 implementation changes only the normal continuation UX.
 
-#77 automatic continuation does not replace the validated core stages. It keeps:
+The runtime keeps:
 
-- `downloadUpdate()` as the download/verify operation;
+- `downloadUpdate()` as the independently callable download/verify operation;
 - `DOWNLOADED` as the verified-artifact and recovery boundary;
 - `installUpdate()` as the existing install-refresh/preflight/permission/PackageInstaller operation.
 
-The one-step UX adds orchestration above those stages. Old #76 is reference material for the **concept** of continuation intent and for retry/permission/retarget scenarios, but its process-local `oneStepUpdateRequested` flag and Settings-owned presentation are not the final #77 implementation contract.
+A small process-local continuation marker is armed by the user-facing `startUpdate()` path. When that download job completes successfully and the authoritative state is `DOWNLOADED`, the runtime invokes the existing `installUpdate()` entry point. The low-level `downloadUpdate()` method itself is not converted into a monolithic one-step operation, so direct tests/recovery can still stop at `DOWNLOADED`.
 
-The final #77 continuation follows this order:
+The marker remains armed across a same-process Download failure so an explicit Download Retry can finish the intended Update flow. It also survives install-refresh retargeting so a user-approved replacement Download automatically returns to the existing install stage. Recoverable/terminal install failure clears automatic continuation; pressing the existing Install/Retry action starts a fresh explicit install attempt and re-arms continuation only for any later retarget download.
 
-1. explicit Update/Retry arms application-owned continuation intent;
-2. the existing download operation runs unchanged;
-3. verified `DOWNLOADED` is claimed at most once for continuation;
-4. the existing install operation runs unchanged;
-5. permission-required pauses continuation without discarding the retained APK; permission return re-checks Android trust and resumes without redownload;
-6. install-refresh newer-release retargeting keeps the same user operation alive but moves it back through the existing download/verify boundary for the newer candidate;
-7. recoverable failure stops automatic progression; explicit Retry is required to re-arm/resume;
-8. restored `DOWNLOADED` plus valid continuation intent may resume at most once, while active/pending installer work blocks duplicate continuation;
-9. Reset AALyrics clears continuation intent.
+Continuation is intentionally **not persisted across process death**. If startup restores a valid retained verified APK, the runtime restores `DOWNLOADED` and the Unified Update Dialog can show `Ready to install -> Install` as a recovery fallback. AALyrics therefore never auto-installs a merely restored artifact without a fresh in-process user intent.
 
-Production UX may therefore become one-step in the final #77 slice while the independently validated two-stage route remains preserved in runtime boundaries, tests, and recovery behavior. The second user-facing Install action is removed only after focused orchestration tests prove the above contract.
+Reset AALyrics clears the continuation marker. `Download from GitHub` remains external dismissal/navigation only and never arms or advances this path.
+
 
 #### Version presentation
 
@@ -595,7 +588,7 @@ After the migration, Settings Previews should cover:
 - manual Up to date;
 - manual Check failed / Retry.
 
-Update-process Previews belong to the Unified Update Dialog. The current #77 checkpoint covers preparing download, downloading/progress, dedicated verification presentation, Ready to install / explicit Install, Download failed / Retry, Preparing installation, Permission required, and Installing. Permission required includes narrow-phone and enlarged-font coverage because it carries the longest explanatory copy. Install-failure/retry and install-refresh-retarget Previews are added with their corresponding ownership migrations rather than keeping parallel Settings fixtures. #77 Preview coverage must ultimately demonstrate the full two-stage route; #77's final slice may change only the normal user-facing continuation behavior.
+Update-process Previews belong to the Unified Update Dialog. The matrix covers preparing download, downloading/progress, dedicated verification presentation, Download failed / Retry, Preparing installation, Permission required, Installing, install failure/Retry, and install-refresh retarget. `Ready to install` remains in the Preview matrix specifically as the direct/restart recovery fallback; normal accepted-update flow now auto-continues through that internal `DOWNLOADED` checkpoint.
 
 The Phone UI remains presentation-only. It emits semantic discovery/update actions and renders application-owned state; it does not perform GitHub HTTP requests, file I/O, checksum verification, package inspection, signing checks, Android settings mutation, or PackageInstaller session work directly.
 

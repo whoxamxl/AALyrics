@@ -366,20 +366,31 @@ The approved stacked implementation is:
    ```
 
 4. **Final #77 slice — automatically hand verified download into the existing install stage**
-   - start from the validated #77 implementation;
-   - treat old #76 as a scenario/design reference only: its continuation-intent idea, retry/permission/retarget scenarios, and single user-facing Update concept are useful, but its process-local boolean, Settings-owned presentation, stale prompt ownership, and outdated mapper/runtime details are not authoritative;
-   - keep `DOWNLOADED` as a real internal/recovery state even if it is transient in normal production UX;
-   - keep `downloadUpdate()` and `installUpdate()` independently testable and reusable;
-   - introduce explicit application-owned one-step continuation intent/coordinator above those operations rather than copying old #76's raw `oneStepUpdateRequested` flag;
-   - arm continuation only from explicit user Update/Retry intent;
-   - continue from verified `DOWNLOADED` into the existing install stage only when continuation intent is valid and no install/preflight/session operation is already active;
-   - use an idempotent continuation claim/guard so recomposition, Activity recreation, restored state, permission return, or duplicate state collection cannot start installation twice;
-   - preserve source-trust pause/resume and retained-artifact reuse without redownload;
-   - if install refresh finds a newer release, retarget the same one-step operation to the newer candidate rather than installing the stale retained APK;
-   - stop automatic progression on recoverable failure and require explicit Retry to re-arm/resume the one-step operation;
-   - define process-recovery semantics for continuation intent and clear it under Reset AALyrics;
-   - adapt old #76 one-step tests only as scenario references against the current #77 runtime contract;
-   - remove the second user-facing Install action only after focused tests pass, then validate the one-step UX separately on-device.
+   - keep the validated #77 download/install operations and safety boundaries unchanged;
+   - arm a small process-local continuation marker only when the user accepts the normal AALyrics Update flow, or later explicitly retries/installs through the existing action;
+   - after that app-managed download job completes successfully at authoritative `DOWNLOADED`, call the existing `installUpdate()` entry point;
+   - do not make raw `downloadUpdate()` itself one-step. Direct/internal use without an armed continuation still stops at `DOWNLOADED`;
+   - keep continuation armed across same-process Download failure -> Retry and install-refresh replacement Download;
+   - clear continuation on terminal/recoverable install failure and after installer handoff; explicit Install/Retry may arm it again;
+   - do not persist continuation across process death. A verified APK restored as `DOWNLOADED` remains a recovery state and retains the explicit `Ready to install -> Install` fallback rather than auto-installing after restart;
+   - Reset AALyrics clears the process-local continuation marker together with the existing update state/artifacts;
+   - external `Download from GitHub` remains dismissal/navigation only and never counts as an AALyrics-managed download or installation trigger;
+   - rely on the existing active-operation/session guards plus the single download-job completion callback to prevent duplicate install starts.
+
+Normal accepted-update flow therefore becomes:
+
+```text
+Update
+  -> Source-trust gate / Permission if required
+  -> Download / Verify
+  -> DOWNLOADED              [internal verified checkpoint]
+  -> existing installUpdate() automatically
+  -> Install refresh / Preflight
+  -> Source-trust re-check if required
+  -> Android PackageInstaller confirmation
+```
+
+The visible `Ready to install -> Install` state remains intentionally valid for direct two-stage use and recovery, especially a retained verified APK restored after process restart.
 
 Typical, narrow-phone, and enlarged-font Previews must cover the shared release-available dialog and representative #77 process states, including `Ready to install`. Settings Previews should cover only the manual discovery states plus automatic-check preference ON/OFF; they should not retain parallel update-process fixtures after #77 migration.
 
@@ -414,18 +425,17 @@ The recovery/install safety checkpoints are already established. Continue in bou
 
 ### Final #77 automatic-continuation slice
 
-1. freeze the validated #77 two-stage route as the immutable pre-auto-install comparison baseline;
-2. define application-owned continuation intent/coordinator semantics, using old #76's one-step intent only as a conceptual reference;
-3. route explicit Update/Retry actions through the coordinator while preserving independently callable `downloadUpdate()` and `installUpdate()`;
-4. auto-continue only after verified `DOWNLOADED`, guarded by an idempotent single-consumer/active-install check;
-5. preserve source-trust pause/resume, retained-artifact recovery, and no-redownload behavior;
-6. preserve install-refresh retargeting within the same one-step operation when a newer candidate appears;
-7. stop on recoverable failure and require explicit Retry rather than automatically looping;
-8. define restart/process-recovery behavior for continuation intent and clear it under Reset;
-9. adapt old #76 tests as scenario references for current runtime behavior, not as code/presentation to copy;
-10. remove the second production Install action only after focused tests prove orchestration correctness;
-11. align Unified Update Dialog one-step Previews/docs while keeping the two-stage route covered internally;
-12. validate the one-step production UX separately on-device.
+1. freeze the validated explicit two-stage route as the pre-auto-install comparison baseline;
+2. arm process-local continuation from the user-facing `startUpdate()` path;
+3. after its download job reaches verified `DOWNLOADED`, call the existing `installUpdate()` entry point;
+4. preserve direct `downloadUpdate()` as an independently testable two-stage operation;
+5. keep continuation across Download Retry and install-refresh replacement download within the same process;
+6. stop automatic progression on install failure and require explicit Install/Retry to continue;
+7. preserve the explicit `Ready to install -> Install` state as restart/recovery fallback instead of persisting an auto-install intent across process death;
+8. clear the continuation marker under Reset and after terminal install handoff/failure;
+9. align focused tests, recovery Preview labeling, and documentation;
+10. validate the resulting HEAD with the normal bounded PR validation.
+
 
 Do not weaken, bypass, or collapse the validated internal update boundaries merely to simplify user-facing presentation.
 

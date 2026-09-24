@@ -178,18 +178,20 @@ Complete these items before the final two-stage real-device validation:
 
 This is intentionally a small continuation change on top of the validated checkpoint above, not a new update architecture and not a separate #78 development phase.
 
-1. [ ] Keep the existing independent `downloadUpdate()` and `installUpdate()` operations unchanged in responsibility.
-2. [ ] Keep `DOWNLOADED` as the authoritative verified-artifact/recovery checkpoint.
-3. [ ] When the normal app-managed download/verification flow reaches `DOWNLOADED`, automatically dispatch the existing `installUpdate()` path exactly once instead of waiting for the ordinary second user-facing Install press.
-4. [ ] Do not infer success from the external GitHub fallback. Opening `Download from GitHub` remains presentation dismissal/external navigation and must never arm or trigger automatic installation.
-5. [ ] Preserve the existing permission gate, install refresh, package/version/signing preflight, retained-APK retry, PackageInstaller handoff, and Android-owned final confirmation.
-6. [ ] Preserve explicit recovery behavior on failure; automatic continuation must not create an automatic retry loop.
-7. [ ] Remove the normal production Install button only after the automatic continuation path is covered by focused tests; keep the underlying `DOWNLOADED` state and independently callable install path available to runtime/tests/recovery.
-8. [ ] Align Unified Update Dialog Previews and update documentation with the final production path, then run the bounded validation appropriate to this small change.
+1. [x] Keep the existing independent `downloadUpdate()` and `installUpdate()` operations unchanged in responsibility.
+2. [x] Keep `DOWNLOADED` as the authoritative verified-artifact/recovery checkpoint.
+3. [x] Arm process-local automatic continuation from the user-facing `startUpdate()` path. After its existing download/verification job completes successfully in `DOWNLOADED`, dispatch the existing `installUpdate()` path.
+4. [x] Keep low-level `downloadUpdate()` independently callable: when no continuation is armed, it still stops at `DOWNLOADED`. This preserves the two-stage runtime/test/recovery boundary.
+5. [x] Preserve continuation across same-process Download Retry and install-refresh replacement download. Recoverable install failure stops automatic progression; explicit Install/Retry re-arms continuation through the existing `installUpdate()` entry point.
+6. [x] Keep source-trust gating, install refresh, package/version/signing preflight, retained-APK handling, PackageInstaller handoff, and Android-owned final confirmation unchanged.
+7. [x] Keep `Ready to install -> Install` as a recovery/fallback presentation rather than deleting it. Normal accepted-update flow auto-continues through `DOWNLOADED`, but a verified APK restored after process restart is not auto-installed without a fresh in-process user intent.
+8. [x] Keep the GitHub manual-download fallback dismissal-only. Opening GitHub does not arm, trigger, or imply successful AALyrics-managed installation.
+9. [x] Add focused coverage for normal auto-continuation, duplicate start/source-trust protection, Download Retry continuation, install-refresh replacement continuation, and the still-independent direct `downloadUpdate()` path.
+10. [x] Align update docs and rename the `Ready to install` Preview as a recovery fallback. Full Build/CI remains the validation gate for the new HEAD.
 
 ## Current checkpoint
 
-**#75 is merged into `feature/package-installer`. PR #76 remains legacy/reference only. PR #77 has a validated corrected two-stage checkpoint at `d5de6a46a442eec0d1e293812475b51b57d572a0`: Build #1118 passed, the latest Codex review found no major issue, and real-device validation succeeded for the corrected route. The only planned behavior change before #77 closes is the narrow automatic handoff from verified `DOWNLOADED` into the existing `installUpdate()` path.**
+**#75 is merged into `feature/package-installer`. PR #76 remains legacy/reference only. PR #77 keeps the validated two-stage checkpoint at `d5de6a46a442eec0d1e293812475b51b57d572a0` and now implements the narrow automatic handoff on top: accepted Update flows auto-dispatch the existing `installUpdate()` after verified `DOWNLOADED`, while direct/recovered `DOWNLOADED` remains available as the explicit recovery fallback. Build/CI for the new auto-continuation HEAD is the remaining validation gate.**
 
 The #75 production behavior is:
 
