@@ -130,8 +130,8 @@ Active branch: `feature/unified-update-dialog`, created fresh from the current `
 - [x] Keep `VerifyingDownload` on the Unified Update Dialog surface during the ownership transition so the dialog does not disappear between transfer completion and `DOWNLOADED`.
 - [x] Give `VerifyingDownload` dedicated `Verifying update` / `Checking download integrity…` presentation with indeterminate progress and typical/narrow/large-font Previews, without changing SHA-256 semantics.
 - [ ] Connect permission-required, typed failure/Retry, installing, and install-refresh retarget presentation to the Unified Update Dialog.
-- [ ] Keep `DOWNLOADED` as the authoritative verified-artifact boundary and render it as `Ready to install`.
-- [ ] Keep an explicit user-facing `Install` action after `DOWNLOADED`; do not auto-continue into installation in #77.
+- [x] Keep `DOWNLOADED` as the authoritative verified-artifact boundary and render it as `Ready to install` in the Unified Update Dialog.
+- [x] Keep an explicit user-facing `Install` action after `DOWNLOADED`; the button calls the existing `installUpdate()` operation and #77 does not auto-continue into installation.
 - [ ] Preserve independent `downloadUpdate()` and `installUpdate()` operations and all existing SHA-256, retained-artifact, install-refresh, package/version/signing preflight, source-trust, PackageInstaller, and recovery behavior.
 - [ ] Remove process presentation from Settings only when the corresponding dialog presentation exists.
 - [ ] Align process-state Previews and focused tests with Unified Update Dialog ownership, including `Ready to install`.
