@@ -144,7 +144,9 @@ On the next valid Phone entry after the installed package is confirmed to have r
 ```text
 AALyrics updated
 
-You're now running v0.x.x.
+[ v0.x.x ]
+
+You're now running this version.
 
 Done
 ```
@@ -199,7 +201,9 @@ Automatic discovery presents:
 ```text
 New release available
 
-AALyrics v0.x.x is available.
+[ v0.x.x ]
+
+A new AALyrics release is available.
 
 Update
 Not now
