@@ -381,7 +381,7 @@ The `APP` section exposes app/distribution information without moving release-ne
 
 ### Version and update
 
-The APP section keeps one Version/update row, but its responsibility is intentionally narrow: **Settings owns manual update discovery, not the update process.**
+The APP section keeps one Version/update row. In #75, **release discovery** is narrow: Settings owns MANUAL Checking / Up to date / Check failed, while MANUAL and AUTOMATIC newer-release results use the same global release dialog. The already-validated post-Update download/install process presentation remains in Settings until #76.
 
 The installed version is supplied from `BuildConfig.VERSION_NAME` and rendered through the shared `VersionChip`.
 
@@ -402,7 +402,7 @@ CHECK_FAILED
 Update check failed                        ⓘ   ↻ Retry
 ```
 
-These are the only update-related states Settings should present after the unified-dialog migration.
+These are the only **discovery** states Settings should present. They become the only update-related Settings states overall after the #76 process-presentation migration.
 
 Manual discovery behavior:
 
@@ -410,9 +410,10 @@ Manual discovery behavior:
 2. While the query is active, Settings shows `Checking for updates…`.
 3. If no newer eligible release exists, Settings shows `Up to date`.
 4. If the query fails, Settings shows `Update check failed` with Retry.
-5. If a newer eligible release exists, Settings does **not** show `Update available` or a Download action; it immediately hands the release to the global Unified Update Dialog.
+5. If a newer eligible release exists, Settings does **not** show `Update available` or a Download action; it immediately hands the release to the global release-available dialog.
+6. If a MANUAL check is requested while an AUTOMATIC query is already in flight, the existing query is promoted to MANUAL presentation semantics. Settings immediately shows `Checking for updates…`, no duplicate release request is started, and the eventual Up to date / Check failed / newer-release result is treated as MANUAL.
 
-Settings must not present any of the following after this migration:
+#75 still presents the existing post-Update process states in Settings. After the #76 migration, Settings must not present any of the following:
 
 ```text
 Update available
@@ -480,7 +481,9 @@ Durable `SuccessfulUpdate` feedback retains modal priority and is not merged int
 
 #### Update-process presentation ownership
 
-After the user chooses `Update`, the Unified Update Dialog becomes the presentation owner for the update process. Settings does not mirror those process states.
+**#75 current:** after the user chooses `Update`, the release-available dialog closes and the existing Settings-owned download/install process presentation continues unchanged.
+
+**#76 target:** the Unified Update Dialog becomes the presentation owner for that same update process, and Settings stops mirroring process states.
 
 #76 deliberately preserves the validated **two-stage user action** while moving its presentation into the dialog:
 
@@ -1028,8 +1031,8 @@ Deterministic debug Previews should cover at least:
 - enlarged font;
 - app update checking;
 - app up-to-date state;
-- app update available state;
-- app update failure/retry state;
+- manual app update failure/retry state;
+- shared new-release dialog for MANUAL/AUTOMATIC update availability;
 - install failure with signing-identity mismatch plus the expanded reason tooltip at typical, narrow, and enlarged-font configurations;
 - automatic update checking ON and OFF;
 - new-release dialog at typical, narrow, and enlarged-font configurations;
@@ -1070,7 +1073,7 @@ PR #50 implements the Phone runtime-host application-composition boundary from `
 
 A durable Plain auto-scroll preference remains a separate ownership decision unless the runtime-host implementation has an already-approved backing seam.
 
-The update runtime is application-owned. Settings owns explicit manual discovery only: Check/Retry, Checking, Up to date, and Check failed. MANUAL and AUTOMATIC newer-release results converge into the same global Unified Update Dialog, while automatic non-update results remain silent. The dialog owns release-available and update-process presentation, including migrated preparation/download progress, verification, retained-artifact continuation, permission-required handling, typed failures/Retry, install preparation, and PackageInstaller handoff. Active work survives ordinary destination changes because it is process-owned rather than composable-owned. Durable pending/success replacement markers, one-time success feedback, best-effort post-replacement resume, and automatic-check cadence/suppression remain application-owned. Changelog remains functional independently of release-network wiring: the application supplies the bundled repository `CHANGELOG.md` as presentation text. The About & Support implementation keeps bundled legal-document access application-owned, maps Help & Feedback semantic actions to GitHub destinations in `:app`, and keeps the existing Buy Me a Coffee handoff application-owned; none of these capabilities moves asset access or browser launching into `:ui:phone`.
+The update runtime is application-owned. In #75, Settings owns explicit MANUAL discovery states (Check/Retry, Checking, Up to date, Check failed) and continues to present the inherited post-Update process states after the shared release dialog hands off to the existing download/install route. MANUAL and AUTOMATIC newer-release discovery already converge on the same global release-available dialog, while automatic non-update results remain silent. #76 moves the post-Update process presentation—preparation/download progress, verification, retained-artifact continuation, permission-required handling, typed failures/Retry, install preparation, and PackageInstaller handoff—out of Settings and into the Unified Update Dialog. Active work remains application/process-owned across ordinary destination changes. Durable pending/success replacement markers, one-time success feedback, best-effort post-replacement resume, and automatic-check cadence/suppression remain application-owned. Changelog remains functional independently of release-network wiring: the application supplies the bundled repository `CHANGELOG.md` as presentation text. The About & Support implementation keeps bundled legal-document access application-owned, maps Help & Feedback semantic actions to GitHub destinations in `:app`, and keeps the existing Buy Me a Coffee handoff application-owned; none of these capabilities moves asset access or browser launching into `:ui:phone`.
 
 That wiring must preserve the existing capability ownership documented in the relevant architecture files.
 
