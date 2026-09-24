@@ -86,6 +86,15 @@
     <string name="update_process_download_failed_body_suffix">could not be downloaded or verified.</string>
     <string name="update_process_download_failed_reason">Check your connection and try again.</string>
     <string name="update_process_retry">Retry</string>
+    <string name="update_process_preparing_install_title">Preparing installation</string>
+    <string name="update_process_preparing_install_label">Checking release and APK requirements…</string>
+    <string name="update_process_permission_title">Allow AALyrics to install updates</string>
+    <string name="update_process_permission_body">AALyrics is distributed outside Google Play. Android requires permission for AALyrics to hand this verified update to the system installer.</string>
+    <string name="update_process_permission_reason">This permission does not allow silent updates. Android will still ask you to confirm each installation.</string>
+    <string name="update_process_grant_permission">Grant permission</string>
+    <string name="update_process_download_from_github">Download from GitHub</string>
+    <string name="update_process_installing_title">Installing update</string>
+    <string name="update_process_installing_label">Waiting for Android to complete installation…</string>
     <string name="update_successful_eyebrow">UPDATE COMPLETE</string>
     <string name="update_successful_title">AALyrics updated</string>
     <string name="update_successful_body">You’re now running</string>
