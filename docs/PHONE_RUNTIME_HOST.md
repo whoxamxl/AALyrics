@@ -181,29 +181,36 @@ This slice does not change media-session selection policy.
 
 ## Lyrics destination
 
-`LyricsScreen` is production Compose, but the production runtime route/mapping is still incomplete.
+`LyricsScreen` and the canonical Phone lyrics mapper are production Compose/runtime behavior. The remaining Translation-specific gap is downstream of the already-running `TranslationCoordinator`: `AALyricsApplication.translationState` is exposed but is not yet consumed by `PhoneRuntimeHost` or `mapPhoneLyricsState`.
 
-This slice may add the minimal app-owned Phone lyrics presentation mapper/route necessary to render live data from the existing canonical sources:
+The active `feature/translation-runtime` slice closes that gap with the minimal application-owned presentation composition:
 
 ```text
-PlaybackSnapshot
-LyricsState
-TranslationState / Translation settings where already approved
-Phone presentation preference state
-        ↓
-LyricsScreenUiState
-        ↓
-LyricsScreen
+PlaybackSnapshot ----------------------┐
+LyricsState ---------------------------┤
+TranslationState ----------------------┼─> Phone lyrics mapper
+Phone presentation preference state ---┘
+                                            ↓
+                                   LyricsScreenUiState
+                                            ↓
+                                     LyricsScreen
 ```
+
+The host lifecycle-collects the existing `translationState` and passes it to the mapper. It does not start, retry, cancel, or otherwise own Translation execution.
 
 The mapper must preserve existing approved semantics:
 
 - canonical lyrics ownership stays in `:core:lyrics`;
+- a Ready Translation artifact is used only when its canonical identity exactly matches the canonical lyrics being mapped;
+- preserved artifact lines are not duplicated as translated text;
+- pending/not-required/failed Translation stays original-only and never becomes Lyrics failure;
 - current-line timing is derived from existing playback/lyrics facts rather than a new timing algorithm;
 - PLAIN auto-scroll follows the existing presentation contract;
-- WORD-capable source lyrics do not implicitly enable Karaoke mode;
+- WORD-capable source lyrics do not implicitly enable Karaoke mode or translated-word highlighting;
 - Translation remains an additive derived capability;
-- provider DTOs and provider-specific logic do not enter `:ui:phone`.
+- provider DTOs, Translation engines, ML Kit, and provider-specific logic do not enter `:ui:phone`.
+
+The full Phone Translation handoff contract and acceptance criteria are in `TASK.md`, `docs/TRANSLATION_ARCHITECTURE.md`, and `docs/PHONE_LYRICS_VIEWPORT.md`.
 
 The runtime now forwards selected-session artwork from `METADATA_KEY_ALBUM_ART`, `METADATA_KEY_ART`, or `MediaDescription.iconBitmap` through `:app` into the existing renderable artwork slots. Android Bitmap/MediaSession ownership does not enter `:ui:phone`. Missing artwork uses the shared AALyrics foreground mark derived from `branding/android/AALyrics_foreground_android.svg`.
 
