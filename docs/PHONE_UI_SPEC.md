@@ -216,7 +216,7 @@ Goals:
 - normal phone layouts should preserve roughly five to six visible lyric lines where practical
 - fixed shell elements should remain compact enough not to consume the majority of vertical space
 
-The active Phone Translation integration consumes only identity-validated, atomically published Translation output. It does not move Translation execution, ML Kit, provider selection, or timing ownership into `:ui:phone`. Android Auto Translation remains a separate later surface integration.
+The active Phone Translation integration consumes only atomically published Translation output that is eligible under the current enabled/target settings and exact canonical identity. It does not move Translation execution, ML Kit, provider selection, or timing ownership into `:ui:phone`. Android Auto Translation remains a separate later surface integration.
 
 This is a layout target, not a hard line-count guarantee. Exact secondary Translation typography and tight intra-row spacing should be tuned in Compose Preview/device testing while preserving the canonical hierarchy and the viewport contract in `docs/PHONE_LYRICS_VIEWPORT.md`.
 
