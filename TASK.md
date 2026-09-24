@@ -116,6 +116,7 @@ Completed in this checkpoint:
 - the new-release dialog now reuses #74's shared `PhoneDialogHeader`, matching the permission and successful-update dialogs for close-icon geometry and touch target;
 - Update UX and Phone Settings documentation are aligned.
 - inherited #74 recovery hardening remains preserved: process-death cleanup is session-bound and Reset cannot race a stale pending marker past the PackageInstaller commit boundary.
+- Codex review identified a valid Reset/cadence race; successful release-query callbacks are now serialized with update generation invalidation so pre-Reset query work cannot restore the 7-day cadence timestamp after Reset clears it.
 
 No end-to-end one-step Download + Install composition has been implemented yet. The `Update` action currently enters the already-validated download/verification state machine and leaves installation as the existing explicit follow-up.
 
