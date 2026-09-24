@@ -103,7 +103,7 @@ class UpdateReleasePromptRuntimeTest {
         runtime.onUpdateState(automatic)
         assertNull(runtime.prompt.value)
 
-        runtime.onUpdateState(AppUpdateCheckState.Checking)
+        runtime.onUpdateState(AppUpdateCheckState.Checking())
         runtime.onUpdateState(
             AppUpdateCheckState.UpdateAvailable(
                 versionName = "0.3.0-alpha.1",
@@ -136,7 +136,7 @@ class UpdateReleasePromptRuntimeTest {
         )
         assertNull(runtime.prompt.value)
 
-        runtime.onUpdateState(AppUpdateCheckState.Checking)
+        runtime.onUpdateState(AppUpdateCheckState.Checking())
         runtime.onUpdateState(manual)
 
         assertEquals(
@@ -182,7 +182,7 @@ class UpdateReleasePromptRuntimeTest {
 
         runtime.onUpdateState(manual)
         runtime.dismiss()
-        runtime.onUpdateState(AppUpdateCheckState.Checking)
+        runtime.onUpdateState(AppUpdateCheckState.Checking())
         assertNull(runtime.prompt.value)
 
         runtime.onUpdateState(manual)
