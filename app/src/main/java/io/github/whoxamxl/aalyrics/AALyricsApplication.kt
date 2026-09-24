@@ -401,8 +401,9 @@ class AALyricsApplication : Application() {
             ),
             packageInstaller = AndroidUpdatePackageInstaller(this),
             updateRecoveryStore = updateRecoveryStore,
-            onReleaseQuerySucceeded =
-                automaticUpdateCheckRuntime::recordSuccessfulReleaseQuery,
+            onReleaseQuerySucceeded = { origin ->
+                automaticUpdateCheckRuntime.recordSuccessfulReleaseQuery(origin)
+            },
             onInstallPermissionRequired = installPermissionPromptRuntime::request,
         )
         translationSettingsStore = SharedPreferencesTranslationSettingsStore(this)
