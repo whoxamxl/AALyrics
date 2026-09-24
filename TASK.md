@@ -159,8 +159,8 @@ Additional #75 invariants:
 - Dismissing an automatic prompt suppresses that exact automatic version for the current process session.
 - An explicit later manual check may present the same still-current version even when its automatic prompt was suppressed.
 - If MANUAL discovery is requested while an AUTOMATIC query is already in flight, the existing query is promoted to MANUAL presentation semantics: Settings immediately shows Checking, no duplicate release request is started, and the eventual result is surfaced as MANUAL.
-- `INSTALL_REFRESH` remains internal and does not create a discovery prompt in this #75 scope.
-- Settings does not present `UpdateAvailable`; after the user presses `Update`, the existing download/install presentation remains unchanged from the validated pre-unification baseline until #76 moves that same two-stage process into the Unified Update Dialog.
+- `INSTALL_REFRESH` remains internal and does not create a MANUAL/AUTOMATIC discovery prompt in this #75 scope. If install preparation finds a newer eligible release, the existing Settings process surface shows `Newer update available -> Download` and preserves that retarget state across Settings re-entry.
+- Settings does not present `UpdateAvailable` for MANUAL/AUTOMATIC discovery; after the user presses `Update`, the existing download/install presentation remains unchanged from the validated pre-unification baseline until #76 moves that same two-stage process, including install-refresh retargeting, into the Unified Update Dialog.
 - #76 must preserve the explicit `Downloaded -> Install` user checkpoint and prove it end-to-end on-device.
 - #77 alone may remove that second user action by automatically continuing across the already-validated `DOWNLOADED` boundary.
 - The existing download, SHA-256 verification, retained APK, install refresh, package/version/signing preflight, source trust, PackageInstaller, durable recovery, and Reset boundaries are unchanged by #75.
