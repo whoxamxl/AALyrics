@@ -381,7 +381,7 @@ The `APP` section exposes app/distribution information without moving release-ne
 
 ### Version and update
 
-The APP section keeps one Version/update row. In #75, **release discovery** is narrow: Settings owns MANUAL Checking / Up to date / Check failed, while MANUAL and AUTOMATIC newer-release results use the same global release dialog. The already-validated post-Update download/install process presentation remains in Settings until #76.
+The APP section keeps one Version/update row. In #75, **release discovery** is narrow: Settings owns MANUAL Checking / Up to date / Check failed, while MANUAL and AUTOMATIC newer-release results use the same shared release-available dialog. The already-validated post-Update download/install process presentation remains in Settings until #77.
 
 The installed version is supplied from `BuildConfig.VERSION_NAME` and rendered through the shared `VersionChip`.
 
@@ -402,7 +402,7 @@ CHECK_FAILED
 Update check failed                        ⓘ   ↻ Retry
 ```
 
-These are the only **discovery** states Settings should present. They become the only update-related Settings states overall after the #76 process-presentation migration.
+These are the only **discovery** states Settings should present. They become the only update-related Settings states overall after the #77 process-presentation migration.
 
 Manual discovery behavior:
 
@@ -415,7 +415,7 @@ Manual discovery behavior:
 
 #75 still presents the existing post-Update process states in Settings. One #75-specific process exception is `INSTALL_REFRESH`: if install preparation discovers a newer eligible release, Settings presents `Newer update available` with a Download action for that replacement target. MANUAL/AUTOMATIC discovery never uses this Settings state.
 
-After the #76 migration, Settings must not present any of the following:
+After the #77 migration, Settings must not present any of the following:
 
 ```text
 Update available
@@ -445,7 +445,7 @@ MANUAL
   Checking       -> Settings
   Up to date     -> Settings
   Check failed   -> Settings / Retry
-  Update found   -> Unified Update Dialog
+  Update found   -> Shared release-available dialog
 
 AUTOMATIC
   Checking       -> silent
@@ -460,9 +460,9 @@ A successful manual GitHub Releases query refreshes the same durable 7-day autom
 
 Turning automatic checking OFF suppresses automatic release notification even if an already-started automatic query completes later. It never disables manual `Check for updates`.
 
-#### Unified Update Dialog
+#### Shared release-available dialog
 
-A newer release found by either MANUAL or AUTOMATIC discovery opens the same global dialog:
+A newer release found by either MANUAL or AUTOMATIC discovery opens the same shared release-available dialog:
 
 ```text
 UPDATE AVAILABLE
@@ -485,9 +485,9 @@ Durable `SuccessfulUpdate` feedback retains modal priority and is not merged int
 
 **#75 current:** after the user chooses `Update`, the release-available dialog closes and the existing Settings-owned download/install process presentation continues unchanged.
 
-**#76 target:** the Unified Update Dialog becomes the presentation owner for that same update process, and Settings stops mirroring process states.
+**#77 target:** after the user accepts `Update` in the shared release-available dialog, the Unified Update Dialog becomes the presentation owner for that same update process, and Settings stops mirroring process states.
 
-#76 deliberately preserves the validated **two-stage user action** while moving its presentation into the dialog:
+#77 deliberately preserves the validated **two-stage user action** while moving its presentation into the dialog:
 
 ```text
 Update
@@ -501,7 +501,7 @@ Update
   -> INSTALLING / Android confirmation
 ```
 
-Target #76 presentation states include:
+Target #77 presentation states include:
 
 ```text
 PREPARING_DOWNLOAD
@@ -531,19 +531,19 @@ DOWNLOAD_FAILED / INSTALL_FAILED
 
 The existing Settings-row progress behavior should be transplanted into this dialog. GitHub Release asset size remains the expected total, downloaded bytes remain the determinate-progress numerator, and size mismatch / SHA-256 mismatch continue to fail closed.
 
-`DOWNLOADED` remains an authoritative application-owned safety and recovery boundary. In #76 it is also a visible `Ready to install` checkpoint with an explicit user-facing `Install` action. #76 must not automatically continue into installation merely because verification completed.
+`DOWNLOADED` remains an authoritative application-owned safety and recovery boundary. In #77 it is also a visible `Ready to install` checkpoint with an explicit user-facing `Install` action. #77 must not automatically continue into installation merely because verification completed.
 
 When Android install-source trust is missing, the update flow explains the requirement without bypassing Android Settings. Granting permission still hands off to Android's per-app source-trust Settings and re-checks `PackageManager.canRequestPackageInstalls()` on return. Android continues to own final package-install confirmation.
 
-In #75, install-time latest-release refresh still belongs to the existing Settings-owned process presentation. If it discovers a newer eligible release, Settings shows `Newer update available` with Download and preserves that retarget state across Settings re-entry. In #76, the active Unified Update Dialog takes over this handoff and returns to its release-available state instead of sending the user back to Settings.
+In #75, install-time latest-release refresh still belongs to the existing Settings-owned process presentation. If it discovers a newer eligible release, Settings shows `Newer update available` with Download and preserves that retarget state across Settings re-entry. In #77, the active Unified Update Dialog takes over this handoff and returns to its release-available state instead of sending the user back to Settings.
 
 A valid verified APK remains reusable across permission handling and recoverable retry. Presentation dismissal must not silently destroy the runtime's authoritative operation/artifact state.
 
-#### #77 one-step orchestration
+#### #78 one-step orchestration
 
-Only after the #76 two-stage route has passed focused tests and full real-device E2E validation may a later PR remove the second user-facing Install action.
+Only after the #77 two-stage route has passed focused tests and full real-device E2E validation may #78 remove the second user-facing Install action.
 
-#77 does not replace the validated core stages. It keeps:
+#78 does not replace the validated core stages. It keeps:
 
 - `downloadUpdate()` as the download/verify operation;
 - `DOWNLOADED` as the verified-artifact and recovery boundary;
@@ -551,7 +551,7 @@ Only after the #76 two-stage route has passed focused tests and full real-device
 
 The one-step UX adds orchestration above those stages: an Update operation carrying one-step continuation intent may automatically call the existing install stage after verified `DOWNLOADED`. The coordinator must prevent duplicate continuation across recomposition, Activity recreation, process recovery, and permission return.
 
-Production UX may therefore become one-step in #77 while the independently validated two-stage route remains preserved in runtime boundaries, tests, and recovery behavior.
+Production UX may therefore become one-step in #78 while the independently validated two-stage route remains preserved in runtime boundaries, tests, and recovery behavior.
 
 #### Version presentation
 
@@ -571,7 +571,7 @@ After the migration, Settings Previews should cover:
 - manual Up to date;
 - manual Check failed / Retry.
 
-Update-process Previews belong to the Unified Update Dialog and should cover representative release-available, preparing, downloading/progress, verification, Ready to install / explicit Install, permission-required, failure/retry, narrow-phone, and enlarged-font configurations. #76 Preview coverage must demonstrate the two-stage route; #77 may later change only the normal user-facing continuation behavior.
+Update-process Previews belong to the Unified Update Dialog and should cover representative release-available, preparing, downloading/progress, verification, Ready to install / explicit Install, permission-required, failure/retry, narrow-phone, and enlarged-font configurations. #77 Preview coverage must demonstrate the two-stage route; #78 may later change only the normal user-facing continuation behavior.
 
 The Phone UI remains presentation-only. It emits semantic discovery/update actions and renders application-owned state; it does not perform GitHub HTTP requests, file I/O, checksum verification, package inspection, signing checks, Android settings mutation, or PackageInstaller session work directly.
 
@@ -609,7 +609,7 @@ MANUAL CHECK_FAILED  -> visit-local
 IDLE                 -> ordinary Version / Check for updates presentation
 ```
 
-A newer-release result leaves Settings presentation ownership immediately and is represented by the Unified Update Dialog instead. Active download/install work, retained verified artifacts, permission-required state, and install handoff are not reset merely because the user changes primary destination or Settings visit.
+A MANUAL/AUTOMATIC newer-release discovery result leaves Settings presentation ownership immediately and is represented by the shared release-available dialog instead. In the current baseline, accepting `Update` then hands back to the existing Settings-owned process presentation. `INSTALL_REFRESH` retargeting also remains part of that Settings-owned process route until #77. Active download/install work, retained verified artifacts, permission-required state, and install handoff are not reset merely because the user changes primary destination or Settings visit.
 
 Automatic Checking / Up to date / Failed never become Settings presentation states.
 
@@ -1076,7 +1076,7 @@ PR #50 implements the Phone runtime-host application-composition boundary from `
 
 A durable Plain auto-scroll preference remains a separate ownership decision unless the runtime-host implementation has an already-approved backing seam.
 
-The update runtime is application-owned. In #75, Settings owns explicit MANUAL discovery states (Check/Retry, Checking, Up to date, Check failed) and continues to present the inherited post-Update process states after the shared release dialog hands off to the existing download/install route. MANUAL and AUTOMATIC newer-release discovery already converge on the same global release-available dialog, while automatic non-update results remain silent. #76 moves the post-Update process presentation—preparation/download progress, verification, retained-artifact continuation, permission-required handling, typed failures/Retry, install preparation, and PackageInstaller handoff—out of Settings and into the Unified Update Dialog. Active work remains application/process-owned across ordinary destination changes. Durable pending/success replacement markers, one-time success feedback, best-effort post-replacement resume, and automatic-check cadence/suppression remain application-owned. Changelog remains functional independently of release-network wiring: the application supplies the bundled repository `CHANGELOG.md` as presentation text. The About & Support implementation keeps bundled legal-document access application-owned, maps Help & Feedback semantic actions to GitHub destinations in `:app`, and keeps the existing Buy Me a Coffee handoff application-owned; none of these capabilities moves asset access or browser launching into `:ui:phone`.
+The update runtime is application-owned. In #75, Settings owns explicit MANUAL discovery states (Check/Retry, Checking, Up to date, Check failed) and continues to present the inherited post-Update process states after the shared release dialog hands off to the existing download/install route. MANUAL and AUTOMATIC newer-release discovery already converge on the same shared release-available dialog, while automatic non-update results remain silent. #77 moves the post-Update process presentation—preparation/download progress, verification, retained-artifact continuation, permission-required handling, typed failures/Retry, install-refresh retargeting, install preparation, and PackageInstaller handoff—out of Settings and into the Unified Update Dialog. Active work remains application/process-owned across ordinary destination changes. Durable pending/success replacement markers, one-time success feedback, best-effort post-replacement resume, and automatic-check cadence/suppression remain application-owned. Changelog remains functional independently of release-network wiring: the application supplies the bundled repository `CHANGELOG.md` as presentation text. The About & Support implementation keeps bundled legal-document access application-owned, maps Help & Feedback semantic actions to GitHub destinations in `:app`, and keeps the existing Buy Me a Coffee handoff application-owned; none of these capabilities moves asset access or browser launching into `:ui:phone`.
 
 That wiring must preserve the existing capability ownership documented in the relevant architecture files.
 
