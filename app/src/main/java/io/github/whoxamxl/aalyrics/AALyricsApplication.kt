@@ -401,9 +401,8 @@ class AALyricsApplication : Application() {
             ),
             packageInstaller = AndroidUpdatePackageInstaller(this),
             updateRecoveryStore = updateRecoveryStore,
-            onReleaseQuerySucceeded = {
-                automaticUpdateCheckRuntime.recordSuccessfulReleaseQuery()
-            },
+            onReleaseQuerySucceeded =
+                automaticUpdateCheckRuntime::recordSuccessfulReleaseQuery,
             onInstallPermissionRequired = installPermissionPromptRuntime::request,
         )
         translationSettingsStore = SharedPreferencesTranslationSettingsStore(this)
@@ -417,9 +416,17 @@ class AALyricsApplication : Application() {
             },
         )
         applicationScope.launch {
-            appUpdateCheckRuntime.state.collect(
-                automaticUpdateReleasePromptRuntime::onUpdateState,
-            )
+            combine(
+                appUpdateCheckRuntime.state,
+                phonePresentationSettingsStore.automaticallyCheckForUpdates,
+            ) { updateState, automaticChecksEnabled ->
+                updateState to automaticChecksEnabled
+            }.collect { (updateState, automaticChecksEnabled) ->
+                automaticUpdateReleasePromptRuntime.onUpdateState(
+                    state = updateState,
+                    enabled = automaticChecksEnabled,
+                )
+            }
         }
         playbackAppLauncher = SelectedPlaybackAppLauncher(this)
         playbackSourceAppInfoResolver = PlaybackSourceAppInfoResolver(this)
