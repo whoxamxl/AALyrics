@@ -105,7 +105,7 @@ The production Settings contract is defined in `docs/PHONE_SETTINGS.md`. The `fe
 - `APP`:
   - durable `Automatically check for updates` switch (default ON) with shared info tooltip;
   - #75 discovery presentation: installed version plus MANUAL Check/Retry, Checking, Up to date, and Check failed;
-  - #75 keeps the inherited post-Update download/install process presentation in Settings until #76;
+  - #75 keeps the inherited post-Update download/install process presentation in Settings until #76, including an install-refresh-only `Newer update available -> Download` retarget state when a newer release appears during install preparation;
   - one global release-available dialog shared by MANUAL and AUTOMATIC newer-release discovery;
   - #76 dialog-owned update-process presentation for preparing/download progress, verification, explicit `Ready to install` / Install, install preparation, permission-required handling, typed failure/Retry, and PackageInstaller handoff;
   - #76 preserves the validated two-stage Update -> Download/Verify -> Downloaded -> Install interaction while moving that process out of Settings;
