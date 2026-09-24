@@ -219,7 +219,7 @@ The durable 7-day cadence and process-local prompt suppression solve different p
 
 If durable `SuccessfulUpdate` feedback and an automatic release prompt were ever both present, successful-update acknowledgement has presentation priority and dialogs are not stacked. A valid update-success marker also prevents starting the automatic check on that Phone entry.
 
-Typical, narrow-phone, and enlarged-font Previews cover the new-release dialog.
+Typical, narrow-phone, and enlarged-font Previews cover the new-release dialog. Settings Preview coverage also pins the automatic-check preference itself: the ordinary Settings fixture represents the default ON state and the dedicated `Automatic updates off` Preview represents the persisted OFF state. These Previews use the same production `SettingsSwitchRow`, `SettingInfoTooltip`, dialog content, and shared `VersionChip` components as runtime presentation rather than parallel mock styling.
 
 ## One-step user update action
 
