@@ -259,8 +259,8 @@ class PhoneSettingsMapperTest {
         assertNull(downloaded.availableVersionName)
 
         val downloadFailed = mapped(AppUpdateCheckState.DownloadFailed("0.2.0-alpha.2"))
-        assertEquals(AppUpdateUiPhase.DOWNLOAD_FAILED, downloadFailed.phase)
-        assertEquals("0.2.0-alpha.2", downloadFailed.availableVersionName)
+        assertEquals(AppUpdateUiPhase.IDLE, downloadFailed.phase)
+        assertNull(downloadFailed.availableVersionName)
 
         val preparingInstall = mapped(AppUpdateCheckState.PreparingInstall("0.2.0-alpha.2"))
         assertEquals(AppUpdateUiPhase.PREPARING_INSTALL, preparingInstall.phase)
