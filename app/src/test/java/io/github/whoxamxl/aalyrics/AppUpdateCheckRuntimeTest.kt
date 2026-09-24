@@ -1113,6 +1113,16 @@ class AppUpdateCheckRuntimeTest {
                 ),
                 runtime.state.value,
             )
+
+            runtime.onSettingsEntered()
+
+            assertEquals(
+                AppUpdateCheckState.UpdateAvailable(
+                    versionName = "0.2.0-beta.1",
+                    origin = UpdateCheckOrigin.INSTALL_REFRESH,
+                ),
+                runtime.state.value,
+            )
             assertEquals(0, installer.installCount)
             assertTrue(retained.isFile)
         } finally {
