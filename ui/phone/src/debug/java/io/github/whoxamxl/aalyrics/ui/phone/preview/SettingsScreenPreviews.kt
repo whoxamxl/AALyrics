@@ -106,36 +106,6 @@ private fun SettingsInstallRefreshUpdateAvailablePreview() {
     SettingsScreenPreview(PhonePreviewFixtures.settingsInstallRefreshUpdateAvailable)
 }
 
-@Preview(name = "Update · preparing install", group = "SettingsScreen", widthDp = 412, heightDp = 900)
-@Composable
-private fun SettingsUpdatePreparingInstallPreview() {
-    SettingsScreenPreview(PhonePreviewFixtures.settingsPreparingInstall)
-}
-
-@Preview(name = "Update · install permission", group = "SettingsScreen", widthDp = 412, heightDp = 900)
-@Composable
-private fun SettingsUpdateInstallPermissionPreview() {
-    SettingsScreenPreview(PhonePreviewFixtures.settingsInstallPermissionRequired)
-}
-
-@Preview(name = "Permission return · denied", group = "SettingsScreen", widthDp = 412, heightDp = 900)
-@Composable
-private fun SettingsPermissionReturnDeniedPreview() {
-    SettingsScreenPreview(PhonePreviewFixtures.settingsInstallPermissionRequired)
-}
-
-@Preview(name = "Permission return · granted", group = "SettingsScreen", widthDp = 412, heightDp = 900)
-@Composable
-private fun SettingsPermissionReturnGrantedPreview() {
-    SettingsScreenPreview(PhonePreviewFixtures.settingsInstallingUpdate)
-}
-
-@Preview(name = "Update · installing", group = "SettingsScreen", widthDp = 412, heightDp = 900)
-@Composable
-private fun SettingsUpdateInstallingPreview() {
-    SettingsScreenPreview(PhonePreviewFixtures.settingsInstallingUpdate)
-}
-
 @Preview(name = "Update · install failed · signing mismatch", group = "SettingsScreen", widthDp = 412, heightDp = 900)
 @Composable
 private fun SettingsUpdateInstallFailedSigningMismatchPreview() {
@@ -267,40 +237,7 @@ internal fun SettingsScreenPreview(
                     )
                 },
                 onInstallUpdate = {
-                    val version = state.appUpdate.availableVersionName ?: "0.1.2"
-                    state = state.copy(
-                        appUpdate = AppUpdateUiState(
-                            phase = AppUpdateUiPhase.PREPARING_INSTALL,
-                            availableVersionName = version,
-                        ),
-                    )
-                    scope.launch {
-                        delay(600)
-                        state = state.copy(
-                            appUpdate = AppUpdateUiState(
-                                phase = AppUpdateUiPhase.INSTALL_PERMISSION_REQUIRED,
-                                availableVersionName = version,
-                            ),
-                        )
-                    }
-                },
-                onOpenInstallSettings = {
-                    val version = state.appUpdate.availableVersionName ?: "0.1.2"
-                    state = state.copy(
-                        appUpdate = AppUpdateUiState(
-                            phase = AppUpdateUiPhase.PREPARING_INSTALL,
-                            availableVersionName = version,
-                        ),
-                    )
-                    scope.launch {
-                        delay(350)
-                        state = state.copy(
-                            appUpdate = AppUpdateUiState(
-                                phase = AppUpdateUiPhase.INSTALLING,
-                                availableVersionName = version,
-                            ),
-                        )
-                    }
+                    // Install retry remains Settings-owned until INSTALL_FAILED migrates.
                 },
                 onOpenGitHub = {},
                 onHelpFeedback = {},
