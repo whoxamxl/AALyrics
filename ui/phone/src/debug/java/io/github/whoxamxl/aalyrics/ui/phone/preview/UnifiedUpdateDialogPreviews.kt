@@ -90,6 +90,58 @@ private fun UnifiedUpdateDownloadingLargeFontPreview() {
     )
 }
 
+@Preview(
+    name = "Verifying update",
+    group = "UnifiedUpdateDialog",
+    widthDp = 412,
+    heightDp = 892,
+    showBackground = true,
+)
+@Composable
+private fun UnifiedUpdateVerifyingPreview() {
+    UnifiedUpdateDialogPreview(
+        state = UpdateDialogUiState(
+            phase = UpdateDialogPhase.VERIFYING,
+            versionName = "0.3.0-alpha.1",
+        ),
+    )
+}
+
+@Preview(
+    name = "Verifying · narrow phone",
+    group = "UnifiedUpdateDialog",
+    widthDp = 320,
+    heightDp = 720,
+    showBackground = true,
+)
+@Composable
+private fun UnifiedUpdateVerifyingNarrowPreview() {
+    UnifiedUpdateDialogPreview(
+        state = UpdateDialogUiState(
+            phase = UpdateDialogPhase.VERIFYING,
+            versionName = "0.3.0-alpha.1",
+        ),
+    )
+}
+
+@Preview(
+    name = "Verifying · large font",
+    group = "UnifiedUpdateDialog",
+    widthDp = 412,
+    heightDp = 892,
+    fontScale = 1.3f,
+    showBackground = true,
+)
+@Composable
+private fun UnifiedUpdateVerifyingLargeFontPreview() {
+    UnifiedUpdateDialogPreview(
+        state = UpdateDialogUiState(
+            phase = UpdateDialogPhase.VERIFYING,
+            versionName = "0.3.0-alpha.1",
+        ),
+    )
+}
+
 @Composable
 private fun UnifiedUpdateDialogPreview(
     state: UpdateDialogUiState,
