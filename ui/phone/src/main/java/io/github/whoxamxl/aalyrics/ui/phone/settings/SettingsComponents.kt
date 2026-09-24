@@ -379,6 +379,8 @@ internal fun AppUpdateRow(
     checkLabel: String,
     checkingLabel: String,
     upToDateLabel: String,
+    updateAvailableLabel: String,
+    downloadLabel: String,
     preparingDownloadLabel: String,
     downloadingLabel: String,
     downloadedLabel: String,
@@ -439,6 +441,15 @@ internal fun AppUpdateRow(
                     label = upToDateLabel,
                     icon = AALyricsIcons.Check,
                     iconTint = AALyricsColors.Success,
+                )
+            }
+
+            AppUpdateUiPhase.UPDATE_AVAILABLE -> {
+                AppUpdateActionRow(
+                    status = updateAvailableLabel,
+                    versionName = state.availableVersionName,
+                    actionLabel = downloadLabel,
+                    onAction = onDownloadUpdate,
                 )
             }
 
