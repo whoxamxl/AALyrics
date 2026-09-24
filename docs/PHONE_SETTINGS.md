@@ -413,7 +413,9 @@ Manual discovery behavior:
 5. If a newer eligible release exists, Settings does **not** show `Update available` or a Download action; it immediately hands the release to the global release-available dialog.
 6. If a MANUAL check is requested while an AUTOMATIC query is already in flight, the existing query is promoted to MANUAL presentation semantics. Settings immediately shows `Checking for updates…`, no duplicate release request is started, and the eventual Up to date / Check failed / newer-release result is treated as MANUAL.
 
-#75 still presents the existing post-Update process states in Settings. After the #76 migration, Settings must not present any of the following:
+#75 still presents the existing post-Update process states in Settings. One #75-specific process exception is `INSTALL_REFRESH`: if install preparation discovers a newer eligible release, Settings presents `Newer update available` with a Download action for that replacement target. MANUAL/AUTOMATIC discovery never uses this Settings state.
+
+After the #76 migration, Settings must not present any of the following:
 
 ```text
 Update available
@@ -533,7 +535,7 @@ The existing Settings-row progress behavior should be transplanted into this dia
 
 When Android install-source trust is missing, the update flow explains the requirement without bypassing Android Settings. Granting permission still hands off to Android's per-app source-trust Settings and re-checks `PackageManager.canRequestPackageInstalls()` on return. Android continues to own final package-install confirmation.
 
-If install-time latest-release refresh discovers a newer eligible release, the active dialog returns to the release-available state for that newer version. It must not send the user back to a Settings `Update available` row.
+In #75, install-time latest-release refresh still belongs to the existing Settings-owned process presentation. If it discovers a newer eligible release, Settings shows `Newer update available` with Download and preserves that retarget state across Settings re-entry. In #76, the active Unified Update Dialog takes over this handoff and returns to its release-available state instead of sending the user back to Settings.
 
 A valid verified APK remains reusable across permission handling and recoverable retry. Presentation dismissal must not silently destroy the runtime's authoritative operation/artifact state.
 
@@ -1033,6 +1035,7 @@ Deterministic debug Previews should cover at least:
 - app up-to-date state;
 - manual app update failure/retry state;
 - shared new-release dialog for MANUAL/AUTOMATIC update availability;
+- #75 install-refresh retarget state showing a newer replacement release with Download;
 - install failure with signing-identity mismatch plus the expanded reason tooltip at typical, narrow, and enlarged-font configurations;
 - automatic update checking ON and OFF;
 - new-release dialog at typical, narrow, and enlarged-font configurations;
