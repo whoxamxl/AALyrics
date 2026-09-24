@@ -333,12 +333,14 @@ internal fun PhoneRuntimeHost(
             state.phase == UpdateDialogPhase.PREPARING_DOWNLOAD ||
                 state.phase == UpdateDialogPhase.DOWNLOADING ||
                 state.phase == UpdateDialogPhase.VERIFYING ||
-                state.phase == UpdateDialogPhase.READY_TO_INSTALL
+                state.phase == UpdateDialogPhase.READY_TO_INSTALL ||
+                state.phase == UpdateDialogPhase.DOWNLOAD_FAILED
         }
         if (downloadProcessDialogState != null) {
             UnifiedUpdateDialog(
                 state = downloadProcessDialogState,
                 onInstall = application::installUpdate,
+                onRetryDownload = application::downloadUpdate,
             )
         } else {
             updateReleasePrompt?.let { prompt ->
