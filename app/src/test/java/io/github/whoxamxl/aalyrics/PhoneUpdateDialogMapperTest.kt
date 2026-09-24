@@ -1,5 +1,6 @@
 package io.github.whoxamxl.aalyrics
 
+import io.github.whoxamxl.aalyrics.ui.phone.update.UpdateDialogAvailabilityContext
 import io.github.whoxamxl.aalyrics.ui.phone.update.UpdateDialogInstallFailureUiReason
 import io.github.whoxamxl.aalyrics.ui.phone.update.UpdateDialogPhase
 import java.io.File
@@ -16,15 +17,17 @@ class PhoneUpdateDialogMapperTest {
         )
         assertNull(mapPhoneUpdateDialogState(manualState))
 
+        val manualMapped = mapPhoneUpdateDialogState(
+            updateState = manualState,
+            releasePrompt = UpdateReleasePrompt(
+                versionName = "0.3.0-alpha.1",
+                origin = UpdateCheckOrigin.MANUAL,
+            ),
+        )
+        assertEquals(UpdateDialogPhase.AVAILABLE, manualMapped?.phase)
         assertEquals(
-            UpdateDialogPhase.AVAILABLE,
-            mapPhoneUpdateDialogState(
-                updateState = manualState,
-                releasePrompt = UpdateReleasePrompt(
-                    versionName = "0.3.0-alpha.1",
-                    origin = UpdateCheckOrigin.MANUAL,
-                ),
-            )?.phase,
+            UpdateDialogAvailabilityContext.DISCOVERY,
+            manualMapped?.availabilityContext,
         )
 
         val automaticState = AppUpdateCheckState.UpdateAvailable(
@@ -33,15 +36,17 @@ class PhoneUpdateDialogMapperTest {
         )
         assertNull(mapPhoneUpdateDialogState(automaticState))
 
+        val automaticMapped = mapPhoneUpdateDialogState(
+            updateState = automaticState,
+            releasePrompt = UpdateReleasePrompt(
+                versionName = "0.3.0-alpha.1",
+                origin = UpdateCheckOrigin.AUTOMATIC,
+            ),
+        )
+        assertEquals(UpdateDialogPhase.AVAILABLE, automaticMapped?.phase)
         assertEquals(
-            UpdateDialogPhase.AVAILABLE,
-            mapPhoneUpdateDialogState(
-                updateState = automaticState,
-                releasePrompt = UpdateReleasePrompt(
-                    versionName = "0.3.0-alpha.1",
-                    origin = UpdateCheckOrigin.AUTOMATIC,
-                ),
-            )?.phase,
+            UpdateDialogAvailabilityContext.DISCOVERY,
+            automaticMapped?.availabilityContext,
         )
     }
 
@@ -83,6 +88,10 @@ class PhoneUpdateDialogMapperTest {
 
         assertEquals(UpdateDialogPhase.AVAILABLE, mapped?.phase)
         assertEquals("0.3.0-beta.1", mapped?.versionName)
+        assertEquals(
+            UpdateDialogAvailabilityContext.INSTALL_REFRESH_RETARGET,
+            mapped?.availabilityContext,
+        )
     }
 
     @Test
