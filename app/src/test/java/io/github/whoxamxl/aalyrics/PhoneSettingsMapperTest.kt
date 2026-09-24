@@ -213,6 +213,7 @@ class PhoneSettingsMapperTest {
                 downloadedBytes = 25L,
                 totalBytes = 100L,
             ),
+            AppUpdateCheckState.VerifyingDownload("0.2.0-alpha.2"),
             AppUpdateCheckState.Downloaded(
                 versionName = "0.2.0-alpha.2",
                 apkFile = java.io.File("verified.apk"),
