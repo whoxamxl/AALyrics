@@ -37,6 +37,7 @@ import kotlin.math.roundToInt
 fun UnifiedUpdateDialog(
     state: UpdateDialogUiState,
     onInstall: () -> Unit,
+    onRetryDownload: () -> Unit,
 ) {
     require(state.phase.isDownloadFlowPhase()) {
         "UnifiedUpdateDialog download flow cannot render ${state.phase}"
@@ -62,6 +63,7 @@ fun UnifiedUpdateDialog(
             UnifiedUpdateDialogContent(
                 state = state,
                 onInstall = onInstall,
+                onRetryDownload = onRetryDownload,
                 modifier = Modifier
                     .fillMaxWidth()
                     .widthIn(max = 420.dp),
@@ -74,6 +76,7 @@ fun UnifiedUpdateDialog(
 internal fun UnifiedUpdateDialogContent(
     state: UpdateDialogUiState,
     onInstall: () -> Unit,
+    onRetryDownload: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     require(state.phase.isDownloadFlowPhase()) {
@@ -109,6 +112,8 @@ internal fun UnifiedUpdateDialogContent(
                             R.string.update_process_verifying_title
                         UpdateDialogPhase.READY_TO_INSTALL ->
                             R.string.update_process_ready_title
+                        UpdateDialogPhase.DOWNLOAD_FAILED ->
+                            R.string.update_process_download_failed_title
                         else ->
                             R.string.update_process_preparing_title
                     },
@@ -133,13 +138,28 @@ internal fun UnifiedUpdateDialogContent(
                     versionName = state.versionName,
                     modifier = Modifier.align(Alignment.CenterVertically),
                 )
-                if (state.phase == UpdateDialogPhase.READY_TO_INSTALL) {
-                    Text(
-                        text = stringResource(R.string.update_process_ready_body_suffix),
-                        style = AALyricsTypography.TrackArtist,
-                        color = AALyricsColors.TextSecondary,
-                        modifier = Modifier.align(Alignment.CenterVertically),
-                    )
+                when (state.phase) {
+                    UpdateDialogPhase.READY_TO_INSTALL -> {
+                        Text(
+                            text = stringResource(R.string.update_process_ready_body_suffix),
+                            style = AALyricsTypography.TrackArtist,
+                            color = AALyricsColors.TextSecondary,
+                            modifier = Modifier.align(Alignment.CenterVertically),
+                        )
+                    }
+
+                    UpdateDialogPhase.DOWNLOAD_FAILED -> {
+                        Text(
+                            text = stringResource(
+                                R.string.update_process_download_failed_body_suffix,
+                            ),
+                            style = AALyricsTypography.TrackArtist,
+                            color = AALyricsColors.TextSecondary,
+                            modifier = Modifier.align(Alignment.CenterVertically),
+                        )
+                    }
+
+                    else -> Unit
                 }
             }
 
@@ -210,6 +230,25 @@ internal fun UnifiedUpdateDialogContent(
                     }
                 }
 
+                UpdateDialogPhase.DOWNLOAD_FAILED -> {
+                    Text(
+                        text = stringResource(R.string.update_process_download_failed_reason),
+                        style = AALyricsTypography.TrackArtist,
+                        color = AALyricsColors.TextSecondary,
+                    )
+
+                    Spacer(Modifier.height(AALyricsSpacing.Space16))
+
+                    Button(
+                        onClick = onRetryDownload,
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Text(
+                            text = stringResource(R.string.update_process_retry),
+                        )
+                    }
+                }
+
                 else -> Unit
             }
         }
@@ -220,4 +259,5 @@ internal fun UpdateDialogPhase.isDownloadFlowPhase(): Boolean =
     this == UpdateDialogPhase.PREPARING_DOWNLOAD ||
         this == UpdateDialogPhase.DOWNLOADING ||
         this == UpdateDialogPhase.VERIFYING ||
-        this == UpdateDialogPhase.READY_TO_INSTALL
+        this == UpdateDialogPhase.READY_TO_INSTALL ||
+        this == UpdateDialogPhase.DOWNLOAD_FAILED
