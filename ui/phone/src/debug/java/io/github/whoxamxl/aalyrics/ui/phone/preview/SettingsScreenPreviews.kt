@@ -106,18 +106,6 @@ private fun SettingsInstallRefreshUpdateAvailablePreview() {
     SettingsScreenPreview(PhonePreviewFixtures.settingsInstallRefreshUpdateAvailable)
 }
 
-@Preview(name = "Update · preparing download", group = "SettingsScreen", widthDp = 412, heightDp = 900)
-@Composable
-private fun SettingsUpdatePreparingDownloadPreview() {
-    SettingsScreenPreview(PhonePreviewFixtures.settingsPreparingUpdateDownload)
-}
-
-@Preview(name = "Update · downloading", group = "SettingsScreen", widthDp = 412, heightDp = 900)
-@Composable
-private fun SettingsUpdateDownloadingPreview() {
-    SettingsScreenPreview(PhonePreviewFixtures.settingsDownloadingUpdate)
-}
-
 @Preview(name = "Update · downloaded", group = "SettingsScreen", widthDp = 412, heightDp = 900)
 @Composable
 private fun SettingsUpdateDownloadedPreview() {
@@ -287,30 +275,11 @@ internal fun SettingsScreenPreview(
                 onDownloadUpdate = {
                     val version = state.appUpdate.availableVersionName ?: "0.1.2"
                     state = state.copy(
-                        appUpdate = AppUpdateUiState(
-                            phase = AppUpdateUiPhase.PREPARING_DOWNLOAD,
-                            availableVersionName = version,
-                        ),
+                        appUpdate = AppUpdateUiState(phase = AppUpdateUiPhase.IDLE),
                     )
                     scope.launch {
-                        delay(500)
-                        state = state.copy(
-                            appUpdate = AppUpdateUiState(
-                                phase = AppUpdateUiPhase.DOWNLOADING,
-                                availableVersionName = version,
-                                downloadProgress = 0f,
-                            ),
-                        )
-                        listOf(0.18f, 0.43f, 0.71f, 1f).forEach { progress ->
-                            delay(300)
-                            state = state.copy(
-                                appUpdate = AppUpdateUiState(
-                                    phase = AppUpdateUiPhase.DOWNLOADING,
-                                    availableVersionName = version,
-                                    downloadProgress = progress,
-                                ),
-                            )
-                        }
+                        // Active download progress is owned by UnifiedUpdateDialog.
+                        delay(2000)
                         state = state.copy(
                             appUpdate = AppUpdateUiState(
                                 phase = AppUpdateUiPhase.DOWNLOADED,
