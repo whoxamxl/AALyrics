@@ -240,44 +240,40 @@ The Phone Settings surface exposes one combined version/update row. GitHub Relea
 
 Manual discovery remains explicitly available through `Check for updates` and `Retry` regardless of the automatic-update preference or cadence.
 
-AALyrics also supports low-frequency automatic discovery. `Automatically check for updates` is an app-owned durable preference that defaults to ON. After the normal Phone entry gates reach `READY`, the application may start an automatic release query only when the preference is enabled and the durable cadence is due. The cadence is **7 full days** from the last recorded check; no timestamp means the first automatic check is eligible immediately.
-
-Starting an automatic check records the cadence timestamp before the network result is known, preventing repeated retries across process restarts when the network is unavailable. Automatic-query completion does not rewrite that timestamp. A successful manual GitHub Releases query refreshes the same cadence timestamp. Install-time latest-release refresh does not alter the automatic discovery cadence. Manual checks are never blocked by this cadence. Turning the preference ON later in the same process requests automatic discovery only when the cadence is due. A process-local attempt guard prevents duplicate automatic attempts from recomposition, Activity recreation, navigation, or repeated READY rendering.
-
-Automatic checking starts only from an idle update runtime. It must not replace a retained verified APK or interrupt active download/install work. `Reset AALyrics` restores the preference to ON, clears the cadence timestamp and process-local attempt guard, and makes a fresh automatic check eligible at the next valid READY entry. Successful release-query cadence writes are generation-serialized with Reset so pre-Reset work cannot restore a cleared timestamp.
-
-Release-query results carry an internal origin: `MANUAL`, `AUTOMATIC`, or `INSTALL_REFRESH`. Only an `AUTOMATIC` newer-release result may request the global `New release available` dialog, and only while the automatic-update preference is currently enabled. Turning the preference OFF suppresses the automatic modal even when an already-started automatic query completes afterward. Manual checks and install-time refreshes never create that dialog. Dismissing the automatic dialog with `Not now`, its close action, or system Back suppresses that exact version for the remainder of the current app-process session; a different version remains eligible. Outside-tap dismissal is disabled. Accepting `Update` consumes the prompt and enters the existing verified download pipeline; #75 does not yet auto-chain download completion into installation. Durable `AALyrics updated` feedback has modal priority, and an unconsumed success marker prevents automatic checking on that Phone entry.
-
-The application-owned release client reads the repository's public Release collection. It must not rely on GitHub's single "latest release" concept because AALyrics prerelease channels (alpha/beta/RC) are valid update candidates.
-
-Only releases whose tags match the AALyrics version grammar participate:
+Settings owns only the manual discovery presentation:
 
 ```text
-vMAJOR.MINOR.PATCH
-vMAJOR.MINOR.PATCH-alpha.N
-vMAJOR.MINOR.PATCH-beta.N
-vMAJOR.MINOR.PATCH-rc.N
+Idle / Check for updates
+Checking…
+Up to date
+Check failed / Retry
 ```
 
-Draft releases and unrelated/malformed tags are ignored. Candidate ordering is determined from the parsed version, not publication time alone.
+A manual query that finds a newer eligible release does not expose a Settings-row Download action. It immediately hands the result to the global Unified Update Dialog.
 
-Eligibility follows the installed channel:
+AALyrics also supports low-frequency automatic discovery. `Automatically check for updates` is an app-owned durable preference that defaults to ON. After normal Phone entry gates reach `READY`, the application may start an automatic release query only when the preference is enabled and the durable cadence is due. The cadence is **7 full days** from the last recorded check; no timestamp means the first automatic check is eligible immediately.
 
-- stable installed builds consider stable releases only;
-- alpha/beta/RC installed builds consider prerelease and stable releases;
-- development builds use their embedded base release version and channel.
+Starting an automatic check records the cadence timestamp before the network request so repeated app restarts do not hammer GitHub after a transient failure. A successful MANUAL query refreshes the same timestamp. AUTOMATIC completion does not shift its already-recorded start timestamp, and INSTALL_REFRESH does not alter discovery cadence.
 
-Development metadata such as `0.2.0-alpha.1-dev+abcdef0` or `.dirty` identifies the source build but does not make the same base release appear newer. For update comparison, that example compares as `0.2.0-alpha.1`.
+Automatic non-update outcomes are intentionally silent in Phone UI. Automatic Checking, Up to date, and Failed do not appear in Settings.
 
-Within one numeric `MAJOR.MINOR.PATCH`, precedence is:
+Release-query results still carry an internal origin: `MANUAL`, `AUTOMATIC`, or `INSTALL_REFRESH`. Origin controls cadence and notification-suppression policy; it does not choose a second update flow.
+
+Both user-visible newer-release results converge:
 
 ```text
-alpha.N < beta.N < rc.N < stable
+MANUAL UpdateAvailable ───────┐
+                              ├─> Unified Update Dialog
+AUTOMATIC UpdateAvailable ────┘
 ```
 
-The installed version shown in Settings comes from `BuildConfig.VERSION_NAME`; no duplicate UI version constant is allowed. A successful check with no newer eligible release maps to `UP_TO_DATE`; a newer eligible release maps to `UPDATE_AVAILABLE`. Network/protocol failure, an unparseable installed version, or inability to establish any comparable AALyrics release maps to `CHECK_FAILED`.
+The available-state dialog presents the discovered release with `Update`, `Not now`, close, and system-Back handling. Outside-tap dismissal is disabled.
 
-The public client must not embed a GitHub token or repository secret in the APK.
+Automatic same-session suppression remains scoped to automatic notification. Dismissing an automatically discovered release suppresses that exact automatic prompt for the current process session. An explicit later manual `Check for updates` may present that same still-current release because the user deliberately requested discovery.
+
+Turning the automatic preference OFF suppresses automatic dialog presentation even when an already-started automatic query completes afterward. Manual discovery remains available.
+
+Durable `AALyrics updated` feedback has modal priority, and an unconsumed success marker prevents automatic checking on that Phone entry.
 
 ### Verified in-app download
 
@@ -290,7 +286,7 @@ AALyrics-vX.Y.Z[-suffix].apk.sha256
 
 The download runtime is application-owned. It accepts only HTTPS asset URLs, follows only HTTPS redirects, bounds downloaded content, stages the APK under the app-private cache, parses the Release workflow's single-line `sha256sum` output for the exact APK filename, and calculates SHA-256 over the downloaded APK before accepting it.
 
-The Phone presentation distinguishes preparation from transfer. `PREPARING_DOWNLOAD` covers asset resolution, checksum retrieval/parsing, and staging-file preparation and uses an indeterminate linear progress bar. The runtime enters `DOWNLOADING` immediately before the APK body transfer starts. GitHub Release asset `size` is the expected total byte count, while the download boundary reports bytes received; Settings therefore renders determinate 0–100% progress. The completed transfer byte count must equal the Release-published asset size before checksum verification continues.
+The Unified Update Dialog distinguishes preparation from transfer. `PREPARING_DOWNLOAD` covers asset resolution, checksum retrieval/parsing, and staging-file preparation and uses indeterminate progress. The runtime enters `DOWNLOADING` immediately before the APK body transfer starts. GitHub Release asset `size` is the expected total byte count, while the download boundary reports bytes received; the dialog therefore renders determinate 0–100% progress. The completed transfer byte count must equal the Release-published asset size before checksum verification continues.
 
 The APK is written first as an operation-owned partial artifact under app-private cache storage. Each reset generation uses a distinct staging filename, so a stale transport can only delete its own destination. Only after the published digest matches is it promoted into app-private no-backup persistent storage. Promotion uses an operation-owned temporary persistent `.promoting` file. Canonical verified-APK commit and Reset cleanup are serialized by the same file-store mutation lock, and commit revalidates operation ownership inside that critical section. Therefore Reset either runs after a completed commit and removes it, or invalidates ownership before commit so the canonical APK is never published. Missing/duplicate assets, malformed checksum content, transport/I/O failure, oversize content, or digest mismatch map to `DOWNLOAD_FAILED`; a failed or partial APK must not remain as a verified artifact.
 
@@ -300,9 +296,9 @@ Active downloads survive destination changes and Activity recreation because the
 
 ### In-app installation handoff
 
-`DOWNLOADED` means that the retained signed-release APK bytes match the Release-published SHA-256. Installation remains a separate explicit user action.
+`DOWNLOADED` means that the retained signed-release APK bytes match the Release-published SHA-256. It remains an internal/recovery state, but the approved user-facing flow does not require a second Settings-row Install action; the Unified Update Dialog continues the same Update intent into install preparation.
 
-When the user presses `Install`, AALyrics must first refresh eligible GitHub Releases using the same release grammar and installed-channel rules used by ordinary update discovery. If the retained verified release is still the latest eligible release, installation preparation may continue. If a newer eligible release has appeared, AALyrics must not intentionally install the older retained APK first; it returns to the normal update/download path for the newer release. This refresh happens only on the explicit Install action, not in the background and not merely because `DOWNLOADED` is restored.
+Before installation continues from the verified artifact, AALyrics must refresh eligible GitHub Releases using the same release grammar and installed-channel rules used by ordinary update discovery. If the retained verified release is still the latest eligible release, installation preparation may continue. If a newer eligible release has appeared, AALyrics must not intentionally install the older retained APK first; the active Unified Update Dialog returns to the available state for the newer release. This refresh is an install-process boundary, not background discovery, and does not alter the automatic discovery cadence.
 
 Before any PackageInstaller session is created, application-owned preflight validates the retained APK as an update of the installed AALyrics package. The retained file must still be the canonical verified artifact, archive metadata must be readable, the package name must match `io.github.whoxamxl.aalyrics`, the archive version must be newer than the installed Android package version, and its signing identity must be update-compatible with the installed AALyrics package. SHA-256 verification proves Release-asset integrity; package/version/signing validation separately proves that Android package handoff is appropriate.
 
@@ -343,9 +339,10 @@ The intended device validation is:
 ```text
 install older same-release-signed fixture
     -> Check for updates
+    -> Unified Update Dialog
+    -> Update
     -> Download / verify current published release
-    -> Install
-    -> Android confirmation
+    -> install preparation / Android confirmation
     -> current published AALyrics replaces the fixture
 ```
 
