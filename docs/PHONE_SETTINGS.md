@@ -529,7 +529,7 @@ DOWNLOAD_FAILED / INSTALL_FAILED
 [typed explanation + Retry]
 ```
 
-The active download preparation/transfer presentation has now moved out of Settings and into the Unified Update Dialog. `PREPARING_DOWNLOAD` uses indeterminate dialog progress and `DOWNLOADING` uses the existing byte-based determinate 0–100% progress. Settings no longer owns those phases or their Preview fixtures. `VerifyingDownload` is also kept on the dialog surface so the presentation does not disappear after transfer completion, but dedicated verification copy is intentionally deferred to the next #77 checkpoint.
+The active download preparation/transfer presentation has now moved out of Settings and into the Unified Update Dialog. `PREPARING_DOWNLOAD` uses indeterminate dialog progress and `DOWNLOADING` uses the existing byte-based determinate 0–100% progress. Settings no longer owns those phases or their Preview fixtures. `VerifyingDownload` also stays on the dialog surface and now renders dedicated `Verifying update` / `Checking download integrity…` copy with indeterminate progress.
 
 GitHub Release asset size remains the expected total, downloaded bytes remain the determinate-progress numerator, and size mismatch / SHA-256 mismatch continue to fail closed.
 
@@ -585,7 +585,7 @@ After the migration, Settings Previews should cover:
 - manual Up to date;
 - manual Check failed / Retry.
 
-Update-process Previews belong to the Unified Update Dialog. The current #77 checkpoint already covers preparing download and downloading/progress at typical, narrow-phone, and enlarged-font sizes. Dedicated verification, Ready to install / explicit Install, permission-required, and failure/retry dialog Previews are added with their corresponding ownership migrations rather than keeping parallel Settings fixtures. #77 Preview coverage must ultimately demonstrate the full two-stage route; #78 may later change only the normal user-facing continuation behavior.
+Update-process Previews belong to the Unified Update Dialog. The current #77 checkpoint covers preparing download, downloading/progress, and dedicated verification presentation, including narrow-phone and enlarged-font coverage for the active progress states. Ready to install / explicit Install, permission-required, and failure/retry dialog Previews are added with their corresponding ownership migrations rather than keeping parallel Settings fixtures. #77 Preview coverage must ultimately demonstrate the full two-stage route; #78 may later change only the normal user-facing continuation behavior.
 
 The Phone UI remains presentation-only. It emits semantic discovery/update actions and renders application-owned state; it does not perform GitHub HTTP requests, file I/O, checksum verification, package inspection, signing checks, Android settings mutation, or PackageInstaller session work directly.
 
