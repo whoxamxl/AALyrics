@@ -15,7 +15,6 @@ import io.github.whoxamxl.aalyrics.ui.phone.lyrics.TrackCardLyricsStatus
 import io.github.whoxamxl.aalyrics.ui.phone.lyrics.TrackCardUiState
 import io.github.whoxamxl.aalyrics.ui.phone.navigation.PhoneDestination
 import io.github.whoxamxl.aalyrics.ui.phone.settings.AndroidAutoCompatibilityUiStatus
-import io.github.whoxamxl.aalyrics.ui.phone.settings.AppUpdateInstallFailureUiReason
 import io.github.whoxamxl.aalyrics.ui.phone.settings.AppUpdateUiPhase
 import io.github.whoxamxl.aalyrics.ui.phone.settings.AppUpdateUiState
 import io.github.whoxamxl.aalyrics.ui.phone.settings.SettingsLanguageOptionUiState
@@ -407,63 +406,6 @@ internal object PhonePreviewFixtures {
         appUpdate = AppUpdateUiState(
             phase = AppUpdateUiPhase.CHECK_FAILED,
             failureReason = "GitHub Releases could not be reached.",
-        ),
-    )
-    val settingsInstallRefreshUpdateAvailable = settingsTypical.copy(
-        appUpdate = AppUpdateUiState(
-            phase = AppUpdateUiPhase.UPDATE_AVAILABLE,
-            availableVersionName = "0.2.0-beta.1",
-        ),
-    )
-    val settingsPreparingUpdateDownload = settingsTypical.copy(
-        appUpdate = AppUpdateUiState(
-            phase = AppUpdateUiPhase.PREPARING_DOWNLOAD,
-            availableVersionName = "0.1.2",
-        ),
-    )
-    val settingsDownloadingUpdate = settingsTypical.copy(
-        appUpdate = AppUpdateUiState(
-            phase = AppUpdateUiPhase.DOWNLOADING,
-            availableVersionName = "0.1.2",
-            downloadProgress = 0.64f,
-        ),
-    )
-    val settingsDownloadedUpdate = settingsTypical.copy(
-        appUpdate = AppUpdateUiState(
-            phase = AppUpdateUiPhase.DOWNLOADED,
-            availableVersionName = "0.1.2",
-        ),
-    )
-    val settingsDownloadFailed = settingsTypical.copy(
-        appUpdate = AppUpdateUiState(
-            phase = AppUpdateUiPhase.DOWNLOAD_FAILED,
-            availableVersionName = "0.1.2",
-            failureReason = "The APK could not be downloaded or verified.",
-        ),
-    )
-    val settingsPreparingInstall = settingsTypical.copy(
-        appUpdate = AppUpdateUiState(
-            phase = AppUpdateUiPhase.PREPARING_INSTALL,
-            availableVersionName = "0.1.2",
-        ),
-    )
-    val settingsInstallPermissionRequired = settingsTypical.copy(
-        appUpdate = AppUpdateUiState(
-            phase = AppUpdateUiPhase.INSTALL_PERMISSION_REQUIRED,
-            availableVersionName = "0.1.2",
-        ),
-    )
-    val settingsInstallingUpdate = settingsTypical.copy(
-        appUpdate = AppUpdateUiState(
-            phase = AppUpdateUiPhase.INSTALLING,
-            availableVersionName = "0.1.2",
-        ),
-    )
-    val settingsInstallFailedSigningMismatch = settingsTypical.copy(
-        appUpdate = AppUpdateUiState(
-            phase = AppUpdateUiPhase.INSTALL_FAILED,
-            availableVersionName = "0.1.2",
-            installFailureReason = AppUpdateInstallFailureUiReason.SIGNING_IDENTITY_MISMATCH,
         ),
     )
     val settingsTranslationOn = settingsTypical.copy(translationEnabled = true)

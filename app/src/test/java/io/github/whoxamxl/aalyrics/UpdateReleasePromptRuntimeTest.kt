@@ -149,6 +149,36 @@ class UpdateReleasePromptRuntimeTest {
     }
 
     @Test
+    fun `manual update acceptance does not behave like dismissal suppression`() {
+        val runtime = UpdateReleasePromptRuntime()
+        val manual = AppUpdateCheckState.UpdateAvailable(
+            versionName = "0.3.0-alpha.1",
+            origin = UpdateCheckOrigin.MANUAL,
+        )
+
+        runtime.onUpdateState(manual)
+
+        assertEquals(
+            UpdateReleasePrompt(
+                versionName = "0.3.0-alpha.1",
+                origin = UpdateCheckOrigin.MANUAL,
+            ),
+            runtime.consumeForUpdate(),
+        )
+        assertNull(runtime.prompt.value)
+
+        runtime.onUpdateState(manual)
+
+        assertEquals(
+            UpdateReleasePrompt(
+                versionName = "0.3.0-alpha.1",
+                origin = UpdateCheckOrigin.MANUAL,
+            ),
+            runtime.prompt.value,
+        )
+    }
+
+    @Test
     fun `update consumption closes prompt and preserves automatic suppression`() {
         val runtime = UpdateReleasePromptRuntime()
         val automatic = AppUpdateCheckState.UpdateAvailable(

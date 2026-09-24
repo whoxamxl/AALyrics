@@ -74,9 +74,9 @@ internal class UpdateReleasePromptRuntime {
         when (current.origin) {
             UpdateCheckOrigin.AUTOMATIC ->
                 automaticallySuppressedVersions += current.versionName
-            UpdateCheckOrigin.MANUAL ->
-                dismissedManualResult = current
-            UpdateCheckOrigin.INSTALL_REFRESH -> Unit
+            UpdateCheckOrigin.MANUAL,
+            UpdateCheckOrigin.INSTALL_REFRESH,
+            -> Unit
         }
         mutablePrompt.value = null
         return current
