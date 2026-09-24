@@ -93,13 +93,16 @@ Render translated text as additive secondary content inside the same logical lyr
 Stable visual/geometry contract:
 
 - preserve the existing canonical source typography, WORD/LINE/PLAIN behavior, current-line emphasis, and source word-progress behavior;
-- translated text appears directly below the canonical line with a tight intra-row gap, smaller supporting typography, and secondary visual emphasis;
-- translated text never receives independent word highlighting or independent current-line logic;
+- translated text is a chrome-free typographic annotation: no cards, backgrounds, badges/pills, language labels, icons, separators, or dividers;
+- translated text appears directly below the canonical line with an initial 4dp intra-row gap;
+- use an initial translated-text target of approximately 15sp Medium / compact supporting line height / TextSecondary-class emphasis at about 0.76 local opacity, while keeping canonical typography unchanged;
+- translated text never receives independent word highlighting, independent current-line logic, or separate current/past/future focus animation;
 - the canonical + translated pair is measured as one row;
 - for timed lyrics, the complete row receives the existing shared focus scale/alpha transform as one unit;
 - follow/browse scroll calculations use the measured height/center of that complete row;
 - the existing approximately 45% timed focus target, opening `♪` row, edge fades, return-to-playback behavior, and PLAIN auto-scroll contract remain intact;
-- Translation appearing atomically may change row heights, but must not introduce a second scroll/timing owner.
+- Translation appearing atomically may change row heights, but must not introduce a second scroll/timing owner;
+- do not animate row height merely to reveal Translation; if an appearance transition is used, re-measure geometry immediately and limit animation to a short translated-text alpha fade (initial target about 150ms).
 
 ### Tests and Previews
 
@@ -210,6 +213,7 @@ The slice is complete when all of the following are true:
 - A Ready artifact for a superseded target language, or one observed after Translation has been turned OFF, is not shown.
 - Translation does not change canonical timing, current-line selection, sync type, provider attribution, lyrics status, provider lookup, or playback ownership.
 - Canonical and translated text form one scroll/focus geometry row.
+- Translation remains visually subordinate to canonical lyrics and uses the documented chrome-free annotation treatment rather than introducing a second subtitle UI.
 - Existing 45% focus, edge fading, Browse/Follow, opening `♪`, return control, and PLAIN auto-scroll behavior remain intact.
 - `:ui:phone` remains presentation-only and has no direct ML Kit/Translation runtime dependency.
 - Android Auto behavior is unchanged.
