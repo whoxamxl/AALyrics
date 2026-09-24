@@ -194,6 +194,58 @@ private fun UnifiedUpdateReadyToInstallLargeFontPreview() {
     )
 }
 
+@Preview(
+    name = "Download failed",
+    group = "UnifiedUpdateDialog",
+    widthDp = 412,
+    heightDp = 892,
+    showBackground = true,
+)
+@Composable
+private fun UnifiedUpdateDownloadFailedPreview() {
+    UnifiedUpdateDialogPreview(
+        state = UpdateDialogUiState(
+            phase = UpdateDialogPhase.DOWNLOAD_FAILED,
+            versionName = "0.3.0-alpha.1",
+        ),
+    )
+}
+
+@Preview(
+    name = "Download failed · narrow phone",
+    group = "UnifiedUpdateDialog",
+    widthDp = 320,
+    heightDp = 720,
+    showBackground = true,
+)
+@Composable
+private fun UnifiedUpdateDownloadFailedNarrowPreview() {
+    UnifiedUpdateDialogPreview(
+        state = UpdateDialogUiState(
+            phase = UpdateDialogPhase.DOWNLOAD_FAILED,
+            versionName = "0.3.0-alpha.1",
+        ),
+    )
+}
+
+@Preview(
+    name = "Download failed · large font",
+    group = "UnifiedUpdateDialog",
+    widthDp = 412,
+    heightDp = 892,
+    fontScale = 1.3f,
+    showBackground = true,
+)
+@Composable
+private fun UnifiedUpdateDownloadFailedLargeFontPreview() {
+    UnifiedUpdateDialogPreview(
+        state = UpdateDialogUiState(
+            phase = UpdateDialogPhase.DOWNLOAD_FAILED,
+            versionName = "0.3.0-alpha.1",
+        ),
+    )
+}
+
 @Composable
 private fun UnifiedUpdateDialogPreview(
     state: UpdateDialogUiState,
@@ -212,6 +264,7 @@ private fun UnifiedUpdateDialogPreview(
             UnifiedUpdateDialogContent(
                 state = state,
                 onInstall = {},
+                onRetryDownload = {},
                 modifier = Modifier
                     .fillMaxWidth()
                     .widthIn(max = 420.dp),
