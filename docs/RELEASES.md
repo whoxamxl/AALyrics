@@ -352,7 +352,7 @@ In **#75**, the inherited #74 presentation remains: Settings can show the permis
 
 In the corrected #77 permission UI, `Download from GitHub` means only "open the external manual-download destination." That external handoff is treated like dismissing AALyrics' permission presentation. AALyrics does not infer that a manual download occurred and does not clear or advance the authoritative process. The user may return and use Settings `Check for updates` to re-enter the current process.
 
-In **#77**, that permission explanation moves into the Unified Update Dialog and the parallel Settings process presentation is removed. In both versions, only the explicit `Grant permission` action opens the platform's per-app unknown-source settings. On return, AALyrics re-checks platform state rather than assuming permission was granted; refusal leaves the update recoverable from the retained APK, while granted trust resumes install preparation from that artifact. The secondary `Download from GitHub` action remains an external-release fallback and does not bypass Android confirmation. This platform-owned trust choice is not cleared by Reset AALyrics. Android's PackageManager exposes this trust check from API 26 onward, while the legacy `Intent.ACTION_INSTALL_PACKAGE` entry point is deprecated from API 29 in favor of `PackageInstaller`.
+In **#77**, that permission explanation moves into the Unified Update Dialog and the parallel Settings process presentation is removed. Only the explicit `Grant permission` action opens the platform's per-app unknown-source settings. On return, AALyrics re-checks platform state rather than assuming permission was granted. For the normal pre-download gate, refusal preserves the selected release without transferring the APK and granted trust resumes Download. If the install-time fail-safe gate is reached later, refusal preserves the retained verified APK/install target and granted trust resumes Install. The secondary `Download from GitHub` action remains an external-release fallback and does not bypass Android confirmation. This platform-owned trust choice is not cleared by Reset AALyrics. Android's PackageManager exposes this trust check from API 26 onward, while the legacy `Intent.ACTION_INSTALL_PACKAGE` entry point is deprecated from API 29 in favor of `PackageInstaller`.
 
 Installation uses `android.content.pm.PackageInstaller.Session`, not the deprecated ACTION_INSTALL_PACKAGE flow. The application-owned boundary creates a full-install session, streams the retained APK into the session, syncs/closes the write, and commits with an `IntentSender` status callback. A `STATUS_PENDING_USER_ACTION` result hands the system-provided confirmation intent to the user; AALyrics does not bypass or synthesize Android's final install confirmation.
 
@@ -392,10 +392,12 @@ install older same-release-signed fixture
     -> shared release-available dialog
     -> Update
     -> Unified Update Dialog
+    -> source-trust gate / permission if required
     -> Download / verify current published release
     -> DOWNLOADED / Ready to install
     -> Install
-    -> install refresh / preflight / permission if required
+    -> install refresh / preflight
+    -> source-trust re-check if required
     -> Android PackageInstaller confirmation
     -> current published AALyrics replaces the fixture
     -> durable Update successful reconciliation
