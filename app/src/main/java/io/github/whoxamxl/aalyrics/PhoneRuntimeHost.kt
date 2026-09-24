@@ -332,10 +332,14 @@ internal fun PhoneRuntimeHost(
         val downloadProcessDialogState = updateDialogState?.takeIf { state ->
             state.phase == UpdateDialogPhase.PREPARING_DOWNLOAD ||
                 state.phase == UpdateDialogPhase.DOWNLOADING ||
-                state.phase == UpdateDialogPhase.VERIFYING
+                state.phase == UpdateDialogPhase.VERIFYING ||
+                state.phase == UpdateDialogPhase.READY_TO_INSTALL
         }
         if (downloadProcessDialogState != null) {
-            UnifiedUpdateDialog(state = downloadProcessDialogState)
+            UnifiedUpdateDialog(
+                state = downloadProcessDialogState,
+                onInstall = application::installUpdate,
+            )
         } else {
             updateReleasePrompt?.let { prompt ->
                 NewReleaseAvailableDialog(
