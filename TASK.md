@@ -113,6 +113,7 @@ Completed in this checkpoint:
 - durable `SuccessfulUpdate` feedback has presentation priority, dialogs are not stacked, and an unconsumed success marker prevents automatic checking on that Phone entry;
 - focused prompt-runtime tests cover automatic-only eligibility, manual/install-refresh exclusion, same-version suppression, different-version eligibility, Update consumption, and Reset;
 - typical, narrow-phone, and enlarged-font new-release dialog Previews were added;
+- standardized semantic application/release version presentation through the shared `VersionChip` and applied it across Settings update states, the branding footer, install-permission, new-release, and successful-update surfaces; the channel matrix Preview is the visual baseline.
 - the new-release dialog now reuses #74's shared `PhoneDialogHeader`, matching the permission and successful-update dialogs for close-icon geometry and touch target;
 - Update UX and Phone Settings documentation are aligned.
 - inherited #74 recovery hardening remains preserved: process-death cleanup is session-bound and Reset cannot race a stale pending marker past the PackageInstaller commit boundary.
