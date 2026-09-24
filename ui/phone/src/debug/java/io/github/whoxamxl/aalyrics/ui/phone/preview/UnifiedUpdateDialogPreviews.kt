@@ -15,6 +15,7 @@ import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsColors
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsSpacing
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsTheme
 import io.github.whoxamxl.aalyrics.ui.phone.update.UnifiedUpdateDialogContent
+import io.github.whoxamxl.aalyrics.ui.phone.update.UpdateDialogInstallFailureUiReason
 import io.github.whoxamxl.aalyrics.ui.phone.update.UpdateDialogPhase
 import io.github.whoxamxl.aalyrics.ui.phone.update.UpdateDialogUiState
 
@@ -332,6 +333,64 @@ private fun UnifiedUpdateInstallingPreview() {
     )
 }
 
+@Preview(
+    name = "Installation failed",
+    group = "UnifiedUpdateDialog",
+    widthDp = 412,
+    heightDp = 892,
+    showBackground = true,
+)
+@Composable
+private fun UnifiedUpdateInstallFailedPreview() {
+    UnifiedUpdateDialogPreview(
+        state = UpdateDialogUiState(
+            phase = UpdateDialogPhase.INSTALL_FAILED,
+            versionName = "0.3.0-alpha.1",
+            installFailureReason =
+                UpdateDialogInstallFailureUiReason.SIGNING_IDENTITY_MISMATCH,
+        ),
+    )
+}
+
+@Preview(
+    name = "Installation failed · narrow phone",
+    group = "UnifiedUpdateDialog",
+    widthDp = 320,
+    heightDp = 720,
+    showBackground = true,
+)
+@Composable
+private fun UnifiedUpdateInstallFailedNarrowPreview() {
+    UnifiedUpdateDialogPreview(
+        state = UpdateDialogUiState(
+            phase = UpdateDialogPhase.INSTALL_FAILED,
+            versionName = "0.3.0-alpha.1",
+            installFailureReason =
+                UpdateDialogInstallFailureUiReason.SIGNING_IDENTITY_MISMATCH,
+        ),
+    )
+}
+
+@Preview(
+    name = "Installation failed · large font",
+    group = "UnifiedUpdateDialog",
+    widthDp = 412,
+    heightDp = 892,
+    fontScale = 1.3f,
+    showBackground = true,
+)
+@Composable
+private fun UnifiedUpdateInstallFailedLargeFontPreview() {
+    UnifiedUpdateDialogPreview(
+        state = UpdateDialogUiState(
+            phase = UpdateDialogPhase.INSTALL_FAILED,
+            versionName = "0.3.0-alpha.1",
+            installFailureReason =
+                UpdateDialogInstallFailureUiReason.SIGNING_IDENTITY_MISMATCH,
+        ),
+    )
+}
+
 @Composable
 private fun UnifiedUpdateDialogPreview(
     state: UpdateDialogUiState,
@@ -351,6 +410,7 @@ private fun UnifiedUpdateDialogPreview(
                 state = state,
                 onInstall = {},
                 onRetryDownload = {},
+                onRetryInstall = {},
                 onGrantInstallPermission = {},
                 onDownloadFromGitHub = {},
                 modifier = Modifier

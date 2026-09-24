@@ -106,13 +106,6 @@ private fun SettingsInstallRefreshUpdateAvailablePreview() {
     SettingsScreenPreview(PhonePreviewFixtures.settingsInstallRefreshUpdateAvailable)
 }
 
-@Preview(name = "Update · install failed · signing mismatch", group = "SettingsScreen", widthDp = 412, heightDp = 900)
-@Composable
-private fun SettingsUpdateInstallFailedSigningMismatchPreview() {
-    SettingsScreenPreview(PhonePreviewFixtures.settingsInstallFailedSigningMismatch)
-}
-
-
 @Preview(name = "Narrow · 320dp", group = "SettingsScreen", widthDp = 320, heightDp = 700)
 @Composable
 private fun SettingsScreenNarrowPreview() {
@@ -235,9 +228,6 @@ internal fun SettingsScreenPreview(
                     state = state.copy(
                         appUpdate = AppUpdateUiState(phase = AppUpdateUiPhase.IDLE),
                     )
-                },
-                onInstallUpdate = {
-                    // Install retry remains Settings-owned until INSTALL_FAILED migrates.
                 },
                 onOpenGitHub = {},
                 onHelpFeedback = {},

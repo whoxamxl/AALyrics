@@ -4,7 +4,6 @@ import io.github.whoxamxl.aalyrics.translation.api.TranslationModelPhase
 import io.github.whoxamxl.aalyrics.translation.api.TranslationModelState
 import io.github.whoxamxl.aalyrics.translation.api.TranslationSettings
 import io.github.whoxamxl.aalyrics.ui.phone.settings.AndroidAutoCompatibilityUiStatus
-import io.github.whoxamxl.aalyrics.ui.phone.settings.AppUpdateInstallFailureUiReason
 import io.github.whoxamxl.aalyrics.ui.phone.settings.AppUpdateUiPhase
 import io.github.whoxamxl.aalyrics.ui.phone.settings.TranslationModelCleanupUiState
 import io.github.whoxamxl.aalyrics.ui.phone.settings.TranslationModelUiState
@@ -280,12 +279,8 @@ class PhoneSettingsMapperTest {
                 reason = AppUpdateInstallFailureReason.SIGNING_IDENTITY_MISMATCH,
             ),
         )
-        assertEquals(AppUpdateUiPhase.INSTALL_FAILED, installFailed.phase)
-        assertEquals("0.2.0-alpha.2", installFailed.availableVersionName)
-        assertEquals(
-            AppUpdateInstallFailureUiReason.SIGNING_IDENTITY_MISMATCH,
-            installFailed.installFailureReason,
-        )
+        assertEquals(AppUpdateUiPhase.IDLE, installFailed.phase)
+        assertNull(installFailed.availableVersionName)
     }
 
     @Test
