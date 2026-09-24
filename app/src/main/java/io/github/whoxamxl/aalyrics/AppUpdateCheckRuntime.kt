@@ -216,16 +216,7 @@ internal class AppUpdateCheckRuntime(
         }
 
         val candidate = availableCandidate ?: return
-        val versionName = candidate.release.tagName.removePrefix("v")
-        if (installSourceTrustChecker?.canRequestPackageInstalls() == false) {
-            installPermissionResumeStage = InstallPermissionResumeStage.DOWNLOAD
-            mutableState.value =
-                AppUpdateCheckState.InstallPermissionRequired(versionName)
-            onInstallPermissionRequired(versionName)
-            return
-        }
-
-        startDownload(candidate)
+        startDownloadWithSourceTrust(candidate)
     }
 
     fun downloadUpdate() {
@@ -239,6 +230,19 @@ internal class AppUpdateCheckRuntime(
             currentState !is AppUpdateCheckState.UpdateAvailable &&
             currentState !is AppUpdateCheckState.DownloadFailed
         ) {
+            return
+        }
+
+        startDownloadWithSourceTrust(candidate)
+    }
+
+    private fun startDownloadWithSourceTrust(candidate: AALyricsReleaseCandidate) {
+        val versionName = candidate.release.tagName.removePrefix("v")
+        if (installSourceTrustChecker?.canRequestPackageInstalls() == false) {
+            installPermissionResumeStage = InstallPermissionResumeStage.DOWNLOAD
+            mutableState.value =
+                AppUpdateCheckState.InstallPermissionRequired(versionName)
+            onInstallPermissionRequired(versionName)
             return
         }
 
