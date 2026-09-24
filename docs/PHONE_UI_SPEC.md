@@ -208,10 +208,17 @@ Goals:
 
 - current lyric remains visually dominant
 - previous and next lines provide context
+- canonical/source lyric text remains the primary hierarchy when Translation is shown
+- matching translated text may appear as smaller secondary text directly below its canonical line
+- canonical + translated text remains one measured/focused row rather than two independently timed rows
+- preserved/non-translated artifact lines are not duplicated
+- Translation pending/failure/stale identity falls back to the normal original-only row without changing Lyrics status
 - normal phone layouts should preserve roughly five to six visible lyric lines where practical
 - fixed shell elements should remain compact enough not to consume the majority of vertical space
 
-This is a layout target, not a hard line-count guarantee. Exact typography, spacing, and dp values must be tuned in Compose Preview and device testing rather than frozen in this architecture document.
+The active Phone Translation integration consumes only identity-validated, atomically published Translation output. It does not move Translation execution, ML Kit, provider selection, or timing ownership into `:ui:phone`. Android Auto Translation remains a separate later surface integration.
+
+This is a layout target, not a hard line-count guarantee. Exact secondary Translation typography and tight intra-row spacing should be tuned in Compose Preview/device testing while preserving the canonical hierarchy and the viewport contract in `docs/PHONE_LYRICS_VIEWPORT.md`.
 
 ## Persistent playback surface
 
@@ -414,6 +421,9 @@ Preview coverage should eventually exercise at least:
 - no artwork
 - loading / ready / degraded / not found / failed lyrics states
 - line-synced / word-synced / unsynced lyrics
+- matching translated LINE/PLAIN rows with canonical text kept primary
+- mixed translated/preserved lines without duplicated preserved text
+- long/wrapped translated text at typical, narrow, and enlarged-font configurations
 - long lyric lines
 - first/last-line boundaries
 - follow vs manual browse
