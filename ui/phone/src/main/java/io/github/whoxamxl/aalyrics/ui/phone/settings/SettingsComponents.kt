@@ -382,13 +382,10 @@ internal fun AppUpdateRow(
     downloadLabel: String,
     retryLabel: String,
     checkFailedLabel: String,
-    installFailedLabel: String,
     failureInfoContentDescription: String,
     genericFailureReason: String,
-    installFailureReason: String,
     onCheckForUpdates: () -> Unit,
     onDownloadUpdate: () -> Unit,
-    onInstallUpdate: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -451,16 +448,6 @@ internal fun AppUpdateRow(
                     failureInfoContentDescription = failureInfoContentDescription,
                     retryLabel = retryLabel,
                     onRetry = onCheckForUpdates,
-                )
-            }
-
-            AppUpdateUiPhase.INSTALL_FAILED -> {
-                AppUpdateFailureRow(
-                    label = installFailedLabel,
-                    reason = state.failureReason ?: installFailureReason,
-                    failureInfoContentDescription = failureInfoContentDescription,
-                    retryLabel = retryLabel,
-                    onRetry = onInstallUpdate,
                 )
             }
         }

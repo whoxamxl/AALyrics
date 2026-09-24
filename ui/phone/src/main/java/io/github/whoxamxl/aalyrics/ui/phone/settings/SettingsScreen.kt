@@ -43,7 +43,6 @@ fun SettingsScreen(
     onAndroidAutoCompatibilitySetup: () -> Unit,
     onCheckForUpdates: () -> Unit,
     onDownloadUpdate: () -> Unit,
-    onInstallUpdate: () -> Unit,
     onOpenGitHub: () -> Unit,
     onHelpFeedback: (HelpFeedbackDestination) -> Unit,
     onSupportAALyrics: () -> Unit,
@@ -144,7 +143,6 @@ fun SettingsScreen(
             onAndroidAutoCompatibilitySetup = onAndroidAutoCompatibilitySetup,
             onCheckForUpdates = onCheckForUpdates,
             onDownloadUpdate = onDownloadUpdate,
-            onInstallUpdate = onInstallUpdate,
             onChangelogRequested = { activeSubscreen = SettingsSubscreen.CHANGELOG },
             onPrivacyPolicyRequested = {
                 activeSubscreen = SettingsSubscreen.PRIVACY_POLICY
@@ -183,7 +181,6 @@ internal fun SettingsScreenContent(
     onAndroidAutoCompatibilitySetup: () -> Unit,
     onCheckForUpdates: () -> Unit,
     onDownloadUpdate: () -> Unit,
-    onInstallUpdate: () -> Unit,
     onChangelogRequested: () -> Unit,
     onPrivacyPolicyRequested: () -> Unit,
     onTermsOfUseRequested: () -> Unit,
@@ -309,17 +306,12 @@ internal fun SettingsScreenContent(
                 downloadLabel = stringResource(R.string.settings_download_update),
                 retryLabel = stringResource(R.string.settings_retry),
                 checkFailedLabel = stringResource(R.string.settings_update_check_failed),
-                installFailedLabel =
-                    stringResource(R.string.settings_update_install_failed),
                 failureInfoContentDescription =
                     stringResource(R.string.settings_update_failure_info),
                 genericFailureReason =
                     stringResource(R.string.settings_update_failure_generic),
-                installFailureReason =
-                    appUpdateInstallFailureReasonText(state.appUpdate.installFailureReason),
                 onCheckForUpdates = onCheckForUpdates,
                 onDownloadUpdate = onDownloadUpdate,
-                onInstallUpdate = onInstallUpdate,
             )
 
             SettingsDivider()
@@ -455,53 +447,3 @@ private fun androidAutoStatusColor(
     AndroidAutoCompatibilityUiStatus.SKIPPED -> AALyricsColors.Warning
     AndroidAutoCompatibilityUiStatus.NOT_REVIEWED -> AALyricsColors.TextSecondary
 }
-
-
-
-@Composable
-private fun appUpdateInstallFailureReasonText(
-    reason: AppUpdateInstallFailureUiReason?,
-): String =
-    when (reason) {
-        AppUpdateInstallFailureUiReason.DEPENDENCIES_UNAVAILABLE ->
-            stringResource(R.string.settings_update_install_failure_dependencies_unavailable)
-        AppUpdateInstallFailureUiReason.RELEASE_REFRESH_FAILED ->
-            stringResource(R.string.settings_update_install_failure_release_refresh_failed)
-        AppUpdateInstallFailureUiReason.INSTALLED_VERSION_INVALID ->
-            stringResource(R.string.settings_update_install_failure_installed_version_invalid)
-        AppUpdateInstallFailureUiReason.RETAINED_VERSION_INVALID ->
-            stringResource(R.string.settings_update_install_failure_retained_version_invalid)
-        AppUpdateInstallFailureUiReason.RETAINED_RELEASE_NOT_ELIGIBLE ->
-            stringResource(R.string.settings_update_install_failure_retained_release_not_eligible)
-        AppUpdateInstallFailureUiReason.RETAINED_RELEASE_NOT_NEWER ->
-            stringResource(R.string.settings_update_install_failure_retained_release_not_newer)
-        AppUpdateInstallFailureUiReason.NO_ELIGIBLE_RELEASE ->
-            stringResource(R.string.settings_update_install_failure_no_eligible_release)
-        AppUpdateInstallFailureUiReason.RETAINED_RELEASE_NO_LONGER_CURRENT ->
-            stringResource(
-                R.string.settings_update_install_failure_retained_release_no_longer_current,
-            )
-        AppUpdateInstallFailureUiReason.APK_FILE_MISSING ->
-            stringResource(R.string.settings_update_install_failure_apk_missing)
-        AppUpdateInstallFailureUiReason.APK_NOT_CANONICAL ->
-            stringResource(R.string.settings_update_install_failure_apk_not_canonical)
-        AppUpdateInstallFailureUiReason.APK_UNREADABLE ->
-            stringResource(R.string.settings_update_install_failure_apk_unreadable)
-        AppUpdateInstallFailureUiReason.PACKAGE_MISMATCH ->
-            stringResource(R.string.settings_update_install_failure_package_mismatch)
-        AppUpdateInstallFailureUiReason.VERSION_NOT_NEWER ->
-            stringResource(R.string.settings_update_install_failure_version_not_newer)
-        AppUpdateInstallFailureUiReason.VERSION_NAME_MISMATCH ->
-            stringResource(R.string.settings_update_install_failure_version_name_mismatch)
-        AppUpdateInstallFailureUiReason.SIGNING_IDENTITY_UNAVAILABLE ->
-            stringResource(R.string.settings_update_install_failure_signing_unavailable)
-        AppUpdateInstallFailureUiReason.SIGNING_IDENTITY_MISMATCH ->
-            stringResource(R.string.settings_update_install_failure_signing_mismatch)
-        AppUpdateInstallFailureUiReason.RECOVERY_STATE_PERSISTENCE_FAILED ->
-            stringResource(R.string.settings_update_install_failure_recovery_state)
-        AppUpdateInstallFailureUiReason.INSTALLER_HANDOFF_FAILED ->
-            stringResource(R.string.settings_update_install_failure_handoff)
-        AppUpdateInstallFailureUiReason.INSTALLER_REJECTED ->
-            stringResource(R.string.settings_update_install_failure_installer_rejected)
-        null -> stringResource(R.string.settings_update_install_failure_generic)
-    }
