@@ -1015,11 +1015,10 @@ class AppUpdateCheckRuntimeTest {
     }
 
     @Test
-    fun `denied source trust return stays required without reopening prompt`() = runTest {
+    fun `denied source trust return stays permission required`() = runTest {
         val root = createTempDirectory("aalyrics-install-runtime").toFile()
         retainedUpdate(root, "0.2.0-alpha.2")
         val installer = FakeUpdatePackageInstaller()
-        val permissionPromptVersions = mutableListOf<String>()
         try {
             val runtime = runtime(
                 installedVersionName = "0.2.0-alpha.1",
@@ -1033,7 +1032,6 @@ class AppUpdateCheckRuntimeTest {
                 ),
                 installSourceTrustChecker = InstallSourceTrustChecker { false },
                 packageInstaller = installer,
-                onInstallPermissionRequired = permissionPromptVersions::add,
             )
 
             runtime.installUpdate()
@@ -1042,7 +1040,6 @@ class AppUpdateCheckRuntimeTest {
                 AppUpdateCheckState.InstallPermissionRequired("0.2.0-alpha.2"),
                 runtime.state.value,
             )
-            assertEquals(listOf("0.2.0-alpha.2"), permissionPromptVersions)
             assertEquals(0, installer.installCount)
 
             runtime.onInstallSourceTrustReturned()
@@ -1052,15 +1049,6 @@ class AppUpdateCheckRuntimeTest {
                 AppUpdateCheckState.InstallPermissionRequired("0.2.0-alpha.2"),
                 runtime.state.value,
             )
-            assertEquals(listOf("0.2.0-alpha.2"), permissionPromptVersions)
-            assertEquals(0, installer.installCount)
-
-            runtime.installUpdate()
-
-            assertEquals(
-                listOf("0.2.0-alpha.2", "0.2.0-alpha.2"),
-                permissionPromptVersions,
-            )
             assertEquals(0, installer.installCount)
         } finally {
             root.deleteRecursively()
@@ -1068,11 +1056,10 @@ class AppUpdateCheckRuntimeTest {
     }
 
     @Test
-    fun `granted source trust return resumes install without reopening prompt`() = runTest {
+    fun `granted source trust return resumes install`() = runTest {
         val root = createTempDirectory("aalyrics-install-runtime").toFile()
         retainedUpdate(root, "0.2.0-alpha.2")
         val installer = FakeUpdatePackageInstaller()
-        val permissionPromptVersions = mutableListOf<String>()
         var sourceTrusted = false
         try {
             val runtime = runtime(
@@ -1087,7 +1074,6 @@ class AppUpdateCheckRuntimeTest {
                 ),
                 installSourceTrustChecker = InstallSourceTrustChecker { sourceTrusted },
                 packageInstaller = installer,
-                onInstallPermissionRequired = permissionPromptVersions::add,
             )
 
             runtime.installUpdate()
@@ -1096,7 +1082,6 @@ class AppUpdateCheckRuntimeTest {
                 AppUpdateCheckState.InstallPermissionRequired("0.2.0-alpha.2"),
                 runtime.state.value,
             )
-            assertEquals(listOf("0.2.0-alpha.2"), permissionPromptVersions)
             assertEquals(0, installer.installCount)
 
             sourceTrusted = true
@@ -1107,7 +1092,6 @@ class AppUpdateCheckRuntimeTest {
                 AppUpdateCheckState.Installing("0.2.0-alpha.2"),
                 runtime.state.value,
             )
-            assertEquals(listOf("0.2.0-alpha.2"), permissionPromptVersions)
             assertEquals(1, installer.installCount)
         } finally {
             root.deleteRecursively()
@@ -1655,7 +1639,6 @@ class AppUpdateCheckRuntimeTest {
         packageInstaller: UpdatePackageInstaller? = null,
         updateRecoveryStore: UpdateRecoveryStore? = FakeUpdateRecoveryStore(),
         onReleaseQuerySucceeded: (UpdateCheckOrigin) -> Unit = {},
-        onInstallPermissionRequired: (String) -> Unit = {},
     ) = AppUpdateCheckRuntime(
         installedVersionName = installedVersionName,
         releaseClient = GitHubReleaseClient { Result.success(releases) },
@@ -1667,7 +1650,6 @@ class AppUpdateCheckRuntimeTest {
         packageInstaller = packageInstaller,
         updateRecoveryStore = updateRecoveryStore,
         onReleaseQuerySucceeded = onReleaseQuerySucceeded,
-        onInstallPermissionRequired = onInstallPermissionRequired,
     )
 
     private fun installPreparation(
