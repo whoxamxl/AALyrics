@@ -451,7 +451,7 @@ AUTOMATIC
   Checking       -> silent
   Up to date     -> silent
   Failed         -> silent
-  Update found   -> Unified Update Dialog
+  Update found   -> Shared release-available dialog
 ```
 
 Both origins use the same release grammar, installed-channel eligibility rules, and comparison logic. The internal `UpdateCheckOrigin` remains necessary for cadence and notification-suppression policy, but it must not select a different update process.
