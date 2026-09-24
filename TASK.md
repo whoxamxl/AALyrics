@@ -127,8 +127,8 @@ Active branch: `feature/unified-update-dialog`, created fresh from the current `
 - [x] Introduce explicit application-owned `VerifyingDownload(versionName)` immediately before SHA-256 verification.
 - [x] Define the pure Unified Update Dialog presentation contract and mapper without changing runtime ownership: `UpdateDialogUiState` / `UpdateDialogPhase`, discovery-vs-install-refresh availability context, bounded download progress, explicit `VERIFYING` / `READY_TO_INSTALL`, typed install-failure mapping, and focused mapper coverage.
 - [x] Move `PREPARING_DOWNLOAD` and `DOWNLOADING` presentation ownership from Settings into the Unified Update Dialog, including determinate 0–100% transfer progress, dedicated typical/narrow/large-font Previews, and Settings mapper/Preview cleanup.
-- [x] Keep `VerifyingDownload` on the Unified Update Dialog surface during the ownership transition so the dialog does not disappear between transfer completion and `DOWNLOADED`; it temporarily reuses the preparing-style indeterminate presentation.
-- [ ] Give `VerifyingDownload` its dedicated verification copy/presentation without changing SHA-256 semantics.
+- [x] Keep `VerifyingDownload` on the Unified Update Dialog surface during the ownership transition so the dialog does not disappear between transfer completion and `DOWNLOADED`.
+- [x] Give `VerifyingDownload` dedicated `Verifying update` / `Checking download integrity…` presentation with indeterminate progress and typical/narrow/large-font Previews, without changing SHA-256 semantics.
 - [ ] Connect permission-required, typed failure/Retry, installing, and install-refresh retarget presentation to the Unified Update Dialog.
 - [ ] Keep `DOWNLOADED` as the authoritative verified-artifact boundary and render it as `Ready to install`.
 - [ ] Keep an explicit user-facing `Install` action after `DOWNLOADED`; do not auto-continue into installation in #77.
