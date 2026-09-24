@@ -108,6 +108,7 @@ internal fun mapPhoneSettingsState(
             is AppUpdateCheckState.UpdateAvailable,
             is AppUpdateCheckState.PreparingDownload,
             is AppUpdateCheckState.Downloading,
+            is AppUpdateCheckState.VerifyingDownload,
             is AppUpdateCheckState.Downloaded,
             is AppUpdateCheckState.DownloadFailed,
             is AppUpdateCheckState.PreparingInstall,
