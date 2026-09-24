@@ -296,9 +296,21 @@ Active downloads survive destination changes and Activity recreation because the
 
 ### In-app installation handoff
 
-`DOWNLOADED` means that the retained signed-release APK bytes match the Release-published SHA-256. It remains an internal/recovery state, but the approved user-facing flow does not require a second Settings-row Install action; the Unified Update Dialog continues the same Update intent into install preparation.
+`DOWNLOADED` means that the retained signed-release APK bytes match the Release-published SHA-256. It is a permanent internal safety/recovery boundary and must not be removed by later UX simplification.
+
+In **#76**, `DOWNLOADED` is also an explicit user-visible `Ready to install` checkpoint in the Unified Update Dialog. The user presses `Install` before installation preparation begins. The old Settings-row Install action is removed, but the two-stage interaction itself is intentionally preserved and validated end-to-end:
+
+```text
+Update
+  -> Download / Verify
+  -> DOWNLOADED / Ready to install
+  -> Install
+  -> install refresh / preflight / permission / PackageInstaller
+```
 
 Before installation continues from the verified artifact, AALyrics must refresh eligible GitHub Releases using the same release grammar and installed-channel rules used by ordinary update discovery. If the retained verified release is still the latest eligible release, installation preparation may continue. If a newer eligible release has appeared, AALyrics must not intentionally install the older retained APK first; the active Unified Update Dialog returns to the available state for the newer release. This refresh is an install-process boundary, not background discovery, and does not alter the automatic discovery cadence.
+
+Only after the #76 two-stage route is validated on-device may **#77** remove the second user-facing Install action. #77 must reuse the existing `downloadUpdate()` -> `DOWNLOADED` -> `installUpdate()` boundaries rather than replacing them with a new monolithic update operation. One-step UX is an orchestration layer that automatically continues from verified `DOWNLOADED` into the existing install stage when continuation intent is present. The independent download/install stages, retained-artifact recovery, and `DOWNLOADED` state remain testable and authoritative.
 
 Before any PackageInstaller session is created, application-owned preflight validates the retained APK as an update of the installed AALyrics package. The retained file must still be the canonical verified artifact, archive metadata must be readable, the package name must match `io.github.whoxamxl.aalyrics`, the archive version must be newer than the installed Android package version, and its signing identity must be update-compatible with the installed AALyrics package. SHA-256 verification proves Release-asset integrity; package/version/signing validation separately proves that Android package handoff is appropriate.
 
