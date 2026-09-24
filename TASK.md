@@ -79,6 +79,8 @@ Approved follow-up direction:
 
 ## Implementation checkpoints
 
+### #75 — automatic discovery and unified release handoff
+
 - [x] Freeze the validated Package Installer baseline in TASK/update documentation.
 - [x] Separate install-permission runtime state from transient dialog visibility.
 - [x] Implement the large install-permission explanation dialog and lifecycle behavior.
@@ -90,35 +92,58 @@ Approved follow-up direction:
 - [x] Standardize dismissible custom update-dialog X placement through shared `PhoneDialogHeader`.
 - [x] Bind durable pending-update recovery to the exact PackageInstaller session and harden Reset races.
 - [x] Add durable automatic update checking preference and bounded automatic discovery.
-- [x] Add the initial automatic-discovery release dialog and session suppression.
+- [x] Add release-available prompting and same-session automatic suppression.
 - [x] Standardize semantic application/release version presentation through `VersionChip`.
-- [x] Freeze the approved unified discovery/update presentation contract in `docs/UPDATE_UX.md`, `docs/PHONE_SETTINGS.md`, `docs/RELEASES.md`, and `docs/PHONE_UI_SPEC.md`.
-- [x] Generalize the automatic-only prompt owner into the Unified Update Dialog presentation owner.
-- [x] Route both MANUAL and AUTOMATIC `UpdateAvailable` results into the same dialog.
+- [x] Freeze the approved #75/#76 presentation split in `docs/UPDATE_UX.md`, `docs/PHONE_SETTINGS.md`, `docs/RELEASES.md`, and `docs/PHONE_UI_SPEC.md`.
+- [x] Generalize the automatic-only release prompt owner so MANUAL and AUTOMATIC `UpdateAvailable` use the same release dialog.
 - [x] Keep automatic same-session suppression notification-specific while allowing explicit manual discovery to re-present the same current release.
 - [x] Preserve check origin through Checking / Up to date / Failed so AUTOMATIC non-update outcomes remain silent in Settings while MANUAL outcomes stay visible.
-- [ ] Reduce Settings Version/update presentation to Idle / Checking / Up to date / Check failed.
-- [ ] Move preparing/download progress, verification/preparation, permission-required, typed failure/Retry, and install presentation into the Unified Update Dialog.
+- [x] Keep `UpdateAvailable` itself out of the Settings row and hand both MANUAL and AUTOMATIC discoveries to the same release dialog.
+- [x] Add focused runtime/mapper coverage for the MANUAL/AUTOMATIC discovery split and prompt behavior.
+- [ ] Complete focused real-device regression for manual/automatic discovery, toggle behavior, prompt dismissal, and manual re-presentation.
+- [ ] Run final #75 CI/review validation after checkpoint documentation is aligned.
+
+### Deferred to #76 — unified update-process presentation
+
+Do not implement these items in #75:
+
+- [ ] Reduce the Settings Version/update presentation to only Idle / Checking / Up to date / Check failed for the complete update lifecycle.
+- [ ] Move preparing/download progress, verification/preparation, downloaded/install, permission-required, typed failure/Retry, and installing presentation into the Unified Update Dialog.
 - [ ] Compose Download + Install behind the dialog's one user-facing `Update` action.
-- [ ] Align production Previews and focused tests with the new presentation ownership.
-- [ ] Complete same-release-signing device E2E from a recovery-capable OLD APK to a newer recovery-capable APK, confirming durable replacement reconciliation and one-time Successful dialog.
-- [ ] Complete focused real-device regression for manual/automatic discovery convergence and unified update-dialog behavior.
+- [ ] Align process-state Previews and focused tests with the unified dialog ownership.
+- [ ] Complete same-release-signing device E2E from a recovery-capable OLD APK to a newer recovery-capable APK, confirming durable replacement reconciliation and one-time Successful dialog where required by the #76 validation plan.
 
 ## Current checkpoint
 
-**Origin-aware discovery presentation complete. Stop here before moving update-process presentation.**
+**#75 implementation scope is complete. Update-process presentation work is explicitly deferred to #76.**
 
-Implemented through this slice:
+The #75 production behavior is:
 
-- MANUAL and AUTOMATIC `UpdateAvailable` already converge into the same global release dialog;
-- `Checking`, `UpToDate`, and `Failed` now retain their `UpdateCheckOrigin`;
-- MANUAL Checking / Up to date / Check failed continue to render in Settings;
-- AUTOMATIC Checking / Up to date / Failed map to the ordinary idle Version/update row and therefore remain silent;
-- automatic preference OFF continues to suppress only automatic release presentation and never blocks manual discovery;
-- automatic same-version suppression remains notification-specific, while explicit manual discovery can re-present the same current release;
-- focused runtime tests pin origin preservation through Checking, Up to date, and Failed;
-- Settings mapper tests pin the manual-visible / automatic-silent split.
+```text
+MANUAL
+  Check for updates
+  -> Checking        -> Settings
+  -> Up to date      -> Settings
+  -> Check failed    -> Settings / Retry
+  -> UpdateAvailable -> shared release dialog
 
-The Settings row still temporarily owns preparing/download progress, Downloaded/Install, permission-required, installing, and recoverable failure presentation. Those states cannot be removed safely until their presentation is moved into the Unified Update Dialog in the same implementation slice; removing them earlier would create a user-visible gap after pressing Update.
+AUTOMATIC
+  -> Checking        -> silent in Settings
+  -> Up to date      -> silent in Settings
+  -> Failed          -> silent in Settings
+  -> UpdateAvailable -> same shared release dialog
+```
 
-Next bounded slice: move the existing update-process presentation into the Unified Update Dialog, then remove those process states/actions from Settings at the same checkpoint. The underlying download, SHA-256 verification, retained APK, install refresh, package/version/signing preflight, source trust, PackageInstaller, durable recovery, and Reset boundaries remain unchanged.
+Additional #75 invariants:
+
+- MANUAL and AUTOMATIC `UpdateAvailable` use the same `New release available` dialog and the same existing verified-download entry point.
+- Turning automatic checks OFF suppresses only automatic presentation; manual discovery remains available.
+- Dismissing an automatic prompt suppresses that exact automatic version for the current process session.
+- An explicit later manual check may present the same still-current version even when its automatic prompt was suppressed.
+- `INSTALL_REFRESH` remains internal and does not create a discovery prompt in this #75 scope.
+- Settings does not present `UpdateAvailable`; after the user presses `Update`, the existing download/install presentation remains unchanged from the validated pre-unification baseline until #76 moves that process into the unified dialog.
+- The existing download, SHA-256 verification, retained APK, install refresh, package/version/signing preflight, source trust, PackageInstaller, durable recovery, and Reset boundaries are unchanged by #75.
+
+A temporary #76-scope implementation was intentionally reverted before finalizing #75. The branch code tree after that revert matches the previously green `612c8112` checkpoint; only the explicit revert history and this checkpoint documentation are newer.
+
+Remaining #75 work is validation only: run final CI on the aligned checkpoint, review the latest #75 diff, and complete the focused real-device regression before merge readiness is declared.
