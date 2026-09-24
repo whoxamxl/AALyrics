@@ -28,6 +28,7 @@ import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsStroke
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsTypography
 import io.github.whoxamxl.aalyrics.ui.phone.R
 import io.github.whoxamxl.aalyrics.ui.phone.component.PhoneDialogHeader
+import io.github.whoxamxl.aalyrics.ui.phone.component.VersionChip
 
 @Immutable
 data class UpdateSuccessfulDialogUiState(
@@ -103,10 +104,13 @@ fun UpdateSuccessfulDialogContent(
 
             Spacer(Modifier.height(AALyricsSpacing.Space16))
 
+            VersionChip(versionName = state.versionName)
+
+            Spacer(Modifier.height(AALyricsSpacing.Space16))
+
             Text(
                 text = stringResource(
                     R.string.update_successful_body,
-                    state.versionName,
                 ),
                 style = AALyricsTypography.TrackArtist,
                 color = AALyricsColors.TextSecondary,
