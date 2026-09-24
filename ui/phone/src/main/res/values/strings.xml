@@ -80,6 +80,9 @@
     <string name="update_process_downloading_label">Downloading</string>
     <string name="update_process_verifying_title">Verifying update</string>
     <string name="update_process_verifying_label">Checking download integrity…</string>
+    <string name="update_process_ready_title">Ready to install</string>
+    <string name="update_process_ready_body_suffix">is ready to install.</string>
+    <string name="update_process_install">Install</string>
     <string name="update_successful_eyebrow">UPDATE COMPLETE</string>
     <string name="update_successful_title">AALyrics updated</string>
     <string name="update_successful_body">You’re now running</string>
