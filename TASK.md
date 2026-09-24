@@ -139,7 +139,7 @@ Pre-redesign checkpoint frozen before the next #77 runtime-contract slice:
 - [x] Move `DOWNLOAD_FAILED` presentation and explicit `Retry` from Settings into the Unified Update Dialog. Retry calls the existing `downloadUpdate()` operation; no automatic retry loop or new download-failure runtime type is introduced.
 - [x] Move `PREPARING_INSTALL`, `PERMISSION_REQUIRED`, and `INSTALLING` presentation from Settings into the Unified Update Dialog without changing install-refresh, APK preflight, Android source-trust, PackageInstaller, or recovery semantics. Permission-required keeps `Grant permission` and GitHub fallback actions on the unified surface.
 - [x] Connect typed install failure/Retry presentation to the Unified Update Dialog. Retry calls the existing independent `installUpdate()` operation and Settings no longer owns install-failure presentation.
-- [x] Connect install-refresh retarget presentation to the Unified Update Dialog. A newer release found during install preparation remains process-owned, returns the non-dismissible Unified Update Dialog to `Newer update available`, and uses the existing `downloadUpdate()` operation.
+- [x] Connect install-refresh retarget presentation to the Unified Update Dialog. A newer release found during install preparation remains process-owned, returns the Unified Update Dialog to `Newer update available`, and uses the existing `downloadUpdate()` operation. Under the corrected dismissal contract this process-owned retarget presentation is dismissible without discarding the replacement candidate.
 - [x] Keep `DOWNLOADED` as the authoritative verified-artifact boundary and render it as `Ready to install` in the Unified Update Dialog.
 - [x] Keep an explicit user-facing `Install` action after `DOWNLOADED`; the button calls the existing `installUpdate()` operation and #77 does not auto-continue into installation.
 - [x] Preserve independent `downloadUpdate()` and `installUpdate()` operations and all existing SHA-256, retained-artifact, install-refresh, package/version/signing preflight, source-trust, PackageInstaller, and recovery behavior.
@@ -253,7 +253,15 @@ Pre-Draft regression audit:
 - [x] Static ownership/reference audit: no stale Settings process-state presentation remains; Unified Update Dialog phase/resource/callback coverage is internally aligned.
 - [x] Semantic state-machine audit: download retry, explicit Ready-to-install -> Install, install-refresh retarget, source-trust return, retained-artifact reuse, and install Retry continue through the existing runtime operations.
 - [x] Fix regression found by the semantic audit: Settings entry now preserves `InstallFailed` instead of collapsing it back to restored `Downloaded`, so the global reason/Retry presentation survives destination changes.
-- [x] Address valid Codex dismissal feedback: paused/recoverable Unified Update Dialog states can be closed with shared X/System Back without clearing runtime/artifact state; active work and install-refresh retarget remain non-dismissible.
+- [x] Historical Codex dismissal feedback was first addressed by making paused/recoverable states dismissible; the later pre-E2E contract correction supersedes that checkpoint and now makes every app-owned process phase, including active work and install-refresh retarget, dismissible without clearing runtime/artifact state.
 - [x] Build / architecture checks / unit tests / CI pass on Build #1089 after fixing the Codex-review dismissal work's focused-test compile mismatch.
 - [x] Codex review completed; valid feedback was addressed, including paused/recoverable dialog dismissal and obsolete Preview references.
+
+Post-contract regression audit before Build / CI:
+
+- [x] Static ownership/reference audit rerun after permission-first/dismiss-reentry changes. Removed stale non-dismissible wording, stale permission-after-download route descriptions, and pre-download UI copy that incorrectly referred to an already-verified update.
+- [x] Semantic state-machine audit rerun across normal Update, permission deny/grant, Download Retry, dismiss/re-entry, explicit Ready-to-install -> Install, install-refresh retarget, fail-safe source-trust re-check, retained-artifact retry, and PackageInstaller handoff.
+- [x] Fix audit finding: all user-started APK download paths now share the source-trust gate. Install-refresh replacement Download and Download Retry can no longer bypass the pre-transfer permission gate.
+- [x] Add focused install-refresh coverage proving replacement Download is blocked until source trust is granted and resumes the selected replacement candidate afterward.
+- [ ] Build / CI intentionally remain unrun after this audit checkpoint.
 
