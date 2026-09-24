@@ -96,6 +96,7 @@ Approved follow-up direction:
 - [x] Generalize the automatic-only prompt owner into the Unified Update Dialog presentation owner.
 - [x] Route both MANUAL and AUTOMATIC `UpdateAvailable` results into the same dialog.
 - [x] Keep automatic same-session suppression notification-specific while allowing explicit manual discovery to re-present the same current release.
+- [x] Preserve check origin through Checking / Up to date / Failed so AUTOMATIC non-update outcomes remain silent in Settings while MANUAL outcomes stay visible.
 - [ ] Reduce Settings Version/update presentation to Idle / Checking / Up to date / Check failed.
 - [ ] Move preparing/download progress, verification/preparation, permission-required, typed failure/Retry, and install presentation into the Unified Update Dialog.
 - [ ] Compose Download + Install behind the dialog's one user-facing `Update` action.
@@ -105,28 +106,19 @@ Approved follow-up direction:
 
 ## Current checkpoint
 
-**Unified discovery handoff implementation complete. Stop at this checkpoint before moving update-process presentation.**
+**Origin-aware discovery presentation complete. Stop here before moving update-process presentation.**
 
-Implemented in this slice:
+Implemented through this slice:
 
-- replaced the automatic-only `AutomaticUpdateReleasePromptRuntime` with `UpdateReleasePromptRuntime`;
-- MANUAL and AUTOMATIC `UpdateAvailable` both create the same global release prompt and therefore render the same `NewReleaseAvailableDialog`;
-- the prompt carries origin internally so cadence/suppression policy remains origin-aware without creating separate UI flows;
-- automatic preference OFF suppresses only AUTOMATIC presentation and never blocks MANUAL presentation;
-- dismissing an AUTOMATIC result suppresses that version for automatic prompting during the current process session;
-- an explicit later MANUAL check may present the same still-current version even when automatic presentation was suppressed;
-- dismissing a MANUAL result keeps that current result closed until the runtime leaves UpdateAvailable; a new manual discovery cycle may present it again;
-- consuming either MANUAL or AUTOMATIC prompt enters the same existing verified-download pipeline;
-- `INSTALL_REFRESH` does not create a discovery prompt in this #75 slice;
-- production Settings mapping no longer renders `UpdateAvailable`; while the dialog is open the underlying Version/update row returns to the ordinary idle presentation;
-- focused runtime tests cover manual/automatic convergence, automatic-only suppression, manual re-presentation, disabled automatic checks, consumption, and Reset;
-- mapper coverage pins MANUAL and AUTOMATIC `UpdateAvailable` as absent from the Settings row.
+- MANUAL and AUTOMATIC `UpdateAvailable` already converge into the same global release dialog;
+- `Checking`, `UpToDate`, and `Failed` now retain their `UpdateCheckOrigin`;
+- MANUAL Checking / Up to date / Check failed continue to render in Settings;
+- AUTOMATIC Checking / Up to date / Failed map to the ordinary idle Version/update row and therefore remain silent;
+- automatic preference OFF continues to suppress only automatic release presentation and never blocks manual discovery;
+- automatic same-version suppression remains notification-specific, while explicit manual discovery can re-present the same current release;
+- focused runtime tests pin origin preservation through Checking, Up to date, and Failed;
+- Settings mapper tests pin the manual-visible / automatic-silent split.
 
-Still intentionally deferred to the next bounded implementation slice:
+The Settings row still temporarily owns preparing/download progress, Downloaded/Install, permission-required, installing, and recoverable failure presentation. Those states cannot be removed safely until their presentation is moved into the Unified Update Dialog in the same implementation slice; removing them earlier would create a user-visible gap after pressing Update.
 
-- make AUTOMATIC Checking / Up to date / Failed silent in Settings while retaining those states for MANUAL discovery;
-- reduce Settings production presentation to Idle / Checking / Up to date / Check failed only;
-- move preparing/download progress, verification/preparation, retained-artifact continuation, permission-required, typed failure/Retry, and install presentation into the Unified Update Dialog;
-- compose Download + Install behind one user-facing Update action.
-
-The existing download, SHA-256 verification, retained APK, install refresh, package/version/signing preflight, source trust, PackageInstaller, durable recovery, and Reset boundaries remain unchanged in this checkpoint.
+Next bounded slice: move the existing update-process presentation into the Unified Update Dialog, then remove those process states/actions from Settings at the same checkpoint. The underlying download, SHA-256 verification, retained APK, install refresh, package/version/signing preflight, source trust, PackageInstaller, durable recovery, and Reset boundaries remain unchanged.
