@@ -319,9 +319,9 @@ internal fun PhoneRuntimeHost(
         }
     }
 
-    val updateProcessDialogState = updateDialogState?.takeIf(
-        UpdateDialogUiState::isAppOwnedUpdateProcessPresentation,
-    )
+    val updateProcessDialogState = updateDialogState?.takeIf { state ->
+        state.isAppOwnedUpdateProcessPresentation()
+    }
 
     LaunchedEffect(updateProcessDialogState == null) {
         if (updateProcessDialogState == null) {
