@@ -191,9 +191,23 @@ class PhoneSettingsMapperTest {
         assertEquals(AppUpdateUiPhase.UP_TO_DATE, mapped(AppUpdateCheckState.UpToDate).phase)
         assertEquals(AppUpdateUiPhase.CHECK_FAILED, mapped(AppUpdateCheckState.Failed).phase)
 
-        val available = mapped(AppUpdateCheckState.UpdateAvailable("0.2.0-alpha.2"))
-        assertEquals(AppUpdateUiPhase.UPDATE_AVAILABLE, available.phase)
-        assertEquals("0.2.0-alpha.2", available.availableVersionName)
+        val manualAvailable = mapped(
+            AppUpdateCheckState.UpdateAvailable(
+                versionName = "0.2.0-alpha.2",
+                origin = UpdateCheckOrigin.MANUAL,
+            ),
+        )
+        assertEquals(AppUpdateUiPhase.IDLE, manualAvailable.phase)
+        assertNull(manualAvailable.availableVersionName)
+
+        val automaticAvailable = mapped(
+            AppUpdateCheckState.UpdateAvailable(
+                versionName = "0.2.0-alpha.2",
+                origin = UpdateCheckOrigin.AUTOMATIC,
+            ),
+        )
+        assertEquals(AppUpdateUiPhase.IDLE, automaticAvailable.phase)
+        assertNull(automaticAvailable.availableVersionName)
 
         val preparing = mapped(AppUpdateCheckState.PreparingDownload("0.2.0-alpha.2"))
         assertEquals(AppUpdateUiPhase.PREPARING_DOWNLOAD, preparing.phase)
