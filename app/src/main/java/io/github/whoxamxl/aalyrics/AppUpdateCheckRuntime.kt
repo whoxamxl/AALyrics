@@ -458,15 +458,19 @@ internal class AppUpdateCheckRuntime(
     fun onSettingsEntered() {
         mutableState.value = when (val current = mutableState.value) {
             is AppUpdateCheckState.Checking,
+            is AppUpdateCheckState.UpdateAvailable,
             is AppUpdateCheckState.PreparingDownload,
             is AppUpdateCheckState.Downloading,
             is AppUpdateCheckState.Downloaded,
+            is AppUpdateCheckState.DownloadFailed,
             is AppUpdateCheckState.PreparingInstall,
             is AppUpdateCheckState.InstallPermissionRequired,
-            is AppUpdateCheckState.Installing -> current
+            is AppUpdateCheckState.Installing,
+            is AppUpdateCheckState.InstallFailed -> current
 
-            is AppUpdateCheckState.InstallFailed -> restoreVerifiedDownload()
-            else -> AppUpdateCheckState.Idle
+            AppUpdateCheckState.Idle,
+            is AppUpdateCheckState.UpToDate,
+            is AppUpdateCheckState.Failed -> AppUpdateCheckState.Idle
         }
     }
 
