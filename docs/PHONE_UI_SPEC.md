@@ -209,8 +209,11 @@ Goals:
 - current lyric remains visually dominant
 - previous and next lines provide context
 - canonical/source lyric text remains the primary hierarchy when Translation is shown
-- matching translated text may appear as smaller secondary text directly below its canonical line
+- matching translated text appears as a typographic annotation directly below its canonical line, not as a separate subtitle/card surface
+- Translation adds no per-line cards, backgrounds, pills/badges, language labels, icons, separators, or dividers
+- the initial translated-text target is approximately 15sp Medium with a 4dp canonical-to-translation gap and restrained TextSecondary-class emphasis
 - canonical + translated text remains one measured/focused row rather than two independently timed rows
+- the whole row keeps the existing focus scale/alpha behavior; Translation does not get its own current/past/future animation
 - preserved/non-translated artifact lines are not duplicated
 - Translation pending/failure/stale identity falls back to the normal original-only row without changing Lyrics status
 - normal phone layouts should preserve roughly five to six visible lyric lines where practical
@@ -218,7 +221,7 @@ Goals:
 
 The active Phone Translation integration consumes only atomically published Translation output that is eligible under the current enabled/target settings and exact canonical identity. It does not move Translation execution, ML Kit, provider selection, or timing ownership into `:ui:phone`. Android Auto Translation remains a separate later surface integration.
 
-This is a layout target, not a hard line-count guarantee. Exact secondary Translation typography and tight intra-row spacing should be tuned in Compose Preview/device testing while preserving the canonical hierarchy and the viewport contract in `docs/PHONE_LYRICS_VIEWPORT.md`.
+This is a layout target, not a hard line-count guarantee. The 15sp Medium / 4dp / restrained-secondary treatment is the initial production target rather than a new independent design system. Preview/device tuning may make small numerical adjustments, but the canonical-first, chrome-free annotation hierarchy and single-row geometry are the stable contract defined in `docs/PHONE_LYRICS_VIEWPORT.md`.
 
 ## Persistent playback surface
 
