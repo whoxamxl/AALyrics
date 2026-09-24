@@ -161,40 +161,75 @@ This is deliberately a launch **request**, not a correctness signal. Android may
 
 If automatic return succeeds, normal entry handling still decides what is displayed; no update-specific destination routing is added. If it does not succeed, the next ordinary user launch still guarantees the one-time success feedback. No notification fallback is implemented in this checkpoint.
 
-## Automatic update checks
+## Manual and automatic update discovery
 
-Settings now exposes a compact switch aligned with the rest of Phone Settings:
+Settings exposes a durable automatic-discovery preference while retaining an explicit manual discovery action:
 
 ```text
 Automatically check for updates   [i]   [ON/OFF]
-```
 
-The shared info tooltip contains:
-
-```text
-Check for new releases and notify you when one is available.
-Updates are never installed without your confirmation.
+Version                     [ v0.x.x ]
+                                   Check for updates
 ```
 
 The preference is app-owned and durable. Its default is **ON**, including users whose existing preferences do not yet contain the key. `Reset AALyrics` restores it to ON.
 
-Automatic checking is deliberately low-frequency and bounded:
+Automatic checking remains deliberately low-frequency and bounded:
 
 - no automatic network check occurs before the normal Phone entry gates reach `READY`;
 - automatic discovery is eligible only when at least **7 full days** have elapsed since the durable cadence timestamp, or when no cadence timestamp exists yet;
 - starting an automatic check records the cadence timestamp immediately, so a failed network request does not cause repeated automatic retries after process restarts during the same 7-day window;
-- a successful manual GitHub Releases query also refreshes the same cadence timestamp, so manually checking today suppresses redundant automatic discovery for the next 7 days; automatic-query completion and install-time refresh do not move that timestamp because the automatic start was already recorded and install refresh is not a discovery cadence event;
+- a successful manual GitHub Releases query also refreshes the same cadence timestamp, so manually checking today suppresses redundant automatic discovery for the next 7 days;
+- automatic-query completion and install-time refresh do not move that timestamp because the automatic start was already recorded and install refresh is not a discovery cadence event;
 - manual `Check for updates` is never blocked by the automatic cadence;
 - if the setting was OFF at entry and is switched ON later, an automatic check is requested only if the durable 7-day cadence is due;
 - a process-local attempt guard remains as secondary duplicate protection against recomposition, Activity recreation, navigation, or repeated READY rendering;
-- an automatic check starts only from the update runtime's idle state and does not overwrite a retained verified APK or active download/install state;
-- `Reset AALyrics` clears both the durable cadence timestamp and the process-local attempt guard, so the restored ON default is eligible for a fresh check at the next valid READY entry.
+- automatic discovery never displaces a retained verified APK or active update/install operation;
+- `Reset AALyrics` clears both the durable cadence timestamp and the process-local automatic-attempt guard.
 
-The existing `Check for updates` action remains available as the explicit manual path regardless of the preference and retains its existing behavior.
+### Settings owns manual discovery only
 
-Check results carry an internal origin: `MANUAL`, `AUTOMATIC`, or `INSTALL_REFRESH`. The Phone runtime now uses that origin to create a transient release prompt **only** for `AUTOMATIC` `UPDATE_AVAILABLE` results. Manual checks and install-time latest-release refreshes never create this dialog.
+The Settings Version/update row is not an update-process surface. It owns only the user-initiated discovery interaction and its direct result when no newer release is found.
 
-Automatic discovery presents:
+Approved Settings presentation states are:
+
+```text
+IDLE
+Version                     [ v0.x.x ]
+                                   Check for updates
+
+CHECKING
+Checking for updates…                              ◌
+
+UP_TO_DATE
+Up to date                                         ✓
+
+CHECK_FAILED
+Update check failed                        ⓘ   ↻ Retry
+```
+
+A manual check that finds a newer eligible release does **not** render `Update available`, Download, progress, Downloaded, Install, permission-required, installing, or install-failure UI in the Settings row. Discovery hands the result to the unified Update Dialog immediately.
+
+Automatic discovery is background-only unless it finds a newer eligible release:
+
+- `AUTOMATIC + Checking` is silent;
+- `AUTOMATIC + UpToDate` is silent;
+- `AUTOMATIC + Failed` is silent;
+- `AUTOMATIC + UpdateAvailable` opens the same unified Update Dialog used by manual discovery.
+
+The internal origin remains meaningful for cadence and notification-suppression policy, not for choosing a different update flow.
+
+### Unified Update Dialog handoff
+
+Both user-visible discovery origins converge at the same presentation boundary:
+
+```text
+MANUAL UpdateAvailable ───────┐
+                              ├─> Unified Update Dialog
+AUTOMATIC UpdateAvailable ────┘
+```
+
+The available-state dialog is:
 
 ```text
 New release available
@@ -205,37 +240,80 @@ Update
 Not now
 ```
 
-The release version is part of the supporting sentence rather than a standalone metadata row, avoiding repetition between the title and body while keeping the shared `VersionChip` treatment. The phrase uses a wrapping flow layout so text and chip remain readable at narrow widths and enlarged font scales. The dialog also has a top-right close action. It reuses the same `PhoneDialogHeader` introduced by #74 for the install-permission and successful-update dialogs, preserving one trailing close position, a 24dp icon, and a 48dp touch target across dismissible custom update surfaces. System Back, close, and `Not now` share the same dismissal semantics. Outside-tap dismissal is disabled.
+The release version remains part of the supporting sentence and uses the shared `VersionChip` in a wrapping layout. The available state keeps the shared `PhoneDialogHeader` close affordance. `Not now`, the close action, and system Back share one dismissal path; outside-tap dismissal is disabled.
 
-Dismissal records the target version in process-local suppression state. The same version is not prompted again during that app-process session, including after ordinary navigation, recomposition, or Activity recreation. A different automatically discovered version remains eligible. While `Automatically check for updates` is OFF, an in-flight automatic query may finish but its result must not open or retain the automatic release dialog. Re-enabling the preference may present an already-known automatic result if it remains current. `Reset AALyrics` clears this process-local suppression together with the transient prompt.
+Automatic dismissal suppression remains notification-specific: dismissing an automatically discovered version suppresses that exact automatic prompt for the remainder of the current app-process session. A different version remains eligible. An explicit manual `Check for updates` is user intent and may present the same still-current release again even when its automatic prompt was previously suppressed.
 
-`Update` consumes the prompt, suppresses the same version against transient re-presentation, and starts the existing verified download pipeline. This checkpoint intentionally does **not** auto-chain download completion into install; composing Download + Install into a single end-to-end action remains the next implementation checkpoint.
+Turning `Automatically check for updates` OFF prevents an automatic result from opening or retaining the dialog, including when an already-started automatic query completes later. The toggle does not disable manual discovery.
 
-The durable 7-day cadence and process-local prompt suppression solve different problems: cadence limits network frequency across process restarts, while suppression prevents repeated presentation of an already-handled version inside the current process session.
+Durable `SuccessfulUpdate` feedback has modal priority over release-available presentation, and an unconsumed success marker prevents starting an automatic check on that Phone entry.
 
-If durable `SuccessfulUpdate` feedback and an automatic release prompt were ever both present, successful-update acknowledgement has presentation priority and dialogs are not stacked. A valid update-success marker also prevents starting the automatic check on that Phone entry.
+## Unified update-process presentation
 
-Typical, narrow-phone, and enlarged-font Previews cover the new-release dialog. Settings Preview coverage also pins the automatic-check preference itself: the ordinary Settings fixture represents the default ON state and the dedicated `Automatic updates off` Preview represents the persisted OFF state. These Previews use the same production `SettingsSwitchRow`, `SettingInfoTooltip`, dialog content, and shared `VersionChip` components as runtime presentation rather than parallel mock styling.
+After the user chooses `Update`, the same Update Dialog becomes the presentation owner for the app-owned update process. Settings no longer mirrors those process states.
 
-## One-step user update action
-
-The final user-facing flow should not require users to understand the distinction between downloading and installing an APK.
-
-The preferred UX is:
+The target user-visible progression is:
 
 ```text
-New release available / manual check result
+New release available
     -> Update
-    -> Downloading update...
-    -> Verifying / preparing...
-    -> permission explanation only if required
-    -> Android confirmation
+    -> Preparing download…
+    -> Downloading…                    0–100%
+    -> Verifying / preparing…
+    -> Preparing installation…
+    -> install-source permission explanation only if required
+    -> PackageInstaller / Android confirmation
     -> Update successful
 ```
 
-Internally, download, verification, retained-artifact ownership, install refresh, APK preflight, source trust, and PackageInstaller remain separate states and boundaries.
+The existing progress semantics move from the Settings row into the dialog rather than being discarded:
 
-If permission is missing after the APK has already been verified, dismissing the permission explanation must preserve the verified APK. Invoking Update again should continue from the retained artifact rather than force a second download while that artifact remains valid.
+- `PREPARING_DOWNLOAD` uses indeterminate progress while assets/checksum/staging are prepared;
+- `DOWNLOADING` uses the existing determinate byte-based 0–100% progress;
+- checksum verification and promotion remain explicit internal boundaries and receive a verifying/preparing presentation rather than appearing to stall;
+- install preparation retains the latest-release refresh and APK package/version/signing preflight;
+- missing Android install-source trust is explained in the update flow without bypassing Android Settings or final confirmation;
+- recoverable download/install failures remain typed and expose Retry from the update flow;
+- a valid retained verified APK remains reusable, so retry/permission return must not force a second download;
+- Android's final installation confirmation remains system-owned.
+
+`INSTALL_REFRESH` remains an internal update-process origin. If install-time refresh discovers a newer eligible release, the active dialog returns to the release-available state for that newer release rather than sending the user back to a Settings update row.
+
+The Update Dialog is therefore the single app-owned presentation surface from `UpdateAvailable` through PackageInstaller handoff. `UpdateSuccessfulDialog` remains a separate post-replacement acknowledgement because successful package replacement may terminate the old process and the new binary reconstructs that feedback from durable `SuccessfulUpdate` state.
+
+### Dismissal boundary
+
+Availability and active update work have different dismissal semantics.
+
+Before `Update` starts, `Not now`, close, and Back are ordinary dismissal actions. Once app-owned update work starts, `Not now` is no longer part of the process UI. Active-work, permission-required, and recoverable-failure dismissal/re-entry behavior must preserve the application-owned operation/artifact state and must never require Settings to become a second progress/install surface.
+
+The implementation may evolve the exact close/Back affordance per process phase, but it must satisfy these invariants:
+
+- dismissing presentation never corrupts or silently discards an active operation;
+- dismissing permission explanation preserves a valid verified APK;
+- recoverable failures preserve reusable artifacts where the existing runtime already does so;
+- reopening or retrying resumes from the authoritative application-owned runtime state;
+- no process phase reintroduces Download/Install/progress actions into the Settings row.
+
+## Implementation split
+
+The approved stacked implementation is:
+
+1. **#75 — unify discovery handoff**
+   - keep Settings manual discovery states: Idle / Checking / Up to date / Check failed;
+   - route both MANUAL and AUTOMATIC newer-release results to one Update Dialog;
+   - keep automatic-only cadence and same-session notification suppression;
+   - allow explicit manual discovery to present a release even when its prior automatic prompt was suppressed;
+   - remove Settings as the presentation owner of `UpdateAvailable`.
+
+2. **#76 — unify the complete update process**
+   - move the existing preparing/downloading progress presentation into the Update Dialog;
+   - chain verified download into install preparation behind the same user-facing `Update` intent;
+   - present verification, install preparation, permission-required, installing, typed failure, and Retry states through the dialog;
+   - remove Download / Downloaded / Install / update-process progress and failure presentation from Settings;
+   - preserve all existing download, SHA-256, retained-artifact, install-refresh, preflight, source-trust, PackageInstaller, and recovery boundaries.
+
+Typical, narrow-phone, and enlarged-font Previews must cover the release-available dialog and representative update-process states. Settings Previews should cover only the manual discovery states plus automatic-check preference ON/OFF; they should not retain parallel update-process fixtures after the migration.
 
 ## Reset contract
 
@@ -245,17 +323,14 @@ Both implemented recovery markers — `PendingUpdate` and `SuccessfulUpdate` —
 
 ## Implementation order
 
-Implement in bounded checkpoints:
+The recovery/install safety checkpoints are already established. For the remaining presentation unification work, implement in bounded checkpoints:
 
-1. separate install-permission runtime state from transient dialog visibility;
-2. add the large install-permission explanation dialog and lifecycle behavior;
-3. persist durable `PendingUpdate` immediately before PackageInstaller commit;
-4. reconcile `ACTION_MY_PACKAGE_REPLACED` into durable update-success state;
-5. present one-time `Update successful` feedback on the next valid app entry;
-6. add best-effort resume-after-update behavior without relying on it for correctness;
-7. add the durable automatic update-check preference and bounded automatic checking;
-8. add the automatic-discovery-only release-available dialog and session suppression;
-9. compose Download + Install into one user-facing Update action while preserving the existing internal state machine;
-10. align Previews, Reset behavior, docs, tests, CI, and real-device regression validation.
+1. freeze this unified discovery/update presentation contract in docs;
+2. generalize the release-prompt owner from automatic-only presentation to a unified update-dialog presentation owner;
+3. route MANUAL and AUTOMATIC newer-release results into the same available-state dialog while preserving origin-specific cadence/suppression semantics;
+4. reduce Settings Version/update presentation to Idle / Checking / Up to date / Check failed;
+5. move preparing/download progress, verification, retained-artifact, install-preparation, permission-required, installing, typed failure, and Retry presentation into the Update Dialog;
+6. compose the existing internal Download + Install stages behind the dialog's one user-facing `Update` action;
+7. align Previews, Reset behavior, docs, tests, CI, and focused real-device regression.
 
-Do not combine these checkpoints into one large implementation change.
+Do not weaken or bypass the validated internal update boundaries while changing presentation ownership.
