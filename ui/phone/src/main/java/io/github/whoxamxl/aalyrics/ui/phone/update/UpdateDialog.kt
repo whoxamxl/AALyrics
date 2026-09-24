@@ -142,6 +142,11 @@ internal fun UpdateDialogContent(
 
                 UpdateDialogPhase.DOWNLOADING -> DownloadingContent(state)
 
+                UpdateDialogPhase.VERIFYING_DOWNLOAD -> ProgressContent(
+                    title = stringResource(R.string.update_dialog_verifying_download),
+                    versionName = state.versionName,
+                )
+
                 UpdateDialogPhase.DOWNLOADED -> DownloadedContent(
                     state = state,
                     onInstall = onInstall,
