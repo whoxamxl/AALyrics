@@ -265,14 +265,15 @@ New release available
     -> Update successful
 ```
 
-The first #77 implementation checkpoint defines this as a **pure presentation contract only**. `UpdateDialogUiState` / `UpdateDialogPhase` and the application-side mapper now describe the future dialog without yet changing Phone host ownership, Settings process presentation, permission prompting, or download/install actions. Discovery availability and install-refresh retarget availability are explicitly distinguished because `Not now` / ordinary pre-update dismissal semantics apply only to discovery availability; an install-refresh retarget occurs after app-owned update work has already started.
+The first #77 implementation checkpoint defined this as a **pure presentation contract only**. The second checkpoint now moves the active download preparation/transfer presentation into the Unified Update Dialog while leaving download/install runtime semantics unchanged. Discovery availability and install-refresh retarget availability remain explicitly distinguished because `Not now` / ordinary pre-update dismissal semantics apply only to discovery availability; an install-refresh retarget occurs after app-owned update work has already started.
 
 The existing progress semantics move from the Settings row into the dialog rather than being discarded:
 
-- `PREPARING_DOWNLOAD` uses indeterminate progress while assets/checksum/staging are prepared;
-- `DOWNLOADING` uses the existing determinate byte-based 0–100% progress;
-- `VerifyingDownload(versionName)` is now an explicit application-owned runtime state entered immediately before SHA-256 verification. While #77 presentation migration is incomplete, the current Settings mapper temporarily folds it into the existing preparing presentation;
-- the #77 Unified Update Dialog must give `VerifyingDownload` its own verifying/preparing presentation so 100% transfer does not appear stalled; checksum verification and verified-artifact promotion semantics remain unchanged;
+- `PREPARING_DOWNLOAD` now renders as indeterminate progress in the Unified Update Dialog while assets/checksum/staging are prepared;
+- `DOWNLOADING` now renders the existing determinate byte-based 0–100% progress in the Unified Update Dialog;
+- Settings no longer renders either of those active download phases and its corresponding progress fixtures/copy have been removed;
+- `VerifyingDownload(versionName)` is an explicit application-owned runtime state entered immediately before SHA-256 verification. Its presentation ownership is already on the Unified Update Dialog so the dialog does not disappear after transfer completion, but it temporarily reuses the preparing-style indeterminate presentation;
+- the next #77 checkpoint gives `VerifyingDownload` dedicated verification copy/presentation so 100% transfer does not appear stalled or ambiguously return to preparation; checksum verification and verified-artifact promotion semantics remain unchanged;
 - install preparation retains the latest-release refresh and APK package/version/signing preflight;
 - missing Android install-source trust is explained in the update flow without bypassing Android Settings or final confirmation;
 - recoverable download/install failures remain typed and expose Retry from the update flow;
