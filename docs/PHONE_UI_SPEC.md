@@ -121,7 +121,25 @@ The production Settings contract is defined in `docs/PHONE_SETTINGS.md`. The `fe
   - `Reset > Reset AALyrics`, which resets AALyrics-owned settings/onboarding/update state, clears app-owned update recovery/cadence state and retained update artifacts, without deleting translation models or changing Android/system settings such as install-source trust;
 - permanent AALyrics branding/GitHub footer after Advanced.
 
-The Phone update surfaces follow the shared dismissible-dialog contract introduced by #74: install permission, update successful, and automatic new-release dialogs use `PhoneDialogHeader` for one consistent trailing X position, 24dp icon, and 48dp touch target. The update UI may simplify user-facing actions, but release discovery, SHA-256 verification, retained-artifact ownership, install-time refresh, package/version/signing preflight, source trust, PackageInstaller, and Android confirmation remain application/platform-owned boundaries.
+The Phone update surfaces follow the shared dismissible-dialog contract introduced by #74: install permission, update successful, and automatic new-release dialogs use `PhoneDialogHeader` for one consistent trailing X position, 24dp icon, and 48dp touch target.
+
+### Version presentation
+
+Phone UI uses the shared `VersionChip` whenever an AALyrics application or release version is presented as a semantic UI value rather than as prose/document content. The chip owns the leading `v` normalization, so callers pass either `0.2.0-alpha.1` or `v0.2.0-alpha.1` without duplicating prefix logic.
+
+The approved channel treatment is intentionally restrained: a low-emphasis tinted pill surface, subtle border, monospace label text, and one channel accent.
+
+```text
+DEV     -> neutral gray
+ALPHA   -> soft red / Error
+BETA    -> AccentCyan
+RC      -> AccentBlue
+STABLE  -> Success
+```
+
+The deterministic `VersionChip` Preview matrix is the visual baseline for these colors and geometry. Version presentation should reuse this component rather than recreating inline `v...` text, channel colors, pill shapes, or prefix normalization per screen.
+
+Apply `VersionChip` to standalone semantic application/release versions in Settings and update surfaces. Do not use it for Android SDK numbers, package versions embedded only in diagnostic prose, arbitrary numbers, GitHub/CHANGELOG Markdown document content, or explanatory sentences where the version is not a distinct UI value. The update UI may simplify user-facing actions, but release discovery, SHA-256 verification, retained-artifact ownership, install-time refresh, package/version/signing preflight, source trust, PackageInstaller, and Android confirmation remain application/platform-owned boundaries.
 
 The approved support flow does not embed checkout, handle payment credentials/state, or unlock app functionality. Browser/Custom-Tab launching remains application-owned. Provider preferences, appearance/theme selection, log export, functional Karaoke wiring, and other future taxonomy remain deferred until separately approved.
 
