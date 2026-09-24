@@ -5,6 +5,7 @@ import io.github.whoxamxl.aalyrics.ui.phone.update.UpdateDialogInstallFailureUiR
 import io.github.whoxamxl.aalyrics.ui.phone.update.UpdateDialogPhase
 import io.github.whoxamxl.aalyrics.ui.phone.update.UpdateDialogUiState
 import kotlin.test.Test
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class PhoneUpdateDialogDismissalTest {
@@ -61,6 +62,7 @@ class PhoneUpdateDialogDismissalTest {
         states.forEach { state ->
             assertTrue(state.isAppOwnedUpdateProcessPresentation())
             assertTrue(state.isDismissibleUpdateProcessPresentation())
+            assertTrue(shouldReenterUpdateProcess(state))
         }
     }
 
@@ -72,7 +74,9 @@ class PhoneUpdateDialogDismissalTest {
             availabilityContext = UpdateDialogAvailabilityContext.DISCOVERY,
         )
 
-        assertTrue(!discovery.isAppOwnedUpdateProcessPresentation())
-        assertTrue(!discovery.isDismissibleUpdateProcessPresentation())
+        assertFalse(discovery.isAppOwnedUpdateProcessPresentation())
+        assertFalse(discovery.isDismissibleUpdateProcessPresentation())
+        assertFalse(shouldReenterUpdateProcess(discovery))
+        assertFalse(shouldReenterUpdateProcess(null))
     }
 }
