@@ -121,6 +121,7 @@ Completed in this checkpoint:
 - Codex review identified a valid Reset/cadence race; successful release-query callbacks are now serialized with update generation invalidation so pre-Reset query work cannot restore the 7-day cadence timestamp after Reset clears it.
 - Preview/Doc audit confirmed the production automatic-update surfaces are covered by default-ON and explicit-OFF Settings Previews, typical/narrow/enlarged-font new-release dialog Previews, and the shared VersionChip channel matrix; stale manual-only release documentation and the Settings structure map were corrected.
 - Two-pass regression audit found and fixed two #75 boundary issues: disabling automatic checks now suppresses any result from an already in-flight automatic query from opening the release modal, and cadence refresh is now origin-scoped so only successful manual discovery refreshes the durable timestamp while automatic completion and install refresh do not shift it. Focused tests cover both behaviors.
+- Reverse contract audit also found that the bundled Privacy Policy predated automatic GitHub update discovery. `PRIVACY.md` now discloses the default-ON low-frequency GitHub Releases query, manual update checks, release-asset downloads, local preference/cadence storage, and the absence of track/lyrics payloads in update requests.
 
 No end-to-end one-step Download + Install composition has been implemented yet. The `Update` action currently enters the already-validated download/verification state machine and leaves installation as the existing explicit follow-up.
 
