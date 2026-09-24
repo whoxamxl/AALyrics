@@ -79,7 +79,7 @@
     <string name="update_process_preparing_install_title">Preparing installation</string>
     <string name="update_process_preparing_install_label">Checking release and APK requirements…</string>
     <string name="update_process_permission_title">Allow AALyrics to install updates</string>
-    <string name="update_process_permission_body">AALyrics is distributed outside Google Play. Android requires permission for AALyrics to hand this verified update to the system installer.</string>
+    <string name="update_process_permission_body">AALyrics is distributed outside Google Play. Android requires permission for AALyrics to hand update APKs to the system installer. AALyrics asks for that permission before downloading the update.</string>
     <string name="update_process_permission_reason">This permission does not allow silent updates. Android will still ask you to confirm each installation.</string>
     <string name="update_process_grant_permission">Grant permission</string>
     <string name="update_process_download_from_github">Download from GitHub</string>
