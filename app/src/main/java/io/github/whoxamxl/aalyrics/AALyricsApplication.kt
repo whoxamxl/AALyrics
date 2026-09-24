@@ -90,7 +90,6 @@ class AALyricsApplication : Application() {
     private lateinit var updateCheckCadenceStore: UpdateCheckCadenceStore
     private lateinit var updateRecoveryStore: UpdateRecoveryStore
     private lateinit var updateSuccessFeedbackRuntime: UpdateSuccessFeedbackRuntime
-    private val installPermissionPromptRuntime = UpdateInstallPermissionPromptRuntime()
     private val mutablePlaybackArtworkState = MutableStateFlow<Bitmap?>(null)
     private val mutableQueueArtworkBitmapsState =
         MutableStateFlow<Map<Long, Bitmap>>(emptyMap())
@@ -198,9 +197,6 @@ class AALyricsApplication : Application() {
     internal val appUpdateCheckState: StateFlow<AppUpdateCheckState>
         get() = appUpdateCheckRuntime.state
 
-    internal val installPermissionPrompt: StateFlow<UpdateInstallPermissionPrompt?>
-        get() = installPermissionPromptRuntime.prompt
-
     internal val successfulUpdate: StateFlow<SuccessfulUpdate?>
         get() = updateSuccessFeedbackRuntime.successfulUpdate
 
@@ -241,12 +237,7 @@ class AALyricsApplication : Application() {
     }
 
     internal fun onInstallSourceTrustReturned() {
-        installPermissionPromptRuntime.dismiss()
         appUpdateCheckRuntime.onInstallSourceTrustReturned()
-    }
-
-    internal fun dismissInstallPermissionPrompt() {
-        installPermissionPromptRuntime.dismiss()
     }
 
     internal fun dismissSuccessfulUpdate() {
@@ -332,7 +323,6 @@ class AALyricsApplication : Application() {
     }
 
     fun resetAppOwnedSettings() {
-        installPermissionPromptRuntime.dismiss()
         updateReleasePromptRuntime.reset()
         appUpdateCheckRuntime.reset()
         updateSuccessFeedbackRuntime.refresh()
@@ -402,7 +392,6 @@ class AALyricsApplication : Application() {
             onReleaseQuerySucceeded = { origin ->
                 automaticUpdateCheckRuntime.recordSuccessfulReleaseQuery(origin)
             },
-            onInstallPermissionRequired = installPermissionPromptRuntime::request,
         )
         translationSettingsStore = SharedPreferencesTranslationSettingsStore(this)
         phonePresentationSettingsStore = SharedPreferencesPhonePresentationSettingsStore(this)
