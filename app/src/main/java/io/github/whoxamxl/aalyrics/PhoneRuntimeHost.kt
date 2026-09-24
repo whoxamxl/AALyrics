@@ -203,18 +203,12 @@ internal fun PhoneRuntimeHost(
             playbackSurface = playbackSurface,
         ),
         onDestinationSelected = { destination ->
-            if (destination != PhoneDestination.Settings) {
-                application.dismissInstallPermissionPrompt()
-            }
             if (isSettingsNavigationEntry(selectedDestination, destination)) {
                 application.onSettingsEntered()
             }
             selectedDestination = destination
         },
         onDestinationReselected = { destination ->
-            if (destination == PhoneDestination.Settings) {
-                application.dismissInstallPermissionPrompt()
-            }
             destinationRootResetKey += 1
             if (destination == PhoneDestination.Lyrics) {
                 lyricsInteractionMode = LyricsViewportInteractionMode.FOLLOW
