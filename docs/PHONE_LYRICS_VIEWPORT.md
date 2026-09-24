@@ -226,14 +226,29 @@ While Translation is disabled, idle, translating, not required, failed, unavaila
 
 ### Visual hierarchy
 
-- Keep the existing canonical WORD/LINE/PLAIN typography and color behavior unchanged.
-- Place translated text directly below its canonical text with a tight intra-row gap that is clearly smaller than the existing inter-row spacing.
-- Use smaller supporting typography and secondary visual emphasis for translated text.
+Translation is an **annotation inside the lyric typography**, not a second subtitle surface.
+
+Do not introduce Translation-specific cards, backgrounds, pills/badges, language labels, icons, separators, dividers, or per-line chrome. The existing lyric document must remain visually continuous.
+
+- Keep the existing canonical WORD/LINE/PLAIN typography, weight, color, and focus behavior unchanged.
+- Place translated text directly below its canonical text.
+- Use an initial **4dp intra-row gap** between canonical and translated text. This gap must remain clearly smaller than the existing inter-row spacing.
+- Use an initial translated-text target of approximately **15sp / Medium**, with a compact supporting line height (approximately **21sp**) unless an existing AALyrics typography token provides the same hierarchy more cleanly.
+- Use `TextSecondary`-class color with an initial local opacity target of approximately **0.76**. This local opacity is inherited through the existing whole-row focus alpha; do not create separate Translation-specific current/past/future alpha animations.
+- Keep canonical text visually dominant at all times. Translation must be readable when intentionally viewed but should not compete with the canonical line at a glance.
 - Do not make translated text bold merely because its canonical row is current.
 - Do not apply word-progress highlighting to translated text.
-- Do not introduce an independent Translation focus animation.
+- Do not introduce an independent Translation focus animation, scale, timing state, or current-line state.
 
-The exact secondary font token/size and tight gap may be selected from existing AALyrics design-system primitives during Preview tuning, but the canonical text must remain visually dominant.
+The intended hierarchy is therefore:
+
+```text
+canonical lyric       <- primary lyric typography
+    4dp
+translation           <- ~15sp Medium / secondary emphasis
+```
+
+The numeric values above are the initial production tuning target for Preview/device implementation. Small visual tuning is allowed if real rendering demonstrates a problem, but changing the hierarchy model itself requires an explicit design decision.
 
 ### Geometry and focus
 
@@ -254,6 +269,16 @@ For PLAIN presentation:
 - Translation does not invent a current row.
 
 Atomic arrival of a complete Translation Artifact may therefore change measured document height. The viewport should naturally re-measure and continue using its existing single Follow/Browse owner; it must not maintain a separate Translation scroll offset.
+
+### Translation appearance transition
+
+Translation availability must not introduce a large layout animation that makes the focused lyric document visibly stretch or wobble.
+
+- Do not animate row height with `animateContentSize` or an equivalent geometry tween merely to reveal Translation.
+- Re-measure the complete canonical + translated row immediately when the atomic artifact arrives.
+- If an appearance animation is used, animate **translated-text alpha only**, with an initial target of about **150ms**.
+- The canonical lyric must not fade, move independently, or replay its focus animation when Translation arrives.
+- No loading spinner, `Translating…` placeholder, failure banner, or reserved blank Translation slot belongs inside the Lyrics viewport.
 
 ## Plain lyrics auto-scroll setting
 
