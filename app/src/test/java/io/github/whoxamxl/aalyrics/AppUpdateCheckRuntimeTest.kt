@@ -11,7 +11,10 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
@@ -509,6 +512,11 @@ class AppUpdateCheckRuntimeTest {
                 runtime.state.value,
             )
 
+            val observedStates = mutableListOf<AppUpdateCheckState>()
+            backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+                runtime.state.collect { observedStates += it }
+            }
+
             runtime.downloadUpdate()
             assertEquals(
                 AppUpdateCheckState.PreparingDownload("0.2.0-alpha.2"),
@@ -518,6 +526,11 @@ class AppUpdateCheckRuntimeTest {
 
             val downloaded = runtime.state.value as AppUpdateCheckState.Downloaded
             assertEquals("0.2.0-alpha.2", downloaded.versionName)
+            assertTrue(
+                observedStates.contains(
+                    AppUpdateCheckState.VerifyingDownload("0.2.0-alpha.2"),
+                ),
+            )
             assertEquals(apkBytes.toList(), downloaded.apkFile.readBytes().toList())
             assertEquals(1, downloadClient.downloadCount)
         } finally {
