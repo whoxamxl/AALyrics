@@ -185,7 +185,7 @@ Automatic checking is deliberately low-frequency and bounded:
 - no automatic network check occurs before the normal Phone entry gates reach `READY`;
 - automatic discovery is eligible only when at least **7 full days** have elapsed since the durable cadence timestamp, or when no cadence timestamp exists yet;
 - starting an automatic check records the cadence timestamp immediately, so a failed network request does not cause repeated automatic retries after process restarts during the same 7-day window;
-- a successful manual GitHub Releases query also refreshes the same cadence timestamp, so manually checking today suppresses redundant automatic discovery for the next 7 days;
+- a successful manual GitHub Releases query also refreshes the same cadence timestamp, so manually checking today suppresses redundant automatic discovery for the next 7 days; automatic-query completion and install-time refresh do not move that timestamp because the automatic start was already recorded and install refresh is not a discovery cadence event;
 - manual `Check for updates` is never blocked by the automatic cadence;
 - if the setting was OFF at entry and is switched ON later, an automatic check is requested only if the durable 7-day cadence is due;
 - a process-local attempt guard remains as secondary duplicate protection against recomposition, Activity recreation, navigation, or repeated READY rendering;
@@ -211,7 +211,7 @@ Not now
 
 The dialog also has a top-right close action. It reuses the same `PhoneDialogHeader` introduced by #74 for the install-permission and successful-update dialogs, preserving one trailing close position, a 24dp icon, and a 48dp touch target across dismissible custom update surfaces. System Back, close, and `Not now` share the same dismissal semantics. Outside-tap dismissal is disabled.
 
-Dismissal records the target version in process-local suppression state. The same version is not prompted again during that app-process session, including after ordinary navigation, recomposition, or Activity recreation. A different automatically discovered version remains eligible. `Reset AALyrics` clears this process-local suppression together with the transient prompt.
+Dismissal records the target version in process-local suppression state. The same version is not prompted again during that app-process session, including after ordinary navigation, recomposition, or Activity recreation. A different automatically discovered version remains eligible. While `Automatically check for updates` is OFF, an in-flight automatic query may finish but its result must not open or retain the automatic release dialog. Re-enabling the preference may present an already-known automatic result if it remains current. `Reset AALyrics` clears this process-local suppression together with the transient prompt.
 
 `Update` consumes the prompt, suppresses the same version against transient re-presentation, and starts the existing verified download pipeline. This checkpoint intentionally does **not** auto-chain download completion into install; composing Download + Install into a single end-to-end action remains the next implementation checkpoint.
 
