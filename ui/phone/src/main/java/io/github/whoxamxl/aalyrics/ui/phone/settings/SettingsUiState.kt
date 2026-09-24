@@ -67,11 +67,6 @@ data class AppUpdateUiState(
     val installFailureReason: AppUpdateInstallFailureUiReason? = null,
 )
 
-@Immutable
-data class InstallPermissionDialogUiState(
-    val versionName: String,
-)
-
 /** User acknowledgement shown for the legacy Android Auto compatibility setup. */
 enum class AndroidAutoCompatibilityUiStatus {
     NOT_REVIEWED,
@@ -103,5 +98,4 @@ data class SettingsScreenUiState(
     val termsOfUseText: String = "",
     val thirdPartyLicensesText: String = "",
     val appUpdate: AppUpdateUiState = AppUpdateUiState(),
-    val installPermissionDialog: InstallPermissionDialogUiState? = null,
 )
