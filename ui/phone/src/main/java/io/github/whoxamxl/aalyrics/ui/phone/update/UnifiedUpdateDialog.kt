@@ -56,16 +56,10 @@ fun UnifiedUpdateDialog(
         "UnifiedUpdateDialog cannot render ${state.phase} / ${state.availabilityContext}"
     }
 
-    val dismissible = state.isDismissibleProcessPresentation()
-
     Dialog(
-        onDismissRequest = {
-            if (dismissible) {
-                onDismissRequest()
-            }
-        },
+        onDismissRequest = onDismissRequest,
         properties = DialogProperties(
-            dismissOnBackPress = dismissible,
+            dismissOnBackPress = true,
             dismissOnClickOutside = false,
             usePlatformDefaultWidth = false,
         ),
@@ -126,21 +120,13 @@ internal fun UnifiedUpdateDialogContent(
                 .verticalScroll(rememberScrollState())
                 .padding(AALyricsSpacing.Space24),
         ) {
-            if (state.isDismissibleProcessPresentation()) {
-                PhoneDialogHeader(
-                    eyebrow = stringResource(R.string.update_process_eyebrow),
-                    closeContentDescription = stringResource(
-                        R.string.update_process_close,
-                    ),
-                    onClose = onDismissRequest,
-                )
-            } else {
-                Text(
-                    text = stringResource(R.string.update_process_eyebrow),
-                    style = AALyricsTypography.Label,
-                    color = AALyricsColors.AccentCyan,
-                )
-            }
+            PhoneDialogHeader(
+                eyebrow = stringResource(R.string.update_process_eyebrow),
+                closeContentDescription = stringResource(
+                    R.string.update_process_close,
+                ),
+                onClose = onDismissRequest,
+            )
 
             Spacer(Modifier.height(AALyricsSpacing.Space8))
 
@@ -506,14 +492,7 @@ private fun updateDialogInstallFailureReasonText(
     }
 
 internal fun UpdateDialogUiState.isDismissibleProcessPresentation(): Boolean =
-    when (phase) {
-        UpdateDialogPhase.READY_TO_INSTALL,
-        UpdateDialogPhase.DOWNLOAD_FAILED,
-        UpdateDialogPhase.PERMISSION_REQUIRED,
-        UpdateDialogPhase.INSTALL_FAILED,
-        -> true
-        else -> false
-    }
+    isUnifiedUpdateDialogState()
 
 internal fun UpdateDialogUiState.isUnifiedUpdateDialogState(): Boolean =
     phase.isUnifiedProcessPhase() ||

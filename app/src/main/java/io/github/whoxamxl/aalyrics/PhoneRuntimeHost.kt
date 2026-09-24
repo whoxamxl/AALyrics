@@ -129,8 +129,8 @@ internal fun PhoneRuntimeHost(
     var selectedDestination by rememberSaveable {
         mutableStateOf(PhoneDestination.Home)
     }
-    var dismissedUpdateProcessPresentationKey by rememberSaveable {
-        mutableStateOf<String?>(null)
+    var updateProcessDialogDismissed by rememberSaveable {
+        mutableStateOf(false)
     }
     var plainLyricsAutoScrollEnabled by rememberSaveable {
         mutableStateOf(true)
@@ -319,23 +319,13 @@ internal fun PhoneRuntimeHost(
         }
     }
 
-    LaunchedEffect(
-        updateDialogState?.phase,
-        updateDialogState?.versionName,
-        updateDialogState?.availabilityContext,
-        updateDialogState?.installFailureReason,
-        installPermissionPrompt?.versionName,
-    ) {
-        val state = updateDialogState
-        if (
-            state == null ||
-            !state.isDismissibleUpdateProcessPresentation() ||
-            (
-                state.phase == UpdateDialogPhase.PERMISSION_REQUIRED &&
-                    installPermissionPrompt?.versionName == state.versionName
-                )
-        ) {
-            dismissedUpdateProcessPresentationKey = null
+    val updateProcessDialogState = updateDialogState?.takeIf(
+        UpdateDialogUiState::isAppOwnedUpdateProcessPresentation,
+    )
+
+    LaunchedEffect(updateProcessDialogState == null) {
+        if (updateProcessDialogState == null) {
+            updateProcessDialogDismissed = false
         }
     }
 
@@ -347,32 +337,11 @@ internal fun PhoneRuntimeHost(
             onDismissRequest = application::dismissSuccessfulUpdate,
         )
     } else {
-        val updateProcessDialogState = updateDialogState?.takeIf { state ->
-            (
-                state.phase == UpdateDialogPhase.AVAILABLE &&
-                    state.availabilityContext ==
-                    UpdateDialogAvailabilityContext.INSTALL_REFRESH_RETARGET
-                ) ||
-                state.phase == UpdateDialogPhase.PREPARING_DOWNLOAD ||
-                state.phase == UpdateDialogPhase.DOWNLOADING ||
-                state.phase == UpdateDialogPhase.VERIFYING ||
-                state.phase == UpdateDialogPhase.READY_TO_INSTALL ||
-                state.phase == UpdateDialogPhase.DOWNLOAD_FAILED ||
-                state.phase == UpdateDialogPhase.PREPARING_INSTALL ||
-                state.phase == UpdateDialogPhase.PERMISSION_REQUIRED ||
-                state.phase == UpdateDialogPhase.INSTALLING ||
-                state.phase == UpdateDialogPhase.INSTALL_FAILED
-        }
         val visibleUpdateProcessDialogState = updateProcessDialogState?.takeIf { state ->
             val permissionPromptVisible =
                 state.phase != UpdateDialogPhase.PERMISSION_REQUIRED ||
                     installPermissionPrompt?.versionName == state.versionName
-            val dismissalKey = state.updateProcessPresentationDismissalKey()
-            permissionPromptVisible &&
-                (
-                    dismissalKey == null ||
-                        dismissalKey != dismissedUpdateProcessPresentationKey
-                    )
+            !updateProcessDialogDismissed && permissionPromptVisible
         }
         if (visibleUpdateProcessDialogState != null) {
             UnifiedUpdateDialog(
@@ -390,11 +359,7 @@ internal fun PhoneRuntimeHost(
                     onOpenUpdateRelease(visibleUpdateProcessDialogState.versionName)
                 },
                 onDismissRequest = {
-                    visibleUpdateProcessDialogState
-                        .updateProcessPresentationDismissalKey()
-                        ?.let { key ->
-                            dismissedUpdateProcessPresentationKey = key
-                        }
+                    updateProcessDialogDismissed = true
                     if (
                         visibleUpdateProcessDialogState.phase ==
                         UpdateDialogPhase.PERMISSION_REQUIRED
@@ -418,30 +383,23 @@ internal fun PhoneRuntimeHost(
     }
 }
 
-internal fun UpdateDialogUiState.isDismissibleUpdateProcessPresentation(): Boolean =
-    when (phase) {
-        UpdateDialogPhase.READY_TO_INSTALL,
-        UpdateDialogPhase.DOWNLOAD_FAILED,
-        UpdateDialogPhase.PERMISSION_REQUIRED,
-        UpdateDialogPhase.INSTALL_FAILED,
-        -> true
-        else -> false
-    }
+internal fun UpdateDialogUiState.isAppOwnedUpdateProcessPresentation(): Boolean =
+    (
+        phase == UpdateDialogPhase.AVAILABLE &&
+            availabilityContext == UpdateDialogAvailabilityContext.INSTALL_REFRESH_RETARGET
+        ) ||
+        phase == UpdateDialogPhase.PREPARING_DOWNLOAD ||
+        phase == UpdateDialogPhase.DOWNLOADING ||
+        phase == UpdateDialogPhase.VERIFYING ||
+        phase == UpdateDialogPhase.READY_TO_INSTALL ||
+        phase == UpdateDialogPhase.DOWNLOAD_FAILED ||
+        phase == UpdateDialogPhase.PREPARING_INSTALL ||
+        phase == UpdateDialogPhase.PERMISSION_REQUIRED ||
+        phase == UpdateDialogPhase.INSTALLING ||
+        phase == UpdateDialogPhase.INSTALL_FAILED
 
-internal fun UpdateDialogUiState.updateProcessPresentationDismissalKey(): String? =
-    if (isDismissibleUpdateProcessPresentation()) {
-        buildString {
-            append(phase.name)
-            append('|')
-            append(versionName)
-            append('|')
-            append(availabilityContext?.name.orEmpty())
-            append('|')
-            append(installFailureReason?.name.orEmpty())
-        }
-    } else {
-        null
-    }
+internal fun UpdateDialogUiState.isDismissibleUpdateProcessPresentation(): Boolean =
+    isAppOwnedUpdateProcessPresentation()
 
 @Composable
 private fun QueueItemArtwork(
