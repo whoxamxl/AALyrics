@@ -330,13 +330,15 @@ internal fun PhoneRuntimeHost(
                 state.phase == UpdateDialogPhase.DOWNLOAD_FAILED ||
                 state.phase == UpdateDialogPhase.PREPARING_INSTALL ||
                 state.phase == UpdateDialogPhase.PERMISSION_REQUIRED ||
-                state.phase == UpdateDialogPhase.INSTALLING
+                state.phase == UpdateDialogPhase.INSTALLING ||
+                state.phase == UpdateDialogPhase.INSTALL_FAILED
         }
         if (updateProcessDialogState != null) {
             UnifiedUpdateDialog(
                 state = updateProcessDialogState,
                 onInstall = application::installUpdate,
                 onRetryDownload = application::downloadUpdate,
+                onRetryInstall = application::installUpdate,
                 onGrantInstallPermission = {
                     application.dismissInstallPermissionPrompt()
                     onOpenInstallSettings()

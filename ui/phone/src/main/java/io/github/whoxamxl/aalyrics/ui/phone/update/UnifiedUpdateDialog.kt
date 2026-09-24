@@ -45,6 +45,7 @@ fun UnifiedUpdateDialog(
     state: UpdateDialogUiState,
     onInstall: () -> Unit,
     onRetryDownload: () -> Unit,
+    onRetryInstall: () -> Unit,
     onGrantInstallPermission: () -> Unit,
     onDownloadFromGitHub: () -> Unit,
 ) {
@@ -73,6 +74,7 @@ fun UnifiedUpdateDialog(
                 state = state,
                 onInstall = onInstall,
                 onRetryDownload = onRetryDownload,
+                onRetryInstall = onRetryInstall,
                 onGrantInstallPermission = onGrantInstallPermission,
                 onDownloadFromGitHub = onDownloadFromGitHub,
                 modifier = Modifier
@@ -88,6 +90,7 @@ internal fun UnifiedUpdateDialogContent(
     state: UpdateDialogUiState,
     onInstall: () -> Unit,
     onRetryDownload: () -> Unit,
+    onRetryInstall: () -> Unit,
     onGrantInstallPermission: () -> Unit,
     onDownloadFromGitHub: () -> Unit,
     modifier: Modifier = Modifier,
@@ -135,6 +138,8 @@ internal fun UnifiedUpdateDialogContent(
                             R.string.update_process_permission_title
                         UpdateDialogPhase.INSTALLING ->
                             R.string.update_process_installing_title
+                        UpdateDialogPhase.INSTALL_FAILED ->
+                            R.string.update_process_install_failed_title
                         else ->
                             R.string.update_process_preparing_title
                     },
@@ -173,6 +178,17 @@ internal fun UnifiedUpdateDialogContent(
                         Text(
                             text = stringResource(
                                 R.string.update_process_download_failed_body_suffix,
+                            ),
+                            style = AALyricsTypography.TrackArtist,
+                            color = AALyricsColors.TextSecondary,
+                            modifier = Modifier.align(Alignment.CenterVertically),
+                        )
+                    }
+
+                    UpdateDialogPhase.INSTALL_FAILED -> {
+                        Text(
+                            text = stringResource(
+                                R.string.update_process_install_failed_body_suffix,
                             ),
                             style = AALyricsTypography.TrackArtist,
                             color = AALyricsColors.TextSecondary,
@@ -366,11 +382,81 @@ internal fun UnifiedUpdateDialogContent(
                     )
                 }
 
+                UpdateDialogPhase.INSTALL_FAILED -> {
+                    Text(
+                        text = updateDialogInstallFailureReasonText(
+                            state.installFailureReason,
+                        ),
+                        style = AALyricsTypography.TrackArtist,
+                        color = AALyricsColors.TextSecondary,
+                    )
+
+                    Spacer(Modifier.height(AALyricsSpacing.Space16))
+
+                    Button(
+                        onClick = onRetryInstall,
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Text(
+                            text = stringResource(R.string.update_process_retry),
+                        )
+                    }
+                }
+
                 else -> Unit
             }
         }
     }
 }
+
+
+@Composable
+private fun updateDialogInstallFailureReasonText(
+    reason: UpdateDialogInstallFailureUiReason?,
+): String =
+    when (reason) {
+        UpdateDialogInstallFailureUiReason.DEPENDENCIES_UNAVAILABLE ->
+            stringResource(R.string.update_process_install_failure_dependencies_unavailable)
+        UpdateDialogInstallFailureUiReason.RELEASE_REFRESH_FAILED ->
+            stringResource(R.string.update_process_install_failure_release_refresh_failed)
+        UpdateDialogInstallFailureUiReason.INSTALLED_VERSION_INVALID ->
+            stringResource(R.string.update_process_install_failure_installed_version_invalid)
+        UpdateDialogInstallFailureUiReason.RETAINED_VERSION_INVALID ->
+            stringResource(R.string.update_process_install_failure_retained_version_invalid)
+        UpdateDialogInstallFailureUiReason.RETAINED_RELEASE_NOT_ELIGIBLE ->
+            stringResource(R.string.update_process_install_failure_retained_release_not_eligible)
+        UpdateDialogInstallFailureUiReason.RETAINED_RELEASE_NOT_NEWER ->
+            stringResource(R.string.update_process_install_failure_retained_release_not_newer)
+        UpdateDialogInstallFailureUiReason.NO_ELIGIBLE_RELEASE ->
+            stringResource(R.string.update_process_install_failure_no_eligible_release)
+        UpdateDialogInstallFailureUiReason.RETAINED_RELEASE_NO_LONGER_CURRENT ->
+            stringResource(
+                R.string.update_process_install_failure_retained_release_no_longer_current,
+            )
+        UpdateDialogInstallFailureUiReason.APK_FILE_MISSING ->
+            stringResource(R.string.update_process_install_failure_apk_missing)
+        UpdateDialogInstallFailureUiReason.APK_NOT_CANONICAL ->
+            stringResource(R.string.update_process_install_failure_apk_not_canonical)
+        UpdateDialogInstallFailureUiReason.APK_UNREADABLE ->
+            stringResource(R.string.update_process_install_failure_apk_unreadable)
+        UpdateDialogInstallFailureUiReason.PACKAGE_MISMATCH ->
+            stringResource(R.string.update_process_install_failure_package_mismatch)
+        UpdateDialogInstallFailureUiReason.VERSION_NOT_NEWER ->
+            stringResource(R.string.update_process_install_failure_version_not_newer)
+        UpdateDialogInstallFailureUiReason.VERSION_NAME_MISMATCH ->
+            stringResource(R.string.update_process_install_failure_version_name_mismatch)
+        UpdateDialogInstallFailureUiReason.SIGNING_IDENTITY_UNAVAILABLE ->
+            stringResource(R.string.update_process_install_failure_signing_unavailable)
+        UpdateDialogInstallFailureUiReason.SIGNING_IDENTITY_MISMATCH ->
+            stringResource(R.string.update_process_install_failure_signing_mismatch)
+        UpdateDialogInstallFailureUiReason.RECOVERY_STATE_PERSISTENCE_FAILED ->
+            stringResource(R.string.update_process_install_failure_recovery_state)
+        UpdateDialogInstallFailureUiReason.INSTALLER_HANDOFF_FAILED ->
+            stringResource(R.string.update_process_install_failure_handoff)
+        UpdateDialogInstallFailureUiReason.INSTALLER_REJECTED ->
+            stringResource(R.string.update_process_install_failure_installer_rejected)
+        null -> stringResource(R.string.update_process_install_failure_generic)
+    }
 
 internal fun UpdateDialogPhase.isUnifiedProcessPhase(): Boolean =
     this == UpdateDialogPhase.PREPARING_DOWNLOAD ||
@@ -380,4 +466,5 @@ internal fun UpdateDialogPhase.isUnifiedProcessPhase(): Boolean =
         this == UpdateDialogPhase.DOWNLOAD_FAILED ||
         this == UpdateDialogPhase.PREPARING_INSTALL ||
         this == UpdateDialogPhase.PERMISSION_REQUIRED ||
-        this == UpdateDialogPhase.INSTALLING
+        this == UpdateDialogPhase.INSTALLING ||
+        this == UpdateDialogPhase.INSTALL_FAILED
