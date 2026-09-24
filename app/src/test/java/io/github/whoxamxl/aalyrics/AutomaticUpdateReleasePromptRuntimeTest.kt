@@ -44,6 +44,36 @@ class AutomaticUpdateReleasePromptRuntimeTest {
     }
 
     @Test
+    fun `disabled preference suppresses in flight automatic result`() {
+        val runtime = AutomaticUpdateReleasePromptRuntime()
+        val available = AppUpdateCheckState.UpdateAvailable(
+            versionName = "0.3.0-alpha.1",
+            origin = UpdateCheckOrigin.AUTOMATIC,
+        )
+
+        runtime.onUpdateState(
+            state = available,
+            enabled = false,
+        )
+        assertNull(runtime.prompt.value)
+
+        runtime.onUpdateState(
+            state = available,
+            enabled = true,
+        )
+        assertEquals(
+            AutomaticUpdateReleasePrompt("0.3.0-alpha.1"),
+            runtime.prompt.value,
+        )
+
+        runtime.onUpdateState(
+            state = available,
+            enabled = false,
+        )
+        assertNull(runtime.prompt.value)
+    }
+
+    @Test
     fun `dismiss suppresses same version for current process session`() {
         val runtime = AutomaticUpdateReleasePromptRuntime()
         val available = AppUpdateCheckState.UpdateAvailable(
