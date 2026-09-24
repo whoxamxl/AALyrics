@@ -466,6 +466,7 @@ internal class AppUpdateCheckRuntime(
             is AppUpdateCheckState.PreparingDownload,
             is AppUpdateCheckState.Downloading,
             is AppUpdateCheckState.Downloaded,
+            is AppUpdateCheckState.DownloadFailed,
             is AppUpdateCheckState.PreparingInstall,
             is AppUpdateCheckState.InstallPermissionRequired,
             is AppUpdateCheckState.Installing -> current
