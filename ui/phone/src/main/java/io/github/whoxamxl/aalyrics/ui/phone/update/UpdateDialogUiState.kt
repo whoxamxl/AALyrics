@@ -15,6 +15,11 @@ enum class UpdateDialogPhase {
     INSTALL_FAILED,
 }
 
+enum class UpdateDialogAvailabilityContext {
+    DISCOVERY,
+    INSTALL_REFRESH_RETARGET,
+}
+
 enum class UpdateDialogInstallFailureUiReason {
     DEPENDENCIES_UNAVAILABLE,
     RELEASE_REFRESH_FAILED,
@@ -41,6 +46,7 @@ enum class UpdateDialogInstallFailureUiReason {
 data class UpdateDialogUiState(
     val phase: UpdateDialogPhase,
     val versionName: String,
+    val availabilityContext: UpdateDialogAvailabilityContext? = null,
     val downloadProgress: Float? = null,
     val installFailureReason: UpdateDialogInstallFailureUiReason? = null,
 )
