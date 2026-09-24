@@ -269,7 +269,8 @@ The existing progress semantics move from the Settings row into the dialog rathe
 
 - `PREPARING_DOWNLOAD` uses indeterminate progress while assets/checksum/staging are prepared;
 - `DOWNLOADING` uses the existing determinate byte-based 0–100% progress;
-- checksum verification and promotion remain explicit internal boundaries and receive a verifying/preparing presentation rather than appearing to stall;
+- `VerifyingDownload(versionName)` is now an explicit application-owned runtime state entered immediately before SHA-256 verification. While #77 presentation migration is incomplete, the current Settings mapper temporarily folds it into the existing preparing presentation;
+- the #77 Unified Update Dialog must give `VerifyingDownload` its own verifying/preparing presentation so 100% transfer does not appear stalled; checksum verification and verified-artifact promotion semantics remain unchanged;
 - install preparation retains the latest-release refresh and APK package/version/signing preflight;
 - missing Android install-source trust is explained in the update flow without bypassing Android Settings or final confirmation;
 - recoverable download/install failures remain typed and expose Retry from the update flow;
@@ -308,7 +309,9 @@ The approved stacked implementation is:
 2. **#76 — legacy/reference one-step prototype**
    - retain PR #76 / `feature/one-step-update` as a historical implementation reference;
    - do not use it as the active base for #77 or #78;
-   - any reused idea or code must be re-evaluated against the current post-#75 baseline.
+   - any reused idea or code must be re-evaluated against the current post-#75 baseline;
+   - #77 has intentionally adopted the explicit `VerifyingDownload` runtime boundary, but not #76's Settings-owned verification UI;
+   - use #76's verification/permission/retry/retarget tests and Previews only as scenario references: recreate applicable cases against #77's two-stage Unified Update Dialog, while one-step assertions belong exclusively to #78.
 
 3. **#77 — unify the complete update-process presentation while preserving the validated two-stage route**
    - move the existing preparing/downloading progress presentation into the Unified Update Dialog;
