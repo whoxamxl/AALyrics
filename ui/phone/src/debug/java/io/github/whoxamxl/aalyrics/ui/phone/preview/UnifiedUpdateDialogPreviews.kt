@@ -142,6 +142,58 @@ private fun UnifiedUpdateVerifyingLargeFontPreview() {
     )
 }
 
+@Preview(
+    name = "Ready to install",
+    group = "UnifiedUpdateDialog",
+    widthDp = 412,
+    heightDp = 892,
+    showBackground = true,
+)
+@Composable
+private fun UnifiedUpdateReadyToInstallPreview() {
+    UnifiedUpdateDialogPreview(
+        state = UpdateDialogUiState(
+            phase = UpdateDialogPhase.READY_TO_INSTALL,
+            versionName = "0.3.0-alpha.1",
+        ),
+    )
+}
+
+@Preview(
+    name = "Ready to install · narrow phone",
+    group = "UnifiedUpdateDialog",
+    widthDp = 320,
+    heightDp = 720,
+    showBackground = true,
+)
+@Composable
+private fun UnifiedUpdateReadyToInstallNarrowPreview() {
+    UnifiedUpdateDialogPreview(
+        state = UpdateDialogUiState(
+            phase = UpdateDialogPhase.READY_TO_INSTALL,
+            versionName = "0.3.0-alpha.1",
+        ),
+    )
+}
+
+@Preview(
+    name = "Ready to install · large font",
+    group = "UnifiedUpdateDialog",
+    widthDp = 412,
+    heightDp = 892,
+    fontScale = 1.3f,
+    showBackground = true,
+)
+@Composable
+private fun UnifiedUpdateReadyToInstallLargeFontPreview() {
+    UnifiedUpdateDialogPreview(
+        state = UpdateDialogUiState(
+            phase = UpdateDialogPhase.READY_TO_INSTALL,
+            versionName = "0.3.0-alpha.1",
+        ),
+    )
+}
+
 @Composable
 private fun UnifiedUpdateDialogPreview(
     state: UpdateDialogUiState,
@@ -159,6 +211,7 @@ private fun UnifiedUpdateDialogPreview(
         ) {
             UnifiedUpdateDialogContent(
                 state = state,
+                onInstall = {},
                 modifier = Modifier
                     .fillMaxWidth()
                     .widthIn(max = 420.dp),
