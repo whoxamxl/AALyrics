@@ -109,6 +109,7 @@ The production Settings contract is defined in `docs/PHONE_SETTINGS.md`. The `fe
   - one shared release-available dialog for MANUAL and AUTOMATIC newer-release discovery;
   - PR #76 / `feature/one-step-update` remains legacy/reference only and is not the active implementation baseline;
   - #77 dialog-owned update-process presentation for preparing/download progress, verification, explicit `Ready to install` / Install, install preparation, permission-required handling, typed failure/Retry, install-refresh retargeting, and PackageInstaller handoff;
+  - current #77 checkpoint: `PREPARING_DOWNLOAD` and `DOWNLOADING` are already dialog-owned; `VerifyingDownload` stays on the dialog surface with temporary preparing-style presentation until the dedicated verification checkpoint; downstream Ready to install / install / failure states remain Settings-owned until their corresponding migrations;
   - #77 preserves the validated two-stage Update -> Download/Verify -> DOWNLOADED/Ready to install -> Install interaction while moving that process out of Settings;
   - #78 may later remove the second user-facing Install action by orchestrating automatic continuation across the same validated runtime stages; `DOWNLOADED` remains the verified-artifact/recovery boundary;
   - #74 recovery behavior preserved underneath the unified presentation, plus one-time `AALyrics updated` feedback after durable replacement reconciliation;
