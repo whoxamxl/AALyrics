@@ -34,7 +34,7 @@ class AppUpdateCheckRuntimeTest {
         )
 
         runtime.checkForUpdates()
-        assertEquals(AppUpdateCheckState.Checking, runtime.state.value)
+        assertEquals(AppUpdateCheckState.Checking(), runtime.state.value)
         runCurrent()
 
         assertEquals(
@@ -64,6 +64,56 @@ class AppUpdateCheckRuntimeTest {
                 versionName = "0.2.0-alpha.2",
                 origin = UpdateCheckOrigin.AUTOMATIC,
             ),
+            runtime.state.value,
+        )
+    }
+
+    @Test
+    fun `automatic check preserves origin through checking and up to date states`() = runTest {
+        val gate = CompletableDeferred<Unit>()
+        val runtime = AppUpdateCheckRuntime(
+            installedVersionName = "0.2.0-alpha.1",
+            releaseClient = GitHubReleaseClient {
+                gate.await()
+                Result.success(
+                    listOf(
+                        release("v0.2.0-alpha.1", prerelease = true),
+                    ),
+                )
+            },
+            applicationScope = this,
+        )
+
+        runtime.checkForUpdates(origin = UpdateCheckOrigin.AUTOMATIC)
+        assertEquals(
+            AppUpdateCheckState.Checking(UpdateCheckOrigin.AUTOMATIC),
+            runtime.state.value,
+        )
+
+        gate.complete(Unit)
+        runCurrent()
+
+        assertEquals(
+            AppUpdateCheckState.UpToDate(UpdateCheckOrigin.AUTOMATIC),
+            runtime.state.value,
+        )
+    }
+
+    @Test
+    fun `automatic check failure preserves automatic origin`() = runTest {
+        val runtime = AppUpdateCheckRuntime(
+            installedVersionName = "0.2.0-alpha.1",
+            releaseClient = GitHubReleaseClient {
+                Result.failure(IllegalStateException("network unavailable"))
+            },
+            applicationScope = this,
+        )
+
+        runtime.checkForUpdates(origin = UpdateCheckOrigin.AUTOMATIC)
+        runCurrent()
+
+        assertEquals(
+            AppUpdateCheckState.Failed(UpdateCheckOrigin.AUTOMATIC),
             runtime.state.value,
         )
     }
@@ -115,7 +165,7 @@ class AppUpdateCheckRuntimeTest {
         runtime.checkForUpdates()
         runCurrent()
 
-        assertEquals(AppUpdateCheckState.UpToDate, runtime.state.value)
+        assertEquals(AppUpdateCheckState.UpToDate(), runtime.state.value)
     }
 
     @Test
@@ -131,7 +181,7 @@ class AppUpdateCheckRuntimeTest {
         runtime.checkForUpdates()
         runCurrent()
 
-        assertEquals(AppUpdateCheckState.UpToDate, runtime.state.value)
+        assertEquals(AppUpdateCheckState.UpToDate(), runtime.state.value)
     }
 
     @Test
@@ -149,7 +199,7 @@ class AppUpdateCheckRuntimeTest {
         runCurrent()
 
         assertEquals(listOf(UpdateCheckOrigin.MANUAL), origins)
-        assertEquals(AppUpdateCheckState.UpToDate, runtime.state.value)
+        assertEquals(AppUpdateCheckState.UpToDate(), runtime.state.value)
     }
 
     @Test
@@ -214,7 +264,7 @@ class AppUpdateCheckRuntimeTest {
         runCurrent()
 
         assertEquals(emptyList(), origins)
-        assertEquals(AppUpdateCheckState.Failed, runtime.state.value)
+        assertEquals(AppUpdateCheckState.Failed(), runtime.state.value)
     }
 
     @Test
@@ -230,7 +280,7 @@ class AppUpdateCheckRuntimeTest {
         runtime.checkForUpdates()
         runCurrent()
 
-        assertEquals(AppUpdateCheckState.Failed, runtime.state.value)
+        assertEquals(AppUpdateCheckState.Failed(), runtime.state.value)
     }
 
     @Test
@@ -246,7 +296,7 @@ class AppUpdateCheckRuntimeTest {
         runtime.checkForUpdates()
         runCurrent()
 
-        assertEquals(AppUpdateCheckState.Failed, runtime.state.value)
+        assertEquals(AppUpdateCheckState.Failed(), runtime.state.value)
     }
 
     @Test
@@ -264,7 +314,7 @@ class AppUpdateCheckRuntimeTest {
         runtime.checkForUpdates()
         runCurrent()
 
-        assertEquals(AppUpdateCheckState.Failed, runtime.state.value)
+        assertEquals(AppUpdateCheckState.Failed(), runtime.state.value)
         assertEquals(0, fetchCount)
     }
 
@@ -281,7 +331,7 @@ class AppUpdateCheckRuntimeTest {
         runtime.checkForUpdates()
         runCurrent()
 
-        assertEquals(AppUpdateCheckState.Failed, runtime.state.value)
+        assertEquals(AppUpdateCheckState.Failed(), runtime.state.value)
     }
 
     @Test
@@ -303,12 +353,12 @@ class AppUpdateCheckRuntimeTest {
         runtime.checkForUpdates()
         runCurrent()
 
-        assertEquals(AppUpdateCheckState.Checking, runtime.state.value)
+        assertEquals(AppUpdateCheckState.Checking(), runtime.state.value)
         assertEquals(1, fetchCount)
 
         gate.complete(Unit)
         runCurrent()
-        assertEquals(AppUpdateCheckState.UpToDate, runtime.state.value)
+        assertEquals(AppUpdateCheckState.UpToDate(), runtime.state.value)
     }
 
     @Test
@@ -326,11 +376,11 @@ class AppUpdateCheckRuntimeTest {
         runtime.checkForUpdates()
         runCurrent()
         runtime.onSettingsEntered()
-        assertEquals(AppUpdateCheckState.Checking, runtime.state.value)
+        assertEquals(AppUpdateCheckState.Checking(), runtime.state.value)
 
         gate.complete(Unit)
         runCurrent()
-        assertEquals(AppUpdateCheckState.UpToDate, runtime.state.value)
+        assertEquals(AppUpdateCheckState.UpToDate(), runtime.state.value)
 
         runtime.onSettingsEntered()
         assertEquals(AppUpdateCheckState.Idle, runtime.state.value)
