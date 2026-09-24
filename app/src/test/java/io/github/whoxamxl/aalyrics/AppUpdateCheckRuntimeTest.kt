@@ -453,6 +453,13 @@ class AppUpdateCheckRuntimeTest {
                 AppUpdateCheckState.DownloadFailed("0.2.0-alpha.2"),
                 runtime.state.value,
             )
+
+            runtime.onSettingsEntered()
+
+            assertEquals(
+                AppUpdateCheckState.DownloadFailed("0.2.0-alpha.2"),
+                runtime.state.value,
+            )
             assertFalse(stagingRoot(root).exists())
             assertFalse(verifiedRoot(root).exists())
         } finally {
