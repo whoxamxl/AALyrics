@@ -262,7 +262,7 @@ Prepare Translation without changing unfinished foreground presentation:
 - refactor mature ML Kit model availability/download/retry/thermal behavior into an Android adapter;
 - allow background preparation of the persisted target language model;
 - define only the smallest contracts required by that background work;
-- do not wire translated lyrics into Phone or Android Auto yet.
+- at Phase 11.2a, do not wire translated lyrics into Phone or Android Auto yet; Phone presentation is now explicitly authorized by Phase 11.2c below, while Android Auto remains deferred.
 
 The scaffold must not implement speculative LanguageProfiler thresholds, contextual block algorithms, Musixmatch Translation alignment, Translation Provider selection, or persistent Translation Cache.
 
