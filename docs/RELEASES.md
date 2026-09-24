@@ -302,7 +302,7 @@ Active downloads survive destination changes and Activity recreation because the
 
 `DOWNLOADED` means that the retained signed-release APK bytes match the Release-published SHA-256. It is a permanent internal safety/recovery boundary and must not be removed by later UX simplification.
 
-In **#77**, `DOWNLOADED` is also an explicit user-visible `Ready to install` checkpoint in the Unified Update Dialog. The user presses `Install` before installation preparation begins. The old Settings-row Install action is removed, but the two-stage interaction itself is intentionally preserved and validated end-to-end:
+In **#77**, `DOWNLOADED` is now an explicit user-visible `Ready to install` checkpoint in the Unified Update Dialog. The user presses `Install`, which invokes the existing `installUpdate()` operation, before installation preparation begins. The old Settings-row Downloaded/Install action is removed, but the two-stage interaction itself is intentionally preserved and validated end-to-end:
 
 ```text
 Update
