@@ -16,9 +16,10 @@ The intended production path is:
 
 ```text
 LyricsState ---------------------------┐
-TranslationCoordinator.state ----------┼─> Phone lyrics mapper
-PlaybackSnapshot ----------------------┤
-Phone viewport interaction/settings ---┘
+TranslationCoordinator.state ----------┤
+TranslationSettings --------------------┼─> Phone lyrics mapper
+PlaybackSnapshot -----------------------┤
+Phone viewport interaction/settings ----┘
                                          ↓
                                 LyricsScreenUiState
                                          ↓
@@ -53,18 +54,22 @@ Implement Phone Translation presentation from the existing application-owned `Tr
 ### Runtime composition
 
 - Collect `application.translationState` lifecycle-aware in `PhoneRuntimeHost`.
-- Pass the current Translation state into the Phone lyrics presentation mapper.
+- Reuse the already-collected current `application.translationSettings` as part of presentation eligibility.
+- Pass the current Translation state and Translation settings into the Phone lyrics presentation mapper.
 - Do not make `:ui:phone` depend on Translation core, ML Kit, persistence, providers, or Android framework Translation objects.
 - Keep Translation execution application/capability-owned. The Phone host observes state; it does not start or own translator jobs.
 
-### Canonical identity gate
+### Translation presentation eligibility gate
 
-A `TranslationState.Ready` artifact may be presented only when its `request.canonicalLyrics` exactly matches the canonical lyrics currently being mapped.
+A `TranslationState.Ready` artifact may be presented only when **all** of the following are true:
 
-- Reuse or extract the existing canonical-identity construction used by `TranslationExecutionRuntime`; do not create a second subtly different owner/fingerprint algorithm.
-- A stale or mismatched artifact fails closed to original-only presentation.
-- Playback position or current-line changes do not change Translation identity.
-- A target-language change may supersede/restart Translation without refetching Lyrics Providers.
+- current persisted Translation settings are enabled;
+- the artifact `request.targetLanguage` equals the current normalized `TranslationSettings.targetLanguage`;
+- the artifact `request.canonicalLyrics` exactly matches the canonical lyrics currently being mapped.
+
+Reuse or extract the existing canonical-identity construction used by `TranslationExecutionRuntime`; do not create a second subtly different owner/fingerprint algorithm.
+
+A stale/mismatched artifact, an old-target artifact during target switching, or a Ready state observed during disable propagation fails closed to original-only presentation. Playback position or current-line changes do not change Translation identity. A target-language change may supersede/restart Translation without refetching Lyrics Providers.
 
 ### Phone line projection
 
@@ -103,6 +108,8 @@ Add focused coverage for at least:
 - matching `Ready` artifact projects translated text onto the correct canonical rows;
 - `translated == false` does not duplicate canonical text;
 - stale/mismatched canonical identity is ignored;
+- a Ready artifact for an old target language is ignored;
+- current Translation OFF suppresses translated presentation even if an older Ready state is still observed during propagation;
 - `Disabled`, `Translating`, `NotRequired`, and `Failed` remain original-only;
 - translation state does not change current-line index, sync type, provider label, or lyrics-status mapping;
 - Ready/Degraded canonical lyrics follow the same identity/presentation rules;
@@ -153,8 +160,8 @@ Use small, reviewable commits and keep each checkpoint independently coherent.
 
 1. [ ] **Presentation contract and mapper**
    - add optional translated text to the Phone-local lyric-row state;
-   - accept Translation state in `mapPhoneLyricsState`;
-   - enforce canonical-identity matching;
+   - accept Translation state plus current Translation settings in `mapPhoneLyricsState`;
+   - enforce enabled + target-language + canonical-identity matching;
    - project only `translated == true` artifact lines;
    - add mapper tests;
    - do not change Compose rendering yet.
@@ -200,6 +207,7 @@ The slice is complete when all of the following are true:
 - A matching atomic Ready artifact displays translated text only on lines actually marked translated.
 - Preserved/uncertain/target-language lines are not duplicated.
 - A stale Ready artifact from another canonical lyrics identity is never shown.
+- A Ready artifact for a superseded target language, or one observed after Translation has been turned OFF, is not shown.
 - Translation does not change canonical timing, current-line selection, sync type, provider attribution, lyrics status, provider lookup, or playback ownership.
 - Canonical and translated text form one scroll/focus geometry row.
 - Existing 45% focus, edge fading, Browse/Follow, opening `♪`, return control, and PLAIN auto-scroll behavior remain intact.
