@@ -116,7 +116,7 @@ Lyrics Provider selection and Translation Provider selection are independent. Tr
 
 Translation failure is not lyrics lookup failure.
 
-The approved first implementation path starts with foreground-independent settings and ML Kit model lifecycle. Language profiling, contextual block planning, Translation Provider selection, artifact publication, and presentation integration remain later Translation implementation work.
+The Translation background scaffold and execution/orchestration are implemented. Language profiling, contextual block planning, Translation Provider execution, artifact assembly, stale-result rejection, and atomic publication are therefore established dependencies. The active next Translation slice is Phone presentation integration: consume only a matching atomic artifact downstream of canonical lyrics while keeping Android Auto Translation as a separate later surface integration.
 
 See `docs/TRANSLATION_ARCHITECTURE.md`.
 
@@ -226,23 +226,25 @@ The project has now made one explicit ordering decision: **persistent Translatio
 The current dependency-friendly direction is:
 
 ```text
-Translation background scaffold
+Translation background scaffold              ✅
   ↓
-Translation execution / orchestration
+Translation execution / orchestration        ✅
   ↓
-Timing / Calibration
-  ↓
-Karaoke Projection
-  ↓
-Presentation State integration
-  ↓
-Phone / Automotive feature integration
+Phone Translation presentation integration  ACTIVE
+  │
+  ├──────────────> Timing / Calibration
+  │                    ↓
+  │              Karaoke Projection
+  │                    ↓
+  └──────────────> broader Presentation State / Automotive integration
 
 Persistent cache
   -> separate later capability only when explicitly authorized
 ```
 
-This order reduces architectural churn while preserving Cache as an independent capability. It does not forbid non-persistent in-memory lifecycle state needed by Translation execution.
+Phone Translation presentation does not need to wait for timing/calibration or Karaoke because it preserves canonical line/timing ownership and adds only identity-aligned text to the existing row. Timing/calibration and Karaoke remain independent later capabilities, and Android Auto Translation remains a separate surface integration.
+
+This sequencing reduces architectural churn while preserving Cache as an independent capability. It does not forbid non-persistent in-memory lifecycle state needed by Translation execution.
 
 Each capability must be implemented on its own topic branch/PR with its own acceptance criteria and current working-fork re-check where applicable.
 
