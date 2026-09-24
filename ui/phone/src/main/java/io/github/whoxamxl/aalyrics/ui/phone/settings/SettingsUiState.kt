@@ -32,6 +32,7 @@ enum class AppUpdateUiPhase {
     IDLE,
     CHECKING,
     UP_TO_DATE,
+    UPDATE_AVAILABLE,
     CHECK_FAILED,
     PREPARING_DOWNLOAD,
     DOWNLOADING,
