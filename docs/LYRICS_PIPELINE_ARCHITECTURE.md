@@ -116,7 +116,7 @@ Lyrics Provider selection and Translation Provider selection are independent. Tr
 
 Translation failure is not lyrics lookup failure.
 
-The Translation background scaffold and execution/orchestration are implemented. Language profiling, contextual block planning, Translation Provider execution, artifact assembly, stale-result rejection, and atomic publication are therefore established dependencies. The active next Translation slice is Phone presentation integration: consume only a matching atomic artifact downstream of canonical lyrics while keeping Android Auto Translation as a separate later surface integration.
+The Translation background scaffold and execution/orchestration are implemented. Language profiling, contextual block planning, Translation Provider execution, artifact assembly, stale-result rejection, and atomic publication are therefore established dependencies. The active next Translation slice is Phone presentation integration: consume only an atomic Ready artifact that is eligible under the current enabled/target settings and exact canonical identity, while keeping Android Auto Translation as a separate later surface integration.
 
 See `docs/TRANSLATION_ARCHITECTURE.md`.
 
