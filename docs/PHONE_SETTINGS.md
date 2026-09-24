@@ -480,9 +480,23 @@ Durable `SuccessfulUpdate` feedback retains modal priority and is not merged int
 
 #### Update-process presentation ownership
 
-After the user chooses `Update`, the same dialog becomes the presentation owner for the update process.
+After the user chooses `Update`, the Unified Update Dialog becomes the presentation owner for the update process. Settings does not mirror those process states.
 
-Target presentation states include:
+#76 deliberately preserves the validated **two-stage user action** while moving its presentation into the dialog:
+
+```text
+Update
+  -> PREPARING_DOWNLOAD
+  -> DOWNLOADING
+  -> VERIFYING / PREPARING
+  -> DOWNLOADED / Ready to install
+  -> Install
+  -> PREPARING_INSTALL
+  -> INSTALL_PERMISSION_REQUIRED if needed
+  -> INSTALLING / Android confirmation
+```
+
+Target #76 presentation states include:
 
 ```text
 PREPARING_DOWNLOAD
@@ -493,6 +507,9 @@ DOWNLOADING
 
 VERIFYING / PREPARING
 [indeterminate progress]
+
+DOWNLOADED / READY_TO_INSTALL
+[verified version + explicit Install action]
 
 PREPARING_INSTALL
 [indeterminate progress]
@@ -509,11 +526,27 @@ DOWNLOAD_FAILED / INSTALL_FAILED
 
 The existing Settings-row progress behavior should be transplanted into this dialog. GitHub Release asset size remains the expected total, downloaded bytes remain the determinate-progress numerator, and size mismatch / SHA-256 mismatch continue to fail closed.
 
+`DOWNLOADED` remains an authoritative application-owned safety and recovery boundary. In #76 it is also a visible `Ready to install` checkpoint with an explicit user-facing `Install` action. #76 must not automatically continue into installation merely because verification completed.
+
 When Android install-source trust is missing, the update flow explains the requirement without bypassing Android Settings. Granting permission still hands off to Android's per-app source-trust Settings and re-checks `PackageManager.canRequestPackageInstalls()` on return. Android continues to own final package-install confirmation.
 
 If install-time latest-release refresh discovers a newer eligible release, the active dialog returns to the release-available state for that newer version. It must not send the user back to a Settings `Update available` row.
 
 A valid verified APK remains reusable across permission handling and recoverable retry. Presentation dismissal must not silently destroy the runtime's authoritative operation/artifact state.
+
+#### #77 one-step orchestration
+
+Only after the #76 two-stage route has passed focused tests and full real-device E2E validation may a later PR remove the second user-facing Install action.
+
+#77 does not replace the validated core stages. It keeps:
+
+- `downloadUpdate()` as the download/verify operation;
+- `DOWNLOADED` as the verified-artifact and recovery boundary;
+- `installUpdate()` as the existing install-refresh/preflight/permission/PackageInstaller operation.
+
+The one-step UX adds orchestration above those stages: an Update operation carrying one-step continuation intent may automatically call the existing install stage after verified `DOWNLOADED`. The coordinator must prevent duplicate continuation across recomposition, Activity recreation, process recovery, and permission return.
+
+Production UX may therefore become one-step in #77 while the independently validated two-stage route remains preserved in runtime boundaries, tests, and recovery behavior.
 
 #### Version presentation
 
@@ -533,7 +566,7 @@ After the migration, Settings Previews should cover:
 - manual Up to date;
 - manual Check failed / Retry.
 
-Update-process Previews belong to the Unified Update Dialog and should cover representative release-available, preparing, downloading/progress, verification, permission-required, failure/retry, narrow-phone, and enlarged-font configurations.
+Update-process Previews belong to the Unified Update Dialog and should cover representative release-available, preparing, downloading/progress, verification, Ready to install / explicit Install, permission-required, failure/retry, narrow-phone, and enlarged-font configurations. #76 Preview coverage must demonstrate the two-stage route; #77 may later change only the normal user-facing continuation behavior.
 
 The Phone UI remains presentation-only. It emits semantic discovery/update actions and renders application-owned state; it does not perform GitHub HTTP requests, file I/O, checksum verification, package inspection, signing checks, Android settings mutation, or PackageInstaller session work directly.
 
