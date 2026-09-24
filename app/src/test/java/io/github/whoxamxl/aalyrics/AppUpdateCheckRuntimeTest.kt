@@ -552,6 +552,53 @@ class AppUpdateCheckRuntimeTest {
     }
 
     @Test
+    fun `dismissing permission presentation for GitHub fallback preserves update process`() = runTest {
+        val apkBytes = "signed apk bytes".encodeToByteArray()
+        val release = downloadableRelease("v0.2.0-alpha.2")
+        val downloadClient = FakeUpdateAssetDownloadClient(
+            checksumPayload = checksumPayload(apkBytes, release.assets.first().name),
+            apkBytes = apkBytes,
+        )
+        val permissionPromptRuntime = UpdateInstallPermissionPromptRuntime()
+        val root = createTempDirectory("aalyrics-update-runtime").toFile()
+        try {
+            val runtime = runtime(
+                installedVersionName = "0.2.0-alpha.1",
+                releases = listOf(release),
+                assetDownloadClient = downloadClient,
+                downloadFileStore = updateStore(root),
+                installSourceTrustChecker = InstallSourceTrustChecker { false },
+                onInstallPermissionRequired = permissionPromptRuntime::request,
+            )
+
+            runtime.checkForUpdates()
+            runCurrent()
+            runtime.startUpdate()
+
+            assertEquals(
+                AppUpdateCheckState.InstallPermissionRequired("0.2.0-alpha.2"),
+                runtime.state.value,
+            )
+            assertEquals(
+                UpdateInstallPermissionPrompt("0.2.0-alpha.2"),
+                permissionPromptRuntime.prompt.value,
+            )
+            assertEquals(0, downloadClient.downloadCount)
+
+            permissionPromptRuntime.dismiss()
+
+            assertNull(permissionPromptRuntime.prompt.value)
+            assertEquals(
+                AppUpdateCheckState.InstallPermissionRequired("0.2.0-alpha.2"),
+                runtime.state.value,
+            )
+            assertEquals(0, downloadClient.downloadCount)
+        } finally {
+            root.deleteRecursively()
+        }
+    }
+
+    @Test
     fun `accepted update starts download immediately when source trust already exists`() = runTest {
         val apkBytes = "signed apk bytes".encodeToByteArray()
         val release = downloadableRelease("v0.2.0-alpha.2")
