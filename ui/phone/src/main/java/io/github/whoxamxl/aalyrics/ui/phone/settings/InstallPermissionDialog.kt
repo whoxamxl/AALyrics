@@ -37,6 +37,7 @@ import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsStroke
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsTypography
 import io.github.whoxamxl.aalyrics.ui.phone.R
 import io.github.whoxamxl.aalyrics.ui.phone.component.PhoneDialogHeader
+import io.github.whoxamxl.aalyrics.ui.phone.component.VersionChip
 
 @Composable
 internal fun InstallPermissionDialog(
@@ -111,11 +112,14 @@ internal fun InstallPermissionDialogContent(
             Text(
                 text = stringResource(
                     R.string.settings_install_permission_dialog_version,
-                    state.versionName,
                 ),
                 style = AALyricsTypography.Label,
                 color = AALyricsColors.TextSecondary,
             )
+
+            Spacer(Modifier.height(AALyricsSpacing.Space4))
+
+            VersionChip(versionName = state.versionName)
 
             Spacer(Modifier.height(AALyricsSpacing.Space20))
 
