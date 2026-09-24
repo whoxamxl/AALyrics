@@ -378,14 +378,11 @@ internal fun AppUpdateRow(
     checkLabel: String,
     checkingLabel: String,
     upToDateLabel: String,
-    updateAvailableLabel: String,
-    downloadLabel: String,
     retryLabel: String,
     checkFailedLabel: String,
     failureInfoContentDescription: String,
     genericFailureReason: String,
     onCheckForUpdates: () -> Unit,
-    onDownloadUpdate: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -432,15 +429,6 @@ internal fun AppUpdateRow(
                 )
             }
 
-            AppUpdateUiPhase.UPDATE_AVAILABLE -> {
-                AppUpdateActionRow(
-                    status = updateAvailableLabel,
-                    versionName = state.availableVersionName,
-                    actionLabel = downloadLabel,
-                    onAction = onDownloadUpdate,
-                )
-            }
-
             AppUpdateUiPhase.CHECK_FAILED -> {
                 AppUpdateFailureRow(
                     label = checkFailedLabel,
@@ -458,8 +446,6 @@ internal fun AppUpdateRow(
 private fun AppUpdateActionRow(
     actionLabel: String,
     onAction: () -> Unit,
-    status: String? = null,
-    versionName: String? = null,
     actionIcon: ImageVector? = null,
 ) {
     Row(
@@ -468,25 +454,7 @@ private fun AppUpdateActionRow(
             .heightIn(min = AALyricsSpacing.Space48),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        if (status != null) {
-            Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(end = AALyricsSpacing.Space12),
-            ) {
-                Text(
-                    text = status,
-                    style = AALyricsTypography.TrackArtist,
-                    color = AALyricsColors.TextSecondary,
-                )
-                if (!versionName.isNullOrBlank()) {
-                    Spacer(Modifier.height(AALyricsSpacing.Space4))
-                    VersionChip(versionName = versionName)
-                }
-            }
-        } else {
-            Spacer(Modifier.weight(1f))
-        }
+        Spacer(Modifier.weight(1f))
 
         AppUpdateInlineAction(
             label = actionLabel,

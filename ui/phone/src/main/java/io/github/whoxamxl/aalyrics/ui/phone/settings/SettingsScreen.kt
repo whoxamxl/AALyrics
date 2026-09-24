@@ -42,7 +42,6 @@ fun SettingsScreen(
     onResetAALyrics: () -> Unit,
     onAndroidAutoCompatibilitySetup: () -> Unit,
     onCheckForUpdates: () -> Unit,
-    onDownloadUpdate: () -> Unit,
     onOpenGitHub: () -> Unit,
     onHelpFeedback: (HelpFeedbackDestination) -> Unit,
     onSupportAALyrics: () -> Unit,
@@ -142,7 +141,6 @@ fun SettingsScreen(
             onTranslationModelDownloadRequested = onTranslationModelDownloadRequested,
             onAndroidAutoCompatibilitySetup = onAndroidAutoCompatibilitySetup,
             onCheckForUpdates = onCheckForUpdates,
-            onDownloadUpdate = onDownloadUpdate,
             onChangelogRequested = { activeSubscreen = SettingsSubscreen.CHANGELOG },
             onPrivacyPolicyRequested = {
                 activeSubscreen = SettingsSubscreen.PRIVACY_POLICY
@@ -180,7 +178,6 @@ internal fun SettingsScreenContent(
     onTranslationModelDownloadRequested: (String) -> Unit,
     onAndroidAutoCompatibilitySetup: () -> Unit,
     onCheckForUpdates: () -> Unit,
-    onDownloadUpdate: () -> Unit,
     onChangelogRequested: () -> Unit,
     onPrivacyPolicyRequested: () -> Unit,
     onTermsOfUseRequested: () -> Unit,
@@ -302,8 +299,6 @@ internal fun SettingsScreenContent(
                 checkLabel = stringResource(R.string.settings_check_for_updates),
                 checkingLabel = stringResource(R.string.settings_checking_for_updates),
                 upToDateLabel = stringResource(R.string.settings_up_to_date),
-                updateAvailableLabel = stringResource(R.string.settings_update_available),
-                downloadLabel = stringResource(R.string.settings_download_update),
                 retryLabel = stringResource(R.string.settings_retry),
                 checkFailedLabel = stringResource(R.string.settings_update_check_failed),
                 failureInfoContentDescription =
@@ -311,7 +306,6 @@ internal fun SettingsScreenContent(
                 genericFailureReason =
                     stringResource(R.string.settings_update_failure_generic),
                 onCheckForUpdates = onCheckForUpdates,
-                onDownloadUpdate = onDownloadUpdate,
             )
 
             SettingsDivider()

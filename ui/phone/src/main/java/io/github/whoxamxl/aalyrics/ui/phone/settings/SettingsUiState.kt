@@ -32,14 +32,12 @@ enum class AppUpdateUiPhase {
     IDLE,
     CHECKING,
     UP_TO_DATE,
-    UPDATE_AVAILABLE,
     CHECK_FAILED,
 }
 
 @Immutable
 data class AppUpdateUiState(
     val phase: AppUpdateUiPhase = AppUpdateUiPhase.IDLE,
-    val availableVersionName: String? = null,
     val failureReason: String? = null,
 )
 

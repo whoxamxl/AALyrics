@@ -96,14 +96,7 @@ internal fun mapPhoneSettingsState(
                     AppUpdateUiState(phase = AppUpdateUiPhase.IDLE)
                 }
             is AppUpdateCheckState.UpdateAvailable ->
-                if (appUpdateCheckState.origin == UpdateCheckOrigin.INSTALL_REFRESH) {
-                    AppUpdateUiState(
-                        phase = AppUpdateUiPhase.UPDATE_AVAILABLE,
-                        availableVersionName = appUpdateCheckState.versionName,
-                    )
-                } else {
-                    AppUpdateUiState(phase = AppUpdateUiPhase.IDLE)
-                }
+                AppUpdateUiState(phase = AppUpdateUiPhase.IDLE)
             is AppUpdateCheckState.Failed ->
                 if (appUpdateCheckState.origin == UpdateCheckOrigin.MANUAL) {
                     AppUpdateUiState(phase = AppUpdateUiPhase.CHECK_FAILED)
