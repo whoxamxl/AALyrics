@@ -223,5 +223,6 @@ Pre-Draft regression audit:
 - [x] Semantic state-machine audit: download retry, explicit Ready-to-install -> Install, install-refresh retarget, source-trust return, retained-artifact reuse, and install Retry continue through the existing runtime operations.
 - [x] Fix regression found by the semantic audit: Settings entry now preserves `InstallFailed` instead of collapsing it back to restored `Downloaded`, so the global reason/Retry presentation survives destination changes.
 - [x] Address valid Codex dismissal feedback: paused/recoverable Unified Update Dialog states can be closed with shared X/System Back without clearing runtime/artifact state; active work and install-refresh retarget remain non-dismissible.
-- [ ] Build / architecture checks / unit-test execution / CI / Codex review remain intentionally unrun at this checkpoint.
+- [x] Build / architecture checks / unit tests / CI pass on Build #1089 after fixing the Codex-review dismissal work's focused-test compile mismatch.
+- [x] Codex review completed; valid feedback was addressed, including paused/recoverable dialog dismissal and obsolete Preview references.
 

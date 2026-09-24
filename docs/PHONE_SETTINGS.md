@@ -1055,8 +1055,7 @@ Deterministic debug Previews should cover at least:
 - Unified Update Dialog install failure with signing-identity mismatch and its reason-specific explanation at typical, narrow, and enlarged-font configurations;
 - automatic update checking ON and OFF;
 - new-release dialog at typical, narrow, and enlarged-font configurations;
-- install-permission explanation dialog at typical, narrow, and enlarged-font configurations;
-- install-permission Settings return with trust denied and trust granted;
+- Unified Update Dialog permission-required presentation at typical, narrow, and enlarged-font configurations;
 - update-success dialog at typical, narrow, and enlarged-font configurations;
 - Changelog screen at typical, narrow, and enlarged-font configurations;
 - Privacy Policy screen at typical, narrow, and enlarged-font configurations;

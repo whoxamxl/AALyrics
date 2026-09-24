@@ -58,9 +58,9 @@ Grant permission
 Download from GitHub  ↗
 ```
 
-The dialog has an explicit close affordance. System Back has the same dismissal semantics. Leaving the current primary tab dismisses it. Moving AALyrics to the background or stopping/replacing the Activity also dismisses the transient prompt. Returning to the foreground, recreating the Activity, or surviving process loss must not make a dismissed dialog automatically reappear.
+The original #74/#75 standalone permission explanation had an explicit close affordance and System Back dismissal, with transient visibility owned separately from the authoritative permission-required runtime state. That historical presentation could be dismissed without clearing the retained verified APK.
 
-The durable/runtime fact that install-source trust is missing must remain separate from transient dialog visibility. If the user dismisses the explanation, it stays dismissed until the user explicitly invokes Update/Install again while permission is still missing.
+In the current #77 presentation, the permission explanation is part of the Unified Update Dialog. `PERMISSION_REQUIRED` remains dismissible through the shared close affordance or System Back, outside-tap dismissal remains disabled, and dismissing it hides presentation only: `AppUpdateCheckState.InstallPermissionRequired` and the retained verified APK remain authoritative. Active process states and install-refresh retargeting remain non-dismissible as defined in the #77 dismissal boundary below.
 
 ### #75 current permission-state ownership
 
@@ -78,11 +78,11 @@ In #75, the validated #74 presentation is intentionally still in place:
 - `Download from GitHub` remains an explicit external fallback and never bypasses Android confirmation;
 - Reset clears app-owned update state/artifacts but does not revoke Android-owned install-source trust.
 
-### #77 target permission presentation
+### #77 current permission presentation
 
 #77 moves the existing permission explanation into the Unified Update Dialog and removes the parallel Settings process presentation. The runtime fact remains separate from transient presentation visibility.
 
-Required #77 behavior:
+Current #77 behavior:
 
 - `AppUpdateCheckState.InstallPermissionRequired` remains authoritative;
 - entering permission-required state must not discard or redownload a valid retained APK;
