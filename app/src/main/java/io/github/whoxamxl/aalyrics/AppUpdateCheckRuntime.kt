@@ -187,6 +187,7 @@ internal class AppUpdateCheckRuntime(
                 val effectiveOrigin = activeCheckOrigin ?: origin
                 mutableState.value = nextState.withCheckOrigin(effectiveOrigin)
                 activeCheckOrigin = null
+                checkJob = null
             }
         }
         true
