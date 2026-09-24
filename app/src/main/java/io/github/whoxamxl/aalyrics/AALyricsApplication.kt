@@ -233,7 +233,7 @@ class AALyricsApplication : Application() {
     internal fun acceptUpdateReleasePrompt() {
         updateReleasePromptRuntime.consumeForUpdate()
             ?: return
-        appUpdateCheckRuntime.downloadUpdate()
+        appUpdateCheckRuntime.startUpdate()
     }
 
     internal fun installUpdate() {
