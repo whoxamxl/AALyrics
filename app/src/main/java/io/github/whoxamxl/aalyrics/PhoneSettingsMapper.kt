@@ -138,6 +138,11 @@ internal fun mapPhoneSettingsState(
                         0f
                     },
                 )
+            is AppUpdateCheckState.VerifyingDownload ->
+                AppUpdateUiState(
+                    phase = AppUpdateUiPhase.PREPARING_DOWNLOAD,
+                    availableVersionName = appUpdateCheckState.versionName,
+                )
             is AppUpdateCheckState.Downloaded ->
                 AppUpdateUiState(
                     phase = AppUpdateUiPhase.DOWNLOADED,
