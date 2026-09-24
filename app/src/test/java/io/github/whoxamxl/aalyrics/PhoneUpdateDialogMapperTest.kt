@@ -57,6 +57,12 @@ class PhoneUpdateDialogMapperTest {
         assertEquals(UpdateDialogPhase.DOWNLOADING, downloading?.phase)
         assertEquals(0.64f, downloading?.downloadProgress)
 
+        val verifying = mapPhoneUpdateDialogState(
+            AppUpdateCheckState.VerifyingDownload("0.3.0-alpha.1"),
+            releasePrompt = null,
+        )
+        assertEquals(UpdateDialogPhase.VERIFYING_DOWNLOAD, verifying?.phase)
+
         val downloaded = mapPhoneUpdateDialogState(
             AppUpdateCheckState.Downloaded(
                 versionName = "0.3.0-alpha.1",
