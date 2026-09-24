@@ -54,7 +54,6 @@
     <string name="settings_up_to_date">Up to date</string>
     <string name="settings_update_available">Newer update available</string>
     <string name="settings_download_update">Download</string>
-    <string name="settings_update_downloaded">Downloaded</string>
     <string name="settings_install_update">Install</string>
     <string name="settings_preparing_update_install">Preparing installation…</string>
     <string name="settings_install_permission_required">Installation permission required</string>
