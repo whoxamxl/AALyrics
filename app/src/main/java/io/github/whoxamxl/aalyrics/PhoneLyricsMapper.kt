@@ -5,6 +5,8 @@ import io.github.whoxamxl.aalyrics.core.model.LyricsDocument
 import io.github.whoxamxl.aalyrics.core.model.LyricsSyncType
 import io.github.whoxamxl.aalyrics.core.model.PlaybackSnapshot
 import io.github.whoxamxl.aalyrics.core.model.TimedLyricLine
+import io.github.whoxamxl.aalyrics.translation.api.TranslationSettings
+import io.github.whoxamxl.aalyrics.translation.core.TranslationState
 import io.github.whoxamxl.aalyrics.ui.phone.lyrics.LyricsScreenUiState
 import io.github.whoxamxl.aalyrics.ui.phone.lyrics.LyricsViewportInteractionMode
 import io.github.whoxamxl.aalyrics.ui.phone.lyrics.LyricsViewportLineUiState
@@ -19,6 +21,8 @@ internal fun mapPhoneLyricsState(
     plainLyricsAutoScrollEnabled: Boolean,
     interactionMode: LyricsViewportInteractionMode,
     currentMonotonicTimeMs: Long,
+    translationState: TranslationState = TranslationState.Idle,
+    translationSettings: TranslationSettings = TranslationSettings(enabled = false),
 ): LyricsScreenUiState {
     val track = playback.track
     val matchingLyricsState = lyricsState
@@ -31,6 +35,15 @@ internal fun mapPhoneLyricsState(
         is LyricsState.Degraded -> matchingLyricsState.lyrics
         else -> null
     }
+    val translatedLines = (translationState as? TranslationState.Ready)
+        ?.artifact
+        ?.takeIf { artifact ->
+            translationSettings.enabled &&
+                artifact.request.targetLanguage == translationSettings.targetLanguage &&
+                artifact.request.canonicalLyrics == matchingLyricsState?.canonicalLyricsOrNull()?.identity &&
+                artifact.lines.size == document?.lines?.size
+        }
+        ?.lines
     val positionMs = projectedPlaybackPosition(playback, currentMonotonicTimeMs)
     val sourceSyncType = document?.syncType ?: LyricsSyncType.PLAIN
     val displaySyncType = if (sourceSyncType == LyricsSyncType.WORD) {
@@ -61,7 +74,15 @@ internal fun mapPhoneLyricsState(
             lines = document
                 ?.lines
                 .orEmpty()
-                .map { line -> LyricsViewportLineUiState(text = line.text) },
+                .mapIndexed { index, line ->
+                    LyricsViewportLineUiState(
+                        text = line.text,
+                        translatedText = translatedLines
+                            ?.get(index)
+                            ?.takeIf { it.translated && it.text.isNotBlank() }
+                            ?.text,
+                    )
+                },
             syncType = displaySyncType,
             currentLineIndex = document?.currentTimedLineIndex(positionMs),
             playbackProgress = track

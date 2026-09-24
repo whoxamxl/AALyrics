@@ -13,6 +13,15 @@ import io.github.whoxamxl.aalyrics.core.model.TimedLyricLine
 import io.github.whoxamxl.aalyrics.core.model.TimedWord
 import io.github.whoxamxl.aalyrics.core.model.Track
 import io.github.whoxamxl.aalyrics.core.model.TrackReference
+import io.github.whoxamxl.aalyrics.translation.api.TranslationProviderId
+import io.github.whoxamxl.aalyrics.translation.api.TranslationSettings
+import io.github.whoxamxl.aalyrics.translation.core.LanguageProfile
+import io.github.whoxamxl.aalyrics.translation.core.SecondaryActivation
+import io.github.whoxamxl.aalyrics.translation.core.TranslationArtifact
+import io.github.whoxamxl.aalyrics.translation.core.TranslationArtifactLine
+import io.github.whoxamxl.aalyrics.translation.core.TranslationRequestId
+import io.github.whoxamxl.aalyrics.translation.core.TranslationRequestIdentity
+import io.github.whoxamxl.aalyrics.translation.core.TranslationState
 import io.github.whoxamxl.aalyrics.ui.phone.lyrics.LyricsViewportInteractionMode
 import io.github.whoxamxl.aalyrics.ui.phone.lyrics.TrackCardLyricsStatus
 import kotlin.test.Test
@@ -21,6 +30,98 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class PhoneLyricsMapperTest {
+    private val enabledTranslation = TranslationSettings(enabled = true, targetLanguage = "en")
+
+    @Test
+    fun `matching Ready projects only translated lines without changing canonical presentation`() {
+        val playback = PlaybackSnapshot(
+            track = track(),
+            source = PlaybackSource("com.spotify.music"),
+            positionMs = 6_000L,
+        )
+        val lyrics = ready(
+            playback,
+            listOf(TimedLyricLine("First", 0L), TimedLyricLine("Second", 5_000L)),
+        )
+        val baseline = mapPhoneLyricsState(
+            playback, lyrics, true, LyricsViewportInteractionMode.FOLLOW, 1_000L,
+        )
+        val projected = mapPhoneLyricsState(
+            playback, lyrics, true, LyricsViewportInteractionMode.FOLLOW, 1_000L,
+            translationState = translated(lyrics, listOf("Translated first" to true, "Second" to false)),
+            translationSettings = enabledTranslation,
+        )
+
+        assertEquals(listOf("Translated first", null), projected.viewport.lines.map { it.translatedText })
+        assertEquals(baseline.copy(viewport = baseline.viewport.copy(
+            lines = projected.viewport.lines.map { it.copy(translatedText = null) },
+        )), projected.copy(viewport = projected.viewport.copy(
+            lines = projected.viewport.lines.map { it.copy(translatedText = null) },
+        )))
+        assertEquals(1, projected.viewport.currentLineIndex)
+    }
+
+    @Test
+    fun `Ready is rejected for stale lyrics target and disabled settings`() {
+        val playback = PlaybackSnapshot(track = track(), source = PlaybackSource("com.spotify.music"))
+        val lyrics = ready(playback, listOf(TimedLyricLine("First", 0L)))
+        val artifact = translated(lyrics, listOf("Translated" to true))
+        val staleLyrics = lyrics.copy(lyrics = lyrics.lyrics.copy(
+            lines = listOf(TimedLyricLine("Changed", 0L)),
+        ))
+        val cases = listOf(
+            Triple(staleLyrics, artifact, enabledTranslation),
+            Triple(lyrics, artifact, TranslationSettings(enabled = true, targetLanguage = "ja")),
+            Triple(lyrics, artifact, enabledTranslation.copy(enabled = false)),
+        )
+        cases.forEach { (source, state, settings) ->
+            val result = mapPhoneLyricsState(
+                playback, source, true, LyricsViewportInteractionMode.FOLLOW, 1_000L,
+                translationState = state,
+                translationSettings = settings,
+            )
+            assertNull(result.viewport.lines.single().translatedText)
+        }
+    }
+
+    @Test
+    fun `non Ready Translation states preserve Ready and Degraded original lyrics`() {
+        val playback = PlaybackSnapshot(track = track(), source = PlaybackSource("com.spotify.music"))
+        val ready = ready(playback, listOf(TimedLyricLine("Original", 0L)))
+        val request = (translated(ready, listOf("Translated" to true)) as TranslationState.Ready)
+            .artifact.request
+        val profile = LanguageProfile(null, null, SecondaryActivation.NONE, emptyList())
+        val states = listOf(
+            TranslationState.Disabled,
+            TranslationState.Idle,
+            TranslationState.Translating(request),
+            TranslationState.NotRequired(request, profile),
+            TranslationState.Failed(request),
+        )
+        val canonicalStates = listOf(
+            ready,
+            LyricsState.Degraded(ready.lookup, ready.lyrics, failedAttempts = 1),
+        )
+        canonicalStates.forEach { lyrics ->
+            states.forEach { translation ->
+                val result = mapPhoneLyricsState(
+                    playback, lyrics, true, LyricsViewportInteractionMode.FOLLOW, 1_000L,
+                    translationState = translation,
+                    translationSettings = enabledTranslation,
+                )
+                assertEquals("Original", result.viewport.lines.single().text)
+                assertNull(result.viewport.lines.single().translatedText)
+                assertEquals(TrackCardLyricsStatus.READY, result.trackCard.lyricsStatus)
+            }
+            val result = mapPhoneLyricsState(
+                playback, lyrics, true, LyricsViewportInteractionMode.FOLLOW, 1_000L,
+                translationState = translated(ready, listOf("Translated" to true)),
+                translationSettings = enabledTranslation,
+            )
+            assertEquals("Translated", result.viewport.lines.single().translatedText)
+        }
+    }
+
     @Test
     fun `no active track maps to stable empty Phone state`() {
         val state = mapPhoneLyricsState(
@@ -217,6 +318,24 @@ class PhoneLyricsMapperTest {
         artists = listOf("The Northbound Lights"),
         durationMs = 20_000L,
         references = setOf(TrackReference("spotify", "track-id")),
+    )
+
+    private fun translated(
+        lyrics: LyricsState.Ready,
+        lines: List<Pair<String, Boolean>>,
+    ): TranslationState = TranslationState.Ready(
+        TranslationArtifact(
+            request = TranslationRequestIdentity(
+                id = TranslationRequestId(1L),
+                canonicalLyrics = requireNotNull(lyrics.canonicalLyricsOrNull()).identity,
+                targetLanguage = "en",
+            ),
+            providerId = TranslationProviderId("mlkit"),
+            profile = LanguageProfile(null, null, SecondaryActivation.NONE, emptyList()),
+            lines = lines.mapIndexed { index, (text, isTranslated) ->
+                TranslationArtifactLine(index, text, "ja", isTranslated)
+            },
+        ),
     )
 
     private fun ready(

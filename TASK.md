@@ -5,7 +5,7 @@
 - Branch: `feature/translation-runtime`.
 - Base: `main` at `4083588a250092e47f1efeb01e06a099b72a3604`.
 - Classification: TRANSLATION / PHONE PRESENTATION / RUNTIME COMPOSITION.
-- Status: documentation and implementation contract prepared; production implementation has not started on this branch.
+- Status: Phone Translation implementation in progress; mapper checkpoint complete.
 - Authoritative references: `AGENTS.md`, `docs/TRANSLATION_ARCHITECTURE.md`, `docs/PHONE_LYRICS_VIEWPORT.md`, `docs/PHONE_RUNTIME_HOST.md`, `docs/PHONE_UI_SPEC.md`, `docs/PRESENTATION_STATE_ARCHITECTURE.md`, and the current production code/tests on this branch.
 
 ## Goal
@@ -161,7 +161,7 @@ This list is guidance, not permission to restructure unrelated code.
 
 Use small, reviewable commits and keep each checkpoint independently coherent.
 
-1. [ ] **Presentation contract and mapper**
+1. [x] **Presentation contract and mapper**
    - add optional translated text to the Phone-local lyric-row state;
    - accept Translation state plus current Translation settings in `mapPhoneLyricsState`;
    - enforce enabled + target-language + canonical-identity matching;

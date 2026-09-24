@@ -36,7 +36,7 @@ internal class TranslationExecutionRuntime(
     }
 }
 
-private fun LyricsState.canonicalLyricsOrNull(): CanonicalLyrics? = when (this) {
+internal fun LyricsState.canonicalLyricsOrNull(): CanonicalLyrics? = when (this) {
     is LyricsState.Ready -> CanonicalLyrics.create(
         ownerId = "lyrics-lookup-${lookup.id.value}",
         document = lyrics,

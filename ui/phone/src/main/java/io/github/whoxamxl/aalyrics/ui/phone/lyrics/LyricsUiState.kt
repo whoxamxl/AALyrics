@@ -32,6 +32,7 @@ enum class LyricsViewportInteractionMode {
 data class LyricsViewportLineUiState(
     val text: String,
     val words: List<String> = emptyList(),
+    val translatedText: String? = null,
 )
 
 /**
