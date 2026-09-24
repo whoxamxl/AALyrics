@@ -95,12 +95,6 @@ private fun SettingsUpdateUpToDatePreview() {
     SettingsScreenPreview(PhonePreviewFixtures.settingsUpToDate)
 }
 
-@Preview(name = "Update · available", group = "SettingsScreen", widthDp = 412, heightDp = 900)
-@Composable
-private fun SettingsUpdateAvailablePreview() {
-    SettingsScreenPreview(PhonePreviewFixtures.settingsUpdateAvailable)
-}
-
 @Preview(name = "Update · failed", group = "SettingsScreen", widthDp = 412, heightDp = 900)
 @Composable
 private fun SettingsUpdateFailedPreview() {
@@ -280,8 +274,7 @@ internal fun SettingsScreenPreview(
                         delay(1200)
                         state = state.copy(
                             appUpdate = AppUpdateUiState(
-                                phase = AppUpdateUiPhase.UPDATE_AVAILABLE,
-                                availableVersionName = "0.1.2",
+                                phase = AppUpdateUiPhase.UP_TO_DATE,
                             ),
                         )
                     }
