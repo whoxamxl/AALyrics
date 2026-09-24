@@ -236,9 +236,17 @@ The checksum verifies file integrity. Android's package signature separately pro
 
 The Phone Settings surface exposes one combined version/update row. GitHub Releases is the authoritative source for update discovery, while the Phone Compose layer remains presentation-only.
 
-### Check for updates
+### Manual and automatic update discovery
 
-Update discovery remains explicitly user-triggered. An update check begins only when the user presses `Check for updates` or `Retry`. AALyrics must not contact GitHub merely because the app launched, resumed, or Settings was opened.
+Manual discovery remains explicitly available through `Check for updates` and `Retry` regardless of the automatic-update preference or cadence.
+
+AALyrics also supports low-frequency automatic discovery. `Automatically check for updates` is an app-owned durable preference that defaults to ON. After the normal Phone entry gates reach `READY`, the application may start an automatic release query only when the preference is enabled and the durable cadence is due. The cadence is **7 full days** from the last recorded check; no timestamp means the first automatic check is eligible immediately.
+
+Starting an automatic check records the cadence timestamp before the network result is known, preventing repeated retries across process restarts when the network is unavailable. A successful manual GitHub Releases query refreshes the same cadence timestamp. Manual checks are never blocked by this cadence. Turning the preference ON later in the same process requests automatic discovery only when the cadence is due. A process-local attempt guard prevents duplicate automatic attempts from recomposition, Activity recreation, navigation, or repeated READY rendering.
+
+Automatic checking starts only from an idle update runtime. It must not replace a retained verified APK or interrupt active download/install work. `Reset AALyrics` restores the preference to ON, clears the cadence timestamp and process-local attempt guard, and makes a fresh automatic check eligible at the next valid READY entry. Successful release-query cadence writes are generation-serialized with Reset so pre-Reset work cannot restore a cleared timestamp.
+
+Release-query results carry an internal origin: `MANUAL`, `AUTOMATIC`, or `INSTALL_REFRESH`. Only an `AUTOMATIC` newer-release result may request the global `New release available` dialog. Manual checks and install-time refreshes never create that dialog. Dismissing the automatic dialog with `Not now`, its close action, or system Back suppresses that exact version for the remainder of the current app-process session; a different version remains eligible. Outside-tap dismissal is disabled. Accepting `Update` consumes the prompt and enters the existing verified download pipeline; #75 does not yet auto-chain download completion into installation. Durable `AALyrics updated` feedback has modal priority, and an unconsumed success marker prevents automatic checking on that Phone entry.
 
 The application-owned release client reads the repository's public Release collection. It must not rely on GitHub's single "latest release" concept because AALyrics prerelease channels (alpha/beta/RC) are valid update candidates.
 
