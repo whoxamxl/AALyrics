@@ -1,6 +1,7 @@
 package io.github.whoxamxl.aalyrics
 
 import java.io.File
+import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
@@ -130,6 +131,7 @@ internal class AppUpdateCheckRuntime(
     private var installTarget: InstallTarget? = null
     private var availableCandidate: AALyricsReleaseCandidate? = null
     private var installPermissionResumeStage: InstallPermissionResumeStage? = null
+    private val autoInstallAfterDownloadRequested = AtomicBoolean(false)
     private val operationGeneration = AtomicLong(0L)
     private val releaseQueryCallbackLock = Any()
     private val checkPresentationLock = Any()
@@ -216,6 +218,7 @@ internal class AppUpdateCheckRuntime(
         }
 
         val candidate = availableCandidate ?: return
+        autoInstallAfterDownloadRequested.set(true)
         startDownloadWithSourceTrust(candidate)
     }
 
@@ -254,7 +257,7 @@ internal class AppUpdateCheckRuntime(
         val generation = operationGeneration.get()
         val versionName = candidate.release.tagName.removePrefix("v")
         mutableState.value = AppUpdateCheckState.PreparingDownload(versionName)
-        downloadJob = applicationScope.launch {
+        val job = applicationScope.launch {
             val nextState = try {
                 resolveDownloadState(
                     candidate = candidate,
@@ -269,6 +272,17 @@ internal class AppUpdateCheckRuntime(
             }
             ensureCurrentOperation(generation)
             mutableState.value = nextState
+        }
+        downloadJob = job
+        job.invokeOnCompletion { error ->
+            if (
+                error == null &&
+                operationGeneration.get() == generation &&
+                mutableState.value is AppUpdateCheckState.Downloaded &&
+                autoInstallAfterDownloadRequested.get()
+            ) {
+                installUpdate()
+            }
         }
     }
 
@@ -306,6 +320,7 @@ internal class AppUpdateCheckRuntime(
             else -> null
         } ?: return
 
+        autoInstallAfterDownloadRequested.set(true)
         beginInstall(target)
     }
 
@@ -351,6 +366,7 @@ internal class AppUpdateCheckRuntime(
             recoveryStore == null
         ) {
             installTarget = target
+            autoInstallAfterDownloadRequested.set(false)
             mutableState.value = AppUpdateCheckState.InstallFailed(
                 versionName = target.versionName,
                 reason = AppUpdateInstallFailureReason.DEPENDENCIES_UNAVAILABLE,
@@ -389,6 +405,7 @@ internal class AppUpdateCheckRuntime(
                 }
 
                 is UpdateInstallPreparationResult.ReleaseRefreshRejected -> {
+                    autoInstallAfterDownloadRequested.set(false)
                     mutableState.value = AppUpdateCheckState.InstallFailed(
                         versionName = target.versionName,
                         reason = preparationResult.reason.toInstallFailureReason(),
@@ -397,6 +414,7 @@ internal class AppUpdateCheckRuntime(
                 }
 
                 UpdateInstallPreparationResult.ReleaseRefreshFailed -> {
+                    autoInstallAfterDownloadRequested.set(false)
                     mutableState.value = AppUpdateCheckState.InstallFailed(
                         versionName = target.versionName,
                         reason = AppUpdateInstallFailureReason.RELEASE_REFRESH_FAILED,
@@ -405,6 +423,7 @@ internal class AppUpdateCheckRuntime(
                 }
 
                 is UpdateInstallPreparationResult.ApkPreflightRejected -> {
+                    autoInstallAfterDownloadRequested.set(false)
                     mutableState.value = AppUpdateCheckState.InstallFailed(
                         versionName = target.versionName,
                         reason = preparationResult.reason.toInstallFailureReason(),
@@ -439,6 +458,7 @@ internal class AppUpdateCheckRuntime(
                     }
 
                     is UpdatePackageInstallerStatus.Failure -> {
+                        autoInstallAfterDownloadRequested.set(false)
                         val failedSessionId = activeInstallSessionId
                         activeInstallSessionId = null
                         failedSessionId?.let { sessionId ->
@@ -494,12 +514,14 @@ internal class AppUpdateCheckRuntime(
             ensureCurrentOperation(generation)
             installResult.fold(
                 onSuccess = {
+                    autoInstallAfterDownloadRequested.set(false)
                     if (mutableState.value is AppUpdateCheckState.PreparingInstall) {
                         mutableState.value =
                             AppUpdateCheckState.Installing(target.versionName)
                     }
                 },
                 onFailure = {
+                    autoInstallAfterDownloadRequested.set(false)
                     val failedSessionId = activeInstallSessionId
                     activeInstallSessionId = null
                     failedSessionId?.let { sessionId ->
@@ -540,6 +562,7 @@ internal class AppUpdateCheckRuntime(
         installTarget = null
         availableCandidate = null
         installPermissionResumeStage = null
+        autoInstallAfterDownloadRequested.set(false)
         downloadFileStore?.clearAll()
         updateRecoveryStore?.clearAll()
         mutableState.value = AppUpdateCheckState.Idle
