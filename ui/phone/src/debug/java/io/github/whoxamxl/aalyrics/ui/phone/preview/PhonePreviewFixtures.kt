@@ -391,11 +391,11 @@ internal object PhonePreviewFixtures {
         termsOfUseText = termsOfUseMarkdownSample,
         thirdPartyLicensesText = thirdPartyLicensesMarkdownSample,
     )
+    val settingsAutomaticUpdateOff = settingsTypical.copy(
+        automaticallyCheckForUpdates = false,
+    )
     val settingsIdleUpdate = settingsTypical.copy(
         appUpdate = AppUpdateUiState(phase = AppUpdateUiPhase.IDLE),
-    )
-    val settingsUnavailableUpdate = settingsTypical.copy(
-        appUpdate = AppUpdateUiState(phase = AppUpdateUiPhase.UNAVAILABLE),
     )
     val settingsCheckingUpdate = settingsTypical.copy(
         appUpdate = AppUpdateUiState(phase = AppUpdateUiPhase.CHECKING),
@@ -403,16 +403,16 @@ internal object PhonePreviewFixtures {
     val settingsUpToDate = settingsTypical.copy(
         appUpdate = AppUpdateUiState(phase = AppUpdateUiPhase.UP_TO_DATE),
     )
-    val settingsUpdateAvailable = settingsTypical.copy(
-        appUpdate = AppUpdateUiState(
-            phase = AppUpdateUiPhase.UPDATE_AVAILABLE,
-            availableVersionName = "0.1.2",
-        ),
-    )
     val settingsUpdateFailed = settingsTypical.copy(
         appUpdate = AppUpdateUiState(
             phase = AppUpdateUiPhase.CHECK_FAILED,
             failureReason = "GitHub Releases could not be reached.",
+        ),
+    )
+    val settingsInstallRefreshUpdateAvailable = settingsTypical.copy(
+        appUpdate = AppUpdateUiState(
+            phase = AppUpdateUiPhase.UPDATE_AVAILABLE,
+            availableVersionName = "0.2.0-beta.1",
         ),
     )
     val settingsPreparingUpdateDownload = settingsTypical.copy(

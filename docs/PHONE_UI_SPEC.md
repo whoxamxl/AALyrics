@@ -103,7 +103,14 @@ The production Settings contract is defined in `docs/PHONE_SETTINGS.md`. The `fe
 - Translation target language;
 - Android Auto compatibility acknowledgement/status and setup re-entry;
 - `APP`:
-  - installed version plus explicit unavailable Update presentation until release-network runtime exists;
+  - durable `Automatically check for updates` switch (default ON) with shared info tooltip;
+  - #75 discovery presentation: installed version plus MANUAL Check/Retry, Checking, Up to date, and Check failed;
+  - #75 keeps the inherited post-Update download/install process presentation in Settings until #76, including an install-refresh-only `Newer update available -> Download` retarget state when a newer release appears during install preparation;
+  - one global release-available dialog shared by MANUAL and AUTOMATIC newer-release discovery;
+  - #76 dialog-owned update-process presentation for preparing/download progress, verification, explicit `Ready to install` / Install, install preparation, permission-required handling, typed failure/Retry, and PackageInstaller handoff;
+  - #76 preserves the validated two-stage Update -> Download/Verify -> Downloaded -> Install interaction while moving that process out of Settings;
+  - #77 may later remove the second user-facing Install action by orchestrating automatic continuation across the same validated runtime stages; `DOWNLOADED` remains the verified-artifact/recovery boundary;
+  - #74 recovery behavior preserved underneath the unified presentation, plus one-time `AALyrics updated` feedback after durable replacement reconciliation;
   - in-app Changelog backed by repository-root `CHANGELOG.md`;
   - external Source code entry;
 - `ABOUT & SUPPORT`:
@@ -115,8 +122,28 @@ The production Settings contract is defined in `docs/PHONE_SETTINGS.md`. The `fe
   - functional `Verbose details` presentation preference;
   - disabled/unwired `Karaoke mode` future affordance;
   - `Storage > Clear translation models`, which keeps built-in English, turns Translation off, and restores English as the target;
-  - `Reset > Reset AALyrics`, which resets AALyrics-owned settings/onboarding without deleting translation models or changing Android/system settings;
+  - `Reset > Reset AALyrics`, which resets AALyrics-owned settings/onboarding/update state, clears app-owned update recovery/cadence state and retained update artifacts, without deleting translation models or changing Android/system settings such as install-source trust;
 - permanent AALyrics branding/GitHub footer after Advanced.
+
+The Phone update surfaces follow the shared dialog-header contract introduced by #74. In #75, the shared release-available dialog and post-replacement update-success dialog use `PhoneDialogHeader` for the same trailing X position, 24dp icon, and 48dp touch target. #76 extends that unified dialog ownership across the update-process phases and removes the parallel Settings progress/install surface. In #76, `Downloaded / Ready to install` remains an explicit dialog phase with an Install action; #77 changes only the normal continuation UX and does not erase the internal verified-download boundary.
+
+### Version presentation
+
+Phone UI uses the shared `VersionChip` whenever an AALyrics application or release version is presented as a semantic UI value rather than as prose/document content. The chip owns the leading `v` normalization, so callers pass either `0.2.0-alpha.1` or `v0.2.0-alpha.1` without duplicating prefix logic.
+
+The approved channel treatment is intentionally restrained: a low-emphasis tinted pill surface, subtle border, monospace label text, and one channel accent.
+
+```text
+DEV     -> neutral gray
+ALPHA   -> soft red / Error
+BETA    -> AccentCyan
+RC      -> AccentBlue
+STABLE  -> Success
+```
+
+The deterministic `VersionChip` Preview matrix is the visual baseline for these colors and geometry. Version presentation should reuse this component rather than recreating inline `v...` text, channel colors, pill shapes, or prefix normalization per screen.
+
+Apply `VersionChip` to standalone semantic application/release versions in Settings and update surfaces. When the version is grammatically part of supporting copy, keep the chip in the same wrapping phrase rather than creating a separate metadata row. Do not use it for Android SDK numbers, package versions embedded only in diagnostic prose, arbitrary numbers, GitHub/CHANGELOG Markdown document content, or explanatory sentences where the version is not a distinct UI value. The unified update presentation changes only ownership of UI; release discovery, SHA-256 verification, retained-artifact ownership, install-time refresh, package/version/signing preflight, source trust, PackageInstaller, and Android confirmation remain application/platform-owned boundaries.
 
 The approved support flow does not embed checkout, handle payment credentials/state, or unlock app functionality. Browser/Custom-Tab launching remains application-owned. Provider preferences, appearance/theme selection, log export, functional Karaoke wiring, and other future taxonomy remain deferred until separately approved.
 
@@ -320,6 +347,7 @@ Four current Phone patterns are now normative within `:ui:phone`:
 - **Anchored popup / tooltip surface** — use `PhonePopupMenu`. Its current Quick Controls-derived visual treatment is the standard: Radius16, `BackgroundSurfaceStrong`, `BorderSoft`, zero tonal elevation, and the shared shadow elevation. Do not introduce a default-styled `DropdownMenu` for an equivalent compact popup.
 - **Second-level Settings header** — use `SettingsSubscreenHeader`. Its standard back affordance is a Material rounded chevron-left at 32dp inside a 48dp touch target, paired with the subscreen title. This mirrors the chevron-right navigation affordance used when entering a Settings subscreen.
 - **Dismissible custom-dialog header** — use `PhoneDialogHeader` whenever a Phone custom dialog requires an explicit X close affordance. The eyebrow and close action share one full-width header row and are vertically centered. The X is always a 24dp close icon inside the standard 48dp touch target at the trailing edge; dialog implementations must not add per-dialog offsets or alternate close-icon sizing. Supporting metadata such as a target version belongs below the header rather than inside the close-action row. Action-oriented Material `AlertDialog` surfaces that already provide explicit Confirm/Cancel or Done/Cancel controls do not gain an X merely for visual consistency.
+- **Semantic application/release version** — use the Phone-local `VersionChip` for every user-visible AALyrics application or release version. When the version is standalone metadata, render the chip as its own value. When the version is grammatically part of supporting copy, keep the same chip but compose it inline with the surrounding phrase using a wrapping layout; do not create an extra standalone version row merely for visual consistency.
 - **Markdown documents** — use the Phone-local `PhoneMarkdownText` wrapper for bundled or presentation-provided Markdown such as repository `NOTICE`/`LICENSE`, `CHANGELOG.md`, and `PRIVACY.md`. The wrapper delegates Markdown parsing/rendering to `mikepenz/multiplatform-markdown-renderer` Material 3 rather than implementing Markdown syntax in AALyrics. Keep the original document as the source of truth; rendering is presentation-only.
 
 These are Phone-local standards. They should remain in `:ui:phone` until reuse outside the Phone surface justifies promotion to `:ui:designsystem`.

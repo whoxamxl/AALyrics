@@ -31,6 +31,7 @@ Settings
 ├─ Android Auto
 │  └─ Compatibility setup            <status> >
 ├─ App
+│  ├─ Automatically check for updates [switch]  ⓘ
 │  ├─ Version / update
 │  │  ├─ Version                    <version>
 │  │  └─ <stateful update action>
@@ -380,124 +381,199 @@ The `APP` section exposes app/distribution information without moving release-ne
 
 ### Version and update
 
-Current version and update actions share one grouped Settings row. The installed version is supplied from `BuildConfig.VERSION_NAME`.
+The APP section keeps one Version/update row. In #75, **release discovery** is narrow: Settings owns MANUAL Checking / Up to date / Check failed, while MANUAL and AUTOMATIC newer-release results use the same global release dialog. The already-validated post-Update download/install process presentation remains in Settings until #76.
 
-After the Check-for-updates runtime is wired, the production entry state is:
+The installed version is supplied from `BuildConfig.VERSION_NAME` and rendered through the shared `VersionChip`.
 
-```text
-Version                v0.2.0-alpha.1-dev+abcdef0
-                              Check for updates
-```
-
-The production lifecycle covers explicit update discovery, verified download, and user-triggered install handoff:
+Approved Settings presentation:
 
 ```text
 IDLE
+Version                     [ v0.2.0-alpha.1 ]
+                                   Check for updates
+
 CHECKING
+Checking for updates…                              ◌
+
 UP_TO_DATE
-UPDATE_AVAILABLE
+Up to date                                         ✓
+
 CHECK_FAILED
+Update check failed                        ⓘ   ↻ Retry
+```
+
+These are the only **discovery** states Settings should present. They become the only update-related Settings states overall after the #76 process-presentation migration.
+
+Manual discovery behavior:
+
+1. `Check for updates` or `Retry` starts a `MANUAL` release query.
+2. While the query is active, Settings shows `Checking for updates…`.
+3. If no newer eligible release exists, Settings shows `Up to date`.
+4. If the query fails, Settings shows `Update check failed` with Retry.
+5. If a newer eligible release exists, Settings does **not** show `Update available` or a Download action; it immediately hands the release to the global release-available dialog.
+6. If a MANUAL check is requested while an AUTOMATIC query is already in flight, the existing query is promoted to MANUAL presentation semantics. Settings immediately shows `Checking for updates…`, no duplicate release request is started, and the eventual Up to date / Check failed / newer-release result is treated as MANUAL.
+
+#75 still presents the existing post-Update process states in Settings. One #75-specific process exception is `INSTALL_REFRESH`: if install preparation discovers a newer eligible release, Settings presents `Newer update available` with a Download action for that replacement target. MANUAL/AUTOMATIC discovery never uses this Settings state.
+
+After the #76 migration, Settings must not present any of the following:
+
+```text
+Update available
+Preparing download
+Downloading / percent / progress bar
+Downloaded / Ready to install
+Install
+Preparing installation
+Installation permission required
+Installing update
+Download failed
+Install failed
+```
+
+Those states remain application-owned runtime facts, but their user-facing presentation belongs to the Unified Update Dialog.
+
+This means the existing determinate and indeterminate progress behavior is **moved, not removed**. The byte-based download percentage, preparation progress, retained verified APK, typed failures, Retry behavior, install-time latest-release refresh, package/version/signing preflight, source-trust handling, PackageInstaller handoff, and Android confirmation all remain part of the update runtime.
+
+#### Manual and automatic discovery convergence
+
+The durable `Automatically check for updates` switch remains above the Version/update row. It defaults to ON and uses the shared `SettingInfoTooltip`.
+
+Manual and automatic discovery differ only before a newer release is found:
+
+```text
+MANUAL
+  Checking       -> Settings
+  Up to date     -> Settings
+  Check failed   -> Settings / Retry
+  Update found   -> Unified Update Dialog
+
+AUTOMATIC
+  Checking       -> silent
+  Up to date     -> silent
+  Failed         -> silent
+  Update found   -> Unified Update Dialog
+```
+
+Both origins use the same release grammar, installed-channel eligibility rules, and comparison logic. The internal `UpdateCheckOrigin` remains necessary for cadence and notification-suppression policy, but it must not select a different update process.
+
+A successful manual GitHub Releases query refreshes the same durable 7-day automatic cadence timestamp. Automatic completion does not shift the timestamp already recorded at automatic-check start, and install-time refresh does not alter discovery cadence.
+
+Turning automatic checking OFF suppresses automatic release notification even if an already-started automatic query completes later. It never disables manual `Check for updates`.
+
+#### Unified Update Dialog
+
+A newer release found by either MANUAL or AUTOMATIC discovery opens the same global dialog:
+
+```text
+UPDATE AVAILABLE
+
+New release available
+
+AALyrics [ v0.3.0-alpha.1 ] is ready to download.
+
+Update
+Not now
+```
+
+The version is rendered with the shared `VersionChip` inline with the supporting copy. The dialog uses `PhoneDialogHeader` for the standard trailing close affordance. Before Update begins, `Not now`, close, and system Back dismiss the available-state dialog; outside-tap dismissal remains disabled.
+
+Automatic dismissal suppression is notification-specific. Dismissing an automatically discovered version suppresses that exact automatic prompt for the current app-process session. An explicit manual `Check for updates` may still present that same current release because the user has deliberately requested discovery.
+
+Durable `SuccessfulUpdate` feedback retains modal priority and is not merged into this pre-install dialog lifecycle.
+
+#### Update-process presentation ownership
+
+**#75 current:** after the user chooses `Update`, the release-available dialog closes and the existing Settings-owned download/install process presentation continues unchanged.
+
+**#76 target:** the Unified Update Dialog becomes the presentation owner for that same update process, and Settings stops mirroring process states.
+
+#76 deliberately preserves the validated **two-stage user action** while moving its presentation into the dialog:
+
+```text
+Update
+  -> PREPARING_DOWNLOAD
+  -> DOWNLOADING
+  -> VERIFYING / PREPARING
+  -> DOWNLOADED / Ready to install
+  -> Install
+  -> PREPARING_INSTALL
+  -> INSTALL_PERMISSION_REQUIRED if needed
+  -> INSTALLING / Android confirmation
+```
+
+Target #76 presentation states include:
+
+```text
 PREPARING_DOWNLOAD
+[indeterminate progress]
+
 DOWNLOADING
-DOWNLOADED
-DOWNLOAD_FAILED
+[determinate 0–100% progress + percentage]
+
+VERIFYING / PREPARING
+[indeterminate progress]
+
+DOWNLOADED / READY_TO_INSTALL
+[verified version + explicit Install action]
+
 PREPARING_INSTALL
+[indeterminate progress]
+
 INSTALL_PERMISSION_REQUIRED
+[permission explanation / Grant permission / GitHub fallback]
+
 INSTALLING
-INSTALL_FAILED
+[handoff / waiting presentation]
+
+DOWNLOAD_FAILED / INSTALL_FAILED
+[typed explanation + Retry]
 ```
 
-Expected presentation:
+The existing Settings-row progress behavior should be transplanted into this dialog. GitHub Release asset size remains the expected total, downloaded bytes remain the determinate-progress numerator, and size mismatch / SHA-256 mismatch continue to fail closed.
 
-```text
-Version                v0.2.0-alpha.1-dev+abcdef0
-                              Check for updates
+`DOWNLOADED` remains an authoritative application-owned safety and recovery boundary. In #76 it is also a visible `Ready to install` checkpoint with an explicit user-facing `Install` action. #76 must not automatically continue into installation merely because verification completed.
 
-Checking for updates…                         ◌
+When Android install-source trust is missing, the update flow explains the requirement without bypassing Android Settings. Granting permission still hands off to Android's per-app source-trust Settings and re-checks `PackageManager.canRequestPackageInstalls()` on return. Android continues to own final package-install confirmation.
 
-Up to date                                    ✓
+In #75, install-time latest-release refresh still belongs to the existing Settings-owned process presentation. If it discovers a newer eligible release, Settings shows `Newer update available` with Download and preserves that retarget state across Settings re-entry. In #76, the active Unified Update Dialog takes over this handoff and returns to its release-available state instead of sending the user back to Settings.
 
-Update available: v0.2.0-alpha.2         Download
+A valid verified APK remains reusable across permission handling and recoverable retry. Presentation dismissal must not silently destroy the runtime's authoritative operation/artifact state.
 
-Preparing download…
-[indeterminate linear progress]
+#### #77 one-step orchestration
 
-Downloading v0.2.0-alpha.2                  64%
-[determinate 0–100% linear progress]
+Only after the #76 two-stage route has passed focused tests and full real-device E2E validation may a later PR remove the second user-facing Install action.
 
-Update downloaded v0.2.0-alpha.2             Install
+#77 does not replace the validated core stages. It keeps:
 
-Preparing installation…
-[indeterminate linear progress]
+- `downloadUpdate()` as the download/verify operation;
+- `DOWNLOADED` as the verified-artifact and recovery boundary;
+- `installUpdate()` as the existing install-refresh/preflight/permission/PackageInstaller operation.
 
-Installation permission required      Install
+The one-step UX adds orchestration above those stages: an Update operation carrying one-step continuation intent may automatically call the existing install stage after verified `DOWNLOADED`. The coordinator must prevent duplicate continuation across recomposition, Activity recreation, process recovery, and permission return.
 
-Installing update…
-[indeterminate linear progress / system confirmation handoff]
+Production UX may therefore become one-step in #77 while the independently validated two-stage route remains preserved in runtime boundaries, tests, and recovery behavior.
 
-Installation failed                   ⓘ   ↻ Retry
+#### Version presentation
 
-Download failed                       ⓘ   ↻ Retry
+Semantic AALyrics application/release versions use the shared `VersionChip` presentation defined in `docs/PHONE_UI_SPEC.md`.
 
-Update check failed                   ⓘ   ↻ Retry
-```
+In Settings, the installed Version row renders the chip as standalone metadata. In update dialogs, when a version is grammatically part of supporting copy, the same chip participates in the sentence rather than creating an extra metadata row.
 
-Every update-state row keeps the same trailing-edge alignment used by the installed version value. Retry, Download, Install, and Open settings remain compact inline actions. A download Retry re-enters `PREPARING_DOWNLOAD` before APK transfer. `UPDATE_AVAILABLE` exposes Download because APK download and SHA-256 verification are application-owned and functional.
+The dedicated VersionChip Preview matrix remains the visual baseline for DEV / ALPHA / BETA / RC / STABLE channel treatment.
 
-After the user presses Download, `PREPARING_DOWNLOAD` uses an indeterminate horizontal progress bar while the runtime resolves assets, fetches/parses the checksum, and prepares app-private staging. Immediately before APK bytes are transferred, the runtime moves to `DOWNLOADING`. GitHub Release asset metadata supplies the expected APK byte size, and the download client reports received bytes so Settings renders determinate 0–100% progress. A size mismatch fails closed.
+#### Preview contract
 
-`DOWNLOADED` now exposes an explicit Install action. Install first enters `PREPARING_INSTALL`; application/runtime wiring refreshes the latest eligible GitHub Release and validates the retained APK package/version/signing identity before any PackageInstaller session is committed. If a newer eligible release has appeared, AALyrics returns to the ordinary newer-release download path instead of intentionally installing the retained older release first.
+After the migration, Settings Previews should cover:
 
-If Android does not trust AALyrics as an install source, presentation moves to `INSTALL_PERMISSION_REQUIRED`. The update row exposes `Install` as the explicit re-entry action for the explanation dialog rather than jumping directly to Android Settings. `Grant permission` from that dialog emits a semantic callback only; `:app` opens Android's per-app unknown-source settings and re-checks `PackageManager.canRequestPackageInstalls()` when control returns. The UI never reads or changes that system setting directly.
+- automatic-check preference ON and OFF;
+- manual discovery Idle;
+- manual Checking;
+- manual Up to date;
+- manual Check failed / Retry.
 
-`INSTALLING` represents PackageInstaller session handoff and any required system confirmation. The system confirmation UI remains Android-owned. Install failures retain a typed application-owned reason rather than collapsing every failure into one generic state. `INSTALL_FAILED` keeps the same row treatment, but its info tooltip explains the concrete failure boundary: release-refresh rejection/failure, retained-APK/preflight rejection, signing identity mismatch or unavailability, durable recovery-state persistence failure, PackageInstaller handoff failure, or Android installer rejection/cancellation. In particular, a debug-installed AALyrics attempting to install a release-signed APK reports signing identity mismatch instead of implying that install-source permission is missing. Installer cancellation or terminal failure preserves an otherwise-valid verified APK so Retry does not require a second download. Successful self-update may replace the current process; next-launch installed-version reconciliation remains the durable cleanup path.
+Update-process Previews belong to the Unified Update Dialog and should cover representative release-available, preparing, downloading/progress, verification, Ready to install / explicit Install, permission-required, failure/retry, narrow-phone, and enlarged-font configurations. #76 Preview coverage must demonstrate the two-stage route; #77 may later change only the normal user-facing continuation behavior.
 
-If the AALyrics process dies during installer handoff, startup abandons any AALyrics-owned PackageInstaller session that was never committed. A committed/sealed self-update session is preserved. When Android later returns `STATUS_PENDING_USER_ACTION`, the receiver can resume the system confirmation even without the previous process's in-memory callback registration, but only after revalidating that the sealed session is owned by AALyrics and targets the AALyrics package.
-
-#### Validated update-UI baseline
-
-The current Phone presentation has been validated on-device through the full same-release-signing self-update handoff. Its user-visible checkpoint remains deliberately explicit:
-
-```text
-Check for updates
-    -> Download
-    -> Downloaded / Install
-    -> install-source permission state when required
-    -> Android confirmation
-```
-
-Cancellation/retry preserves the retained verified APK, and successful replacement is handled by Android's installer boundary. This split flow is now the regression baseline for subsequent UX work.
-
-The Update UX follow-up now replaces the direct install-permission Settings handoff with an explanatory modal while retaining the compact permission-required row as an explicit `Install` re-entry affordance. Durable post-update success feedback and best-effort post-replacement resume are implemented in this recovery slice. Automatic update discovery and one-step Download + Install remain deferred to dependent PRs. Every presentation change must preserve the existing application-owned states and safety boundaries until its replacement behavior is implemented and tested.
-
-The implemented recovery-slice contract and the deferred follow-up direction are defined in `docs/UPDATE_UX.md`.
-
-The first Update UX checkpoint separates the platform/runtime permission fact from modal visibility. `INSTALL_PERMISSION_REQUIRED` remains the update phase, while a separate process-local prompt request determines whether the explanation dialog should currently be shown. Dismissing that prompt does not alter the update phase or retained APK. Re-invoking Install/Update while permission is still missing re-requests the prompt without repeating the download. Navigation away from Settings, Settings root reset, Activity stop/background, Activity/composition disposal, Reset, and return from Android source-trust Settings clear only the transient prompt. Foreground return does not recreate the prompt merely because the permission-required runtime state remains active.
-
-When that transient request is active, Phone Settings shows a large modal explanation modeled on the information hierarchy of the Notification Access setup surface, but not as a full-screen destination. It presents an update-permission eyebrow, the target update version, a concise explanation of why sideloaded AALyrics needs Android's per-source install permission, and a separate note that Android still owns the final install confirmation.
-
-Dialog actions are:
-
-```text
-Grant permission
-Download from GitHub  ↗
-```
-
-The top-right close button and system Back dismiss only the dialog. Outside-tap dismissal is disabled. `Grant permission` dismisses the prompt and hands off to Android's per-app unknown-source Settings. `Download from GitHub` dismisses the prompt and opens the matching GitHub Release page externally. The compact update row stays in `INSTALL_PERMISSION_REQUIRED` after dismissal and shows `Install` as the explicit re-entry action; it no longer bypasses the explanation by jumping directly to Android Settings. If source trust is still denied when Android Settings returns, the row remains permission-required and the dialog stays dismissed until the user explicitly presses `Install` again. If source trust is granted, the runtime resumes installation from the retained verified APK without reopening the explanation dialog.
-
-The modal uses content-driven height instead of filling a fixed percentage of the Phone viewport. Normal content ends after the secondary GitHub action with standard bottom padding; oversized content remains scrollable within the available dialog viewport. The `INSTALL UPDATES` eyebrow and close action use the shared `PhoneDialogHeader`: the eyebrow and X share one vertically centered full-width header row, the X is the standard 24dp icon inside a 48dp touch target at the trailing edge, and the target version sits immediately below using secondary-text contrast.
-
-The UI emits `onCheckForUpdates`, `onDownloadUpdate`, `onInstallUpdate`, and an install-permission-settings callback. It does not perform GitHub HTTP requests, APK/package inspection, file I/O, signing checks, Android settings navigation, or PackageInstaller session work directly.
-
-Application/runtime wiring owns the check:
-
-1. explicitly start work only when the user presses Check/Retry;
-2. query the public AALyrics GitHub Releases collection;
-3. ignore Draft releases and tags outside the AALyrics release grammar;
-4. parse the installed `BuildConfig.VERSION_NAME`;
-5. select the highest release eligible for the installed channel;
-6. compare the candidate against the installed/base development version;
-7. map the result to `UP_TO_DATE`, `UPDATE_AVAILABLE`, or `CHECK_FAILED`.
+The Phone UI remains presentation-only. It emits semantic discovery/update actions and renders application-owned state; it does not perform GitHub HTTP requests, file I/O, checksum verification, package inspection, signing checks, Android settings mutation, or PackageInstaller session work directly.
 
 Do not use publication timestamp alone as version ordering. Stable installed builds consider stable releases only. Alpha/beta/RC builds consider prerelease and stable releases. Development builds inherit the channel and comparison base embedded in their generated version name.
 
@@ -522,28 +598,22 @@ The check path is public and unauthenticated. Do not embed a GitHub token or rep
 
 ### Update state lifetime
 
-Completed check results plus recoverable download/install failures are intentionally visit-local so Settings does not keep presenting stale transient results. A successfully verified `DOWNLOADED` artifact is the exception: it represents an actual retained APK and remains present while that artifact is still valid for the installed update channel. Active install preparation/session handoff is also application-owned rather than composable-owned.
+Manual discovery presentation is Settings-visit scoped, while update-process state is application/process owned.
 
-The Phone navigation host owns Settings-visit entry detection. A transition from any non-Settings destination into Settings starts a new Settings visit. The presentation `SettingsScreen` itself does not emit an entry callback from composition.
-
-On an actual Settings navigation entry, application/runtime wiring applies these lifetime rules:
+On entering Settings, only the manual-discovery presentation is relevant:
 
 ```text
-CHECKING                  -> keep
-PREPARING_DOWNLOAD        -> keep
-DOWNLOADING               -> keep
-DOWNLOADED                -> keep
-PREPARING_INSTALL         -> keep
-INSTALL_PERMISSION_REQUIRED -> keep while the install flow is awaiting platform trust; revalidate on return
-INSTALLING                -> keep
-other completed check/download/install states -> IDLE
+MANUAL CHECKING      -> keep if the user-started query is still active
+MANUAL UP_TO_DATE    -> visit-local
+MANUAL CHECK_FAILED  -> visit-local
+IDLE                 -> ordinary Version / Check for updates presentation
 ```
 
-Therefore `UP_TO_DATE`, `UPDATE_AVAILABLE`, `CHECK_FAILED`, `DOWNLOAD_FAILED`, and `INSTALL_FAILED` remain visit-local. Leaving Settings and returning presents the ordinary retained-artifact/check state rather than preserving a stale failure banner. Active download/install work is retained while the process is alive, and a successfully verified `DOWNLOADED` artifact is retained beyond the current Settings visit. `INSTALL_PERMISSION_REQUIRED` is revalidated after returning from Android settings instead of assuming the user granted trust.
+A newer-release result leaves Settings presentation ownership immediately and is represented by the Unified Update Dialog instead. Active download/install work, retained verified artifacts, permission-required state, and install handoff are not reset merely because the user changes primary destination or Settings visit.
 
-Configuration changes, Activity recreation, recomposition, Settings subscreen navigation, and Settings-tab reselection while already in Settings remain the same visit and must not clear active update/install state. Check/download/install orchestration is application-owned and continues across ordinary destination changes where the platform operation permits it.
+Automatic Checking / Up to date / Failed never become Settings presentation states.
 
-Only one check, download, or install preparation/session handoff may be active at a time. The active presentation exposes no duplicate action.
+Configuration changes, Activity recreation, recomposition, and destination changes must not duplicate or restart application-owned update work. Only one check, download, or install preparation/session handoff may be active at a time.
 
 Partial APK bytes live only in app-private cache storage. A SHA-256-verified APK is promoted into app-private no-backup persistent storage and becomes the source of truth for `DOWNLOADED`. On process restart, the runtime removes transient staging/promotion files and restores `DOWNLOADED` only when the retained APK has a canonical AALyrics release filename, remains eligible for the installed update channel, and is still newer than the installed version. Stable installed builds therefore do not restore a retained prerelease APK. Once the installed app reaches or passes that retained release, or the retained release is no longer channel-eligible, the stale verified APK is deleted and update state returns to `IDLE`.
 
@@ -551,7 +621,7 @@ Immediately before a PackageInstaller session is committed, application-owned up
 
 After Android replaces the package, a manifest-registered non-exported `ACTION_MY_PACKAGE_REPLACED` receiver compares the pending target with the version running in the new binary. Exact target versionCode/versionName matches reconcile as success, and any strictly newer installed versionCode also satisfies the pending target. Older or same-code/name-mismatched replacements do not consume the pending marker. Successful reconciliation synchronously promotes the pending marker to durable `SuccessfulUpdate(installedVersion, installedVersionCode, resumeAfterUpdate)` state. Promotion itself has no presentation side effect; only after successful reconciliation may the receiver make the separate best-effort `MainActivity` resume request described below.
 
-The next valid Phone entry keeps the ordinary startup destination (`PhoneDestination.Home`, which aliases Lyrics) and overlays the update-success dialog. There is no update-specific destination override. The dialog shows the actual installed version from `SuccessfulUpdate`, not an inferred target label. Its `UPDATE COMPLETE` eyebrow/X header uses the same shared `PhoneDialogHeader` geometry as the install-permission dialog; dialog-specific code must not reposition or resize the close affordance. Done, the close button, and system Back share the same dismissal path. Outside-tap dismissal is disabled. The durable success marker is cleared before the dialog is removed from process state; if that clear fails, the dialog remains visible. Process death before dismissal therefore preserves the marker and causes the dialog to reappear at the next valid Phone entry.
+The next valid Phone entry keeps the ordinary startup destination (`PhoneDestination.Home`, which aliases Lyrics) and overlays the update-success dialog. There is no update-specific destination override. The dialog shows the actual installed version from `SuccessfulUpdate`, not an inferred target label, and presents it inline with the support copy as `You're now running [version].` rather than as a separate row. Its `UPDATE COMPLETE` eyebrow/X header uses the same shared `PhoneDialogHeader` geometry as the install-permission dialog; dialog-specific code must not reposition or resize the close affordance. Done, the close button, and system Back share the same dismissal path. Outside-tap dismissal is disabled. The durable success marker is cleared before the dialog is removed from process state; if that clear fails, the dialog remains visible. Process death before dismissal therefore preserves the marker and causes the dialog to reappear at the next valid Phone entry.
 
 After successful replacement reconciliation, `resumeAfterUpdate=true` causes one best-effort explicit request to open `MainActivity`. A false resume flag, missing pending state, or an unreconciled replacement causes no request. The launch uses new-task/clear-top/single-top semantics but does not alter the Phone destination model. Android may reject or suppress background Activity launch; the request result is never used as update-success evidence and never clears `SuccessfulUpdate`. If the request does not bring AALyrics forward, the next ordinary launch still presents the durable success dialog. Notification fallback is not part of this checkpoint.
 
@@ -859,6 +929,8 @@ After confirmation, reset restores:
 - Ignore non-audio apps -> ON;
 - Allow unclassified apps -> OFF;
 - Android Auto compatibility acknowledgement -> Not reviewed;
+- Automatically check for updates -> ON;
+- automatic update-check 7-day cadence -> cleared;
 - pending/success update recovery state -> cleared.
 
 Reset does **not**:
@@ -961,9 +1033,12 @@ Deterministic debug Previews should cover at least:
 - enlarged font;
 - app update checking;
 - app up-to-date state;
-- app update available state;
-- app update failure/retry state;
+- manual app update failure/retry state;
+- shared new-release dialog for MANUAL/AUTOMATIC update availability;
+- #75 install-refresh retarget state showing a newer replacement release with Download;
 - install failure with signing-identity mismatch plus the expanded reason tooltip at typical, narrow, and enlarged-font configurations;
+- automatic update checking ON and OFF;
+- new-release dialog at typical, narrow, and enlarged-font configurations;
 - install-permission explanation dialog at typical, narrow, and enlarged-font configurations;
 - install-permission Settings return with trust denied and trust granted;
 - update-success dialog at typical, narrow, and enlarged-font configurations;
@@ -1001,7 +1076,7 @@ PR #50 implements the Phone runtime-host application-composition boundary from `
 
 A durable Plain auto-scroll preference remains a separate ownership decision unless the runtime-host implementation has an already-approved backing seam.
 
-The update runtime is application-owned. Settings entry itself does not start ordinary release-network work: explicit `Check for updates` / `Retry` drives discovery, `Download` drives the verified download path, and `Install` drives install-time Release refresh, APK preflight, source-trust handling, and PackageInstaller handoff. Active work survives ordinary destination changes because it is process-owned rather than composable-owned. This recovery slice additionally owns transient permission prompting, durable pending/success replacement markers, one-time success feedback, and best-effort post-replacement resume. Automatic update discovery and one-step Update composition are intentionally deferred to dependent PRs. Changelog remains functional independently of release-network wiring: the application supplies the bundled repository `CHANGELOG.md` as presentation text. The About & Support implementation keeps bundled legal-document access application-owned, maps Help & Feedback semantic actions to GitHub destinations in `:app`, and keeps the existing Buy Me a Coffee handoff application-owned; none of these capabilities moves asset access or browser launching into `:ui:phone`.
+The update runtime is application-owned. In #75, Settings owns explicit MANUAL discovery states (Check/Retry, Checking, Up to date, Check failed) and continues to present the inherited post-Update process states after the shared release dialog hands off to the existing download/install route. MANUAL and AUTOMATIC newer-release discovery already converge on the same global release-available dialog, while automatic non-update results remain silent. #76 moves the post-Update process presentation—preparation/download progress, verification, retained-artifact continuation, permission-required handling, typed failures/Retry, install preparation, and PackageInstaller handoff—out of Settings and into the Unified Update Dialog. Active work remains application/process-owned across ordinary destination changes. Durable pending/success replacement markers, one-time success feedback, best-effort post-replacement resume, and automatic-check cadence/suppression remain application-owned. Changelog remains functional independently of release-network wiring: the application supplies the bundled repository `CHANGELOG.md` as presentation text. The About & Support implementation keeps bundled legal-document access application-owned, maps Help & Feedback semantic actions to GitHub destinations in `:app`, and keeps the existing Buy Me a Coffee handoff application-owned; none of these capabilities moves asset access or browser launching into `:ui:phone`.
 
 That wiring must preserve the existing capability ownership documented in the relevant architecture files.
 

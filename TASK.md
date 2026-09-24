@@ -2,8 +2,8 @@
 
 ## Branch and baseline
 
-- Branch: `feature/update-recovery-ux`.
-- Base: `feature/package-installer` at `df1e394f8dce87b87cc25e6c57cbaa071e40e29d`.
+- Branch: `feature/automatic-update-check`.
+- Base: `feature/package-installer` at `e97894c0920d40cd3f01f3dd719dd0b52d3b6ad7` (`#74` squash-merged recovery UX baseline).
 - Parent installer PR: #72.
 - Classification: SETTINGS / UPDATE UX / ANDROID PACKAGE INSTALLER.
 - Authoritative references: `AGENTS.md`, `docs/UPDATE_UX.md`, `docs/RELEASES.md`, `docs/PHONE_SETTINGS.md`, and the validated package-installer runtime/tests inherited from the parent branch.
@@ -55,15 +55,18 @@ This is the safe checkpoint for the UX follow-up. Do not remove or weaken the in
 
 Polish the user-facing update experience while preserving the validated update pipeline and Android-owned security/confirmation boundaries.
 
-Approved update-UX stack direction (this branch implements items 1–4; later items live in dependent PRs):
+Approved follow-up direction:
 
 1. replace the compact install-permission-required presentation with a large explanatory modal dialog;
 2. separate durable permission-required state from transient dialog visibility and dismissal;
 3. persist pending update intent so successful replacement can produce one-time `Update successful` feedback on the next valid app entry;
 4. attempt post-update return to AALyrics only on a best-effort basis and never depend on background Activity launch for correctness;
-5. add `Automatically check for updates` as a release-notification/check preference, while keeping manual `Check for updates`;
-6. show a `New release available` dialog for automatic discovery;
-7. eventually compose Download + Install into one user-facing `Update` action while retaining the existing internal download/verify/preflight/install state machine.
+5. keep manual `Check for updates` and add durable bounded automatic discovery;
+6. make Settings own manual discovery only: Idle / Checking / Up to date / Check failed;
+7. route MANUAL and AUTOMATIC newer-release results into the same global Unified Update Dialog;
+8. in #76, move existing preparing/download progress, verification, downloaded/install, permission, failure/Retry, and install presentation out of Settings and into the Unified Update Dialog while preserving the validated two-stage `Update -> Download/Verify -> Downloaded -> Install` interaction;
+9. in #76, complete full real-device E2E validation of that two-stage route before changing its transition contract;
+10. in #77, compose the validated Download + Install stages behind one user-facing `Update` intent by adding automatic continuation above the existing internal download/verify/`DOWNLOADED`/preflight/install state machine.
 
 ## Scope guardrails
 
@@ -77,6 +80,8 @@ Approved update-UX stack direction (this branch implements items 1–4; later it
 
 ## Implementation checkpoints
 
+### #75 — automatic discovery and unified release handoff
+
 - [x] Freeze the validated Package Installer baseline in TASK/update documentation.
 - [x] Separate install-permission runtime state from transient dialog visibility.
 - [x] Implement the large install-permission explanation dialog and lifecycle behavior.
@@ -84,38 +89,82 @@ Approved update-UX stack direction (this branch implements items 1–4; later it
 - [x] Reconcile `ACTION_MY_PACKAGE_REPLACED` into durable update-success state.
 - [x] Show one-time Update successful feedback on the next valid app entry.
 - [x] Add best-effort resume-after-update behavior.
-- [x] Preserve typed install-failure reasons through Settings and explain them in the failure tooltip.
+- [x] Preserve typed install-failure reasons and retained-artifact retry semantics.
 - [x] Standardize dismissible custom update-dialog X placement through shared `PhoneDialogHeader`.
-- [x] Bind durable pending-update recovery to the exact PackageInstaller session and clear matching stale markers on abandoned/failed-session recovery.
-- [ ] Complete same-release-signing device E2E from a #74 recovery-capable OLD APK to a newer #74 recovery-capable APK, confirming `ACTION_MY_PACKAGE_REPLACED` reconciliation and one-time Successful dialog. *(explicitly deferred device validation; best-effort automatic resume is not required to occur)*
-- [ ] Add automatic update checking preference and new-release dialog. *(deferred to dependent PR #75; out of scope for #74)*
-- [ ] Compose Download + Install into one user-facing Update action. *(deferred to dependent PR #76; out of scope for #74)*
-- [x] Align #74 Previews, Reset behavior, docs, focused tests, and CI.
+- [x] Bind durable pending-update recovery to the exact PackageInstaller session and harden Reset races.
+- [x] Add durable automatic update checking preference and bounded automatic discovery.
+- [x] Add release-available prompting and same-session automatic suppression.
+- [x] Standardize semantic application/release version presentation through `VersionChip`.
+- [x] Freeze the approved #75/#76/#77 presentation split in `docs/UPDATE_UX.md`, `docs/PHONE_SETTINGS.md`, `docs/RELEASES.md`, and `docs/PHONE_UI_SPEC.md`.
+- [x] Generalize the automatic-only release prompt owner so MANUAL and AUTOMATIC `UpdateAvailable` use the same release dialog.
+- [x] Keep automatic same-session suppression notification-specific while allowing explicit manual discovery to re-present the same current release.
+- [x] Preserve check origin through Checking / Up to date / Failed so AUTOMATIC non-update outcomes remain silent in Settings while MANUAL outcomes stay visible.
+- [x] Keep `UpdateAvailable` itself out of the Settings row and hand both MANUAL and AUTOMATIC discoveries to the same release dialog.
+- [x] Add focused runtime/mapper coverage for the MANUAL/AUTOMATIC discovery split and prompt behavior.
+- [ ] Complete focused real-device regression for manual/automatic discovery, toggle behavior, prompt dismissal, and manual re-presentation.
+- [ ] Run final #75 CI/review validation after checkpoint documentation is aligned.
+
+### Deferred to #76 — unified update-process presentation and validated two-stage E2E
+
+Do not implement these items in #75:
+
+- [ ] Reduce the Settings Version/update presentation to only Idle / Checking / Up to date / Check failed for the complete update lifecycle.
+- [ ] Move preparing/download progress, verification/preparation, permission-required, typed failure/Retry, and installing presentation into the Unified Update Dialog.
+- [ ] Keep `DOWNLOADED` as the authoritative verified-artifact boundary and render it as `Ready to install`.
+- [ ] Keep an explicit user-facing `Install` action after `DOWNLOADED`; do not auto-continue into installation in #76.
+- [ ] Preserve independent `downloadUpdate()` and `installUpdate()` operations and all existing SHA-256, retained-artifact, install-refresh, package/version/signing preflight, source-trust, PackageInstaller, and recovery behavior.
+- [ ] Remove process presentation from Settings only when the corresponding dialog presentation exists.
+- [ ] Align process-state Previews and focused tests with Unified Update Dialog ownership, including `Ready to install`.
+- [ ] Complete full real-device E2E of the two-stage route:
+  `Update -> Download/Verify -> Downloaded/Ready to install -> Install -> Android confirmation -> replacement/recovery -> Update successful`.
+- [ ] Record that route as the validated baseline before #76 is considered complete.
+
+### Deferred to #77 — one-step Update orchestration
+
+Start only from the validated #76 baseline:
+
+- [ ] Keep `DOWNLOADED` as a real internal/recovery state even when normal production UX auto-continues through it.
+- [ ] Keep `downloadUpdate()` and `installUpdate()` independently testable and reusable.
+- [ ] Add one-step continuation intent/coordinator above the existing operations rather than replacing them with a monolithic update routine.
+- [ ] Automatically continue from verified `DOWNLOADED` into the existing install stage only when one-step continuation intent is present.
+- [ ] Prevent duplicate install continuation across recomposition, Activity recreation, process recovery, and permission return.
+- [ ] Preserve retained verified APK recovery without requiring a second download.
+- [ ] Remove the second user-facing Install action only after focused tests and separate real-device E2E prove the one-step orchestration.
 
 ## Current checkpoint
 
-Successful package replacement now makes a bounded best-effort request to return to AALyrics when the persisted resume intent allows it.
+**#75 implementation scope is complete. Unified two-stage process presentation is deferred to #76; one-step orchestration is explicitly deferred again to #77.**
 
-Completed in this checkpoint:
+The #75 production behavior is:
 
-- added an `UpdatePostReplacementResume` boundary that only considers reconciled `SuccessfulUpdate` state;
-- `resumeAfterUpdate=true` requests one launch; false, no pending update, or unreconciled replacement performs no launch;
-- the Android launcher uses an explicit `MainActivity` intent with `NEW_TASK`, `CLEAR_TOP`, and `SINGLE_TOP` flags;
-- the receiver attempts resume only after durable pending-to-success promotion has completed;
-- a thrown launch failure is contained and does not alter update recovery state;
-- an accepted `startActivity()` request is treated only as a request, not proof that Android displayed the Activity;
-- `SuccessfulUpdate` is never cleared or modified by the resume attempt;
-- automatic return uses normal app entry handling and does not add Main/Lyrics destination routing;
-- if Android blocks or suppresses background Activity launch, the next ordinary app launch still surfaces the durable success dialog;
-- focused tests cover resume requested, resume disabled, unreconciled replacement, and launch-request failure;
-- install preparation and PackageInstaller failures now retain typed reasons through Phone presentation; the failure tooltip explains the specific boundary, including signing identity mismatch before source-trust evaluation;
-- permission and successful-update dialogs now share `PhoneDialogHeader`, fixing the X at one standard trailing header position and documenting that contract in the Phone UI spec;
-- Codex review identified a valid process-death recovery gap; `PendingUpdate` now persists the PackageInstaller session ID, startup abandonment clears only its matching marker, and terminal failure clears the matching marker even when the original process-local status sink is gone;
-- second Codex review identified a valid Reset/commit-boundary race; the installer now revalidates operation generation immediately after the synchronous pending-marker write, clears the matching session marker when Reset won the race, and aborts before `Session.commit()`;
-- Update UX and Phone Settings documentation are aligned.
+```text
+MANUAL
+  Check for updates
+  -> Checking        -> Settings
+  -> Up to date      -> Settings
+  -> Check failed    -> Settings / Retry
+  -> UpdateAvailable -> shared release dialog
 
-No notification fallback, automatic update checking, release-available dialog, or one-step Update composition has been implemented yet.
+AUTOMATIC
+  -> Checking        -> silent in Settings
+  -> Up to date      -> silent in Settings
+  -> Failed          -> silent in Settings
+  -> UpdateAvailable -> same shared release dialog
+```
 
-Remaining device-only validation is intentionally limited to a controlled same-signing replacement where both the OLD and NEW binaries contain this #74 recovery implementation. The previously exercised update into published `v0.2.0-alpha.1` cannot validate replacement reconciliation or Successful dialog because that target binary predates the #74 receiver/recovery code.
+Additional #75 invariants:
 
-PR #74 stops at this recovery/resume checkpoint. Automatic update discovery is intentionally deferred to dependent PR #75, and one-step Update composition to dependent PR #76. Do not implement either on `feature/update-recovery-ux`.
+- MANUAL and AUTOMATIC `UpdateAvailable` use the same `New release available` dialog and the same existing verified-download entry point.
+- Turning automatic checks OFF suppresses only automatic presentation; manual discovery remains available.
+- Dismissing an automatic prompt suppresses that exact automatic version for the current process session.
+- An explicit later manual check may present the same still-current version even when its automatic prompt was suppressed.
+- If MANUAL discovery is requested while an AUTOMATIC query is already in flight, the existing query is promoted to MANUAL presentation semantics: Settings immediately shows Checking, no duplicate release request is started, and the eventual result is surfaced as MANUAL.
+- `INSTALL_REFRESH` remains internal and does not create a MANUAL/AUTOMATIC discovery prompt in this #75 scope. If install preparation finds a newer eligible release, the existing Settings process surface shows `Newer update available -> Download` and preserves that retarget state across Settings re-entry.
+- Settings does not present `UpdateAvailable` for MANUAL/AUTOMATIC discovery; after the user presses `Update`, the existing download/install presentation remains unchanged from the validated pre-unification baseline until #76 moves that same two-stage process, including install-refresh retargeting, into the Unified Update Dialog.
+- #76 must preserve the explicit `Downloaded -> Install` user checkpoint and prove it end-to-end on-device.
+- #77 alone may remove that second user action by automatically continuing across the already-validated `DOWNLOADED` boundary.
+- The existing download, SHA-256 verification, retained APK, install refresh, package/version/signing preflight, source trust, PackageInstaller, durable recovery, and Reset boundaries are unchanged by #75.
+
+A temporary #76-scope implementation was intentionally reverted before finalizing #75. Subsequent changes on this branch are limited to #75-scoped documentation alignment and focused regression fixes, including preserving DownloadFailed on Settings entry and promoting an in-flight AUTOMATIC query when the user explicitly requests MANUAL discovery.
+
+Remaining #75 work is validation only: run final CI on the aligned checkpoint, review the latest #75 diff, and complete the focused real-device regression before merge readiness is declared.

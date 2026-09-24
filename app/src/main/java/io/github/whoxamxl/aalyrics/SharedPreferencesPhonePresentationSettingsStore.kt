@@ -3,6 +3,7 @@ package io.github.whoxamxl.aalyrics
 import android.content.Context
 import android.content.SharedPreferences
 import io.github.whoxamxl.aalyrics.PhonePresentationSettingsPersistence.Companion.ALLOW_UNCLASSIFIED_APPS_KEY
+import io.github.whoxamxl.aalyrics.PhonePresentationSettingsPersistence.Companion.AUTOMATICALLY_CHECK_FOR_UPDATES_KEY
 import io.github.whoxamxl.aalyrics.PhonePresentationSettingsPersistence.Companion.IGNORE_NON_AUDIO_APPS_KEY
 import io.github.whoxamxl.aalyrics.PhonePresentationSettingsPersistence.Companion.VERBOSE_DETAILS_ENABLED_KEY
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -53,6 +54,11 @@ internal class SharedPreferencesPhonePresentationSettingsStore(
     val allowUnclassifiedApps: StateFlow<Boolean> =
         mutableAllowUnclassifiedApps.asStateFlow()
 
+    private val mutableAutomaticallyCheckForUpdates =
+        MutableStateFlow(initialSettings.automaticallyCheckForUpdates)
+    val automaticallyCheckForUpdates: StateFlow<Boolean> =
+        mutableAutomaticallyCheckForUpdates.asStateFlow()
+
     private val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
         val settings = persistence.read()
         when (key) {
@@ -62,6 +68,9 @@ internal class SharedPreferencesPhonePresentationSettingsStore(
                 mutableIgnoreNonAudioApps.value = settings.ignoreNonAudioApps
             ALLOW_UNCLASSIFIED_APPS_KEY ->
                 mutableAllowUnclassifiedApps.value = settings.allowUnclassifiedApps
+            AUTOMATICALLY_CHECK_FOR_UPDATES_KEY ->
+                mutableAutomaticallyCheckForUpdates.value =
+                    settings.automaticallyCheckForUpdates
         }
     }
 
@@ -84,11 +93,18 @@ internal class SharedPreferencesPhonePresentationSettingsStore(
         persistence.setAllowUnclassifiedApps(enabled)
     }
 
+    fun setAutomaticallyCheckForUpdates(enabled: Boolean) {
+        mutableAutomaticallyCheckForUpdates.value = enabled
+        persistence.setAutomaticallyCheckForUpdates(enabled)
+    }
+
     fun resetToDefaults() {
         val defaults = PhonePresentationSettingsSnapshot()
         mutableVerboseDetailsEnabled.value = defaults.verboseDetailsEnabled
         mutableIgnoreNonAudioApps.value = defaults.ignoreNonAudioApps
         mutableAllowUnclassifiedApps.value = defaults.allowUnclassifiedApps
+        mutableAutomaticallyCheckForUpdates.value =
+            defaults.automaticallyCheckForUpdates
         persistence.resetToDefaults()
     }
 

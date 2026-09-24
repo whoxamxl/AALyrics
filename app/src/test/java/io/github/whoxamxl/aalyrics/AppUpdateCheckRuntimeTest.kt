@@ -2,6 +2,10 @@ package io.github.whoxamxl.aalyrics
 
 import java.io.ByteArrayInputStream
 import java.io.File
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.concurrent.thread
 import kotlin.io.path.createTempDirectory
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
@@ -30,13 +34,221 @@ class AppUpdateCheckRuntimeTest {
         )
 
         runtime.checkForUpdates()
-        assertEquals(AppUpdateCheckState.Checking, runtime.state.value)
+        assertEquals(AppUpdateCheckState.Checking(), runtime.state.value)
         runCurrent()
 
         assertEquals(
             AppUpdateCheckState.UpdateAvailable("0.2.0-alpha.2"),
             runtime.state.value,
         )
+    }
+
+    @Test
+    fun `automatic check tags discovered release with automatic origin`() = runTest {
+        val runtime = runtime(
+            installedVersionName = "0.2.0-alpha.1",
+            releases = listOf(
+                release("v0.2.0-alpha.2", prerelease = true),
+            ),
+        )
+
+        assertTrue(
+            runtime.checkForUpdates(
+                origin = UpdateCheckOrigin.AUTOMATIC,
+            ),
+        )
+        runCurrent()
+
+        assertEquals(
+            AppUpdateCheckState.UpdateAvailable(
+                versionName = "0.2.0-alpha.2",
+                origin = UpdateCheckOrigin.AUTOMATIC,
+            ),
+            runtime.state.value,
+        )
+    }
+
+    @Test
+    fun `automatic check preserves origin through checking and up to date states`() = runTest {
+        val gate = CompletableDeferred<Unit>()
+        val runtime = AppUpdateCheckRuntime(
+            installedVersionName = "0.2.0-alpha.1",
+            releaseClient = GitHubReleaseClient {
+                gate.await()
+                Result.success(
+                    listOf(
+                        release("v0.2.0-alpha.1", prerelease = true),
+                    ),
+                )
+            },
+            applicationScope = this,
+        )
+
+        runtime.checkForUpdates(origin = UpdateCheckOrigin.AUTOMATIC)
+        assertEquals(
+            AppUpdateCheckState.Checking(UpdateCheckOrigin.AUTOMATIC),
+            runtime.state.value,
+        )
+
+        gate.complete(Unit)
+        runCurrent()
+
+        assertEquals(
+            AppUpdateCheckState.UpToDate(UpdateCheckOrigin.AUTOMATIC),
+            runtime.state.value,
+        )
+    }
+
+    @Test
+    fun `automatic check failure preserves automatic origin`() = runTest {
+        val runtime = AppUpdateCheckRuntime(
+            installedVersionName = "0.2.0-alpha.1",
+            releaseClient = GitHubReleaseClient {
+                Result.failure(IllegalStateException("network unavailable"))
+            },
+            applicationScope = this,
+        )
+
+        runtime.checkForUpdates(origin = UpdateCheckOrigin.AUTOMATIC)
+        runCurrent()
+
+        assertEquals(
+            AppUpdateCheckState.Failed(UpdateCheckOrigin.AUTOMATIC),
+            runtime.state.value,
+        )
+    }
+
+    @Test
+    fun `manual check promotes in-flight automatic up-to-date query without refetching`() = runTest {
+        val gate = CompletableDeferred<Unit>()
+        var fetchCount = 0
+        val runtime = AppUpdateCheckRuntime(
+            installedVersionName = "0.2.0-alpha.1",
+            releaseClient = GitHubReleaseClient {
+                fetchCount += 1
+                gate.await()
+                Result.success(
+                    listOf(
+                        release("v0.2.0-alpha.1", prerelease = true),
+                    ),
+                )
+            },
+            applicationScope = this,
+        )
+
+        assertTrue(runtime.checkForUpdates(UpdateCheckOrigin.AUTOMATIC))
+        assertEquals(
+            AppUpdateCheckState.Checking(UpdateCheckOrigin.AUTOMATIC),
+            runtime.state.value,
+        )
+
+        assertTrue(runtime.checkForUpdates(UpdateCheckOrigin.MANUAL))
+        assertEquals(
+            AppUpdateCheckState.Checking(UpdateCheckOrigin.MANUAL),
+            runtime.state.value,
+        )
+
+        gate.complete(Unit)
+        runCurrent()
+
+        assertEquals(1, fetchCount)
+        assertEquals(
+            AppUpdateCheckState.UpToDate(UpdateCheckOrigin.MANUAL),
+            runtime.state.value,
+        )
+    }
+
+    @Test
+    fun `manual check promotes in-flight automatic failure to visible manual failure`() = runTest {
+        val gate = CompletableDeferred<Unit>()
+        var fetchCount = 0
+        val runtime = AppUpdateCheckRuntime(
+            installedVersionName = "0.2.0-alpha.1",
+            releaseClient = GitHubReleaseClient {
+                fetchCount += 1
+                gate.await()
+                Result.failure(IllegalStateException("network unavailable"))
+            },
+            applicationScope = this,
+        )
+
+        assertTrue(runtime.checkForUpdates(UpdateCheckOrigin.AUTOMATIC))
+        assertTrue(runtime.checkForUpdates(UpdateCheckOrigin.MANUAL))
+        gate.complete(Unit)
+        runCurrent()
+
+        assertEquals(1, fetchCount)
+        assertEquals(
+            AppUpdateCheckState.Failed(UpdateCheckOrigin.MANUAL),
+            runtime.state.value,
+        )
+    }
+
+    @Test
+    fun `manual check promotes in-flight automatic update result to manual origin`() = runTest {
+        val gate = CompletableDeferred<Unit>()
+        var fetchCount = 0
+        val runtime = AppUpdateCheckRuntime(
+            installedVersionName = "0.2.0-alpha.1",
+            releaseClient = GitHubReleaseClient {
+                fetchCount += 1
+                gate.await()
+                Result.success(
+                    listOf(
+                        release("v0.2.0-alpha.2", prerelease = true),
+                    ),
+                )
+            },
+            applicationScope = this,
+        )
+
+        assertTrue(runtime.checkForUpdates(UpdateCheckOrigin.AUTOMATIC))
+        assertTrue(runtime.checkForUpdates(UpdateCheckOrigin.MANUAL))
+        gate.complete(Unit)
+        runCurrent()
+
+        assertEquals(1, fetchCount)
+        assertEquals(
+            AppUpdateCheckState.UpdateAvailable(
+                versionName = "0.2.0-alpha.2",
+                origin = UpdateCheckOrigin.MANUAL,
+            ),
+            runtime.state.value,
+        )
+    }
+
+    @Test
+    fun `automatic check does not replace retained downloaded state`() = runTest {
+        val root = createTempDirectory("aalyrics-update-runtime").toFile()
+        try {
+            retainedUpdate(root, "0.2.0-alpha.2")
+            var fetchCount = 0
+            val runtime = AppUpdateCheckRuntime(
+                installedVersionName = "0.2.0-alpha.1",
+                releaseClient = GitHubReleaseClient {
+                    fetchCount += 1
+                    Result.success(
+                        listOf(
+                            release("v0.2.0-alpha.3", prerelease = true),
+                        ),
+                    )
+                },
+                applicationScope = this,
+                downloadFileStore = updateStore(root),
+            )
+
+            assertTrue(runtime.state.value is AppUpdateCheckState.Downloaded)
+            assertFalse(
+                runtime.checkForUpdates(
+                    origin = UpdateCheckOrigin.AUTOMATIC,
+                ),
+            )
+
+            assertTrue(runtime.state.value is AppUpdateCheckState.Downloaded)
+            assertEquals(0, fetchCount)
+        } finally {
+            root.deleteRecursively()
+        }
     }
 
     @Test
@@ -52,7 +264,7 @@ class AppUpdateCheckRuntimeTest {
         runtime.checkForUpdates()
         runCurrent()
 
-        assertEquals(AppUpdateCheckState.UpToDate, runtime.state.value)
+        assertEquals(AppUpdateCheckState.UpToDate(), runtime.state.value)
     }
 
     @Test
@@ -68,7 +280,90 @@ class AppUpdateCheckRuntimeTest {
         runtime.checkForUpdates()
         runCurrent()
 
-        assertEquals(AppUpdateCheckState.UpToDate, runtime.state.value)
+        assertEquals(AppUpdateCheckState.UpToDate(), runtime.state.value)
+    }
+
+    @Test
+    fun `successful release query reports manual origin`() = runTest {
+        val origins = mutableListOf<UpdateCheckOrigin>()
+        val runtime = runtime(
+            installedVersionName = "0.2.0-alpha.1",
+            releases = listOf(
+                release("v0.2.0-alpha.1", prerelease = true),
+            ),
+            onReleaseQuerySucceeded = origins::add,
+        )
+
+        runtime.checkForUpdates()
+        runCurrent()
+
+        assertEquals(listOf(UpdateCheckOrigin.MANUAL), origins)
+        assertEquals(AppUpdateCheckState.UpToDate(), runtime.state.value)
+    }
+
+    @Test
+    fun `reset serializes with successful release callback`() = runTest {
+        val callbackEntered = CountDownLatch(1)
+        val resetAttempted = CountDownLatch(1)
+        val resetCompleted = CountDownLatch(1)
+        val releaseCallback = CountDownLatch(1)
+        val cadenceRecorded = AtomicBoolean(false)
+        lateinit var runtime: AppUpdateCheckRuntime
+
+        runtime = runtime(
+            installedVersionName = "0.2.0-alpha.1",
+            releases = listOf(
+                release("v0.2.0-alpha.1", prerelease = true),
+            ),
+            onReleaseQuerySucceeded = {
+                callbackEntered.countDown()
+                check(releaseCallback.await(5, TimeUnit.SECONDS))
+                cadenceRecorded.set(true)
+            },
+        )
+
+        val resetThread = thread(start = true, name = "update-reset-race") {
+            check(callbackEntered.await(5, TimeUnit.SECONDS))
+            resetAttempted.countDown()
+            runtime.reset()
+            cadenceRecorded.set(false)
+            resetCompleted.countDown()
+        }
+        val releaseThread = thread(start = true, name = "update-callback-release") {
+            check(resetAttempted.await(5, TimeUnit.SECONDS))
+            resetCompleted.await(250, TimeUnit.MILLISECONDS)
+            releaseCallback.countDown()
+        }
+
+        runtime.checkForUpdates()
+        runCurrent()
+
+        resetThread.join(5_000)
+        releaseThread.join(5_000)
+
+        assertFalse(resetThread.isAlive)
+        assertFalse(releaseThread.isAlive)
+        assertFalse(cadenceRecorded.get())
+        assertEquals(AppUpdateCheckState.Idle, runtime.state.value)
+    }
+
+    @Test
+    fun `release query failure does not report successful cadence event`() = runTest {
+        val origins = mutableListOf<UpdateCheckOrigin>()
+        val runtime = AppUpdateCheckRuntime(
+            installedVersionName = "0.2.0-alpha.1",
+            releaseClient = GitHubReleaseClient {
+                Result.failure(IllegalStateException("network unavailable"))
+            },
+            applicationScope = this,
+            onReleaseQuerySucceeded = origins::add,
+        )
+
+        runtime.checkForUpdates()
+        runCurrent()
+
+        assertEquals(emptyList(), origins)
+        assertEquals(AppUpdateCheckState.Failed(), runtime.state.value)
     }
 
     @Test
@@ -84,7 +379,7 @@ class AppUpdateCheckRuntimeTest {
         runtime.checkForUpdates()
         runCurrent()
 
-        assertEquals(AppUpdateCheckState.Failed, runtime.state.value)
+        assertEquals(AppUpdateCheckState.Failed(), runtime.state.value)
     }
 
     @Test
@@ -100,7 +395,7 @@ class AppUpdateCheckRuntimeTest {
         runtime.checkForUpdates()
         runCurrent()
 
-        assertEquals(AppUpdateCheckState.Failed, runtime.state.value)
+        assertEquals(AppUpdateCheckState.Failed(), runtime.state.value)
     }
 
     @Test
@@ -118,7 +413,7 @@ class AppUpdateCheckRuntimeTest {
         runtime.checkForUpdates()
         runCurrent()
 
-        assertEquals(AppUpdateCheckState.Failed, runtime.state.value)
+        assertEquals(AppUpdateCheckState.Failed(), runtime.state.value)
         assertEquals(0, fetchCount)
     }
 
@@ -135,7 +430,7 @@ class AppUpdateCheckRuntimeTest {
         runtime.checkForUpdates()
         runCurrent()
 
-        assertEquals(AppUpdateCheckState.Failed, runtime.state.value)
+        assertEquals(AppUpdateCheckState.Failed(), runtime.state.value)
     }
 
     @Test
@@ -157,12 +452,12 @@ class AppUpdateCheckRuntimeTest {
         runtime.checkForUpdates()
         runCurrent()
 
-        assertEquals(AppUpdateCheckState.Checking, runtime.state.value)
+        assertEquals(AppUpdateCheckState.Checking(), runtime.state.value)
         assertEquals(1, fetchCount)
 
         gate.complete(Unit)
         runCurrent()
-        assertEquals(AppUpdateCheckState.UpToDate, runtime.state.value)
+        assertEquals(AppUpdateCheckState.UpToDate(), runtime.state.value)
     }
 
     @Test
@@ -180,11 +475,11 @@ class AppUpdateCheckRuntimeTest {
         runtime.checkForUpdates()
         runCurrent()
         runtime.onSettingsEntered()
-        assertEquals(AppUpdateCheckState.Checking, runtime.state.value)
+        assertEquals(AppUpdateCheckState.Checking(), runtime.state.value)
 
         gate.complete(Unit)
         runCurrent()
-        assertEquals(AppUpdateCheckState.UpToDate, runtime.state.value)
+        assertEquals(AppUpdateCheckState.UpToDate(), runtime.state.value)
 
         runtime.onSettingsEntered()
         assertEquals(AppUpdateCheckState.Idle, runtime.state.value)
@@ -252,6 +547,13 @@ class AppUpdateCheckRuntimeTest {
             runCurrent()
             runtime.downloadUpdate()
             runCurrent()
+
+            assertEquals(
+                AppUpdateCheckState.DownloadFailed("0.2.0-alpha.2"),
+                runtime.state.value,
+            )
+
+            runtime.onSettingsEntered()
 
             assertEquals(
                 AppUpdateCheckState.DownloadFailed("0.2.0-alpha.2"),
@@ -805,7 +1107,20 @@ class AppUpdateCheckRuntimeTest {
             runCurrent()
 
             assertEquals(
-                AppUpdateCheckState.UpdateAvailable("0.2.0-beta.1"),
+                AppUpdateCheckState.UpdateAvailable(
+                    versionName = "0.2.0-beta.1",
+                    origin = UpdateCheckOrigin.INSTALL_REFRESH,
+                ),
+                runtime.state.value,
+            )
+
+            runtime.onSettingsEntered()
+
+            assertEquals(
+                AppUpdateCheckState.UpdateAvailable(
+                    versionName = "0.2.0-beta.1",
+                    origin = UpdateCheckOrigin.INSTALL_REFRESH,
+                ),
                 runtime.state.value,
             )
             assertEquals(0, installer.installCount)
@@ -1455,6 +1770,7 @@ class AppUpdateCheckRuntimeTest {
         installSourceTrustChecker: InstallSourceTrustChecker? = null,
         packageInstaller: UpdatePackageInstaller? = null,
         updateRecoveryStore: UpdateRecoveryStore? = FakeUpdateRecoveryStore(),
+        onReleaseQuerySucceeded: (UpdateCheckOrigin) -> Unit = {},
         onInstallPermissionRequired: (String) -> Unit = {},
     ) = AppUpdateCheckRuntime(
         installedVersionName = installedVersionName,
@@ -1466,6 +1782,7 @@ class AppUpdateCheckRuntimeTest {
         installSourceTrustChecker = installSourceTrustChecker,
         packageInstaller = packageInstaller,
         updateRecoveryStore = updateRecoveryStore,
+        onReleaseQuerySucceeded = onReleaseQuerySucceeded,
         onInstallPermissionRequired = onInstallPermissionRequired,
     )
 

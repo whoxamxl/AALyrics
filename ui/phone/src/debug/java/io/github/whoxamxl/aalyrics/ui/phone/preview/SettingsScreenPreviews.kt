@@ -30,6 +30,12 @@ private fun SettingsScreenTypicalPreview() {
     SettingsScreenPreview(PhonePreviewFixtures.settingsTypical)
 }
 
+@Preview(name = "Automatic updates off", group = "SettingsScreen", widthDp = 412, heightDp = 900)
+@Composable
+private fun SettingsAutomaticUpdatesOffPreview() {
+    SettingsScreenPreview(PhonePreviewFixtures.settingsAutomaticUpdateOff)
+}
+
 @Preview(name = "Non-audio filter off", group = "SettingsScreen", widthDp = 412, heightDp = 760)
 @Composable
 private fun SettingsScreenNonAudioFilterOffPreview() {
@@ -71,12 +77,6 @@ private fun SettingsUpdateIdlePreview() {
     SettingsScreenPreview(PhonePreviewFixtures.settingsIdleUpdate)
 }
 
-@Preview(name = "Update · unavailable", group = "SettingsScreen", widthDp = 412, heightDp = 900)
-@Composable
-private fun SettingsUpdateUnavailablePreview() {
-    SettingsScreenPreview(PhonePreviewFixtures.settingsUnavailableUpdate)
-}
-
 @Preview(name = "Update · checking", group = "SettingsScreen", widthDp = 412, heightDp = 900)
 @Composable
 private fun SettingsUpdateCheckingPreview() {
@@ -89,16 +89,21 @@ private fun SettingsUpdateUpToDatePreview() {
     SettingsScreenPreview(PhonePreviewFixtures.settingsUpToDate)
 }
 
-@Preview(name = "Update · available", group = "SettingsScreen", widthDp = 412, heightDp = 900)
-@Composable
-private fun SettingsUpdateAvailablePreview() {
-    SettingsScreenPreview(PhonePreviewFixtures.settingsUpdateAvailable)
-}
-
 @Preview(name = "Update · failed", group = "SettingsScreen", widthDp = 412, heightDp = 900)
 @Composable
 private fun SettingsUpdateFailedPreview() {
     SettingsScreenPreview(PhonePreviewFixtures.settingsUpdateFailed)
+}
+
+@Preview(
+    name = "Install refresh · newer release",
+    group = "SettingsScreen",
+    widthDp = 412,
+    heightDp = 900,
+)
+@Composable
+private fun SettingsInstallRefreshUpdateAvailablePreview() {
+    SettingsScreenPreview(PhonePreviewFixtures.settingsInstallRefreshUpdateAvailable)
 }
 
 @Preview(name = "Update · preparing download", group = "SettingsScreen", widthDp = 412, heightDp = 900)
@@ -205,6 +210,9 @@ internal fun SettingsScreenPreview(
                 onAllowUnclassifiedAppsChanged = {
                     state = state.copy(allowUnclassifiedApps = it)
                 },
+                onAutomaticallyCheckForUpdatesChanged = {
+                    state = state.copy(automaticallyCheckForUpdates = it)
+                },
                 onVerboseDetailsChanged = {
                     state = state.copy(verboseDetailsEnabled = it)
                 },
@@ -253,6 +261,7 @@ internal fun SettingsScreenPreview(
                         plainLyricsAutoScrollEnabled = true,
                         ignoreNonAudioApps = true,
                         allowUnclassifiedApps = false,
+                        automaticallyCheckForUpdates = true,
                         verboseDetailsEnabled = false,
                         translationEnabled = false,
                         translationTarget = english,
@@ -270,8 +279,7 @@ internal fun SettingsScreenPreview(
                         delay(1200)
                         state = state.copy(
                             appUpdate = AppUpdateUiState(
-                                phase = AppUpdateUiPhase.UPDATE_AVAILABLE,
-                                availableVersionName = "0.1.2",
+                                phase = AppUpdateUiPhase.UP_TO_DATE,
                             ),
                         )
                     }
@@ -382,6 +390,9 @@ private fun SettingsScreenContentPreview(
                 },
                 onIgnoreNonAudioAppsChanged = {
                     state = state.copy(ignoreNonAudioApps = it)
+                },
+                onAutomaticallyCheckForUpdatesChanged = {
+                    state = state.copy(automaticallyCheckForUpdates = it)
                 },
                 onTranslationEnabledChanged = {
                     state = state.copy(translationEnabled = it)

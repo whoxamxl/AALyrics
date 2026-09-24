@@ -59,6 +59,7 @@ import androidx.compose.ui.unit.dp
 import kotlin.math.roundToInt
 import io.github.whoxamxl.aalyrics.ui.designsystem.icon.AALyricsIcons
 import io.github.whoxamxl.aalyrics.ui.phone.component.PhonePopupMenu
+import io.github.whoxamxl.aalyrics.ui.phone.component.VersionChip
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsColors
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsRadius
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsSpacing
@@ -394,7 +395,6 @@ internal fun AppUpdateRow(
     failureInfoContentDescription: String,
     genericFailureReason: String,
     installFailureReason: String,
-    unavailableLabel: String,
     onCheckForUpdates: () -> Unit,
     onDownloadUpdate: () -> Unit,
     onInstallUpdate: () -> Unit,
@@ -419,21 +419,12 @@ internal fun AppUpdateRow(
                 modifier = Modifier.weight(1f),
             )
 
-            Text(
-                text = currentVersionName.asVersionLabel(),
-                style = AALyricsTypography.TrackArtist,
-                color = AALyricsColors.TextSecondary,
-                maxLines = 1,
-            )
+            VersionChip(versionName = currentVersionName)
         }
 
         Spacer(Modifier.height(AALyricsSpacing.Space12))
 
         when (state.phase) {
-            AppUpdateUiPhase.UNAVAILABLE -> {
-                AppUpdateStatusTextRow(label = unavailableLabel)
-            }
-
             AppUpdateUiPhase.IDLE -> {
                 AppUpdateActionRow(
                     actionLabel = checkLabel,
@@ -455,9 +446,8 @@ internal fun AppUpdateRow(
 
             AppUpdateUiPhase.UPDATE_AVAILABLE -> {
                 AppUpdateActionRow(
-                    status = "${updateAvailableLabel} ${
-                        state.availableVersionName?.asVersionLabel().orEmpty()
-                    }".trim(),
+                    status = updateAvailableLabel,
+                    versionName = state.availableVersionName,
                     actionLabel = downloadLabel,
                     onAction = onDownloadUpdate,
                 )
@@ -479,22 +469,16 @@ internal fun AppUpdateRow(
 
             AppUpdateUiPhase.DOWNLOADING -> {
                 AppUpdateDownloadProgressRow(
-                    label = if (state.availableVersionName.isNullOrBlank()) {
-                        downloadingLabel
-                    } else {
-                        "${downloadingLabel} ${state.availableVersionName.asVersionLabel()}"
-                    },
+                    label = downloadingLabel,
+                    versionName = state.availableVersionName,
                     progress = state.downloadProgress ?: 0f,
                 )
             }
 
             AppUpdateUiPhase.DOWNLOADED -> {
                 AppUpdateActionRow(
-                    status = if (state.availableVersionName.isNullOrBlank()) {
-                        downloadedLabel
-                    } else {
-                        "${downloadedLabel} ${state.availableVersionName.asVersionLabel()}"
-                    },
+                    status = downloadedLabel,
+                    versionName = state.availableVersionName,
                     actionLabel = installLabel,
                     onAction = onInstallUpdate,
                 )
@@ -544,6 +528,7 @@ private fun AppUpdateActionRow(
     actionLabel: String,
     onAction: () -> Unit,
     status: String? = null,
+    versionName: String? = null,
     actionIcon: ImageVector? = null,
 ) {
     Row(
@@ -553,14 +538,21 @@ private fun AppUpdateActionRow(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         if (status != null) {
-            Text(
-                text = status,
-                style = AALyricsTypography.TrackArtist,
-                color = AALyricsColors.TextSecondary,
+            Column(
                 modifier = Modifier
                     .weight(1f)
                     .padding(end = AALyricsSpacing.Space12),
-            )
+            ) {
+                Text(
+                    text = status,
+                    style = AALyricsTypography.TrackArtist,
+                    color = AALyricsColors.TextSecondary,
+                )
+                if (!versionName.isNullOrBlank()) {
+                    Spacer(Modifier.height(AALyricsSpacing.Space4))
+                    VersionChip(versionName = versionName)
+                }
+            }
         } else {
             Spacer(Modifier.weight(1f))
         }
@@ -661,6 +653,7 @@ private fun AppUpdateIndeterminateBarRow(
 @Composable
 private fun AppUpdateDownloadProgressRow(
     label: String,
+    versionName: String?,
     progress: Float,
 ) {
     val boundedProgress = progress.coerceIn(0f, 1f)
@@ -674,12 +667,19 @@ private fun AppUpdateDownloadProgressRow(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text(
-                text = label,
-                style = AALyricsTypography.TrackArtist,
-                color = AALyricsColors.TextSecondary,
+            Column(
                 modifier = Modifier.weight(1f),
-            )
+            ) {
+                Text(
+                    text = label,
+                    style = AALyricsTypography.TrackArtist,
+                    color = AALyricsColors.TextSecondary,
+                )
+                if (!versionName.isNullOrBlank()) {
+                    Spacer(Modifier.height(AALyricsSpacing.Space4))
+                    VersionChip(versionName = versionName)
+                }
+            }
             Text(
                 text = "${(boundedProgress * 100f).roundToInt()}%",
                 style = AALyricsTypography.TrackArtist,
@@ -779,9 +779,6 @@ private fun AppUpdateFailureRow(
     }
 }
 
-private fun String.asVersionLabel(): String =
-    if (startsWith("v", ignoreCase = true)) this else "v$this"
-
 @Composable
 internal fun SettingsBrandFooter(
     appName: String,
@@ -818,11 +815,17 @@ internal fun SettingsBrandFooter(
 
         Spacer(Modifier.height(AALyricsSpacing.Space16))
 
-        Text(
-            text = "${versionLabel}: ${versionName.asVersionLabel()}",
-            style = AALyricsTypography.TrackArtist,
-            color = AALyricsColors.TextSecondary,
-        )
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = versionLabel,
+                style = AALyricsTypography.TrackArtist,
+                color = AALyricsColors.TextSecondary,
+            )
+            Spacer(Modifier.width(AALyricsSpacing.Space8))
+            VersionChip(versionName = versionName)
+        }
 
         Text(
             text = "© $currentYear $copyrightOwner",
