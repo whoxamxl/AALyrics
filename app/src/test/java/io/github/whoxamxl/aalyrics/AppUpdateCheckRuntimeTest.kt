@@ -1461,6 +1461,80 @@ class AppUpdateCheckRuntimeTest {
     }
 
     @Test
+    fun `install refresh replacement download is source trust gated`() = runTest {
+        val root = createTempDirectory("aalyrics-install-runtime").toFile()
+        val retained = retainedUpdate(root, "0.2.0-alpha.2")
+        val replacementBytes = "replacement signed apk".encodeToByteArray()
+        val replacement = downloadableRelease(
+            tagName = "v0.2.0-beta.1",
+            apkSizeBytes = replacementBytes.size.toLong(),
+        )
+        val downloadClient = FakeUpdateAssetDownloadClient(
+            checksumPayload = checksumPayload(
+                replacementBytes,
+                replacement.assets.first().name,
+            ),
+            apkBytes = replacementBytes,
+        )
+        val permissionPromptVersions = mutableListOf<String>()
+        var sourceTrusted = false
+        try {
+            val runtime = runtime(
+                installedVersionName = "0.2.0-alpha.1",
+                releases = emptyList(),
+                assetDownloadClient = downloadClient,
+                downloadFileStore = updateStore(root),
+                installPreparation = installPreparation(
+                    installedVersionName = "0.2.0-alpha.1",
+                    releases = listOf(
+                        replacement,
+                        release("v0.2.0-alpha.2", prerelease = true),
+                    ),
+                ),
+                installSourceTrustChecker = InstallSourceTrustChecker { sourceTrusted },
+                packageInstaller = FakeUpdatePackageInstaller(),
+                onInstallPermissionRequired = permissionPromptVersions::add,
+            )
+
+            runtime.installUpdate()
+            runCurrent()
+
+            assertEquals(
+                AppUpdateCheckState.UpdateAvailable(
+                    versionName = "0.2.0-beta.1",
+                    origin = UpdateCheckOrigin.INSTALL_REFRESH,
+                ),
+                runtime.state.value,
+            )
+            assertTrue(retained.isFile)
+
+            runtime.downloadUpdate()
+
+            assertEquals(
+                AppUpdateCheckState.InstallPermissionRequired("0.2.0-beta.1"),
+                runtime.state.value,
+            )
+            assertEquals(listOf("0.2.0-beta.1"), permissionPromptVersions)
+            assertEquals(0, downloadClient.downloadCount)
+
+            sourceTrusted = true
+            runtime.onInstallSourceTrustReturned()
+            assertEquals(
+                AppUpdateCheckState.PreparingDownload("0.2.0-beta.1"),
+                runtime.state.value,
+            )
+            runCurrent()
+
+            val downloaded = runtime.state.value as AppUpdateCheckState.Downloaded
+            assertEquals("0.2.0-beta.1", downloaded.versionName)
+            assertEquals(1, downloadClient.downloadCount)
+            assertEquals(replacementBytes.toList(), downloaded.apkFile.readBytes().toList())
+        } finally {
+            root.deleteRecursively()
+        }
+    }
+
+    @Test
     fun `denied source trust return stays required without reopening prompt`() = runTest {
         val root = createTempDirectory("aalyrics-install-runtime").toFile()
         retainedUpdate(root, "0.2.0-alpha.2")
