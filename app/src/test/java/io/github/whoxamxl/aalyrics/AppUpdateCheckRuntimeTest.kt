@@ -489,6 +489,108 @@ class AppUpdateCheckRuntimeTest {
     }
 
     @Test
+    fun `accepted update waits for source trust before download and resumes after grant`() = runTest {
+        val apkBytes = "signed apk bytes".encodeToByteArray()
+        val release = downloadableRelease("v0.2.0-alpha.2")
+        val downloadClient = FakeUpdateAssetDownloadClient(
+            checksumPayload = checksumPayload(apkBytes, release.assets.first().name),
+            apkBytes = apkBytes,
+        )
+        val permissionPromptVersions = mutableListOf<String>()
+        var sourceTrusted = false
+        val root = createTempDirectory("aalyrics-update-runtime").toFile()
+        try {
+            val runtime = runtime(
+                installedVersionName = "0.2.0-alpha.1",
+                releases = listOf(release),
+                assetDownloadClient = downloadClient,
+                downloadFileStore = updateStore(root),
+                installSourceTrustChecker = InstallSourceTrustChecker { sourceTrusted },
+                onInstallPermissionRequired = permissionPromptVersions::add,
+            )
+
+            runtime.checkForUpdates()
+            runCurrent()
+            assertEquals(
+                AppUpdateCheckState.UpdateAvailable("0.2.0-alpha.2"),
+                runtime.state.value,
+            )
+
+            runtime.startUpdate()
+
+            assertEquals(
+                AppUpdateCheckState.InstallPermissionRequired("0.2.0-alpha.2"),
+                runtime.state.value,
+            )
+            assertEquals(listOf("0.2.0-alpha.2"), permissionPromptVersions)
+            assertEquals(0, downloadClient.downloadCount)
+
+            runtime.onInstallSourceTrustReturned()
+            runCurrent()
+
+            assertEquals(
+                AppUpdateCheckState.InstallPermissionRequired("0.2.0-alpha.2"),
+                runtime.state.value,
+            )
+            assertEquals(0, downloadClient.downloadCount)
+
+            sourceTrusted = true
+            runtime.onInstallSourceTrustReturned()
+            assertEquals(
+                AppUpdateCheckState.PreparingDownload("0.2.0-alpha.2"),
+                runtime.state.value,
+            )
+            runCurrent()
+
+            val downloaded = runtime.state.value as AppUpdateCheckState.Downloaded
+            assertEquals("0.2.0-alpha.2", downloaded.versionName)
+            assertEquals(1, downloadClient.downloadCount)
+            assertEquals(apkBytes.toList(), downloaded.apkFile.readBytes().toList())
+        } finally {
+            root.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun `accepted update starts download immediately when source trust already exists`() = runTest {
+        val apkBytes = "signed apk bytes".encodeToByteArray()
+        val release = downloadableRelease("v0.2.0-alpha.2")
+        val downloadClient = FakeUpdateAssetDownloadClient(
+            checksumPayload = checksumPayload(apkBytes, release.assets.first().name),
+            apkBytes = apkBytes,
+        )
+        val permissionPromptVersions = mutableListOf<String>()
+        val root = createTempDirectory("aalyrics-update-runtime").toFile()
+        try {
+            val runtime = runtime(
+                installedVersionName = "0.2.0-alpha.1",
+                releases = listOf(release),
+                assetDownloadClient = downloadClient,
+                downloadFileStore = updateStore(root),
+                installSourceTrustChecker = InstallSourceTrustChecker { true },
+                onInstallPermissionRequired = permissionPromptVersions::add,
+            )
+
+            runtime.checkForUpdates()
+            runCurrent()
+            runtime.startUpdate()
+
+            assertEquals(
+                AppUpdateCheckState.PreparingDownload("0.2.0-alpha.2"),
+                runtime.state.value,
+            )
+            assertTrue(permissionPromptVersions.isEmpty())
+
+            runCurrent()
+
+            assertTrue(runtime.state.value is AppUpdateCheckState.Downloaded)
+            assertEquals(1, downloadClient.downloadCount)
+        } finally {
+            root.deleteRecursively()
+        }
+    }
+
+    @Test
     fun `available update downloads verifies and promotes apk`() = runTest {
         val apkBytes = "signed apk bytes".encodeToByteArray()
         val release = downloadableRelease("v0.2.0-alpha.2")
