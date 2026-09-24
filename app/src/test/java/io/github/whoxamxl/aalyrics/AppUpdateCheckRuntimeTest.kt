@@ -2,6 +2,10 @@ package io.github.whoxamxl.aalyrics
 
 import java.io.ByteArrayInputStream
 import java.io.File
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.concurrent.thread
 import kotlin.io.path.createTempDirectory
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
@@ -146,6 +150,52 @@ class AppUpdateCheckRuntimeTest {
 
         assertEquals(listOf(UpdateCheckOrigin.MANUAL), origins)
         assertEquals(AppUpdateCheckState.UpToDate, runtime.state.value)
+    }
+
+    @Test
+    fun `reset serializes with successful release callback`() = runTest {
+        val callbackEntered = CountDownLatch(1)
+        val resetAttempted = CountDownLatch(1)
+        val resetCompleted = CountDownLatch(1)
+        val releaseCallback = CountDownLatch(1)
+        val cadenceRecorded = AtomicBoolean(false)
+        lateinit var runtime: AppUpdateCheckRuntime
+
+        runtime = runtime(
+            installedVersionName = "0.2.0-alpha.1",
+            releases = listOf(
+                release("v0.2.0-alpha.1", prerelease = true),
+            ),
+            onReleaseQuerySucceeded = {
+                callbackEntered.countDown()
+                check(releaseCallback.await(5, TimeUnit.SECONDS))
+                cadenceRecorded.set(true)
+            },
+        )
+
+        val resetThread = thread(start = true, name = "update-reset-race") {
+            check(callbackEntered.await(5, TimeUnit.SECONDS))
+            resetAttempted.countDown()
+            runtime.reset()
+            cadenceRecorded.set(false)
+            resetCompleted.countDown()
+        }
+        val releaseThread = thread(start = true, name = "update-callback-release") {
+            check(resetAttempted.await(5, TimeUnit.SECONDS))
+            resetCompleted.await(250, TimeUnit.MILLISECONDS)
+            releaseCallback.countDown()
+        }
+
+        runtime.checkForUpdates()
+        runCurrent()
+
+        resetThread.join(5_000)
+        releaseThread.join(5_000)
+
+        assertFalse(resetThread.isAlive)
+        assertFalse(releaseThread.isAlive)
+        assertFalse(cadenceRecorded.get())
+        assertEquals(AppUpdateCheckState.Idle, runtime.state.value)
     }
 
     @Test
