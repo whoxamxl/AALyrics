@@ -78,6 +78,8 @@
     <string name="update_process_preparing_title">Preparing update</string>
     <string name="update_process_downloading_title">Downloading update</string>
     <string name="update_process_downloading_label">Downloading</string>
+    <string name="update_process_verifying_title">Verifying update</string>
+    <string name="update_process_verifying_label">Checking download integrity…</string>
     <string name="update_successful_eyebrow">UPDATE COMPLETE</string>
     <string name="update_successful_title">AALyrics updated</string>
     <string name="update_successful_body">You’re now running</string>
