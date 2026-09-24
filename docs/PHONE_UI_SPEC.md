@@ -105,11 +105,12 @@ The production Settings contract is defined in `docs/PHONE_SETTINGS.md`. The `fe
 - `APP`:
   - durable `Automatically check for updates` switch (default ON) with shared info tooltip;
   - #75 discovery presentation: installed version plus MANUAL Check/Retry, Checking, Up to date, and Check failed;
-  - #75 keeps the inherited post-Update download/install process presentation in Settings until #76, including an install-refresh-only `Newer update available -> Download` retarget state when a newer release appears during install preparation;
-  - one global release-available dialog shared by MANUAL and AUTOMATIC newer-release discovery;
-  - #76 dialog-owned update-process presentation for preparing/download progress, verification, explicit `Ready to install` / Install, install preparation, permission-required handling, typed failure/Retry, and PackageInstaller handoff;
-  - #76 preserves the validated two-stage Update -> Download/Verify -> Downloaded -> Install interaction while moving that process out of Settings;
-  - #77 may later remove the second user-facing Install action by orchestrating automatic continuation across the same validated runtime stages; `DOWNLOADED` remains the verified-artifact/recovery boundary;
+  - #75 keeps the inherited post-Update download/install process presentation in Settings until #77, including an install-refresh-only `Newer update available -> Download` retarget state when a newer release appears during install preparation;
+  - one shared release-available dialog for MANUAL and AUTOMATIC newer-release discovery;
+  - PR #76 / `feature/one-step-update` remains legacy/reference only and is not the active implementation baseline;
+  - #77 dialog-owned update-process presentation for preparing/download progress, verification, explicit `Ready to install` / Install, install preparation, permission-required handling, typed failure/Retry, install-refresh retargeting, and PackageInstaller handoff;
+  - #77 preserves the validated two-stage Update -> Download/Verify -> DOWNLOADED/Ready to install -> Install interaction while moving that process out of Settings;
+  - #78 may later remove the second user-facing Install action by orchestrating automatic continuation across the same validated runtime stages; `DOWNLOADED` remains the verified-artifact/recovery boundary;
   - #74 recovery behavior preserved underneath the unified presentation, plus one-time `AALyrics updated` feedback after durable replacement reconciliation;
   - in-app Changelog backed by repository-root `CHANGELOG.md`;
   - external Source code entry;
@@ -125,7 +126,7 @@ The production Settings contract is defined in `docs/PHONE_SETTINGS.md`. The `fe
   - `Reset > Reset AALyrics`, which resets AALyrics-owned settings/onboarding/update state, clears app-owned update recovery/cadence state and retained update artifacts, without deleting translation models or changing Android/system settings such as install-source trust;
 - permanent AALyrics branding/GitHub footer after Advanced.
 
-The Phone update surfaces follow the shared dialog-header contract introduced by #74. In #75, the shared release-available dialog and post-replacement update-success dialog use `PhoneDialogHeader` for the same trailing X position, 24dp icon, and 48dp touch target. #76 extends that unified dialog ownership across the update-process phases and removes the parallel Settings progress/install surface. In #76, `Downloaded / Ready to install` remains an explicit dialog phase with an Install action; #77 changes only the normal continuation UX and does not erase the internal verified-download boundary.
+The Phone update surfaces follow the shared dialog-header contract introduced by #74. In #75, the shared release-available dialog and post-replacement update-success dialog use `PhoneDialogHeader` for the same trailing X position, 24dp icon, and 48dp touch target. #77 extends unified dialog ownership across the update-process phases and removes the parallel Settings progress/install surface. In #77, `DOWNLOADED / Ready to install` remains an explicit dialog phase with an Install action; #78 changes only the normal continuation UX and does not erase the internal verified-download boundary.
 
 ### Version presentation
 
