@@ -95,6 +95,17 @@ private fun SettingsUpdateFailedPreview() {
     SettingsScreenPreview(PhonePreviewFixtures.settingsUpdateFailed)
 }
 
+@Preview(
+    name = "Install refresh · newer release",
+    group = "SettingsScreen",
+    widthDp = 412,
+    heightDp = 900,
+)
+@Composable
+private fun SettingsInstallRefreshUpdateAvailablePreview() {
+    SettingsScreenPreview(PhonePreviewFixtures.settingsInstallRefreshUpdateAvailable)
+}
+
 @Preview(name = "Update · preparing download", group = "SettingsScreen", widthDp = 412, heightDp = 900)
 @Composable
 private fun SettingsUpdatePreparingDownloadPreview() {
