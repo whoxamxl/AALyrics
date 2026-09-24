@@ -498,6 +498,8 @@ Updates are never installed without your confirmation.
 
 The default is ON. Manual `Check for updates` remains directly available below it regardless of toggle state.
 
+Semantic AALyrics application/release versions use the shared `VersionChip` presentation defined in `docs/PHONE_UI_SPEC.md`. The installed Version row, update-available state, downloading state, downloaded state, Settings branding footer, install-permission dialog, automatic new-release dialog, and update-success dialog all render the version through that component instead of composing independent plain `v...` text. Existing Settings/update dialog Previews render the same production component, while the dedicated VersionChip matrix pins DEV / ALPHA / BETA / RC / STABLE channel treatment.
+
 Application/runtime wiring owns both manual and automatic discovery:
 
 1. manual Check/Retry explicitly requests a `MANUAL` check and remains available at all times;
