@@ -52,8 +52,6 @@
     <string name="settings_check_for_updates">Check for updates</string>
     <string name="settings_checking_for_updates">Checking for updates…</string>
     <string name="settings_up_to_date">Up to date</string>
-    <string name="settings_update_available">Update available</string>
-    <string name="settings_download_update">Download</string>
     <string name="settings_preparing_update_download">Preparing download…</string>
     <string name="settings_downloading_update">Downloading</string>
     <string name="settings_update_downloaded">Downloaded</string>
@@ -134,7 +132,6 @@
     <string name="settings_support_open_note">Opens Buy Me a Coffee</string>
     <string name="settings_required_notice">REQUIRED NOTICE</string>
     <string name="settings_license_terms">LICENSE TERMS</string>
-    <string name="settings_not_available_yet">Not available yet</string>
     <string name="settings_advanced">Advanced</string>
     <string name="settings_back">Back</string>
     <string name="settings_section_playback_source">PLAYBACK SOURCE</string>
