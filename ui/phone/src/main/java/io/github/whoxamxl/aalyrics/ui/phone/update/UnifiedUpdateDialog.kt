@@ -37,6 +37,7 @@ import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsSpacing
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsStroke
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsTypography
 import io.github.whoxamxl.aalyrics.ui.phone.R
+import io.github.whoxamxl.aalyrics.ui.phone.component.PhoneDialogHeader
 import io.github.whoxamxl.aalyrics.ui.phone.component.VersionChip
 import kotlin.math.roundToInt
 
@@ -49,15 +50,22 @@ fun UnifiedUpdateDialog(
     onRetryInstall: () -> Unit,
     onGrantInstallPermission: () -> Unit,
     onDownloadFromGitHub: () -> Unit,
+    onDismissRequest: () -> Unit,
 ) {
     require(state.isUnifiedUpdateDialogState()) {
         "UnifiedUpdateDialog cannot render ${state.phase} / ${state.availabilityContext}"
     }
 
+    val dismissible = state.isDismissibleProcessPresentation()
+
     Dialog(
-        onDismissRequest = {},
+        onDismissRequest = {
+            if (dismissible) {
+                onDismissRequest()
+            }
+        },
         properties = DialogProperties(
-            dismissOnBackPress = false,
+            dismissOnBackPress = dismissible,
             dismissOnClickOutside = false,
             usePlatformDefaultWidth = false,
         ),
@@ -79,6 +87,7 @@ fun UnifiedUpdateDialog(
                 onRetryInstall = onRetryInstall,
                 onGrantInstallPermission = onGrantInstallPermission,
                 onDownloadFromGitHub = onDownloadFromGitHub,
+                onDismissRequest = onDismissRequest,
                 modifier = Modifier
                     .fillMaxWidth()
                     .widthIn(max = 420.dp),
@@ -96,6 +105,7 @@ internal fun UnifiedUpdateDialogContent(
     onRetryInstall: () -> Unit,
     onGrantInstallPermission: () -> Unit,
     onDownloadFromGitHub: () -> Unit,
+    onDismissRequest: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     require(state.isUnifiedUpdateDialogState()) {
@@ -116,11 +126,21 @@ internal fun UnifiedUpdateDialogContent(
                 .verticalScroll(rememberScrollState())
                 .padding(AALyricsSpacing.Space24),
         ) {
-            Text(
-                text = stringResource(R.string.update_process_eyebrow),
-                style = AALyricsTypography.Label,
-                color = AALyricsColors.AccentCyan,
-            )
+            if (state.isDismissibleProcessPresentation()) {
+                PhoneDialogHeader(
+                    eyebrow = stringResource(R.string.update_process_eyebrow),
+                    closeContentDescription = stringResource(
+                        R.string.update_process_close,
+                    ),
+                    onClose = onDismissRequest,
+                )
+            } else {
+                Text(
+                    text = stringResource(R.string.update_process_eyebrow),
+                    style = AALyricsTypography.Label,
+                    color = AALyricsColors.AccentCyan,
+                )
+            }
 
             Spacer(Modifier.height(AALyricsSpacing.Space8))
 
@@ -483,6 +503,16 @@ private fun updateDialogInstallFailureReasonText(
         UpdateDialogInstallFailureUiReason.INSTALLER_REJECTED ->
             stringResource(R.string.update_process_install_failure_installer_rejected)
         null -> stringResource(R.string.update_process_install_failure_generic)
+    }
+
+internal fun UpdateDialogUiState.isDismissibleProcessPresentation(): Boolean =
+    when (phase) {
+        UpdateDialogPhase.READY_TO_INSTALL,
+        UpdateDialogPhase.DOWNLOAD_FAILED,
+        UpdateDialogPhase.PERMISSION_REQUIRED,
+        UpdateDialogPhase.INSTALL_FAILED,
+        -> true
+        else -> false
     }
 
 internal fun UpdateDialogUiState.isUnifiedUpdateDialogState(): Boolean =

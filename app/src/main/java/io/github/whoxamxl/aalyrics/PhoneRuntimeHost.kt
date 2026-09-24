@@ -44,6 +44,7 @@ import io.github.whoxamxl.aalyrics.ui.phone.update.NewReleaseAvailableDialogUiSt
 import io.github.whoxamxl.aalyrics.ui.phone.update.UnifiedUpdateDialog
 import io.github.whoxamxl.aalyrics.ui.phone.update.UpdateDialogAvailabilityContext
 import io.github.whoxamxl.aalyrics.ui.phone.update.UpdateDialogPhase
+import io.github.whoxamxl.aalyrics.ui.phone.update.UpdateDialogUiState
 import io.github.whoxamxl.aalyrics.ui.phone.update.UpdateSuccessfulDialog
 import io.github.whoxamxl.aalyrics.ui.phone.update.UpdateSuccessfulDialogUiState
 import kotlinx.coroutines.CancellationException
@@ -98,6 +99,8 @@ internal fun PhoneRuntimeHost(
     val automaticallyCheckForUpdates by
         application.automaticallyCheckForUpdates.collectAsStateWithLifecycle()
     val appUpdateCheckState by application.appUpdateCheckState.collectAsStateWithLifecycle()
+    val installPermissionPrompt by
+        application.installPermissionPrompt.collectAsStateWithLifecycle()
     val successfulUpdate by
         application.successfulUpdate.collectAsStateWithLifecycle()
     val updateReleasePrompt by
@@ -125,6 +128,9 @@ internal fun PhoneRuntimeHost(
 
     var selectedDestination by rememberSaveable {
         mutableStateOf(PhoneDestination.Home)
+    }
+    var dismissedUpdateProcessPresentationKey by rememberSaveable {
+        mutableStateOf<String?>(null)
     }
     var plainLyricsAutoScrollEnabled by rememberSaveable {
         mutableStateOf(true)
@@ -313,6 +319,26 @@ internal fun PhoneRuntimeHost(
         }
     }
 
+    LaunchedEffect(
+        updateDialogState?.phase,
+        updateDialogState?.versionName,
+        updateDialogState?.availabilityContext,
+        updateDialogState?.installFailureReason,
+        installPermissionPrompt?.versionName,
+    ) {
+        val state = updateDialogState
+        if (
+            state == null ||
+            !state.isDismissibleUpdateProcessPresentation() ||
+            (
+                state.phase == UpdateDialogPhase.PERMISSION_REQUIRED &&
+                    installPermissionPrompt?.versionName == state.versionName
+                )
+        ) {
+            dismissedUpdateProcessPresentationKey = null
+        }
+    }
+
     if (successfulUpdate != null) {
         UpdateSuccessfulDialog(
             state = UpdateSuccessfulDialogUiState(
@@ -337,9 +363,20 @@ internal fun PhoneRuntimeHost(
                 state.phase == UpdateDialogPhase.INSTALLING ||
                 state.phase == UpdateDialogPhase.INSTALL_FAILED
         }
-        if (updateProcessDialogState != null) {
+        val visibleUpdateProcessDialogState = updateProcessDialogState?.takeIf { state ->
+            val permissionPromptVisible =
+                state.phase != UpdateDialogPhase.PERMISSION_REQUIRED ||
+                    installPermissionPrompt?.versionName == state.versionName
+            val dismissalKey = state.updateProcessPresentationDismissalKey()
+            permissionPromptVisible &&
+                (
+                    dismissalKey == null ||
+                        dismissalKey != dismissedUpdateProcessPresentationKey
+                    )
+        }
+        if (visibleUpdateProcessDialogState != null) {
             UnifiedUpdateDialog(
-                state = updateProcessDialogState,
+                state = visibleUpdateProcessDialogState,
                 onInstall = application::installUpdate,
                 onDownloadUpdate = application::downloadUpdate,
                 onRetryDownload = application::downloadUpdate,
@@ -350,7 +387,20 @@ internal fun PhoneRuntimeHost(
                 },
                 onDownloadFromGitHub = {
                     application.dismissInstallPermissionPrompt()
-                    onOpenUpdateRelease(updateProcessDialogState.versionName)
+                    onOpenUpdateRelease(visibleUpdateProcessDialogState.versionName)
+                },
+                onDismissRequest = {
+                    visibleUpdateProcessDialogState
+                        .updateProcessPresentationDismissalKey()
+                        ?.let { key ->
+                            dismissedUpdateProcessPresentationKey = key
+                        }
+                    if (
+                        visibleUpdateProcessDialogState.phase ==
+                        UpdateDialogPhase.PERMISSION_REQUIRED
+                    ) {
+                        application.dismissInstallPermissionPrompt()
+                    }
                 },
             )
         } else {
@@ -367,6 +417,31 @@ internal fun PhoneRuntimeHost(
         }
     }
 }
+
+internal fun UpdateDialogUiState.isDismissibleUpdateProcessPresentation(): Boolean =
+    when (phase) {
+        UpdateDialogPhase.READY_TO_INSTALL,
+        UpdateDialogPhase.DOWNLOAD_FAILED,
+        UpdateDialogPhase.PERMISSION_REQUIRED,
+        UpdateDialogPhase.INSTALL_FAILED,
+        -> true
+        else -> false
+    }
+
+internal fun UpdateDialogUiState.updateProcessPresentationDismissalKey(): String? =
+    if (isDismissibleUpdateProcessPresentation()) {
+        buildString {
+            append(phase.name)
+            append('|')
+            append(versionName)
+            append('|')
+            append(availabilityContext?.name.orEmpty())
+            append('|')
+            append(installFailureReason?.name.orEmpty())
+        }
+    } else {
+        null
+    }
 
 @Composable
 private fun QueueItemArtwork(
