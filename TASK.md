@@ -63,10 +63,11 @@ Approved follow-up direction:
 4. attempt post-update return to AALyrics only on a best-effort basis and never depend on background Activity launch for correctness;
 5. keep manual `Check for updates` and add durable bounded automatic discovery;
 6. make Settings own manual discovery only: Idle / Checking / Up to date / Check failed;
-7. route MANUAL and AUTOMATIC newer-release results into the same global Unified Update Dialog;
-8. in #76, move existing preparing/download progress, verification, downloaded/install, permission, failure/Retry, and install presentation out of Settings and into the Unified Update Dialog while preserving the validated two-stage `Update -> Download/Verify -> Downloaded -> Install` interaction;
-9. in #76, complete full real-device E2E validation of that two-stage route before changing its transition contract;
-10. in #77, compose the validated Download + Install stages behind one user-facing `Update` intent by adding automatic continuation above the existing internal download/verify/`DOWNLOADED`/preflight/install state machine.
+7. route MANUAL and AUTOMATIC newer-release results into the same shared release-available dialog;
+8. keep PR #76 / `feature/one-step-update` as a legacy/reference prototype only; it is not the baseline for new implementation work;
+9. in #77, move existing preparing/download progress, verification, downloaded/install, permission, failure/Retry, install-refresh retargeting, and install presentation out of Settings and into the Unified Update Dialog while preserving the validated two-stage `Update -> Download/Verify -> DOWNLOADED/Ready to install -> Install` interaction;
+10. in #77, complete full real-device E2E validation of that two-stage route before changing its transition contract;
+11. in #78, compose the validated Download + Install stages behind one user-facing `Update` intent by adding automatic continuation above the existing internal download/verify/`DOWNLOADED`/preflight/install state machine.
 
 ## Scope guardrails
 
@@ -95,33 +96,44 @@ Approved follow-up direction:
 - [x] Add durable automatic update checking preference and bounded automatic discovery.
 - [x] Add release-available prompting and same-session automatic suppression.
 - [x] Standardize semantic application/release version presentation through `VersionChip`.
-- [x] Freeze the approved #75/#76/#77 presentation split in `docs/UPDATE_UX.md`, `docs/PHONE_SETTINGS.md`, `docs/RELEASES.md`, and `docs/PHONE_UI_SPEC.md`.
+- [x] Freeze the original #75 discovery contract in `docs/UPDATE_UX.md`, `docs/PHONE_SETTINGS.md`, `docs/RELEASES.md`, and `docs/PHONE_UI_SPEC.md`.
 - [x] Generalize the automatic-only release prompt owner so MANUAL and AUTOMATIC `UpdateAvailable` use the same release dialog.
 - [x] Keep automatic same-session suppression notification-specific while allowing explicit manual discovery to re-present the same current release.
 - [x] Preserve check origin through Checking / Up to date / Failed so AUTOMATIC non-update outcomes remain silent in Settings while MANUAL outcomes stay visible.
 - [x] Keep `UpdateAvailable` itself out of the Settings row and hand both MANUAL and AUTOMATIC discoveries to the same release dialog.
 - [x] Add focused runtime/mapper coverage for the MANUAL/AUTOMATIC discovery split and prompt behavior.
-- [ ] Complete focused real-device regression for manual/automatic discovery, toggle behavior, prompt dismissal, and manual re-presentation.
-- [ ] Run final #75 CI/review validation after checkpoint documentation is aligned.
+- [x] Confirm the shared release-available dialog on-device for both MANUAL and AUTOMATIC discovery.
+- [x] Run final #75 CI/review validation after checkpoint documentation is aligned.
+- [x] Merge #75 into `feature/package-installer`.
 
-### Deferred to #76 — unified update-process presentation and validated two-stage E2E
+### #76 — legacy/reference one-step prototype
 
-Do not implement these items in #75:
+PR #76 / `feature/one-step-update` is intentionally retained as a **legacy/reference branch and Draft PR**.
+
+- Do not use #76 as the base for #77 or #78.
+- Do not rebase or continue #76 as the active implementation path.
+- It may be consulted for prior UI/component ideas, tests, or implementation approaches.
+- Any code reused from #76 must be re-evaluated against the current `feature/package-installer` baseline and the #77 two-stage contract.
+- Keeping #76 open also preserves its branch as a stable historical reference.
+
+### #77 — Unified Update Dialog and validated two-stage E2E
+
+Active branch: `feature/unified-update-dialog`, created fresh from the current `feature/package-installer` baseline after #75 was merged.
 
 - [ ] Reduce the Settings Version/update presentation to only Idle / Checking / Up to date / Check failed for the complete update lifecycle.
-- [ ] Move preparing/download progress, verification/preparation, permission-required, typed failure/Retry, and installing presentation into the Unified Update Dialog.
+- [ ] Move preparing/download progress, verification/preparation, permission-required, typed failure/Retry, installing, and install-refresh retarget presentation into the Unified Update Dialog.
 - [ ] Keep `DOWNLOADED` as the authoritative verified-artifact boundary and render it as `Ready to install`.
-- [ ] Keep an explicit user-facing `Install` action after `DOWNLOADED`; do not auto-continue into installation in #76.
+- [ ] Keep an explicit user-facing `Install` action after `DOWNLOADED`; do not auto-continue into installation in #77.
 - [ ] Preserve independent `downloadUpdate()` and `installUpdate()` operations and all existing SHA-256, retained-artifact, install-refresh, package/version/signing preflight, source-trust, PackageInstaller, and recovery behavior.
 - [ ] Remove process presentation from Settings only when the corresponding dialog presentation exists.
 - [ ] Align process-state Previews and focused tests with Unified Update Dialog ownership, including `Ready to install`.
 - [ ] Complete full real-device E2E of the two-stage route:
-  `Update -> Download/Verify -> Downloaded/Ready to install -> Install -> Android confirmation -> replacement/recovery -> Update successful`.
-- [ ] Record that route as the validated baseline before #76 is considered complete.
+  `Update -> Download/Verify -> DOWNLOADED/Ready to install -> Install -> Android confirmation -> replacement/recovery -> Update successful`.
+- [ ] Record that route as the validated baseline before #77 is considered complete.
 
-### Deferred to #77 — one-step Update orchestration
+### #78 — one-step Update orchestration
 
-Start only from the validated #76 baseline:
+Start only from the validated #77 baseline:
 
 - [ ] Keep `DOWNLOADED` as a real internal/recovery state even when normal production UX auto-continues through it.
 - [ ] Keep `downloadUpdate()` and `installUpdate()` independently testable and reusable.
@@ -133,7 +145,7 @@ Start only from the validated #76 baseline:
 
 ## Current checkpoint
 
-**#75 implementation scope is complete. Unified two-stage process presentation is deferred to #76; one-step orchestration is explicitly deferred again to #77.**
+**#75 is merged into `feature/package-installer`. PR #76 remains legacy/reference only. Active implementation now starts fresh in #77; one-step orchestration is deferred to #78.**
 
 The #75 production behavior is:
 
@@ -160,11 +172,11 @@ Additional #75 invariants:
 - An explicit later manual check may present the same still-current version even when its automatic prompt was suppressed.
 - If MANUAL discovery is requested while an AUTOMATIC query is already in flight, the existing query is promoted to MANUAL presentation semantics: Settings immediately shows Checking, no duplicate release request is started, and the eventual result is surfaced as MANUAL.
 - `INSTALL_REFRESH` remains internal and does not create a MANUAL/AUTOMATIC discovery prompt in this #75 scope. If install preparation finds a newer eligible release, the existing Settings process surface shows `Newer update available -> Download` and preserves that retarget state across Settings re-entry.
-- Settings does not present `UpdateAvailable` for MANUAL/AUTOMATIC discovery; after the user presses `Update`, the existing download/install presentation remains unchanged from the validated pre-unification baseline until #76 moves that same two-stage process, including install-refresh retargeting, into the Unified Update Dialog.
-- #76 must preserve the explicit `Downloaded -> Install` user checkpoint and prove it end-to-end on-device.
-- #77 alone may remove that second user action by automatically continuing across the already-validated `DOWNLOADED` boundary.
+- Settings does not present `UpdateAvailable` for MANUAL/AUTOMATIC discovery; after the user presses `Update`, the existing download/install presentation remains unchanged from the validated pre-unification baseline until #77 moves that same two-stage process, including install-refresh retargeting, into the Unified Update Dialog.
+- #77 must preserve the explicit `DOWNLOADED / Ready to install -> Install` user checkpoint and prove it end-to-end on-device.
+- #78 alone may remove that second user action by automatically continuing across the already-validated `DOWNLOADED` boundary.
 - The existing download, SHA-256 verification, retained APK, install refresh, package/version/signing preflight, source trust, PackageInstaller, durable recovery, and Reset boundaries are unchanged by #75.
 
-A temporary #76-scope implementation was intentionally reverted before finalizing #75. Subsequent changes on this branch are limited to #75-scoped documentation alignment and focused regression fixes, including preserving DownloadFailed on Settings entry and promoting an in-flight AUTOMATIC query when the user explicitly requests MANUAL discovery.
+A temporary process-presentation implementation was intentionally reverted from the #75 branch before #75 was finalized. The older PR #76 separately retains a legacy one-step prototype for reference, but it is not part of the active stack.
 
-Remaining #75 work is validation only: run final CI on the aligned checkpoint, review the latest #75 diff, and complete the focused real-device regression before merge readiness is declared.
+The active #77 branch starts from the post-#75 `feature/package-installer` baseline and must implement only the Unified Update Dialog plus the explicit two-stage route.
