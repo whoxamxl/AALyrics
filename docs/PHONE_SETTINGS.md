@@ -533,6 +533,8 @@ The active download preparation/transfer presentation has now moved out of Setti
 
 GitHub Release asset size remains the expected total, downloaded bytes remain the determinate-progress numerator, and size mismatch / SHA-256 mismatch continue to fail closed.
 
+`DOWNLOAD_FAILED` is now also dialog-owned. The Unified Update Dialog shows a generic download/verification failure message and an explicit `Retry` button that calls the existing `downloadUpdate()` operation. Settings no longer owns the download-failure row or Retry action. Because the runtime currently exposes only `DownloadFailed(versionName)`, #77 does not fabricate a more specific failure reason in presentation.
+
 `DOWNLOADED` remains an authoritative application-owned safety and recovery boundary. It is now dialog-owned in #77 and renders as `Ready to install` with the verified version and an explicit user-facing `Install` action. Settings no longer owns the Downloaded/Install row. Pressing Install invokes the existing `installUpdate()` operation; #77 must not automatically continue into installation merely because verification completed.
 
 When Android install-source trust is missing, the update flow explains the requirement without bypassing Android Settings. Granting permission still hands off to Android's per-app source-trust Settings and re-checks `PackageManager.canRequestPackageInstalls()` on return. Android continues to own final package-install confirmation.
@@ -585,7 +587,7 @@ After the migration, Settings Previews should cover:
 - manual Up to date;
 - manual Check failed / Retry.
 
-Update-process Previews belong to the Unified Update Dialog. The current #77 checkpoint covers preparing download, downloading/progress, dedicated verification presentation, and Ready to install / explicit Install, including narrow-phone and enlarged-font coverage for these migrated states. Permission-required and failure/retry dialog Previews are added with their corresponding ownership migrations rather than keeping parallel Settings fixtures. #77 Preview coverage must ultimately demonstrate the full two-stage route; #78 may later change only the normal user-facing continuation behavior.
+Update-process Previews belong to the Unified Update Dialog. The current #77 checkpoint covers preparing download, downloading/progress, dedicated verification presentation, Ready to install / explicit Install, and Download failed / Retry, including narrow-phone and enlarged-font coverage for these migrated states. Permission-required and install-failure/retry dialog Previews are added with their corresponding ownership migrations rather than keeping parallel Settings fixtures. #77 Preview coverage must ultimately demonstrate the full two-stage route; #78 may later change only the normal user-facing continuation behavior.
 
 The Phone UI remains presentation-only. It emits semantic discovery/update actions and renders application-owned state; it does not perform GitHub HTTP requests, file I/O, checksum verification, package inspection, signing checks, Android settings mutation, or PackageInstaller session work directly.
 
