@@ -135,7 +135,7 @@ Active branch: `feature/unified-update-dialog`, created fresh from the current `
 - [x] Connect install-refresh retarget presentation to the Unified Update Dialog. A newer release found during install preparation remains process-owned, returns the non-dismissible Unified Update Dialog to `Newer update available`, and uses the existing `downloadUpdate()` operation.
 - [x] Keep `DOWNLOADED` as the authoritative verified-artifact boundary and render it as `Ready to install` in the Unified Update Dialog.
 - [x] Keep an explicit user-facing `Install` action after `DOWNLOADED`; the button calls the existing `installUpdate()` operation and #77 does not auto-continue into installation.
-- [ ] Preserve independent `downloadUpdate()` and `installUpdate()` operations and all existing SHA-256, retained-artifact, install-refresh, package/version/signing preflight, source-trust, PackageInstaller, and recovery behavior.
+- [x] Preserve independent `downloadUpdate()` and `installUpdate()` operations and all existing SHA-256, retained-artifact, install-refresh, package/version/signing preflight, source-trust, PackageInstaller, and recovery behavior.
 - [x] Remove process presentation from Settings only when the corresponding dialog presentation exists.
 - [x] Align process-state Previews and focused tests with Unified Update Dialog ownership, including `Ready to install`, typed install failure, and install-refresh retarget.
 - [ ] Complete full real-device E2E of the two-stage route:
@@ -216,3 +216,11 @@ Additional #75 invariants:
 A temporary process-presentation implementation was intentionally reverted from the #75 branch before #75 was finalized. The older PR #76 separately retains a legacy one-step prototype for reference, but it is not part of the active stack.
 
 The active #77 branch starts from the post-#75 `feature/package-installer` baseline and preserves the explicit two-stage route. Settings now owns only Idle / manual Checking / manual Up to date / manual Check failed. The Unified Update Dialog owns the post-Update process, including install-refresh `Newer update available -> Download`, while MANUAL/AUTOMATIC discovery still uses the separate dismissible release-available dialog. The next #77 work is validation rather than additional process-presentation migration.
+
+Pre-Draft regression audit:
+
+- [x] Static ownership/reference audit: no stale Settings process-state presentation remains; Unified Update Dialog phase/resource/callback coverage is internally aligned.
+- [x] Semantic state-machine audit: download retry, explicit Ready-to-install -> Install, install-refresh retarget, source-trust return, retained-artifact reuse, and install Retry continue through the existing runtime operations.
+- [x] Fix regression found by the semantic audit: Settings entry now preserves `InstallFailed` instead of collapsing it back to restored `Downloaded`, so the global reason/Retry presentation survives destination changes.
+- [ ] Build / architecture checks / unit-test execution / CI / Codex review remain intentionally unrun at this checkpoint.
+
