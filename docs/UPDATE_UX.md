@@ -274,6 +274,8 @@ The existing progress semantics move from the Settings row into the dialog rathe
 - Settings no longer renders either of those active download phases and its corresponding progress fixtures/copy have been removed;
 - `VerifyingDownload(versionName)` is an explicit application-owned runtime state entered immediately before SHA-256 verification. It now has dedicated `Verifying update` / `Checking download integrity…` copy with indeterminate progress in the Unified Update Dialog, so 100% transfer no longer appears stalled or ambiguously returns to preparation;
 - verification presentation is intentionally limited to download-integrity checking at this stage; checksum verification and verified-artifact promotion semantics remain unchanged, while package/version/signing preflight remains a later install boundary;
+- verified `DOWNLOADED` now stays on the Unified Update Dialog as `Ready to install`, with the verified version shown via `VersionChip` and an explicit `Install` button;
+- pressing `Install` calls the existing independent `installUpdate()` operation; #77 intentionally preserves this user checkpoint and does not auto-continue from verification into install preparation;
 - install preparation retains the latest-release refresh and APK package/version/signing preflight;
 - missing Android install-source trust is explained in the update flow without bypassing Android Settings or final confirmation;
 - recoverable download/install failures remain typed and expose Retry from the update flow;
