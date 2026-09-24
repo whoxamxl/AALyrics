@@ -278,6 +278,24 @@ Musixmatch native Translation remains deferred until its endpoint/entitlement is
 
 The durable ownership contract remains `docs/TRANSLATION_ARCHITECTURE.md`.
 
+### Phase 11.2c — Phone Translation presentation/integration — active
+
+Connect the already-implemented atomic Translation result to the Phone Lyrics surface without reopening Translation execution architecture.
+
+This slice:
+
+- lifecycle-observes `AALyricsApplication.translationState` in the Phone runtime host;
+- projects only a `TranslationState.Ready` artifact that matches the exact current canonical lyrics identity;
+- keeps canonical/source text primary and adds actual translated lines as secondary text within the same logical viewport row;
+- keeps pending/not-required/failed Translation original-only and never converts Translation failure into lyrics failure;
+- preserves canonical timing, sync/current-line ownership, provider attribution, Lyrics Provider selection, and the existing LyricsViewport Follow/Browse geometry;
+- does not duplicate artifact lines that were intentionally preserved rather than translated;
+- adds focused mapper, rendering, and Preview coverage.
+
+Android Auto Translation presentation, Musixmatch native Translation, persistent Translation Cache, timing/calibration, and Karaoke Translation behavior remain outside this slice.
+
+The active implementation contract is recorded in `TASK.md`, `docs/TRANSLATION_ARCHITECTURE.md`, `docs/PHONE_LYRICS_VIEWPORT.md`, and `docs/PHONE_RUNTIME_HOST.md`.
+
 ### Phase 11.3 — Timing / calibration
 
 Introduce source-versus-effective timing and the smallest calibration transform justified by product behavior and working-fork regressions.
