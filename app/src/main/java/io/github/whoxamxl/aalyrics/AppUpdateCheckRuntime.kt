@@ -79,6 +79,11 @@ internal sealed interface AppUpdateCheckState {
     ) : AppUpdateCheckState
 }
 
+private enum class InstallPermissionResumeStage {
+    DOWNLOAD,
+    INSTALL,
+}
+
 internal enum class AppUpdateInstallFailureReason {
     DEPENDENCIES_UNAVAILABLE,
     RELEASE_REFRESH_FAILED,
@@ -124,6 +129,7 @@ internal class AppUpdateCheckRuntime(
     private var activeInstallSessionId: Int? = null
     private var installTarget: InstallTarget? = null
     private var availableCandidate: AALyricsReleaseCandidate? = null
+    private var installPermissionResumeStage: InstallPermissionResumeStage? = null
     private val operationGeneration = AtomicLong(0L)
     private val releaseQueryCallbackLock = Any()
     private val checkPresentationLock = Any()
@@ -198,13 +204,32 @@ internal class AppUpdateCheckRuntime(
         true
     }
 
+    fun startUpdate() {
+        if (hasActiveUpdateOperation()) {
+            return
+        }
+
+        val currentState = mutableState.value as? AppUpdateCheckState.UpdateAvailable
+            ?: return
+        if (currentState.origin == UpdateCheckOrigin.INSTALL_REFRESH) {
+            return
+        }
+
+        val candidate = availableCandidate ?: return
+        val versionName = candidate.release.tagName.removePrefix("v")
+        if (installSourceTrustChecker?.canRequestPackageInstalls() == false) {
+            installPermissionResumeStage = InstallPermissionResumeStage.DOWNLOAD
+            mutableState.value =
+                AppUpdateCheckState.InstallPermissionRequired(versionName)
+            onInstallPermissionRequired(versionName)
+            return
+        }
+
+        startDownload(candidate)
+    }
+
     fun downloadUpdate() {
-        if (
-            downloadJob?.isActive == true ||
-            checkJob?.isActive == true ||
-            installJob?.isActive == true ||
-            activeInstallSessionId != null
-        ) {
+        if (hasActiveUpdateOperation()) {
             return
         }
 
@@ -217,6 +242,11 @@ internal class AppUpdateCheckRuntime(
             return
         }
 
+        startDownload(candidate)
+    }
+
+    private fun startDownload(candidate: AALyricsReleaseCandidate) {
+        installPermissionResumeStage = null
         val generation = operationGeneration.get()
         val versionName = candidate.release.tagName.removePrefix("v")
         mutableState.value = AppUpdateCheckState.PreparingDownload(versionName)
@@ -237,6 +267,12 @@ internal class AppUpdateCheckRuntime(
             mutableState.value = nextState
         }
     }
+
+    private fun hasActiveUpdateOperation(): Boolean =
+        downloadJob?.isActive == true ||
+            checkJob?.isActive == true ||
+            installJob?.isActive == true ||
+            activeInstallSessionId != null
 
     fun installUpdate() {
         if (
@@ -276,17 +312,27 @@ internal class AppUpdateCheckRuntime(
         if (installSourceTrustChecker?.canRequestPackageInstalls() != true) {
             return
         }
-
-        val target = installTarget ?: return
-        if (
-            checkJob?.isActive == true ||
-            downloadJob?.isActive == true ||
-            installJob?.isActive == true ||
-            activeInstallSessionId != null
-        ) {
+        if (hasActiveUpdateOperation()) {
             return
         }
-        beginInstall(target)
+
+        when (installPermissionResumeStage) {
+            InstallPermissionResumeStage.DOWNLOAD -> {
+                val candidate = availableCandidate ?: return
+                startDownload(candidate)
+            }
+
+            InstallPermissionResumeStage.INSTALL -> {
+                val target = installTarget ?: return
+                installPermissionResumeStage = null
+                beginInstall(target)
+            }
+
+            null -> {
+                val target = installTarget ?: return
+                beginInstall(target)
+            }
+        }
     }
 
     private fun beginInstall(target: InstallTarget) {
@@ -364,11 +410,13 @@ internal class AppUpdateCheckRuntime(
             }
 
             if (!trustChecker.canRequestPackageInstalls()) {
+                installPermissionResumeStage = InstallPermissionResumeStage.INSTALL
                 mutableState.value =
                     AppUpdateCheckState.InstallPermissionRequired(target.versionName)
                 onInstallPermissionRequired(target.versionName)
                 return@launch
             }
+            installPermissionResumeStage = null
 
             val statusSink = UpdatePackageInstallerStatusSink { status ->
                 if (operationGeneration.get() != generation) {
@@ -487,6 +535,7 @@ internal class AppUpdateCheckRuntime(
         activeInstallSessionId = null
         installTarget = null
         availableCandidate = null
+        installPermissionResumeStage = null
         downloadFileStore?.clearAll()
         updateRecoveryStore?.clearAll()
         mutableState.value = AppUpdateCheckState.Idle
