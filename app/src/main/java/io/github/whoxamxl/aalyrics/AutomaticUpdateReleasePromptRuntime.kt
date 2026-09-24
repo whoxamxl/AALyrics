@@ -16,7 +16,15 @@ internal class AutomaticUpdateReleasePromptRuntime {
     val prompt: StateFlow<AutomaticUpdateReleasePrompt?> =
         mutablePrompt.asStateFlow()
 
-    fun onUpdateState(state: AppUpdateCheckState) {
+    fun onUpdateState(
+        state: AppUpdateCheckState,
+        enabled: Boolean = true,
+    ) {
+        if (!enabled) {
+            mutablePrompt.value = null
+            return
+        }
+
         val available = state as? AppUpdateCheckState.UpdateAvailable
             ?: return
         if (
