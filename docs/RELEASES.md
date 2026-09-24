@@ -312,7 +312,11 @@ Update
   -> install refresh / preflight / permission / PackageInstaller
 ```
 
-Before installation continues from the verified artifact, AALyrics must refresh eligible GitHub Releases using the same release grammar and installed-channel rules used by ordinary update discovery. If the retained verified release is still the latest eligible release, installation preparation may continue. If a newer eligible release has appeared, AALyrics must not intentionally install the older retained APK first; the active Unified Update Dialog returns to the available state for the newer release. This refresh is an install-process boundary, not background discovery, and does not alter the automatic discovery cadence.
+Before installation continues from the verified artifact, AALyrics must refresh eligible GitHub Releases using the same release grammar and installed-channel rules used by ordinary update discovery. If the retained verified release is still the latest eligible release, installation preparation may continue. If a newer eligible release has appeared, AALyrics must not intentionally install the older retained APK first.
+
+In **#75**, that `INSTALL_REFRESH` result is surfaced through the existing Settings-owned process route as `Newer update available` with Download. The replacement candidate remains available for `downloadUpdate()`, and Settings re-entry must preserve the retarget state rather than collapsing it to Idle. This is not a MANUAL/AUTOMATIC discovery result and does not open the shared discovery prompt.
+
+In **#76**, once process presentation belongs to the Unified Update Dialog, the same retarget returns the active dialog to its available state for the newer release instead. Install refresh is an install-process boundary, not background discovery, and does not alter the automatic discovery cadence.
 
 Only after the #76 two-stage route is validated on-device may **#77** remove the second user-facing Install action. #77 must reuse the existing `downloadUpdate()` -> `DOWNLOADED` -> `installUpdate()` boundaries rather than replacing them with a new monolithic update operation. One-step UX is an orchestration layer that automatically continues from verified `DOWNLOADED` into the existing install stage when continuation intent is present. The independent download/install stages, retained-artifact recovery, and `DOWNLOADED` state remain testable and authoritative.
 
