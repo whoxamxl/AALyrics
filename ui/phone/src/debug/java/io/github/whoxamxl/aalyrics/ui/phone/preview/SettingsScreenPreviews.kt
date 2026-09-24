@@ -284,7 +284,6 @@ private fun SettingsScreenContentPreview(
                 onAndroidAutoCompatibilitySetup = {},
                 onCheckForUpdates = {},
                 onDownloadUpdate = {},
-                onInstallUpdate = {},
                 onChangelogRequested = {},
                 onPrivacyPolicyRequested = {},
                 onTermsOfUseRequested = {},
