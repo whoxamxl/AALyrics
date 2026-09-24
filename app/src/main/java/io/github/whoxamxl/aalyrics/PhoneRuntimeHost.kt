@@ -99,8 +99,8 @@ internal fun PhoneRuntimeHost(
         application.installPermissionPrompt.collectAsStateWithLifecycle()
     val successfulUpdate by
         application.successfulUpdate.collectAsStateWithLifecycle()
-    val automaticUpdateReleasePrompt by
-        application.automaticUpdateReleasePrompt.collectAsStateWithLifecycle()
+    val updateReleasePrompt by
+        application.updateReleasePrompt.collectAsStateWithLifecycle()
 
     DisposableEffect(application) {
         onDispose {
@@ -323,14 +323,14 @@ internal fun PhoneRuntimeHost(
             onDismissRequest = application::dismissSuccessfulUpdate,
         )
     } else {
-        automaticUpdateReleasePrompt?.let { prompt ->
+        updateReleasePrompt?.let { prompt ->
             NewReleaseAvailableDialog(
                 state = NewReleaseAvailableDialogUiState(
                     versionName = prompt.versionName,
                 ),
-                onUpdate = application::acceptAutomaticUpdateReleasePrompt,
+                onUpdate = application::acceptUpdateReleasePrompt,
                 onDismissRequest =
-                    application::dismissAutomaticUpdateReleasePrompt,
+                    application::dismissUpdateReleasePrompt,
             )
         }
     }
