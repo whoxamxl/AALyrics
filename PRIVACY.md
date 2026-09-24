@@ -1,6 +1,6 @@
 # AALyrics Privacy Policy
 
-**Effective date:** September 22, 2026
+**Effective date:** September 24, 2026
 
 AALyrics is an Android application for displaying synchronized lyrics for music playing on your device. This policy describes the data AALyrics accesses, stores, and sends when you use the app.
 
@@ -8,7 +8,7 @@ AALyrics is an Android application for displaying synchronized lyrics for music 
 
 AALyrics does not include advertising, analytics, or telemetry SDKs, and it does not require an AALyrics account.
 
-AALyrics does access information about the media currently playing on your device so it can identify the track and find lyrics. Lyrics lookup requires network requests to third-party lyrics services.
+AALyrics does access information about the media currently playing on your device so it can identify the track and find lyrics. Lyrics lookup requires network requests to third-party lyrics services. AALyrics may also contact GitHub to check for application updates and, when you choose to update, to retrieve release files.
 
 ## Media and playback information
 
@@ -52,6 +52,14 @@ When you request an additional translation model, ML Kit may contact Google serv
 
 Downloaded translation models are managed on the device and can be removed from **Settings > Advanced > Clear translation models**.
 
+## Update checks and GitHub
+
+AALyrics uses the public GitHub Releases service for application update discovery and distribution.
+
+**Automatically check for updates** is enabled by default. After normal Phone startup is ready, AALyrics may query the public AALyrics GitHub Releases information when the low-frequency update-check cadence is due. You can turn automatic checks off in **Settings > App > Automatically check for updates**. Manual **Check for updates** remains available and contacts GitHub when you invoke it.
+
+Update discovery sends no track, lyrics, media-session, or Translation content to GitHub. GitHub receives the ordinary network information needed to serve the HTTPS request, such as your IP address and request headers. If you choose to download an update, AALyrics also retrieves the APK and checksum assets from the selected GitHub Release.
+
 ## Data stored on the device
 
 AALyrics stores a small amount of app-owned configuration locally, including settings such as:
@@ -59,7 +67,9 @@ AALyrics stores a small amount of app-owned configuration locally, including set
 - whether Translation is enabled;
 - the selected Translation target language;
 - whether Verbose details is enabled;
-- the Android Auto compatibility acknowledgement.
+- the Android Auto compatibility acknowledgement;
+- whether automatic update checking is enabled;
+- the timestamp used to enforce the low-frequency automatic update-check cadence.
 
 AALyrics does not currently maintain a persistent history of the songs you play or a persistent lyrics-history database.
 
@@ -69,7 +79,7 @@ Android may include eligible app-local data in its standard device backup/restor
 
 ## Permissions
 
-AALyrics currently requests Internet access for lyrics-provider communication and related network operations.
+AALyrics currently requests Internet access for lyrics-provider communication, GitHub Release update checks/downloads, Translation-model delivery through ML Kit when requested, and related network operations.
 
 Notification Access is granted separately through Android system settings and is required for AALyrics to observe active media sessions. You can revoke it at any time in Android Settings.
 
@@ -85,7 +95,7 @@ Once you open an external site, that site's own terms and privacy practices appl
 
 AALyrics does not sell personal data.
 
-AALyrics does not send data to advertising or analytics services. Track metadata is shared with lyrics providers only as needed to perform lyrics lookup, as described above.
+AALyrics does not send data to advertising or analytics services. Track metadata is shared with lyrics providers only as needed to perform lyrics lookup, as described above. Update checks do not send track or lyrics content to GitHub; GitHub receives only the information inherent in serving the update request and any release assets you choose to download.
 
 ## Retention and deletion
 
