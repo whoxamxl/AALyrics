@@ -470,6 +470,7 @@ private fun UnifiedUpdateDialogPreview(
                 onRetryInstall = {},
                 onGrantInstallPermission = {},
                 onDownloadFromGitHub = {},
+                onDismissRequest = {},
                 modifier = Modifier
                     .fillMaxWidth()
                     .widthIn(max = 420.dp),

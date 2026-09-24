@@ -222,5 +222,6 @@ Pre-Draft regression audit:
 - [x] Static ownership/reference audit: no stale Settings process-state presentation remains; Unified Update Dialog phase/resource/callback coverage is internally aligned.
 - [x] Semantic state-machine audit: download retry, explicit Ready-to-install -> Install, install-refresh retarget, source-trust return, retained-artifact reuse, and install Retry continue through the existing runtime operations.
 - [x] Fix regression found by the semantic audit: Settings entry now preserves `InstallFailed` instead of collapsing it back to restored `Downloaded`, so the global reason/Retry presentation survives destination changes.
+- [x] Address valid Codex dismissal feedback: paused/recoverable Unified Update Dialog states can be closed with shared X/System Back without clearing runtime/artifact state; active work and install-refresh retarget remain non-dismissible.
 - [ ] Build / architecture checks / unit-test execution / CI / Codex review remain intentionally unrun at this checkpoint.
 

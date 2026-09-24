@@ -294,6 +294,8 @@ Availability and active update work have different dismissal semantics.
 
 Before `Update` starts, `Not now`, close, and Back are ordinary dismissal actions. Once app-owned update work starts, `Not now` is no longer part of the process UI. Active-work, permission-required, and recoverable-failure dismissal/re-entry behavior must preserve the application-owned operation/artifact state and must never require Settings to become a second progress/install surface.
 
+The current #77 implementation keeps active work and install-refresh retargeting non-dismissible, but allows paused/recoverable process states to release the modal surface. `READY_TO_INSTALL`, `DOWNLOAD_FAILED`, `PERMISSION_REQUIRED`, and `INSTALL_FAILED` expose the shared `PhoneDialogHeader` close action and System Back dismissal; outside-tap dismissal remains disabled. Dismissal hides presentation only and does not mutate the authoritative runtime state or retained artifact. Permission-required visibility continues to use the existing process-local permission-prompt runtime, so dismissing the explanation does not clear `InstallPermissionRequired` or the verified APK.
+
 The implementation may evolve the exact close/Back affordance per process phase, but it must satisfy these invariants:
 
 - dismissing presentation never corrupts or silently discards an active operation;
