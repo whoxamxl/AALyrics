@@ -415,24 +415,6 @@ internal object PhonePreviewFixtures {
             availableVersionName = "0.2.0-beta.1",
         ),
     )
-    val settingsPreparingInstall = settingsTypical.copy(
-        appUpdate = AppUpdateUiState(
-            phase = AppUpdateUiPhase.PREPARING_INSTALL,
-            availableVersionName = "0.1.2",
-        ),
-    )
-    val settingsInstallPermissionRequired = settingsTypical.copy(
-        appUpdate = AppUpdateUiState(
-            phase = AppUpdateUiPhase.INSTALL_PERMISSION_REQUIRED,
-            availableVersionName = "0.1.2",
-        ),
-    )
-    val settingsInstallingUpdate = settingsTypical.copy(
-        appUpdate = AppUpdateUiState(
-            phase = AppUpdateUiPhase.INSTALLING,
-            availableVersionName = "0.1.2",
-        ),
-    )
     val settingsInstallFailedSigningMismatch = settingsTypical.copy(
         appUpdate = AppUpdateUiState(
             phase = AppUpdateUiPhase.INSTALL_FAILED,
