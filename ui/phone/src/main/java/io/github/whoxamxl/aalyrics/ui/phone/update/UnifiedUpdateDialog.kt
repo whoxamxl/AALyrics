@@ -98,10 +98,13 @@ internal fun UnifiedUpdateDialogContent(
 
             Text(
                 text = stringResource(
-                    if (state.phase == UpdateDialogPhase.DOWNLOADING) {
-                        R.string.update_process_downloading_title
-                    } else {
-                        R.string.update_process_preparing_title
+                    when (state.phase) {
+                        UpdateDialogPhase.DOWNLOADING ->
+                            R.string.update_process_downloading_title
+                        UpdateDialogPhase.VERIFYING ->
+                            R.string.update_process_verifying_title
+                        else ->
+                            R.string.update_process_preparing_title
                     },
                 ),
                 style = AALyricsTypography.LyricsSupporting,
@@ -158,8 +161,23 @@ internal fun UnifiedUpdateDialogContent(
                     )
                 }
 
-                UpdateDialogPhase.PREPARING_DOWNLOAD,
+                UpdateDialogPhase.PREPARING_DOWNLOAD -> {
+                    LinearProgressIndicator(
+                        modifier = Modifier.fillMaxWidth(),
+                        color = AALyricsColors.AccentCyan,
+                        trackColor = AALyricsColors.OverlaySoft,
+                    )
+                }
+
                 UpdateDialogPhase.VERIFYING -> {
+                    Text(
+                        text = stringResource(R.string.update_process_verifying_label),
+                        style = AALyricsTypography.TrackArtist,
+                        color = AALyricsColors.TextSecondary,
+                    )
+
+                    Spacer(Modifier.height(AALyricsSpacing.Space8))
+
                     LinearProgressIndicator(
                         modifier = Modifier.fillMaxWidth(),
                         color = AALyricsColors.AccentCyan,
