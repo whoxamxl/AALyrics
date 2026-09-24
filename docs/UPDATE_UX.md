@@ -60,7 +60,7 @@ Download from GitHub  ↗
 
 The original #74/#75 standalone permission explanation had an explicit close affordance and System Back dismissal, with transient visibility owned separately from the authoritative permission-required runtime state. That historical presentation could be dismissed without clearing the retained verified APK.
 
-In the current #77 presentation, the permission explanation is part of the Unified Update Dialog. `PERMISSION_REQUIRED` remains dismissible through the shared close affordance or System Back, outside-tap dismissal remains disabled, and dismissing it hides presentation only: `AppUpdateCheckState.InstallPermissionRequired` and the retained verified APK remain authoritative. Active process states and install-refresh retargeting remain non-dismissible as defined in the #77 dismissal boundary below.
+In the current #77 presentation, the permission explanation is part of the Unified Update Dialog. `PERMISSION_REQUIRED` is dismissible through the shared close affordance or System Back, outside-tap dismissal remains disabled, and dismissing it hides presentation only. Before download, the selected release candidate remains authoritative; if the install-time fail-safe gate is reached later, the retained verified APK and install target remain authoritative. Every app-owned process phase, including active work and install-refresh retargeting, follows the same presentation-only dismissal contract defined below.
 
 ### #75 current permission-state ownership
 
@@ -85,18 +85,20 @@ In #75, the validated #74 presentation is intentionally still in place:
 Current #77 behavior:
 
 - `AppUpdateCheckState.InstallPermissionRequired` remains authoritative;
-- entering permission-required state must not discard or redownload a valid retained APK;
+- every user-started APK download path, including install-refresh retarget and Download Retry, checks source trust before transfer;
+- before download, entering permission-required state preserves the selected release candidate and starts no APK transfer;
+- if the install-time fail-safe gate is reached after verification/preflight, permission-required preserves the retained APK and install target;
 - the Unified Update Dialog presents the explanation and explicit `Grant permission` / GitHub fallback actions;
 - returning from Android Settings re-checks `PackageManager.canRequestPackageInstalls()`;
-- denied trust leaves the update recoverable;
-- granted trust resumes install preparation from the retained artifact;
+- denied trust leaves the current update stage recoverable;
+- granted trust resumes the stage that requested permission: Download for the pre-transfer gate, or Install for the pre-PackageInstaller fail-safe gate;
 - #77 must not reintroduce a second Settings-owned Install/permission route.
 
 Typical, narrow-width, and enlarged-font Previews should cover this permission-required dialog state as part of the #77 Unified Update Dialog suite. Runtime tests continue to cover denied and granted source-trust return paths.
 
 The permission presentation remains content-height driven and scrollable when necessary. Its dismissible form uses the shared `PhoneDialogHeader` geometry: one vertically centered row, a 24dp close icon inside the standard 48dp touch target at the trailing edge, and no phase-specific X offset.
 
-Install preparation failures remain distinct from missing source trust. The runtime carries a typed install-failure reason through Phone mapping, and the Unified Update Dialog now presents `Installation failed` with a reason-specific explanation for release refresh, retained APK/preflight, package/version/signing, durable recovery persistence, PackageInstaller handoff, and installer rejection/cancellation failures. Its explicit Retry action calls the existing independent `installUpdate()` operation; Settings no longer owns install-failure presentation. A failure that occurs before source-trust evaluation must not show the permission dialog. For example, a downloaded APK whose signing identity differs from the installed AALyrics app fails at preflight and reports that signing mismatch explicitly.
+Install preparation failures remain distinct from missing source trust. The runtime carries a typed install-failure reason through Phone mapping, and the Unified Update Dialog presents `Installation failed` with a reason-specific explanation for release refresh, retained APK/preflight, package/version/signing, durable recovery persistence, PackageInstaller handoff, and installer rejection/cancellation failures. Its explicit Retry action calls the existing independent `installUpdate()` operation; Settings no longer owns install-failure presentation. At the install stage, release refresh and APK preflight still run before the second source-trust re-check, so a signing mismatch remains a typed preflight failure rather than being masked by the fail-safe permission gate.
 
 ## Successful-update feedback
 
@@ -349,14 +351,16 @@ The approved stacked implementation is:
    - preserve the existing independent `downloadUpdate()` and `installUpdate()` stages and all existing download, SHA-256, retained-artifact, install-refresh, preflight, source-trust, PackageInstaller, and recovery boundaries;
    - complete real-device E2E validation of the full two-stage route before any automatic Download -> Install continuation is introduced.
 
-   #77's validated user-facing baseline is therefore:
+   #77's corrected user-facing baseline to validate is therefore:
 
    ```text
    Update
+     -> Source-trust gate / Permission if required
      -> Preparing / Downloading / Verify
      -> Downloaded / Ready to install
      -> Install
-     -> Install refresh / Preflight / Permission if required
+     -> Install refresh / Preflight
+     -> Source-trust re-check if required
      -> Android PackageInstaller confirmation
      -> Update successful
    ```
