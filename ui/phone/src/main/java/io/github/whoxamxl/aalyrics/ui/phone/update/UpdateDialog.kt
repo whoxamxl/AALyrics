@@ -411,7 +411,7 @@ private fun PermissionContent(
     ProcessHeader()
     Spacer(Modifier.height(AALyricsSpacing.Space12))
     Text(
-        text = stringResource(R.string.settings_install_permission_dialog_version),
+        text = stringResource(R.string.update_dialog_permission_version),
         style = AALyricsTypography.Label,
         color = AALyricsColors.TextSecondary,
     )
@@ -419,13 +419,13 @@ private fun PermissionContent(
     VersionChip(versionName = state.versionName)
     Spacer(Modifier.height(AALyricsSpacing.Space20))
     Text(
-        text = stringResource(R.string.settings_install_permission_dialog_title),
+        text = stringResource(R.string.update_dialog_permission_title),
         style = AALyricsTypography.LyricsSupporting,
         color = AALyricsColors.TextPrimary,
     )
     Spacer(Modifier.height(AALyricsSpacing.Space16))
     Text(
-        text = stringResource(R.string.settings_install_permission_dialog_body),
+        text = stringResource(R.string.update_dialog_permission_body),
         style = AALyricsTypography.TrackArtist,
         color = AALyricsColors.TextSecondary,
     )
@@ -435,7 +435,7 @@ private fun PermissionContent(
         color = AALyricsColors.OverlaySoft,
     ) {
         Text(
-            text = stringResource(R.string.settings_install_permission_dialog_reason),
+            text = stringResource(R.string.update_dialog_permission_reason),
             style = AALyricsTypography.TrackArtist,
             color = AALyricsColors.TextSecondary,
             modifier = Modifier.padding(AALyricsSpacing.Space16),
@@ -446,7 +446,7 @@ private fun PermissionContent(
         onClick = onGrantPermission,
         modifier = Modifier.fillMaxWidth(),
     ) {
-        Text(text = stringResource(R.string.settings_install_permission_dialog_grant))
+        Text(text = stringResource(R.string.update_dialog_permission_grant))
     }
     Spacer(Modifier.height(AALyricsSpacing.Space12))
     OutlinedButton(
@@ -463,7 +463,7 @@ private fun PermissionContent(
         ) {
             Text(
                 text = stringResource(
-                    R.string.settings_install_permission_dialog_download_github,
+                    R.string.update_dialog_permission_download_github,
                 ),
                 textAlign = TextAlign.Center,
             )
@@ -483,44 +483,44 @@ private fun installFailureReasonText(
 ): String =
     when (reason) {
         UpdateInstallFailureUiReason.DEPENDENCIES_UNAVAILABLE ->
-            stringResource(R.string.settings_update_install_failure_dependencies_unavailable)
+            stringResource(R.string.update_dialog_install_failure_dependencies_unavailable)
         UpdateInstallFailureUiReason.RELEASE_REFRESH_FAILED ->
-            stringResource(R.string.settings_update_install_failure_release_refresh_failed)
+            stringResource(R.string.update_dialog_install_failure_release_refresh_failed)
         UpdateInstallFailureUiReason.INSTALLED_VERSION_INVALID ->
-            stringResource(R.string.settings_update_install_failure_installed_version_invalid)
+            stringResource(R.string.update_dialog_install_failure_installed_version_invalid)
         UpdateInstallFailureUiReason.RETAINED_VERSION_INVALID ->
-            stringResource(R.string.settings_update_install_failure_retained_version_invalid)
+            stringResource(R.string.update_dialog_install_failure_retained_version_invalid)
         UpdateInstallFailureUiReason.RETAINED_RELEASE_NOT_ELIGIBLE ->
-            stringResource(R.string.settings_update_install_failure_retained_release_not_eligible)
+            stringResource(R.string.update_dialog_install_failure_retained_release_not_eligible)
         UpdateInstallFailureUiReason.RETAINED_RELEASE_NOT_NEWER ->
-            stringResource(R.string.settings_update_install_failure_retained_release_not_newer)
+            stringResource(R.string.update_dialog_install_failure_retained_release_not_newer)
         UpdateInstallFailureUiReason.NO_ELIGIBLE_RELEASE ->
-            stringResource(R.string.settings_update_install_failure_no_eligible_release)
+            stringResource(R.string.update_dialog_install_failure_no_eligible_release)
         UpdateInstallFailureUiReason.RETAINED_RELEASE_NO_LONGER_CURRENT ->
             stringResource(
-                R.string.settings_update_install_failure_retained_release_no_longer_current,
+                R.string.update_dialog_install_failure_retained_release_no_longer_current,
             )
         UpdateInstallFailureUiReason.APK_FILE_MISSING ->
-            stringResource(R.string.settings_update_install_failure_apk_missing)
+            stringResource(R.string.update_dialog_install_failure_apk_missing)
         UpdateInstallFailureUiReason.APK_NOT_CANONICAL ->
-            stringResource(R.string.settings_update_install_failure_apk_not_canonical)
+            stringResource(R.string.update_dialog_install_failure_apk_not_canonical)
         UpdateInstallFailureUiReason.APK_UNREADABLE ->
-            stringResource(R.string.settings_update_install_failure_apk_unreadable)
+            stringResource(R.string.update_dialog_install_failure_apk_unreadable)
         UpdateInstallFailureUiReason.PACKAGE_MISMATCH ->
-            stringResource(R.string.settings_update_install_failure_package_mismatch)
+            stringResource(R.string.update_dialog_install_failure_package_mismatch)
         UpdateInstallFailureUiReason.VERSION_NOT_NEWER ->
-            stringResource(R.string.settings_update_install_failure_version_not_newer)
+            stringResource(R.string.update_dialog_install_failure_version_not_newer)
         UpdateInstallFailureUiReason.VERSION_NAME_MISMATCH ->
-            stringResource(R.string.settings_update_install_failure_version_name_mismatch)
+            stringResource(R.string.update_dialog_install_failure_version_name_mismatch)
         UpdateInstallFailureUiReason.SIGNING_IDENTITY_UNAVAILABLE ->
-            stringResource(R.string.settings_update_install_failure_signing_unavailable)
+            stringResource(R.string.update_dialog_install_failure_signing_unavailable)
         UpdateInstallFailureUiReason.SIGNING_IDENTITY_MISMATCH ->
-            stringResource(R.string.settings_update_install_failure_signing_mismatch)
+            stringResource(R.string.update_dialog_install_failure_signing_mismatch)
         UpdateInstallFailureUiReason.RECOVERY_STATE_PERSISTENCE_FAILED ->
-            stringResource(R.string.settings_update_install_failure_recovery_state)
+            stringResource(R.string.update_dialog_install_failure_recovery_state)
         UpdateInstallFailureUiReason.INSTALLER_HANDOFF_FAILED ->
-            stringResource(R.string.settings_update_install_failure_handoff)
+            stringResource(R.string.update_dialog_install_failure_handoff)
         UpdateInstallFailureUiReason.INSTALLER_REJECTED ->
-            stringResource(R.string.settings_update_install_failure_installer_rejected)
-        null -> stringResource(R.string.settings_update_install_failure_generic)
+            stringResource(R.string.update_dialog_install_failure_installer_rejected)
+        null -> stringResource(R.string.update_dialog_install_failure_generic)
     }
