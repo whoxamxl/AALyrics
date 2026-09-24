@@ -529,7 +529,9 @@ DOWNLOAD_FAILED / INSTALL_FAILED
 [typed explanation + Retry]
 ```
 
-The existing Settings-row progress behavior should be transplanted into this dialog. GitHub Release asset size remains the expected total, downloaded bytes remain the determinate-progress numerator, and size mismatch / SHA-256 mismatch continue to fail closed.
+The active download preparation/transfer presentation has now moved out of Settings and into the Unified Update Dialog. `PREPARING_DOWNLOAD` uses indeterminate dialog progress and `DOWNLOADING` uses the existing byte-based determinate 0–100% progress. Settings no longer owns those phases or their Preview fixtures. `VerifyingDownload` is also kept on the dialog surface so the presentation does not disappear after transfer completion, but dedicated verification copy is intentionally deferred to the next #77 checkpoint.
+
+GitHub Release asset size remains the expected total, downloaded bytes remain the determinate-progress numerator, and size mismatch / SHA-256 mismatch continue to fail closed.
 
 `DOWNLOADED` remains an authoritative application-owned safety and recovery boundary. In #77 it is also a visible `Ready to install` checkpoint with an explicit user-facing `Install` action. #77 must not automatically continue into installation merely because verification completed.
 
@@ -583,7 +585,7 @@ After the migration, Settings Previews should cover:
 - manual Up to date;
 - manual Check failed / Retry.
 
-Update-process Previews belong to the Unified Update Dialog and should cover representative release-available, preparing, downloading/progress, verification, Ready to install / explicit Install, permission-required, failure/retry, narrow-phone, and enlarged-font configurations. #77 Preview coverage must demonstrate the two-stage route; #78 may later change only the normal user-facing continuation behavior.
+Update-process Previews belong to the Unified Update Dialog. The current #77 checkpoint already covers preparing download and downloading/progress at typical, narrow-phone, and enlarged-font sizes. Dedicated verification, Ready to install / explicit Install, permission-required, and failure/retry dialog Previews are added with their corresponding ownership migrations rather than keeping parallel Settings fixtures. #77 Preview coverage must ultimately demonstrate the full two-stage route; #78 may later change only the normal user-facing continuation behavior.
 
 The Phone UI remains presentation-only. It emits semantic discovery/update actions and renders application-owned state; it does not perform GitHub HTTP requests, file I/O, checksum verification, package inspection, signing checks, Android settings mutation, or PackageInstaller session work directly.
 
