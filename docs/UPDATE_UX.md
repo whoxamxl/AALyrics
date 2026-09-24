@@ -337,12 +337,19 @@ The approved stacked implementation is:
 
 4. **#78 — compose the validated two-stage route into one-step UX**
    - start from the validated #77 implementation;
+   - treat old #76 as a scenario/design reference only: its continuation-intent idea, retry/permission/retarget scenarios, and single user-facing Update concept are useful, but its process-local boolean, Settings-owned presentation, stale prompt ownership, and outdated mapper/runtime details are not authoritative;
    - keep `DOWNLOADED` as a real internal/recovery state even if it is transient in normal production UX;
    - keep `downloadUpdate()` and `installUpdate()` independently testable and reusable;
-   - add only the orchestration needed to continue from verified `DOWNLOADED` into the existing install stage when the operation carries one-step continuation intent;
-   - guard against duplicate continuation across recomposition, Activity recreation, process recovery, and permission return;
-   - retain recovery from a durable verified APK without forcing a second download;
-   - remove the second user-facing Install action only after the two-stage route has been proven on-device and the automatic continuation has its own focused tests and E2E validation.
+   - introduce explicit application-owned one-step continuation intent/coordinator above those operations rather than copying old #76's raw `oneStepUpdateRequested` flag;
+   - arm continuation only from explicit user Update/Retry intent;
+   - continue from verified `DOWNLOADED` into the existing install stage only when continuation intent is valid and no install/preflight/session operation is already active;
+   - use an idempotent continuation claim/guard so recomposition, Activity recreation, restored state, permission return, or duplicate state collection cannot start installation twice;
+   - preserve source-trust pause/resume and retained-artifact reuse without redownload;
+   - if install refresh finds a newer release, retarget the same one-step operation to the newer candidate rather than installing the stale retained APK;
+   - stop automatic progression on recoverable failure and require explicit Retry to re-arm/resume the one-step operation;
+   - define process-recovery semantics for continuation intent and clear it under Reset AALyrics;
+   - adapt old #76 one-step tests only as scenario references against the current #77/#78 runtime contract;
+   - remove the second user-facing Install action only after focused tests pass, then validate the one-step UX separately on-device.
 
 Typical, narrow-phone, and enlarged-font Previews must cover the shared release-available dialog and representative #77 process states, including `Ready to install`. Settings Previews should cover only the manual discovery states plus automatic-check preference ON/OFF; they should not retain parallel update-process fixtures after #77 migration.
 
@@ -375,11 +382,18 @@ The recovery/install safety checkpoints are already established. Continue in bou
 
 ### #78
 
-1. preserve the validated #77 core stages and `DOWNLOADED` boundary;
-2. add a one-step continuation intent/coordinator above the existing `downloadUpdate()` and `installUpdate()` operations;
-3. auto-continue only after verified `DOWNLOADED`, with duplicate-continuation protection;
-4. keep recovery and retained-artifact tests for the independent download/install stages;
-5. validate the one-step production UX separately on-device.
+1. freeze the validated #77 two-stage route as the immutable pre-#78 comparison baseline;
+2. define application-owned continuation intent/coordinator semantics, using old #76's one-step intent only as a conceptual reference;
+3. route explicit Update/Retry actions through the coordinator while preserving independently callable `downloadUpdate()` and `installUpdate()`;
+4. auto-continue only after verified `DOWNLOADED`, guarded by an idempotent single-consumer/active-install check;
+5. preserve source-trust pause/resume, retained-artifact recovery, and no-redownload behavior;
+6. preserve install-refresh retargeting within the same one-step operation when a newer candidate appears;
+7. stop on recoverable failure and require explicit Retry rather than automatically looping;
+8. define restart/process-recovery behavior for continuation intent and clear it under Reset;
+9. adapt old #76 tests as scenario references for current runtime behavior, not as code/presentation to copy;
+10. remove the second production Install action only after focused tests prove orchestration correctness;
+11. align Unified Update Dialog one-step Previews/docs while keeping the two-stage route covered internally;
+12. validate the one-step production UX separately on-device.
 
 Do not weaken, bypass, or collapse the validated internal update boundaries merely to simplify user-facing presentation.
 
