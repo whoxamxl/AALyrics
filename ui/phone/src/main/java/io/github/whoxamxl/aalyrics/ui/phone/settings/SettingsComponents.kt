@@ -56,9 +56,9 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import kotlin.math.roundToInt
 import io.github.whoxamxl.aalyrics.ui.designsystem.icon.AALyricsIcons
 import io.github.whoxamxl.aalyrics.ui.phone.component.PhonePopupMenu
+import io.github.whoxamxl.aalyrics.ui.phone.component.VersionChip
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsColors
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsRadius
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsSpacing
@@ -378,19 +378,11 @@ internal fun AppUpdateRow(
     checkLabel: String,
     checkingLabel: String,
     upToDateLabel: String,
-    updateAvailableLabel: String,
-    downloadLabel: String,
-    preparingDownloadLabel: String,
-    downloadingLabel: String,
-    downloadedLabel: String,
     retryLabel: String,
     checkFailedLabel: String,
-    downloadFailedLabel: String,
     failureInfoContentDescription: String,
     genericFailureReason: String,
-    unavailableLabel: String,
     onCheckForUpdates: () -> Unit,
-    onDownloadUpdate: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -412,21 +404,12 @@ internal fun AppUpdateRow(
                 modifier = Modifier.weight(1f),
             )
 
-            Text(
-                text = currentVersionName.asVersionLabel(),
-                style = AALyricsTypography.TrackArtist,
-                color = AALyricsColors.TextSecondary,
-                maxLines = 1,
-            )
+            VersionChip(versionName = currentVersionName)
         }
 
         Spacer(Modifier.height(AALyricsSpacing.Space12))
 
         when (state.phase) {
-            AppUpdateUiPhase.UNAVAILABLE -> {
-                AppUpdateStatusTextRow(label = unavailableLabel)
-            }
-
             AppUpdateUiPhase.IDLE -> {
                 AppUpdateActionRow(
                     actionLabel = checkLabel,
@@ -446,16 +429,6 @@ internal fun AppUpdateRow(
                 )
             }
 
-            AppUpdateUiPhase.UPDATE_AVAILABLE -> {
-                AppUpdateActionRow(
-                    status = "${updateAvailableLabel} ${
-                        state.availableVersionName?.asVersionLabel().orEmpty()
-                    }".trim(),
-                    actionLabel = downloadLabel,
-                    onAction = onDownloadUpdate,
-                )
-            }
-
             AppUpdateUiPhase.CHECK_FAILED -> {
                 AppUpdateFailureRow(
                     label = checkFailedLabel,
@@ -463,43 +436,6 @@ internal fun AppUpdateRow(
                     failureInfoContentDescription = failureInfoContentDescription,
                     retryLabel = retryLabel,
                     onRetry = onCheckForUpdates,
-                )
-            }
-
-            AppUpdateUiPhase.PREPARING_DOWNLOAD -> {
-                AppUpdateIndeterminateBarRow(label = preparingDownloadLabel)
-            }
-
-            AppUpdateUiPhase.DOWNLOADING -> {
-                AppUpdateDownloadProgressRow(
-                    label = if (state.availableVersionName.isNullOrBlank()) {
-                        downloadingLabel
-                    } else {
-                        "${downloadingLabel} ${state.availableVersionName.asVersionLabel()}"
-                    },
-                    progress = state.downloadProgress ?: 0f,
-                )
-            }
-
-            AppUpdateUiPhase.DOWNLOADED -> {
-                AppUpdateStatusRow(
-                    label = if (state.availableVersionName.isNullOrBlank()) {
-                        downloadedLabel
-                    } else {
-                        "${downloadedLabel} ${state.availableVersionName.asVersionLabel()}"
-                    },
-                    icon = AALyricsIcons.Check,
-                    iconTint = AALyricsColors.Success,
-                )
-            }
-
-            AppUpdateUiPhase.DOWNLOAD_FAILED -> {
-                AppUpdateFailureRow(
-                    label = downloadFailedLabel,
-                    reason = state.failureReason ?: genericFailureReason,
-                    failureInfoContentDescription = failureInfoContentDescription,
-                    retryLabel = retryLabel,
-                    onRetry = onDownloadUpdate,
                 )
             }
         }
@@ -510,7 +446,6 @@ internal fun AppUpdateRow(
 private fun AppUpdateActionRow(
     actionLabel: String,
     onAction: () -> Unit,
-    status: String? = null,
     actionIcon: ImageVector? = null,
 ) {
     Row(
@@ -519,18 +454,7 @@ private fun AppUpdateActionRow(
             .heightIn(min = AALyricsSpacing.Space48),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        if (status != null) {
-            Text(
-                text = status,
-                style = AALyricsTypography.TrackArtist,
-                color = AALyricsColors.TextSecondary,
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(end = AALyricsSpacing.Space12),
-            )
-        } else {
-            Spacer(Modifier.weight(1f))
-        }
+        Spacer(Modifier.weight(1f))
 
         AppUpdateInlineAction(
             label = actionLabel,
@@ -626,46 +550,6 @@ private fun AppUpdateIndeterminateBarRow(
 }
 
 @Composable
-private fun AppUpdateDownloadProgressRow(
-    label: String,
-    progress: Float,
-) {
-    val boundedProgress = progress.coerceIn(0f, 1f)
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .heightIn(min = AALyricsSpacing.Space48),
-        verticalArrangement = Arrangement.Center,
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                text = label,
-                style = AALyricsTypography.TrackArtist,
-                color = AALyricsColors.TextSecondary,
-                modifier = Modifier.weight(1f),
-            )
-            Text(
-                text = "${(boundedProgress * 100f).roundToInt()}%",
-                style = AALyricsTypography.TrackArtist,
-                color = AALyricsColors.TextSecondary,
-            )
-        }
-
-        Spacer(Modifier.height(AALyricsSpacing.Space8))
-
-        LinearProgressIndicator(
-            progress = { boundedProgress },
-            modifier = Modifier.fillMaxWidth(),
-            color = AALyricsColors.AccentCyan,
-            trackColor = AALyricsColors.OverlaySoft,
-        )
-    }
-}
-
-@Composable
 private fun AppUpdateStatusTextRow(
     label: String,
 ) {
@@ -746,9 +630,6 @@ private fun AppUpdateFailureRow(
     }
 }
 
-private fun String.asVersionLabel(): String =
-    if (startsWith("v", ignoreCase = true)) this else "v$this"
-
 @Composable
 internal fun SettingsBrandFooter(
     appName: String,
@@ -785,11 +666,17 @@ internal fun SettingsBrandFooter(
 
         Spacer(Modifier.height(AALyricsSpacing.Space16))
 
-        Text(
-            text = "${versionLabel}: ${versionName.asVersionLabel()}",
-            style = AALyricsTypography.TrackArtist,
-            color = AALyricsColors.TextSecondary,
-        )
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = versionLabel,
+                style = AALyricsTypography.TrackArtist,
+                color = AALyricsColors.TextSecondary,
+            )
+            Spacer(Modifier.width(AALyricsSpacing.Space8))
+            VersionChip(versionName = versionName)
+        }
 
         Text(
             text = "© $currentYear $copyrightOwner",

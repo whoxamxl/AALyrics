@@ -121,7 +121,7 @@ PR #33 established the persistent shell boundary in production Compose. Subseque
 
 PR #50 realizes the application-composition boundary documented in `docs/PHONE_RUNTIME_HOST.md`: `MainActivity` keeps the existing onboarding/permission entry gates, while READY is the lifecycle-aware Compose host for `PhoneAppShell`. Host-local destination selection and Lyrics browse/Plain auto-scroll interaction remain presentation state; durable settings and media/runtime ownership stay outside `:ui:phone`.
 
-The current Phone-local primitive standards are defined in `docs/PHONE_UI_SPEC.md`: `PhonePopupMenu` for anchored compact popup/tooltip surfaces, `SettingsSubscreenHeader` for second-level Settings navigation, and `PhoneMarkdownText` for bundled Markdown documents such as License, Changelog, and the approved Privacy Policy surface. These remain in `:ui:phone` until cross-surface reuse justifies promotion to `:ui:designsystem`. External support/browser launching remains an application-owned action rather than a UI primitive.
+The current Phone-local primitive standards are defined in `docs/PHONE_UI_SPEC.md`: `PhonePopupMenu` for anchored compact popup/tooltip surfaces, `SettingsSubscreenHeader` for second-level Settings navigation, `PhoneDialogHeader` for dismissible custom-dialog eyebrow/X alignment, `VersionChip` for semantic AALyrics application/release version labels, and `PhoneMarkdownText` for bundled Markdown documents such as License, Changelog, and the approved Privacy Policy surface. These remain in `:ui:phone` until cross-surface reuse justifies promotion to `:ui:designsystem`. External support/browser launching remains an application-owned action rather than a UI primitive.
 
 ## Shared vs automotive design system
 

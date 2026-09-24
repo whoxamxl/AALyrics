@@ -13,6 +13,7 @@ import android.os.SystemClock
 import android.util.Log
 import android.util.LruCache
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -38,6 +39,14 @@ import io.github.whoxamxl.aalyrics.ui.phone.shell.PhoneAppShell
 import io.github.whoxamxl.aalyrics.ui.phone.state.PhoneShellUiState
 import io.github.whoxamxl.aalyrics.ui.phone.state.PlaybackQueueItemUiState
 import io.github.whoxamxl.aalyrics.ui.phone.sync.SyncScreen
+import io.github.whoxamxl.aalyrics.ui.phone.update.NewReleaseAvailableDialog
+import io.github.whoxamxl.aalyrics.ui.phone.update.NewReleaseAvailableDialogUiState
+import io.github.whoxamxl.aalyrics.ui.phone.update.UnifiedUpdateDialog
+import io.github.whoxamxl.aalyrics.ui.phone.update.UpdateDialogAvailabilityContext
+import io.github.whoxamxl.aalyrics.ui.phone.update.UpdateDialogPhase
+import io.github.whoxamxl.aalyrics.ui.phone.update.UpdateDialogUiState
+import io.github.whoxamxl.aalyrics.ui.phone.update.UpdateSuccessfulDialog
+import io.github.whoxamxl.aalyrics.ui.phone.update.UpdateSuccessfulDialogUiState
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
@@ -62,9 +71,11 @@ internal fun PhoneRuntimeHost(
     androidAutoStatus: AndroidAutoCompatibilityUiStatus,
     onAndroidAutoCompatibilitySetup: () -> Unit,
     onResetAALyrics: () -> Unit,
+    onOpenInstallSettings: () -> Unit,
     onOpenSourceCode: () -> Unit,
     onOpenHelpFeedback: (HelpFeedbackDestination) -> Unit,
     onOpenSupportAALyrics: () -> Unit,
+    onOpenUpdateRelease: (String) -> Unit = {},
 ) {
     val playback by application.playbackState.collectAsStateWithLifecycle()
     val playbackSourceRuntimeState by
@@ -85,7 +96,27 @@ internal fun PhoneRuntimeHost(
     val verboseDetailsEnabled by application.verboseDetailsEnabled.collectAsStateWithLifecycle()
     val ignoreNonAudioApps by application.ignoreNonAudioApps.collectAsStateWithLifecycle()
     val allowUnclassifiedApps by application.allowUnclassifiedApps.collectAsStateWithLifecycle()
+    val automaticallyCheckForUpdates by
+        application.automaticallyCheckForUpdates.collectAsStateWithLifecycle()
     val appUpdateCheckState by application.appUpdateCheckState.collectAsStateWithLifecycle()
+    val successfulUpdate by
+        application.successfulUpdate.collectAsStateWithLifecycle()
+    val updateReleasePrompt by
+        application.updateReleasePrompt.collectAsStateWithLifecycle()
+    val updateDialogState = mapPhoneUpdateDialogState(
+        updateState = appUpdateCheckState,
+        releasePrompt = updateReleasePrompt,
+    )
+
+    DisposableEffect(application) {
+        onDispose {
+            application.dismissInstallPermissionPrompt()
+        }
+    }
+
+    LaunchedEffect(application) {
+        application.onPhoneReadyForAutomaticUpdateCheck()
+    }
 
     val queueArtworkCache = remember {
         QueueArtworkCache(maxEntries = QUEUE_ARTWORK_CACHE_ENTRIES)
@@ -95,6 +126,9 @@ internal fun PhoneRuntimeHost(
 
     var selectedDestination by rememberSaveable {
         mutableStateOf(PhoneDestination.Home)
+    }
+    var updateProcessDialogDismissed by rememberSaveable {
+        mutableStateOf(false)
     }
     var plainLyricsAutoScrollEnabled by rememberSaveable {
         mutableStateOf(true)
@@ -158,6 +192,7 @@ internal fun PhoneRuntimeHost(
         plainLyricsAutoScrollEnabled = plainLyricsAutoScrollEnabled,
         ignoreNonAudioApps = ignoreNonAudioApps,
         allowUnclassifiedApps = allowUnclassifiedApps,
+        automaticallyCheckForUpdates = automaticallyCheckForUpdates,
         androidAutoStatus = androidAutoStatus,
         appVersionName = BuildConfig.VERSION_NAME,
         currentYear = Year.now().value,
@@ -171,6 +206,10 @@ internal fun PhoneRuntimeHost(
         appUpdateCheckState = appUpdateCheckState,
     )
 
+    val updateProcessDialogState = updateDialogState?.takeIf { state ->
+        state.isAppOwnedUpdateProcessPresentation()
+    }
+
     PhoneAppShell(
         state = PhoneShellUiState(
             selectedDestination = selectedDestination,
@@ -182,12 +221,18 @@ internal fun PhoneRuntimeHost(
             playbackSurface = playbackSurface,
         ),
         onDestinationSelected = { destination ->
+            if (destination != PhoneDestination.Settings) {
+                application.dismissInstallPermissionPrompt()
+            }
             if (isSettingsNavigationEntry(selectedDestination, destination)) {
                 application.onSettingsEntered()
             }
             selectedDestination = destination
         },
         onDestinationReselected = { destination ->
+            if (destination == PhoneDestination.Settings) {
+                application.dismissInstallPermissionPrompt()
+            }
             destinationRootResetKey += 1
             if (destination == PhoneDestination.Lyrics) {
                 lyricsInteractionMode = LyricsViewportInteractionMode.FOLLOW
@@ -252,6 +297,8 @@ internal fun PhoneRuntimeHost(
                 onPlainLyricsAutoScrollChanged = { plainLyricsAutoScrollEnabled = it },
                 onIgnoreNonAudioAppsChanged = application::setIgnoreNonAudioApps,
                 onAllowUnclassifiedAppsChanged = application::setAllowUnclassifiedApps,
+                onAutomaticallyCheckForUpdatesChanged =
+                    application::setAutomaticallyCheckForUpdates,
                 onVerboseDetailsChanged = application::setVerboseDetailsEnabled,
                 onTranslationEnabledChanged = application::setTranslationEnabled,
                 onTranslationTargetSelected = application::setTranslationTargetLanguage,
@@ -265,8 +312,13 @@ internal fun PhoneRuntimeHost(
                     onResetAALyrics()
                 },
                 onAndroidAutoCompatibilitySetup = onAndroidAutoCompatibilitySetup,
-                onCheckForUpdates = application::checkForUpdates,
-                onDownloadUpdate = application::downloadUpdate,
+                onCheckForUpdates = {
+                    if (shouldReenterUpdateProcess(updateProcessDialogState)) {
+                        updateProcessDialogDismissed = false
+                    } else {
+                        application.checkForUpdates()
+                    }
+                },
                 onOpenGitHub = onOpenSourceCode,
                 onHelpFeedback = onOpenHelpFeedback,
                 onSupportAALyrics = onOpenSupportAALyrics,
@@ -274,7 +326,86 @@ internal fun PhoneRuntimeHost(
             )
         }
     }
+
+    LaunchedEffect(updateProcessDialogState == null) {
+        if (updateProcessDialogState == null) {
+            updateProcessDialogDismissed = false
+        }
+    }
+
+    if (successfulUpdate != null) {
+        UpdateSuccessfulDialog(
+            state = UpdateSuccessfulDialogUiState(
+                versionName = successfulUpdate!!.installedVersion,
+            ),
+            onDismissRequest = application::dismissSuccessfulUpdate,
+        )
+    } else {
+        val visibleUpdateProcessDialogState = updateProcessDialogState?.takeIf {
+            !updateProcessDialogDismissed
+        }
+        if (visibleUpdateProcessDialogState != null) {
+            UnifiedUpdateDialog(
+                state = visibleUpdateProcessDialogState,
+                onInstall = application::installUpdate,
+                onDownloadUpdate = application::downloadUpdate,
+                onRetryDownload = application::downloadUpdate,
+                onRetryInstall = application::installUpdate,
+                onGrantInstallPermission = {
+                    application.dismissInstallPermissionPrompt()
+                    onOpenInstallSettings()
+                },
+                onDownloadFromGitHub = {
+                    updateProcessDialogDismissed = true
+                    application.dismissInstallPermissionPrompt()
+                    onOpenUpdateRelease(visibleUpdateProcessDialogState.versionName)
+                },
+                onDismissRequest = {
+                    updateProcessDialogDismissed = true
+                    if (
+                        visibleUpdateProcessDialogState.phase ==
+                        UpdateDialogPhase.PERMISSION_REQUIRED
+                    ) {
+                        application.dismissInstallPermissionPrompt()
+                    }
+                },
+            )
+        } else {
+            updateReleasePrompt?.let { prompt ->
+                NewReleaseAvailableDialog(
+                    state = NewReleaseAvailableDialogUiState(
+                        versionName = prompt.versionName,
+                    ),
+                    onUpdate = application::acceptUpdateReleasePrompt,
+                    onDismissRequest =
+                        application::dismissUpdateReleasePrompt,
+                )
+            }
+        }
+    }
 }
+
+internal fun UpdateDialogUiState.isAppOwnedUpdateProcessPresentation(): Boolean =
+    (
+        phase == UpdateDialogPhase.AVAILABLE &&
+            availabilityContext == UpdateDialogAvailabilityContext.INSTALL_REFRESH_RETARGET
+        ) ||
+        phase == UpdateDialogPhase.PREPARING_DOWNLOAD ||
+        phase == UpdateDialogPhase.DOWNLOADING ||
+        phase == UpdateDialogPhase.VERIFYING ||
+        phase == UpdateDialogPhase.READY_TO_INSTALL ||
+        phase == UpdateDialogPhase.DOWNLOAD_FAILED ||
+        phase == UpdateDialogPhase.PREPARING_INSTALL ||
+        phase == UpdateDialogPhase.PERMISSION_REQUIRED ||
+        phase == UpdateDialogPhase.INSTALLING ||
+        phase == UpdateDialogPhase.INSTALL_FAILED
+
+internal fun UpdateDialogUiState.isDismissibleUpdateProcessPresentation(): Boolean =
+    isAppOwnedUpdateProcessPresentation()
+
+internal fun shouldReenterUpdateProcess(
+    state: UpdateDialogUiState?,
+): Boolean = state?.isAppOwnedUpdateProcessPresentation() == true
 
 @Composable
 private fun QueueItemArtwork(

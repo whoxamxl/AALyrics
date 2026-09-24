@@ -51,6 +51,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
@@ -84,6 +85,12 @@ class AALyricsApplication : Application() {
     private lateinit var phonePlaybackSourceCanOpenAppStateFlow: StateFlow<Boolean>
     private lateinit var phoneDetailsStateFlow: StateFlow<DetailsScreenUiState>
     private lateinit var appUpdateCheckRuntime: AppUpdateCheckRuntime
+    private lateinit var automaticUpdateCheckRuntime: AutomaticUpdateCheckRuntime
+    private val updateReleasePromptRuntime = UpdateReleasePromptRuntime()
+    private lateinit var updateCheckCadenceStore: UpdateCheckCadenceStore
+    private lateinit var updateRecoveryStore: UpdateRecoveryStore
+    private lateinit var updateSuccessFeedbackRuntime: UpdateSuccessFeedbackRuntime
+    private val installPermissionPromptRuntime = UpdateInstallPermissionPromptRuntime()
     private val mutablePlaybackArtworkState = MutableStateFlow<Bitmap?>(null)
     private val mutableQueueArtworkBitmapsState =
         MutableStateFlow<Map<Long, Bitmap>>(emptyMap())
@@ -179,6 +186,9 @@ class AALyricsApplication : Application() {
     internal val allowUnclassifiedApps: StateFlow<Boolean>
         get() = phonePresentationSettingsStore.allowUnclassifiedApps
 
+    internal val automaticallyCheckForUpdates: StateFlow<Boolean>
+        get() = phonePresentationSettingsStore.automaticallyCheckForUpdates
+
     val translationModelStates: StateFlow<Map<String, TranslationModelState>>
         get() = translationModelManager.states
 
@@ -188,12 +198,72 @@ class AALyricsApplication : Application() {
     internal val appUpdateCheckState: StateFlow<AppUpdateCheckState>
         get() = appUpdateCheckRuntime.state
 
+    internal val installPermissionPrompt: StateFlow<UpdateInstallPermissionPrompt?>
+        get() = installPermissionPromptRuntime.prompt
+
+    internal val successfulUpdate: StateFlow<SuccessfulUpdate?>
+        get() = updateSuccessFeedbackRuntime.successfulUpdate
+
+    internal val updateReleasePrompt: StateFlow<UpdateReleasePrompt?>
+        get() = updateReleasePromptRuntime.prompt
+
     internal fun checkForUpdates() {
-        appUpdateCheckRuntime.checkForUpdates()
+        appUpdateCheckRuntime.checkForUpdates(
+            origin = UpdateCheckOrigin.MANUAL,
+        )
+    }
+
+    internal fun onPhoneReadyForAutomaticUpdateCheck() {
+        if (updateSuccessFeedbackRuntime.successfulUpdate.value != null) {
+            return
+        }
+        automaticUpdateCheckRuntime.requestIfEnabled(
+            phonePresentationSettingsStore.automaticallyCheckForUpdates.value,
+        )
     }
 
     internal fun downloadUpdate() {
         appUpdateCheckRuntime.downloadUpdate()
+    }
+
+    internal fun dismissUpdateReleasePrompt() {
+        updateReleasePromptRuntime.dismiss()
+    }
+
+    internal fun acceptUpdateReleasePrompt() {
+        updateReleasePromptRuntime.consumeForUpdate()
+            ?: return
+        appUpdateCheckRuntime.startUpdate()
+    }
+
+    internal fun installUpdate() {
+        appUpdateCheckRuntime.installUpdate()
+    }
+
+    internal fun onInstallSourceTrustReturned() {
+        installPermissionPromptRuntime.dismiss()
+        appUpdateCheckRuntime.onInstallSourceTrustReturned()
+    }
+
+    internal fun dismissInstallPermissionPrompt() {
+        installPermissionPromptRuntime.dismiss()
+    }
+
+    internal fun dismissSuccessfulUpdate() {
+        updateSuccessFeedbackRuntime.dismiss()
+    }
+
+    internal fun reconcilePackageReplacement(): UpdateReplacementReconciliation {
+        val result = UpdatePackageReplacementHandler(
+            recoveryStore = updateRecoveryStore,
+        ).reconcile(
+            installedVersion = BuildConfig.VERSION_NAME,
+            installedVersionCode = BuildConfig.VERSION_CODE.toLong(),
+        )
+        if (result is UpdateReplacementReconciliation.Succeeded) {
+            updateSuccessFeedbackRuntime.refresh()
+        }
+        return result
     }
 
     internal fun onSettingsEntered() {
@@ -233,6 +303,11 @@ class AALyricsApplication : Application() {
         applyCurrentPlaybackSourceEligibility()
     }
 
+    internal fun setAutomaticallyCheckForUpdates(enabled: Boolean) {
+        phonePresentationSettingsStore.setAutomaticallyCheckForUpdates(enabled)
+        automaticUpdateCheckRuntime.requestIfEnabled(enabled)
+    }
+
     fun clearDownloadedTranslationModels() {
         if (mutableTranslationModelCleanupState.value == TranslationModelCleanupState.RUNNING) {
             return
@@ -257,9 +332,13 @@ class AALyricsApplication : Application() {
     }
 
     fun resetAppOwnedSettings() {
+        installPermissionPromptRuntime.dismiss()
+        updateReleasePromptRuntime.reset()
         appUpdateCheckRuntime.reset()
+        updateSuccessFeedbackRuntime.refresh()
         translationSettingsStore.resetToDefaults()
         phonePresentationSettingsStore.resetToDefaults()
+        automaticUpdateCheckRuntime.resetCadence()
         applyCurrentPlaybackSourceEligibility()
     }
 
@@ -276,23 +355,78 @@ class AALyricsApplication : Application() {
     override fun onCreate() {
         super.onCreate()
         val updateUserAgent = "AALyrics/${BuildConfig.VERSION_NAME}"
+        updateRecoveryStore = SharedPreferencesUpdateRecoveryStore(this)
+        updateCheckCadenceStore = SharedPreferencesUpdateCheckCadenceStore(this)
+        AndroidUpdateInstallerSessionRecovery(
+            context = this,
+            onSessionAbandoned = { sessionId ->
+                runCatching {
+                    updateRecoveryStore.clearPendingUpdateForSession(sessionId)
+                }
+            },
+        ).cleanupInterruptedSessions()
+        val updateReleaseClient = HttpGitHubReleaseClient(
+            userAgent = updateUserAgent,
+        )
+        val updateFileStore = UpdateDownloadFileStore(
+            stagingDirectory = cacheDir.resolve(UPDATE_STAGING_DIRECTORY_NAME),
+            verifiedDirectory = noBackupFilesDir.resolve(UPDATE_VERIFIED_DIRECTORY_NAME),
+            legacyVerifiedDirectory = filesDir.resolve(UPDATE_VERIFIED_DIRECTORY_NAME),
+        )
+        val updatePreflight = UpdateApkPreflightBoundary(
+            fileStore = updateFileStore,
+            packageInspector = AndroidUpdateApkPackageInspector(
+                packageManager = packageManager,
+                installedPackageName = packageName,
+            ),
+        )
+        updateSuccessFeedbackRuntime = UpdateSuccessFeedbackRuntime(updateRecoveryStore)
         appUpdateCheckRuntime = AppUpdateCheckRuntime(
             installedVersionName = BuildConfig.VERSION_NAME,
-            releaseClient = HttpGitHubReleaseClient(
-                userAgent = updateUserAgent,
-            ),
+            releaseClient = updateReleaseClient,
             applicationScope = applicationScope,
             assetDownloadClient = HttpUpdateAssetDownloadClient(
                 userAgent = updateUserAgent,
             ),
-            downloadFileStore = UpdateDownloadFileStore(
-                stagingDirectory = cacheDir.resolve(UPDATE_STAGING_DIRECTORY_NAME),
-                verifiedDirectory = noBackupFilesDir.resolve(UPDATE_VERIFIED_DIRECTORY_NAME),
-                legacyVerifiedDirectory = filesDir.resolve(UPDATE_VERIFIED_DIRECTORY_NAME),
+            downloadFileStore = updateFileStore,
+            installPreparation = UpdateInstallPreparation(
+                installedVersionName = BuildConfig.VERSION_NAME,
+                releaseClient = updateReleaseClient,
+                preflightEvaluator = updatePreflight,
             ),
+            installSourceTrustChecker = AndroidInstallSourceTrustChecker(
+                packageManager = packageManager,
+            ),
+            packageInstaller = AndroidUpdatePackageInstaller(this),
+            updateRecoveryStore = updateRecoveryStore,
+            onReleaseQuerySucceeded = { origin ->
+                automaticUpdateCheckRuntime.recordSuccessfulReleaseQuery(origin)
+            },
+            onInstallPermissionRequired = installPermissionPromptRuntime::request,
         )
         translationSettingsStore = SharedPreferencesTranslationSettingsStore(this)
         phonePresentationSettingsStore = SharedPreferencesPhonePresentationSettingsStore(this)
+        automaticUpdateCheckRuntime = AutomaticUpdateCheckRuntime(
+            cadenceStore = updateCheckCadenceStore,
+            requestAutomaticCheck = {
+                appUpdateCheckRuntime.checkForUpdates(
+                    origin = UpdateCheckOrigin.AUTOMATIC,
+                )
+            },
+        )
+        applicationScope.launch {
+            combine(
+                appUpdateCheckRuntime.state,
+                phonePresentationSettingsStore.automaticallyCheckForUpdates,
+            ) { updateState, automaticChecksEnabled ->
+                updateState to automaticChecksEnabled
+            }.collect { (updateState, automaticChecksEnabled) ->
+                updateReleasePromptRuntime.onUpdateState(
+                    state = updateState,
+                    automaticChecksEnabled = automaticChecksEnabled,
+                )
+            }
+        }
         playbackAppLauncher = SelectedPlaybackAppLauncher(this)
         playbackSourceAppInfoResolver = PlaybackSourceAppInfoResolver(this)
         graph = createProductionApplicationGraph(applicationScope)

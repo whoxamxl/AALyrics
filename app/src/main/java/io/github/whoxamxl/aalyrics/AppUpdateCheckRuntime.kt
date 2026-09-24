@@ -1,6 +1,7 @@
 package io.github.whoxamxl.aalyrics
 
 import java.io.File
+import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
@@ -13,16 +14,30 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
+internal enum class UpdateCheckOrigin {
+    MANUAL,
+    AUTOMATIC,
+    INSTALL_REFRESH,
+}
+
 internal sealed interface AppUpdateCheckState {
     data object Idle : AppUpdateCheckState
-    data object Checking : AppUpdateCheckState
-    data object UpToDate : AppUpdateCheckState
+    data class Checking(
+        val origin: UpdateCheckOrigin = UpdateCheckOrigin.MANUAL,
+    ) : AppUpdateCheckState
+
+    data class UpToDate(
+        val origin: UpdateCheckOrigin = UpdateCheckOrigin.MANUAL,
+    ) : AppUpdateCheckState
 
     data class UpdateAvailable(
         val versionName: String,
+        val origin: UpdateCheckOrigin = UpdateCheckOrigin.MANUAL,
     ) : AppUpdateCheckState
 
-    data object Failed : AppUpdateCheckState
+    data class Failed(
+        val origin: UpdateCheckOrigin = UpdateCheckOrigin.MANUAL,
+    ) : AppUpdateCheckState
 
     data class PreparingDownload(
         val versionName: String,
@@ -34,6 +49,10 @@ internal sealed interface AppUpdateCheckState {
         val totalBytes: Long,
     ) : AppUpdateCheckState
 
+    data class VerifyingDownload(
+        val versionName: String,
+    ) : AppUpdateCheckState
+
     data class Downloaded(
         val versionName: String,
         val apkFile: File,
@@ -42,6 +61,50 @@ internal sealed interface AppUpdateCheckState {
     data class DownloadFailed(
         val versionName: String,
     ) : AppUpdateCheckState
+
+    data class PreparingInstall(
+        val versionName: String,
+    ) : AppUpdateCheckState
+
+    data class InstallPermissionRequired(
+        val versionName: String,
+    ) : AppUpdateCheckState
+
+    data class Installing(
+        val versionName: String,
+    ) : AppUpdateCheckState
+
+    data class InstallFailed(
+        val versionName: String,
+        val reason: AppUpdateInstallFailureReason,
+    ) : AppUpdateCheckState
+}
+
+private enum class InstallPermissionResumeStage {
+    DOWNLOAD,
+    INSTALL,
+}
+
+internal enum class AppUpdateInstallFailureReason {
+    DEPENDENCIES_UNAVAILABLE,
+    RELEASE_REFRESH_FAILED,
+    INSTALLED_VERSION_INVALID,
+    RETAINED_VERSION_INVALID,
+    RETAINED_RELEASE_NOT_ELIGIBLE,
+    RETAINED_RELEASE_NOT_NEWER,
+    NO_ELIGIBLE_RELEASE,
+    RETAINED_RELEASE_NO_LONGER_CURRENT,
+    APK_FILE_MISSING,
+    APK_NOT_CANONICAL,
+    APK_UNREADABLE,
+    PACKAGE_MISMATCH,
+    VERSION_NOT_NEWER,
+    VERSION_NAME_MISMATCH,
+    SIGNING_IDENTITY_UNAVAILABLE,
+    SIGNING_IDENTITY_MISMATCH,
+    RECOVERY_STATE_PERSISTENCE_FAILED,
+    INSTALLER_HANDOFF_FAILED,
+    INSTALLER_REJECTED,
 }
 
 internal class AppUpdateCheckRuntime(
@@ -50,48 +113,117 @@ internal class AppUpdateCheckRuntime(
     private val applicationScope: CoroutineScope,
     private val assetDownloadClient: UpdateAssetDownloadClient? = null,
     private val downloadFileStore: UpdateDownloadFileStore? = null,
+    private val installPreparation: UpdateInstallPreparation? = null,
+    private val installSourceTrustChecker: InstallSourceTrustChecker? = null,
+    private val packageInstaller: UpdatePackageInstaller? = null,
+    private val updateRecoveryStore: UpdateRecoveryStore? = null,
+    private val onReleaseQuerySucceeded: (UpdateCheckOrigin) -> Unit = {},
+    private val onInstallPermissionRequired: (String) -> Unit = {},
 ) {
     private val mutableState = MutableStateFlow<AppUpdateCheckState>(AppUpdateCheckState.Idle)
     val state: StateFlow<AppUpdateCheckState> = mutableState.asStateFlow()
 
     private var checkJob: Job? = null
     private var downloadJob: Job? = null
+    private var installJob: Job? = null
+    @Volatile
+    private var activeInstallSessionId: Int? = null
+    private var installTarget: InstallTarget? = null
     private var availableCandidate: AALyricsReleaseCandidate? = null
+    private var installPermissionResumeStage: InstallPermissionResumeStage? = null
+    private val autoInstallAfterDownloadRequested = AtomicBoolean(false)
     private val operationGeneration = AtomicLong(0L)
+    private val releaseQueryCallbackLock = Any()
+    private val checkPresentationLock = Any()
+    private var activeCheckOrigin: UpdateCheckOrigin? = null
 
     init {
         mutableState.value = restoreVerifiedDownload()
     }
 
-    fun checkForUpdates() {
+    fun checkForUpdates(
+        origin: UpdateCheckOrigin = UpdateCheckOrigin.MANUAL,
+    ): Boolean = synchronized(checkPresentationLock) {
+        val currentCheck = mutableState.value as? AppUpdateCheckState.Checking
+        if (checkJob?.isActive == true) {
+            if (
+                origin == UpdateCheckOrigin.MANUAL &&
+                currentCheck?.origin == UpdateCheckOrigin.AUTOMATIC &&
+                activeCheckOrigin == UpdateCheckOrigin.AUTOMATIC
+            ) {
+                activeCheckOrigin = UpdateCheckOrigin.MANUAL
+                mutableState.value = AppUpdateCheckState.Checking(UpdateCheckOrigin.MANUAL)
+                return@synchronized true
+            }
+            return@synchronized false
+        }
+
         if (
-            checkJob?.isActive == true ||
             downloadJob?.isActive == true ||
-            mutableState.value == AppUpdateCheckState.Checking ||
+            installJob?.isActive == true ||
+            activeInstallSessionId != null ||
+            mutableState.value is AppUpdateCheckState.Checking ||
             mutableState.value is AppUpdateCheckState.PreparingDownload ||
-            mutableState.value is AppUpdateCheckState.Downloading
+            mutableState.value is AppUpdateCheckState.Downloading ||
+            mutableState.value is AppUpdateCheckState.VerifyingDownload ||
+            mutableState.value is AppUpdateCheckState.PreparingInstall ||
+            mutableState.value is AppUpdateCheckState.InstallPermissionRequired ||
+            mutableState.value is AppUpdateCheckState.Installing ||
+            (
+                origin == UpdateCheckOrigin.AUTOMATIC &&
+                    mutableState.value != AppUpdateCheckState.Idle
+                )
         ) {
-            return
+            return@synchronized false
         }
 
         val generation = operationGeneration.get()
-        mutableState.value = AppUpdateCheckState.Checking
+        activeCheckOrigin = origin
+        mutableState.value = AppUpdateCheckState.Checking(origin)
         checkJob = applicationScope.launch {
             val nextState = try {
-                resolveCheckState(generation)
+                resolveCheckState(
+                    generation = generation,
+                    origin = origin,
+                )
             } catch (error: CancellationException) {
                 throw error
             } catch (_: Exception) {
                 clearCandidateIfCurrent(generation)
-                AppUpdateCheckState.Failed
+                AppUpdateCheckState.Failed(origin)
             }
             ensureCurrentOperation(generation)
-            mutableState.value = nextState
+            synchronized(checkPresentationLock) {
+                if (operationGeneration.get() != generation) {
+                    throw CancellationException("Update operation is stale")
+                }
+                val effectiveOrigin = activeCheckOrigin ?: origin
+                mutableState.value = nextState.withCheckOrigin(effectiveOrigin)
+                activeCheckOrigin = null
+                checkJob = null
+            }
         }
+        true
+    }
+
+    fun startUpdate() {
+        if (hasActiveUpdateOperation()) {
+            return
+        }
+
+        val currentState = mutableState.value as? AppUpdateCheckState.UpdateAvailable
+            ?: return
+        if (currentState.origin == UpdateCheckOrigin.INSTALL_REFRESH) {
+            return
+        }
+
+        val candidate = availableCandidate ?: return
+        autoInstallAfterDownloadRequested.set(true)
+        startDownloadWithSourceTrust(candidate)
     }
 
     fun downloadUpdate() {
-        if (downloadJob?.isActive == true || checkJob?.isActive == true) {
+        if (hasActiveUpdateOperation()) {
             return
         }
 
@@ -104,10 +236,28 @@ internal class AppUpdateCheckRuntime(
             return
         }
 
+        startDownloadWithSourceTrust(candidate)
+    }
+
+    private fun startDownloadWithSourceTrust(candidate: AALyricsReleaseCandidate) {
+        val versionName = candidate.release.tagName.removePrefix("v")
+        if (installSourceTrustChecker?.canRequestPackageInstalls() == false) {
+            installPermissionResumeStage = InstallPermissionResumeStage.DOWNLOAD
+            mutableState.value =
+                AppUpdateCheckState.InstallPermissionRequired(versionName)
+            onInstallPermissionRequired(versionName)
+            return
+        }
+
+        startDownload(candidate)
+    }
+
+    private fun startDownload(candidate: AALyricsReleaseCandidate) {
+        installPermissionResumeStage = null
         val generation = operationGeneration.get()
         val versionName = candidate.release.tagName.removePrefix("v")
         mutableState.value = AppUpdateCheckState.PreparingDownload(versionName)
-        downloadJob = applicationScope.launch {
+        val job = applicationScope.launch {
             val nextState = try {
                 resolveDownloadState(
                     candidate = candidate,
@@ -123,42 +273,343 @@ internal class AppUpdateCheckRuntime(
             ensureCurrentOperation(generation)
             mutableState.value = nextState
         }
+        downloadJob = job
+        job.invokeOnCompletion { error ->
+            if (
+                error == null &&
+                operationGeneration.get() == generation &&
+                mutableState.value is AppUpdateCheckState.Downloaded &&
+                autoInstallAfterDownloadRequested.get()
+            ) {
+                installUpdate()
+            }
+        }
+    }
+
+    private fun hasActiveUpdateOperation(): Boolean =
+        downloadJob?.isActive == true ||
+            checkJob?.isActive == true ||
+            installJob?.isActive == true ||
+            activeInstallSessionId != null
+
+    fun installUpdate() {
+        if (
+            checkJob?.isActive == true ||
+            downloadJob?.isActive == true ||
+            installJob?.isActive == true ||
+            activeInstallSessionId != null
+        ) {
+            return
+        }
+
+        val target = when (val current = mutableState.value) {
+            is AppUpdateCheckState.Downloaded ->
+                InstallTarget(
+                    versionName = current.versionName,
+                    apkFile = current.apkFile,
+                )
+
+            is AppUpdateCheckState.InstallFailed ->
+                installTarget
+
+            is AppUpdateCheckState.InstallPermissionRequired -> {
+                onInstallPermissionRequired(current.versionName)
+                return
+            }
+
+            else -> null
+        } ?: return
+
+        autoInstallAfterDownloadRequested.set(true)
+        beginInstall(target)
+    }
+
+    fun onInstallSourceTrustReturned() {
+        if (mutableState.value !is AppUpdateCheckState.InstallPermissionRequired) {
+            return
+        }
+        if (installSourceTrustChecker?.canRequestPackageInstalls() != true) {
+            return
+        }
+        if (hasActiveUpdateOperation()) {
+            return
+        }
+
+        when (installPermissionResumeStage) {
+            InstallPermissionResumeStage.DOWNLOAD -> {
+                val candidate = availableCandidate ?: return
+                startDownload(candidate)
+            }
+
+            InstallPermissionResumeStage.INSTALL -> {
+                val target = installTarget ?: return
+                installPermissionResumeStage = null
+                beginInstall(target)
+            }
+
+            null -> {
+                val target = installTarget ?: return
+                beginInstall(target)
+            }
+        }
+    }
+
+    private fun beginInstall(target: InstallTarget) {
+        val preparation = installPreparation
+        val trustChecker = installSourceTrustChecker
+        val installer = packageInstaller
+        val recoveryStore = updateRecoveryStore
+        if (
+            preparation == null ||
+            trustChecker == null ||
+            installer == null ||
+            recoveryStore == null
+        ) {
+            installTarget = target
+            autoInstallAfterDownloadRequested.set(false)
+            mutableState.value = AppUpdateCheckState.InstallFailed(
+                versionName = target.versionName,
+                reason = AppUpdateInstallFailureReason.DEPENDENCIES_UNAVAILABLE,
+            )
+            return
+        }
+
+        val generation = operationGeneration.get()
+        installTarget = target
+        mutableState.value = AppUpdateCheckState.PreparingInstall(target.versionName)
+        installJob = applicationScope.launch {
+            val preparationResult = try {
+                preparation.prepare(
+                    retainedApk = target.apkFile,
+                    retainedVersionName = target.versionName,
+                )
+            } catch (error: CancellationException) {
+                throw error
+            } catch (_: Exception) {
+                UpdateInstallPreparationResult.ReleaseRefreshFailed
+            }
+
+            ensureCurrentOperation(generation)
+            val targetVersionCode = when (preparationResult) {
+                is UpdateInstallPreparationResult.Ready ->
+                    preparationResult.targetVersionCode
+
+                is UpdateInstallPreparationResult.NewerReleaseAvailable -> {
+                    availableCandidate = preparationResult.candidate
+                    installTarget = null
+                    mutableState.value = AppUpdateCheckState.UpdateAvailable(
+                        versionName = preparationResult.candidate.release.tagName.removePrefix("v"),
+                        origin = UpdateCheckOrigin.INSTALL_REFRESH,
+                    )
+                    return@launch
+                }
+
+                is UpdateInstallPreparationResult.ReleaseRefreshRejected -> {
+                    autoInstallAfterDownloadRequested.set(false)
+                    mutableState.value = AppUpdateCheckState.InstallFailed(
+                        versionName = target.versionName,
+                        reason = preparationResult.reason.toInstallFailureReason(),
+                    )
+                    return@launch
+                }
+
+                UpdateInstallPreparationResult.ReleaseRefreshFailed -> {
+                    autoInstallAfterDownloadRequested.set(false)
+                    mutableState.value = AppUpdateCheckState.InstallFailed(
+                        versionName = target.versionName,
+                        reason = AppUpdateInstallFailureReason.RELEASE_REFRESH_FAILED,
+                    )
+                    return@launch
+                }
+
+                is UpdateInstallPreparationResult.ApkPreflightRejected -> {
+                    autoInstallAfterDownloadRequested.set(false)
+                    mutableState.value = AppUpdateCheckState.InstallFailed(
+                        versionName = target.versionName,
+                        reason = preparationResult.reason.toInstallFailureReason(),
+                    )
+                    return@launch
+                }
+            }
+
+            if (!trustChecker.canRequestPackageInstalls()) {
+                installPermissionResumeStage = InstallPermissionResumeStage.INSTALL
+                mutableState.value =
+                    AppUpdateCheckState.InstallPermissionRequired(target.versionName)
+                onInstallPermissionRequired(target.versionName)
+                return@launch
+            }
+            installPermissionResumeStage = null
+
+            val statusSink = UpdatePackageInstallerStatusSink { status ->
+                if (operationGeneration.get() != generation) {
+                    return@UpdatePackageInstallerStatusSink
+                }
+                when (status) {
+                    UpdatePackageInstallerStatus.PendingUserAction -> {
+                        mutableState.value =
+                            AppUpdateCheckState.Installing(target.versionName)
+                    }
+
+                    UpdatePackageInstallerStatus.Success -> {
+                        activeInstallSessionId = null
+                        mutableState.value =
+                            AppUpdateCheckState.Installing(target.versionName)
+                    }
+
+                    is UpdatePackageInstallerStatus.Failure -> {
+                        autoInstallAfterDownloadRequested.set(false)
+                        val failedSessionId = activeInstallSessionId
+                        activeInstallSessionId = null
+                        failedSessionId?.let { sessionId ->
+                            runCatching {
+                                recoveryStore.clearPendingUpdateForSession(sessionId)
+                            }
+                        }
+                        mutableState.value = AppUpdateCheckState.InstallFailed(
+                            versionName = target.versionName,
+                            reason = AppUpdateInstallFailureReason.INSTALLER_REJECTED,
+                        )
+                    }
+                }
+            }
+
+            var recoveryPersistenceFailed = false
+            val installResult = installer.install(
+                apkFile = target.apkFile,
+                statusSink = statusSink,
+                onSessionCreated = { sessionId ->
+                    if (operationGeneration.get() == generation) {
+                        activeInstallSessionId = sessionId
+                    } else {
+                        installer.abandon(sessionId)
+                    }
+                },
+                onBeforeCommit = { sessionId ->
+                    if (operationGeneration.get() != generation) {
+                        throw CancellationException("Update operation is stale")
+                    }
+                    try {
+                        recoveryStore.recordPendingUpdate(
+                            PendingUpdate(
+                                targetVersion = target.versionName,
+                                targetVersionCode = targetVersionCode,
+                                installerSessionId = sessionId,
+                                resumeAfterUpdate = true,
+                            ),
+                        )
+                    } catch (error: Exception) {
+                        recoveryPersistenceFailed = true
+                        throw error
+                    }
+                    if (operationGeneration.get() != generation) {
+                        runCatching {
+                            recoveryStore.clearPendingUpdateForSession(sessionId)
+                        }
+                        throw CancellationException("Update operation became stale during recovery write")
+                    }
+                },
+            )
+
+            ensureCurrentOperation(generation)
+            installResult.fold(
+                onSuccess = {
+                    autoInstallAfterDownloadRequested.set(false)
+                    if (mutableState.value is AppUpdateCheckState.PreparingInstall) {
+                        mutableState.value =
+                            AppUpdateCheckState.Installing(target.versionName)
+                    }
+                },
+                onFailure = {
+                    autoInstallAfterDownloadRequested.set(false)
+                    val failedSessionId = activeInstallSessionId
+                    activeInstallSessionId = null
+                    failedSessionId?.let { sessionId ->
+                        runCatching {
+                            recoveryStore.clearPendingUpdateForSession(sessionId)
+                        }
+                    }
+                    mutableState.value = AppUpdateCheckState.InstallFailed(
+                        versionName = target.versionName,
+                        reason = if (recoveryPersistenceFailed) {
+                            AppUpdateInstallFailureReason.RECOVERY_STATE_PERSISTENCE_FAILED
+                        } else {
+                            AppUpdateInstallFailureReason.INSTALLER_HANDOFF_FAILED
+                        },
+                    )
+                },
+            )
+        }
     }
 
     fun reset() {
-        operationGeneration.incrementAndGet()
+        synchronized(checkPresentationLock) {
+            synchronized(releaseQueryCallbackLock) {
+                operationGeneration.incrementAndGet()
+            }
+            activeCheckOrigin = null
+        }
         checkJob?.cancel()
         downloadJob?.cancel()
+        installJob?.cancel()
         checkJob = null
         downloadJob = null
+        installJob = null
+        activeInstallSessionId?.let { sessionId ->
+            packageInstaller?.abandon(sessionId)
+        }
+        activeInstallSessionId = null
+        installTarget = null
         availableCandidate = null
+        installPermissionResumeStage = null
+        autoInstallAfterDownloadRequested.set(false)
         downloadFileStore?.clearAll()
+        updateRecoveryStore?.clearAll()
         mutableState.value = AppUpdateCheckState.Idle
     }
 
     fun onSettingsEntered() {
         mutableState.value = when (val current = mutableState.value) {
-            AppUpdateCheckState.Checking,
+            is AppUpdateCheckState.Checking,
             is AppUpdateCheckState.PreparingDownload,
             is AppUpdateCheckState.Downloading,
-            is AppUpdateCheckState.Downloaded -> current
+            is AppUpdateCheckState.VerifyingDownload,
+            is AppUpdateCheckState.Downloaded,
+            is AppUpdateCheckState.DownloadFailed,
+            is AppUpdateCheckState.PreparingInstall,
+            is AppUpdateCheckState.InstallPermissionRequired,
+            is AppUpdateCheckState.Installing,
+            is AppUpdateCheckState.InstallFailed -> current
+
+            is AppUpdateCheckState.UpdateAvailable ->
+                if (current.origin == UpdateCheckOrigin.INSTALL_REFRESH) {
+                    current
+                } else {
+                    AppUpdateCheckState.Idle
+                }            
             else -> AppUpdateCheckState.Idle
         }
     }
 
     private suspend fun resolveCheckState(
         generation: Long,
+        origin: UpdateCheckOrigin,
     ): AppUpdateCheckState {
         val installedVersion = AALyricsVersionParser.parseInstalledVersion(installedVersionName)
-            ?: return checkFailed(generation)
+            ?: return checkFailed(generation, origin)
 
         val releases = releaseClient.fetchReleases().getOrElse {
-            return checkFailed(generation)
+            return checkFailed(generation, origin)
         }
+        ensureCurrentOperation(generation)
+        notifyReleaseQuerySucceeded(
+            generation = generation,
+            origin = origin,
+        )
         val candidate = AALyricsReleaseSelector.selectLatestEligible(
             installedVersion = installedVersion,
             releases = releases,
-        ) ?: return checkFailed(generation)
+        ) ?: return checkFailed(generation, origin)
 
         ensureCurrentOperation(generation)
         return if (AALyricsReleaseSelector.isUpdateAvailable(installedVersion, candidate)) {
@@ -167,10 +618,11 @@ internal class AppUpdateCheckRuntime(
             }
             AppUpdateCheckState.UpdateAvailable(
                 versionName = candidate.release.tagName.removePrefix("v"),
+                origin = origin,
             )
         } else {
             clearCandidateIfCurrent(generation)
-            AppUpdateCheckState.UpToDate
+            AppUpdateCheckState.UpToDate(origin)
         }
     }
 
@@ -270,6 +722,7 @@ internal class AppUpdateCheckRuntime(
         }
 
         ensureCurrentOperation(generation)
+        mutableState.value = AppUpdateCheckState.VerifyingDownload(versionName)
         val verified = files.partialApk.inputStream().buffered().use { input ->
             AALyricsSha256.verify(
                 expected = expectedDigest,
@@ -343,11 +796,37 @@ internal class AppUpdateCheckRuntime(
         )
     }
 
+    private fun AppUpdateCheckState.withCheckOrigin(
+        origin: UpdateCheckOrigin,
+    ): AppUpdateCheckState =
+        when (this) {
+            is AppUpdateCheckState.Checking -> copy(origin = origin)
+            is AppUpdateCheckState.UpToDate -> copy(origin = origin)
+            is AppUpdateCheckState.UpdateAvailable -> copy(origin = origin)
+            is AppUpdateCheckState.Failed -> copy(origin = origin)
+            else -> this
+        }
+
     private fun checkFailed(
         generation: Long,
+        origin: UpdateCheckOrigin,
     ): AppUpdateCheckState {
         clearCandidateIfCurrent(generation)
-        return AppUpdateCheckState.Failed
+        return AppUpdateCheckState.Failed(origin)
+    }
+
+    private fun notifyReleaseQuerySucceeded(
+        generation: Long,
+        origin: UpdateCheckOrigin,
+    ) {
+        synchronized(releaseQueryCallbackLock) {
+            if (operationGeneration.get() != generation) {
+                throw CancellationException("Update operation is stale")
+            }
+            runCatching {
+                onReleaseQuerySucceeded(origin)
+            }
+        }
     }
 
     private fun clearCandidateIfCurrent(generation: Long) {
@@ -385,6 +864,11 @@ internal class AppUpdateCheckRuntime(
             versionName = candidate.release.tagName.removePrefix("v"),
         )
 
+    private data class InstallTarget(
+        val versionName: String,
+        val apkFile: File,
+    )
+
     private companion object {
         val VERIFIED_APK_NAME = Regex("^AALyrics-(v.+)\\.apk$")
 
@@ -392,3 +876,40 @@ internal class AppUpdateCheckRuntime(
         const val MAX_APK_BYTES = 512L * 1024L * 1024L
     }
 }
+
+
+private fun InstallReleaseRefreshRejection.toInstallFailureReason(): AppUpdateInstallFailureReason =
+    when (this) {
+        InstallReleaseRefreshRejection.INSTALLED_VERSION_INVALID ->
+            AppUpdateInstallFailureReason.INSTALLED_VERSION_INVALID
+        InstallReleaseRefreshRejection.RETAINED_VERSION_INVALID ->
+            AppUpdateInstallFailureReason.RETAINED_VERSION_INVALID
+        InstallReleaseRefreshRejection.RETAINED_RELEASE_NOT_ELIGIBLE ->
+            AppUpdateInstallFailureReason.RETAINED_RELEASE_NOT_ELIGIBLE
+        InstallReleaseRefreshRejection.RETAINED_RELEASE_NOT_NEWER ->
+            AppUpdateInstallFailureReason.RETAINED_RELEASE_NOT_NEWER
+        InstallReleaseRefreshRejection.NO_ELIGIBLE_RELEASE ->
+            AppUpdateInstallFailureReason.NO_ELIGIBLE_RELEASE
+        InstallReleaseRefreshRejection.RETAINED_RELEASE_NO_LONGER_CURRENT ->
+            AppUpdateInstallFailureReason.RETAINED_RELEASE_NO_LONGER_CURRENT
+    }
+
+private fun UpdateApkPreflightRejection.toInstallFailureReason(): AppUpdateInstallFailureReason =
+    when (this) {
+        UpdateApkPreflightRejection.FILE_MISSING ->
+            AppUpdateInstallFailureReason.APK_FILE_MISSING
+        UpdateApkPreflightRejection.NOT_CANONICAL_RETAINED_ARTIFACT ->
+            AppUpdateInstallFailureReason.APK_NOT_CANONICAL
+        UpdateApkPreflightRejection.ARCHIVE_UNREADABLE ->
+            AppUpdateInstallFailureReason.APK_UNREADABLE
+        UpdateApkPreflightRejection.PACKAGE_MISMATCH ->
+            AppUpdateInstallFailureReason.PACKAGE_MISMATCH
+        UpdateApkPreflightRejection.VERSION_NOT_NEWER ->
+            AppUpdateInstallFailureReason.VERSION_NOT_NEWER
+        UpdateApkPreflightRejection.VERSION_NAME_MISMATCH ->
+            AppUpdateInstallFailureReason.VERSION_NAME_MISMATCH
+        UpdateApkPreflightRejection.SIGNING_IDENTITY_UNAVAILABLE ->
+            AppUpdateInstallFailureReason.SIGNING_IDENTITY_UNAVAILABLE
+        UpdateApkPreflightRejection.SIGNING_IDENTITY_MISMATCH ->
+            AppUpdateInstallFailureReason.SIGNING_IDENTITY_MISMATCH
+    }

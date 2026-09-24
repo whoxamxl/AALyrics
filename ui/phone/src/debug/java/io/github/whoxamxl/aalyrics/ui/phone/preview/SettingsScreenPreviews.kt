@@ -30,6 +30,12 @@ private fun SettingsScreenTypicalPreview() {
     SettingsScreenPreview(PhonePreviewFixtures.settingsTypical)
 }
 
+@Preview(name = "Automatic updates off", group = "SettingsScreen", widthDp = 412, heightDp = 900)
+@Composable
+private fun SettingsAutomaticUpdatesOffPreview() {
+    SettingsScreenPreview(PhonePreviewFixtures.settingsAutomaticUpdateOff)
+}
+
 @Preview(name = "Non-audio filter off", group = "SettingsScreen", widthDp = 412, heightDp = 760)
 @Composable
 private fun SettingsScreenNonAudioFilterOffPreview() {
@@ -71,12 +77,6 @@ private fun SettingsUpdateIdlePreview() {
     SettingsScreenPreview(PhonePreviewFixtures.settingsIdleUpdate)
 }
 
-@Preview(name = "Update · unavailable", group = "SettingsScreen", widthDp = 412, heightDp = 900)
-@Composable
-private fun SettingsUpdateUnavailablePreview() {
-    SettingsScreenPreview(PhonePreviewFixtures.settingsUnavailableUpdate)
-}
-
 @Preview(name = "Update · checking", group = "SettingsScreen", widthDp = 412, heightDp = 900)
 @Composable
 private fun SettingsUpdateCheckingPreview() {
@@ -89,42 +89,11 @@ private fun SettingsUpdateUpToDatePreview() {
     SettingsScreenPreview(PhonePreviewFixtures.settingsUpToDate)
 }
 
-@Preview(name = "Update · available", group = "SettingsScreen", widthDp = 412, heightDp = 900)
-@Composable
-private fun SettingsUpdateAvailablePreview() {
-    SettingsScreenPreview(PhonePreviewFixtures.settingsUpdateAvailable)
-}
-
 @Preview(name = "Update · failed", group = "SettingsScreen", widthDp = 412, heightDp = 900)
 @Composable
 private fun SettingsUpdateFailedPreview() {
     SettingsScreenPreview(PhonePreviewFixtures.settingsUpdateFailed)
 }
-
-@Preview(name = "Update · preparing download", group = "SettingsScreen", widthDp = 412, heightDp = 900)
-@Composable
-private fun SettingsUpdatePreparingDownloadPreview() {
-    SettingsScreenPreview(PhonePreviewFixtures.settingsPreparingUpdateDownload)
-}
-
-@Preview(name = "Update · downloading", group = "SettingsScreen", widthDp = 412, heightDp = 900)
-@Composable
-private fun SettingsUpdateDownloadingPreview() {
-    SettingsScreenPreview(PhonePreviewFixtures.settingsDownloadingUpdate)
-}
-
-@Preview(name = "Update · downloaded", group = "SettingsScreen", widthDp = 412, heightDp = 900)
-@Composable
-private fun SettingsUpdateDownloadedPreview() {
-    SettingsScreenPreview(PhonePreviewFixtures.settingsDownloadedUpdate)
-}
-
-@Preview(name = "Update · download failed", group = "SettingsScreen", widthDp = 412, heightDp = 900)
-@Composable
-private fun SettingsUpdateDownloadFailedPreview() {
-    SettingsScreenPreview(PhonePreviewFixtures.settingsDownloadFailed)
-}
-
 
 @Preview(name = "Narrow · 320dp", group = "SettingsScreen", widthDp = 320, heightDp = 700)
 @Composable
@@ -168,6 +137,9 @@ internal fun SettingsScreenPreview(
                 },
                 onAllowUnclassifiedAppsChanged = {
                     state = state.copy(allowUnclassifiedApps = it)
+                },
+                onAutomaticallyCheckForUpdatesChanged = {
+                    state = state.copy(automaticallyCheckForUpdates = it)
                 },
                 onVerboseDetailsChanged = {
                     state = state.copy(verboseDetailsEnabled = it)
@@ -217,6 +189,7 @@ internal fun SettingsScreenPreview(
                         plainLyricsAutoScrollEnabled = true,
                         ignoreNonAudioApps = true,
                         allowUnclassifiedApps = false,
+                        automaticallyCheckForUpdates = true,
                         verboseDetailsEnabled = false,
                         translationEnabled = false,
                         translationTarget = english,
@@ -234,43 +207,7 @@ internal fun SettingsScreenPreview(
                         delay(1200)
                         state = state.copy(
                             appUpdate = AppUpdateUiState(
-                                phase = AppUpdateUiPhase.UPDATE_AVAILABLE,
-                                availableVersionName = "0.1.2",
-                            ),
-                        )
-                    }
-                },
-                onDownloadUpdate = {
-                    val version = state.appUpdate.availableVersionName ?: "0.1.2"
-                    state = state.copy(
-                        appUpdate = AppUpdateUiState(
-                            phase = AppUpdateUiPhase.PREPARING_DOWNLOAD,
-                            availableVersionName = version,
-                        ),
-                    )
-                    scope.launch {
-                        delay(500)
-                        state = state.copy(
-                            appUpdate = AppUpdateUiState(
-                                phase = AppUpdateUiPhase.DOWNLOADING,
-                                availableVersionName = version,
-                                downloadProgress = 0f,
-                            ),
-                        )
-                        listOf(0.18f, 0.43f, 0.71f, 1f).forEach { progress ->
-                            delay(300)
-                            state = state.copy(
-                                appUpdate = AppUpdateUiState(
-                                    phase = AppUpdateUiPhase.DOWNLOADING,
-                                    availableVersionName = version,
-                                    downloadProgress = progress,
-                                ),
-                            )
-                        }
-                        state = state.copy(
-                            appUpdate = AppUpdateUiState(
-                                phase = AppUpdateUiPhase.DOWNLOADED,
-                                availableVersionName = version,
+                                phase = AppUpdateUiPhase.UP_TO_DATE,
                             ),
                         )
                     }
@@ -311,6 +248,9 @@ private fun SettingsScreenContentPreview(
                 onIgnoreNonAudioAppsChanged = {
                     state = state.copy(ignoreNonAudioApps = it)
                 },
+                onAutomaticallyCheckForUpdatesChanged = {
+                    state = state.copy(automaticallyCheckForUpdates = it)
+                },
                 onTranslationEnabledChanged = {
                     state = state.copy(translationEnabled = it)
                 },
@@ -326,7 +266,6 @@ private fun SettingsScreenContentPreview(
                 },
                 onAndroidAutoCompatibilitySetup = {},
                 onCheckForUpdates = {},
-                onDownloadUpdate = {},
                 onChangelogRequested = {},
                 onPrivacyPolicyRequested = {},
                 onTermsOfUseRequested = {},

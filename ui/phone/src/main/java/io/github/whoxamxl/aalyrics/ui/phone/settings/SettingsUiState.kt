@@ -29,23 +29,15 @@ data class SettingsLanguageOptionUiState(
 
 /** Presentation lifecycle for checking/downloading an AALyrics GitHub Release update. */
 enum class AppUpdateUiPhase {
-    UNAVAILABLE,
     IDLE,
     CHECKING,
     UP_TO_DATE,
-    UPDATE_AVAILABLE,
     CHECK_FAILED,
-    PREPARING_DOWNLOAD,
-    DOWNLOADING,
-    DOWNLOADED,
-    DOWNLOAD_FAILED,
 }
 
 @Immutable
 data class AppUpdateUiState(
     val phase: AppUpdateUiPhase = AppUpdateUiPhase.IDLE,
-    val availableVersionName: String? = null,
-    val downloadProgress: Float? = null,
     val failureReason: String? = null,
 )
 
@@ -62,6 +54,7 @@ data class SettingsScreenUiState(
     val plainLyricsAutoScrollEnabled: Boolean = true,
     val ignoreNonAudioApps: Boolean = true,
     val allowUnclassifiedApps: Boolean = false,
+    val automaticallyCheckForUpdates: Boolean = true,
     val verboseDetailsEnabled: Boolean = false,
     val translationEnabled: Boolean = false,
     val translationTarget: SettingsLanguageOptionUiState,

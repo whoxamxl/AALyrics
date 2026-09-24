@@ -236,44 +236,50 @@ The checksum verifies file integrity. Android's package signature separately pro
 
 The Phone Settings surface exposes one combined version/update row. GitHub Releases is the authoritative source for update discovery, while the Phone Compose layer remains presentation-only.
 
-### Check for updates
+### Manual and automatic update discovery
 
-Update discovery remains explicitly user-triggered. An update check begins only when the user presses `Check for updates` or `Retry`. AALyrics must not contact GitHub merely because the app launched, resumed, or Settings was opened.
+Manual discovery remains explicitly available through `Check for updates` and `Retry` regardless of the automatic-update preference or cadence.
 
-The application-owned release client reads the repository's public Release collection. It must not rely on GitHub's single "latest release" concept because AALyrics prerelease channels (alpha/beta/RC) are valid update candidates.
-
-Only releases whose tags match the AALyrics version grammar participate:
+For discovery, Settings owns only the MANUAL presentation:
 
 ```text
-vMAJOR.MINOR.PATCH
-vMAJOR.MINOR.PATCH-alpha.N
-vMAJOR.MINOR.PATCH-beta.N
-vMAJOR.MINOR.PATCH-rc.N
+Idle / Check for updates
+Checking…
+Up to date
+Check failed / Retry
 ```
 
-Draft releases and unrelated/malformed tags are ignored. Candidate ordering is determined from the parsed version, not publication time alone.
+A manual query that finds a newer eligible release does not expose a Settings-row Download action. It immediately hands the result to the shared release-available dialog.
 
-Eligibility follows the installed channel:
+AALyrics also supports low-frequency automatic discovery. `Automatically check for updates` is an app-owned durable preference that defaults to ON. After normal Phone entry gates reach `READY`, the application may start an automatic release query only when the preference is enabled and the durable cadence is due. The cadence is **7 full days** from the last recorded check; no timestamp means the first automatic check is eligible immediately.
 
-- stable installed builds consider stable releases only;
-- alpha/beta/RC installed builds consider prerelease and stable releases;
-- development builds use their embedded base release version and channel.
+Starting an automatic check records the cadence timestamp before the network request so repeated app restarts do not hammer GitHub after a transient failure. A successful MANUAL query refreshes the same timestamp. AUTOMATIC completion does not shift its already-recorded start timestamp, and INSTALL_REFRESH does not alter discovery cadence.
 
-Development metadata such as `0.2.0-alpha.1-dev+abcdef0` or `.dirty` identifies the source build but does not make the same base release appear newer. For update comparison, that example compares as `0.2.0-alpha.1`.
+Automatic non-update outcomes are intentionally silent in Phone UI. Automatic Checking, Up to date, and Failed do not appear in Settings.
 
-Within one numeric `MAJOR.MINOR.PATCH`, precedence is:
+Release-query results still carry an internal origin: `MANUAL`, `AUTOMATIC`, or `INSTALL_REFRESH`. Origin controls cadence and notification-suppression policy; it does not choose a second update flow.
+
+Both user-visible newer-release results converge:
 
 ```text
-alpha.N < beta.N < rc.N < stable
+MANUAL UpdateAvailable ───────┐
+                              ├─> Shared release-available dialog
+AUTOMATIC UpdateAvailable ────┘
 ```
 
-The installed version shown in Settings comes from `BuildConfig.VERSION_NAME`; no duplicate UI version constant is allowed. A successful check with no newer eligible release maps to `UP_TO_DATE`; a newer eligible release maps to `UPDATE_AVAILABLE`. Network/protocol failure, an unparseable installed version, or inability to establish any comparable AALyrics release maps to `CHECK_FAILED`.
+The available-state dialog presents the discovered release with `Update`, `Not now`, close, and system-Back handling. Outside-tap dismissal is disabled.
 
-The public client must not embed a GitHub token or repository secret in the APK.
+Automatic same-session suppression remains scoped to automatic notification. Dismissing an automatically discovered release suppresses that exact automatic prompt for the current process session. An explicit later manual `Check for updates` may present that same still-current release because the user deliberately requested discovery.
+
+Turning the automatic preference OFF suppresses automatic dialog presentation even when an already-started automatic query completes afterward. Manual discovery remains available.
+
+If the user invokes MANUAL discovery while an AUTOMATIC release query is already in flight, AALyrics promotes that existing query to MANUAL presentation semantics instead of dropping the user action or starting a duplicate request. The current query immediately becomes visible as manual Checking, and its eventual Up to date / Check failed / UpdateAvailable result is presented as MANUAL.
+
+Durable `AALyrics updated` feedback has modal priority, and an unconsumed success marker prevents automatic checking on that Phone entry.
 
 ### Verified in-app download
 
-When a newer eligible release is available, Settings exposes an explicit `Download` action. AALyrics resolves exactly one matching APK and checksum asset:
+When the user chooses `Update` from the shared release-available dialog, AALyrics resolves exactly one matching APK and checksum asset:
 
 ```text
 AALyrics-vX.Y.Z[-suffix].apk
@@ -282,27 +288,134 @@ AALyrics-vX.Y.Z[-suffix].apk.sha256
 
 The download runtime is application-owned. It accepts only HTTPS asset URLs, follows only HTTPS redirects, bounds downloaded content, stages the APK under the app-private cache, parses the Release workflow's single-line `sha256sum` output for the exact APK filename, and calculates SHA-256 over the downloaded APK before accepting it.
 
-The Phone presentation distinguishes preparation from transfer. `PREPARING_DOWNLOAD` covers asset resolution, checksum retrieval/parsing, and staging-file preparation and uses an indeterminate linear progress bar. The runtime enters `DOWNLOADING` immediately before the APK body transfer starts. GitHub Release asset `size` is the expected total byte count, while the download boundary reports bytes received; Settings therefore renders determinate 0–100% progress. The completed transfer byte count must equal the Release-published asset size before checksum verification continues.
+The download runtime already distinguishes preparation from transfer. `PREPARING_DOWNLOAD` covers asset resolution, checksum retrieval/parsing, and staging-file preparation, and `DOWNLOADING` begins immediately before the APK body transfer starts. GitHub Release asset `size` is the expected total byte count, while the download boundary reports bytes received; the completed transfer byte count must equal the Release-published asset size before checksum verification continues.
 
-The APK is written first as an operation-owned partial artifact under app-private cache storage. Each reset generation uses a distinct staging filename, so a stale transport can only delete its own destination. Only after the published digest matches is it promoted into app-private no-backup persistent storage. Promotion uses an operation-owned temporary persistent `.promoting` file. Canonical verified-APK commit and Reset cleanup are serialized by the same file-store mutation lock, and commit revalidates operation ownership inside that critical section. Therefore Reset either runs after a completed commit and removes it, or invalidates ownership before commit so the canonical APK is never published. Missing/duplicate assets, malformed checksum content, transport/I/O failure, oversize content, or digest mismatch map to `DOWNLOAD_FAILED`; a failed or partial APK must not remain as a verified artifact.
+In the #75 baseline, these post-Update progress states were presented by the Settings Version/update section after the release-available dialog handed off to the validated download route. The current **#77** checkpoint has moved `PREPARING_DOWNLOAD`, `DOWNLOADING`, and `VerifyingDownload` presentation ownership into the Unified Update Dialog without changing the download boundary or byte accounting. Verification now has dedicated download-integrity copy and indeterminate progress while SHA-256 work runs; package/version/signing checks remain part of the later install preflight boundary.
+
+The APK is written first as an operation-owned partial artifact under app-private cache storage. Each reset generation uses a distinct staging filename, so a stale transport can only delete its own destination. Only after the published digest matches is it promoted into app-private no-backup persistent storage. Promotion uses an operation-owned temporary persistent `.promoting` file. Canonical verified-APK commit and Reset cleanup are serialized by the same file-store mutation lock, and commit revalidates operation ownership inside that critical section. Therefore Reset either runs after a completed commit and removes it, or invalidates ownership before commit so the canonical APK is never published. Missing/duplicate assets, malformed checksum content, transport/I/O failure, oversize content, or digest mismatch map to `DOWNLOAD_FAILED`; a failed or partial APK must not remain as a verified artifact. In #77, that state is presented by the Unified Update Dialog with an explicit Retry action that reuses `downloadUpdate()` and the retained release candidate; Settings no longer owns this failure/retry presentation.
 
 Active downloads survive destination changes and Activity recreation because the runtime is application-owned. A verified `DOWNLOADED` artifact survives process restart: runtime initialization removes transient `.part` / `.promoting` artifacts, then restores `DOWNLOADED` when exactly one canonical verified APK exists, remains eligible for the installed update channel, and is still newer than the installed app. Stable installed builds never restore a retained prerelease APK. If the installed version has caught up, the retained release is no longer channel-eligible, or the APK is malformed/invalid for restoration, the persistent update artifact is removed and update state returns to `IDLE`.
 
 `Reset AALyrics` cancels update work and clears both staging and verified update artifacts.
 
-### Deferred installation
+### In-app installation handoff
 
-`DOWNLOADED` means that the signed-release APK bytes match the Release-published SHA-256. It does **not** install or launch the APK in this slice.
+`DOWNLOADED` means that the retained signed-release APK bytes match the Release-published SHA-256. It is a permanent internal safety/recovery boundary and must not be removed by later UX simplification.
 
-Package Installer handoff, install-permission handling, and installed/signing-identity validation remain separate follow-up concerns. The future explicit Install action must refresh eligible GitHub Releases before handing the retained APK to Package Installer. If a newer eligible release exists than the retained verified APK, AALyrics must offer/download that newer release instead of intentionally installing the stale retained APK first; this avoids a needless two-step update.
+In the validated **#77 checkpoint**, `DOWNLOADED` is an explicit user-visible `Ready to install` checkpoint in the Unified Update Dialog and the explicit Install action invokes the existing `installUpdate()` operation. The final #77 implementation keeps that state as a direct/restart recovery fallback, while a normal user-accepted AALyrics update now auto-dispatches the same existing `installUpdate()` after its app-managed download reaches `DOWNLOADED`:
 
-The Settings `Changelog` entry is independent of the update-network path. It renders the repository `CHANGELOG.md` bundled into the installed APK; it does not fetch GitHub Release notes at runtime. GitHub Releases remain authoritative for signed update distribution, while `CHANGELOG.md` is authoritative for the in-app release history.
+```text
+Update
+  -> install-source trust check
+     -> permission UI / Android Settings only if required
+  -> Download / Verify
+  -> DOWNLOADED
+     -> normal accepted-update flow: existing installUpdate() automatically
+     -> direct/restart recovery: Ready to install -> Install
+  -> install refresh / package-version-signing preflight
+  -> source-trust re-check
+  -> PackageInstaller
+```
+
+Before final #77 E2E, the update contract is corrected so install-source trust is normally resolved **before APK download**. Missing trust enters the Unified Update Dialog permission presentation first; Android Settings still owns the trust decision, and download begins only after return confirms trust. The install path performs a second trust check before PackageInstaller handoff as a fail-safe. PackageInstaller continues to own final installation confirmation.
+
+All app-owned Unified Update Dialog process phases are dismissible through the shared close affordance/System Back while outside-tap dismissal remains disabled. Dismissal hides presentation only and does not cancel active work or clear authoritative release/artifact/recovery state. A newer release found by install refresh returns the same process dialog to `Newer update available` with an explicit Download action wired to the existing `downloadUpdate()`; it has no discovery-only `Not now`, but its presentation can still be dismissed without discarding the retarget candidate.
+
+Before installation continues from the verified artifact, AALyrics must refresh eligible GitHub Releases using the same release grammar and installed-channel rules used by ordinary update discovery. If the retained verified release is still the latest eligible release, installation preparation may continue. If a newer eligible release has appeared, AALyrics must not intentionally install the older retained APK first.
+
+In **#75**, that `INSTALL_REFRESH` result is surfaced through the existing Settings-owned process route as `Newer update available` with Download. The replacement candidate remains available for `downloadUpdate()`, and Settings re-entry must preserve the retarget state rather than collapsing it to Idle. This is not a MANUAL/AUTOMATIC discovery result and does not open the shared discovery prompt.
+
+In **#77**, that retarget returns the Unified Update Dialog to its process-owned available state for the newer release. Install refresh is an install-process boundary, not background discovery, so the dialog offers Download without `Not now` and the refresh does not alter automatic-discovery cadence. The shared close/System Back action only hides the process presentation; it does not convert retargeting into discovery dismissal or discard the newer candidate.
+
+The corrected #77 two-stage route remains the validated on-device checkpoint. The final #77 change reuses the same `downloadUpdate()` -> `DOWNLOADED` -> `installUpdate()` boundaries and adds only a process-local continuation marker around the normal accepted-update path.
+
+The final #77 continuation contract is:
+
+- accepting the normal AALyrics Update flow arms process-local automatic continuation;
+- after that download job completes successfully at verified `DOWNLOADED`, the runtime calls the existing `installUpdate()`;
+- direct `downloadUpdate()` without an armed continuation remains independently testable and stops at `DOWNLOADED`;
+- Download failure keeps the same-process continuation intent so explicit Retry can continue into install after a successful verified retry;
+- install-refresh discovery of a newer candidate never installs the stale retained APK; if the install attempt carried continuation intent, the replacement Download keeps that intent and returns to install after verification;
+- install failure/handoff completion clears automatic continuation; an explicit later Install/Retry begins a fresh install attempt;
+- continuation is not persisted across process death. Restored retained APKs return to `DOWNLOADED / Ready to install` and require explicit Install;
+- Reset AALyrics clears continuation;
+- Android source trust and final PackageInstaller confirmation remain explicit/system-owned;
+- external `Download from GitHub` remains navigation only and does not trigger or imply an AALyrics-managed install.
+
+The independent download/install stages, retained-artifact recovery, and `DOWNLOADED` state remain testable and authoritative even though the normal accepted-update path is now one-step.
+
+Before any PackageInstaller session is created, application-owned preflight validates the retained APK as an update of the installed AALyrics package. The retained file must still be the canonical verified artifact, archive metadata must be readable, the package name must match `io.github.whoxamxl.aalyrics`, the archive version must be newer than the installed Android package version, and its signing identity must be update-compatible with the installed AALyrics package. SHA-256 verification proves Release-asset integrity; package/version/signing validation separately proves that Android package handoff is appropriate.
+
+AALyrics targets Android 8.0+ and declares `android.permission.REQUEST_INSTALL_PACKAGES` for this feature. In the corrected #77 flow, it checks `PackageManager.canRequestPackageInstalls()` immediately after the user accepts Update and before APK download. If Android does not currently trust AALyrics as an install source, the runtime enters permission-required state before transfer begins. The same platform state is checked again immediately before installer handoff as a fail-safe.
+
+In **#75**, the inherited #74 presentation remains: Settings can show the permission-required process state, while `UpdateInstallPermissionPromptRuntime` owns the transient large permission explanation dialog. Dismissing that dialog preserves the verified APK and authoritative permission-required runtime state, and an explicit later Install retry can request the explanation again.
+
+In the corrected #77 permission UI, `Download from GitHub` means only "open the external manual-download destination." That external handoff is treated like dismissing AALyrics' permission presentation. AALyrics does not infer that a manual download occurred and does not clear or advance the authoritative process. The user may return and use Settings `Check for updates` to re-enter the current process.
+
+In **#77**, that permission explanation moves into the Unified Update Dialog and the parallel Settings process presentation is removed. Only the explicit `Grant permission` action opens the platform's per-app unknown-source settings. On return, AALyrics re-checks platform state rather than assuming permission was granted. For the normal pre-download gate, refusal preserves the selected release without transferring the APK and granted trust resumes Download. If the install-time fail-safe gate is reached later, refusal preserves the retained verified APK/install target and granted trust resumes Install. The secondary `Download from GitHub` action remains an external-release fallback and does not bypass Android confirmation. This platform-owned trust choice is not cleared by Reset AALyrics. Android's PackageManager exposes this trust check from API 26 onward, while the legacy `Intent.ACTION_INSTALL_PACKAGE` entry point is deprecated from API 29 in favor of `PackageInstaller`.
+
+Installation uses `android.content.pm.PackageInstaller.Session`, not the deprecated ACTION_INSTALL_PACKAGE flow. The application-owned boundary creates a full-install session, streams the retained APK into the session, syncs/closes the write, and commits with an `IntentSender` status callback. A `STATUS_PENDING_USER_ACTION` result hands the system-provided confirmation intent to the user; AALyrics does not bypass or synthesize Android's final install confirmation.
+
+PackageInstaller session recovery is process-safe. On application-process startup, AALyrics inspects the install sessions still owned by its installer package and best-effort abandons unsealed sessions left behind before `commit()`. Sealed sessions are preserved because sealing occurs when `commit()` is called. If `STATUS_PENDING_USER_ACTION` arrives after the original process died and the in-memory callback registry is therefore empty, the receiver revalidates the Android session itself and resumes the system confirmation only when that session is sealed, owned by AALyrics, and targets the AALyrics package.
+
+Immediately before `PackageInstaller.Session.commit()`, after the APK has been written and fsynced into the session, AALyrics synchronously persists `PendingUpdate(targetVersion, targetVersionCode, installerSessionId, resumeAfterUpdate=true)`. The target versionCode comes from the APK metadata that already passed package/version/signing preflight. If this durable write fails, the installer commit is not performed.
+
+Installer cancellation or terminal install failure preserves an otherwise-valid verified APK so the user can retry without downloading it again. The pending marker is bound to the exact PackageInstaller session: terminal failure clears it only when that session ID matches, including after process loss when the in-memory status sink no longer exists. Startup recovery also clears the matching marker after it successfully abandons an owned unsealed session left behind before commit. PackageInstaller success alone does not clear the marker because successful package replacement may terminate the old process before an in-process terminal state can become authoritative.
+
+After Android replaces AALyrics, a non-exported `ACTION_MY_PACKAGE_REPLACED` receiver reconciles the pending target against the version running in the new binary. An exact target versionCode/versionName match succeeds, and any strictly newer installed versionCode also satisfies the pending target. Successful reconciliation atomically promotes the pending marker to durable `SuccessfulUpdate(installedVersion, installedVersionCode, resumeAfterUpdate)` state.
+
+The durable success marker drives one-time Phone feedback on the next valid READY entry. Dismissing that feedback clears the marker first; if the clear fails, the feedback remains eligible. When `resumeAfterUpdate=true`, the replacement receiver also makes one separate best-effort request to open `MainActivity`. That request is not evidence of update success, may be suppressed by Android background-launch policy, does not alter the Phone destination model, and never clears the durable success marker.
+
+Next-launch installed-version reconciliation remains authoritative for stale retained-APK cleanup: once the installed package version reaches or passes the retained release, the old verified APK is removed and update state returns to `IDLE`.
+
+Reset AALyrics invalidates app-owned install preparation, abandons any installer session still under AALyrics control when practical, clears transient and verified update artifacts, and clears both pending and successful app-owned update recovery markers. The commit boundary is race-hardened: if Reset invalidates the operation while the synchronous pending-marker write is in flight, the installer path re-checks generation immediately after that write, clears only the matching session marker, and aborts before `Session.commit()`. Reset does not revoke Android's per-source install trust and does not undo an already installed package.
+
+The Settings `Changelog` entry remains independent of the update-network path. It renders the repository `CHANGELOG.md` bundled into the installed APK; it does not fetch GitHub Release notes at runtime. GitHub Releases remain authoritative for signed update distribution, while `CHANGELOG.md` is authoritative for the in-app release history.
 
 ## Installation and updates
 
 Debug and release APKs use different signing identities. If a debug AALyrics build is installed, uninstall it before installing the first release-signed APK.
 
 After the first release-signed installation, later APKs signed with the same release key and a higher `versionCode` can update it normally.
+
+### Update-install validation fixture
+
+The manual `Build` workflow keeps the ordinary debug-signed `update_test_version` fixture for update-discovery/download testing. For a real self-update installation test, enable `update_test_release_signed` and provide both an older `update_test_version` and a positive `update_test_version_code` lower than the published target release's Android version code.
+
+That opt-in path restores the durable release keystore only inside the Actions runner, builds an older-version release APK with the same signing identity as published AALyrics releases, and uploads it only as a short-retention Actions artifact. It is never published as a GitHub Release. The keystore is removed from the runner after the fixture path and is never included in an artifact or log.
+
+The **#77 two-stage device validation target** is:
+
+```text
+install older same-release-signed fixture
+    -> Check for updates
+    -> shared release-available dialog
+    -> Update
+    -> Unified Update Dialog
+    -> source-trust gate / permission if required
+    -> Download / verify current published release
+    -> DOWNLOADED / Ready to install
+    -> Install
+    -> install refresh / preflight
+    -> source-trust re-check if required
+    -> Android PackageInstaller confirmation
+    -> current published AALyrics replaces the fixture
+    -> durable Update successful reconciliation
+```
+
+This validation is now the recorded pre-auto-install checkpoint. Automatic continuation from verified `DOWNLOADED` into the existing install stage is the final narrow #77 behavior slice.
+
+The debug-signed fixture remains unsuitable for proving successful replacement because Android update compatibility requires the same signing identity.
+
+#### Validated Package Installer baseline
+
+The same-release-signing fixture path has now been exercised on a real device. The validated baseline covers explicit update discovery/download, SHA-256 verification, Android per-source install trust, Android-owned confirmation, cancellation/retry without requiring a second download of an otherwise-valid retained APK, and successful replacement of the older release-signed fixture by the newer published release.
+
+This validation establishes the current split `Download -> Install` flow as a functional checkpoint. A later Phone UX slice may compose those two user-visible actions into a single `Update` action, but the underlying download, verification, retained-artifact, install-time Release refresh, package/version/signing preflight, source-trust, and PackageInstaller boundaries remain required.
+
+The published target used for this device pass predates the current update/installer runtime. It therefore proves Android's same-signing replacement path but cannot fully prove the new binary's next-launch retained-APK cleanup end to end. That cleanup remains part of the runtime/test contract until a release containing the current update runtime can be used as the update target.
+
+The approved follow-up UX contract is documented in `docs/UPDATE_UX.md`.
 
 AALyrics is intentionally distributed outside Google Play. For Android Auto, non-Play media apps still require Android Auto developer mode and **Developer settings → Unknown sources** on the test/user device. APK signing does not remove that Android Auto trust-source requirement.
 

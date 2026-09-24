@@ -14,21 +14,24 @@ class PhonePresentationSettingsPersistenceTest {
                 verboseDetailsEnabled = false,
                 ignoreNonAudioApps = true,
                 allowUnclassifiedApps = false,
+                automaticallyCheckForUpdates = true,
             ),
             persistence.read(),
         )
     }
 
     @Test
-    fun `playback source preferences persist independently`() {
+    fun `presentation preferences persist independently`() {
         val stored = mutableMapOf<String, Boolean>()
         val persistence = persistence(stored)
 
         persistence.setIgnoreNonAudioApps(false)
         persistence.setAllowUnclassifiedApps(true)
+        persistence.setAutomaticallyCheckForUpdates(false)
 
         assertEquals(false, persistence.read().ignoreNonAudioApps)
         assertEquals(true, persistence.read().allowUnclassifiedApps)
+        assertEquals(false, persistence.read().automaticallyCheckForUpdates)
     }
 
     @Test
@@ -39,6 +42,7 @@ class PhonePresentationSettingsPersistenceTest {
         persistence.setVerboseDetailsEnabled(true)
         persistence.setIgnoreNonAudioApps(false)
         persistence.setAllowUnclassifiedApps(true)
+        persistence.setAutomaticallyCheckForUpdates(false)
         persistence.resetToDefaults()
 
         assertEquals(
@@ -46,6 +50,7 @@ class PhonePresentationSettingsPersistenceTest {
                 verboseDetailsEnabled = false,
                 ignoreNonAudioApps = true,
                 allowUnclassifiedApps = false,
+                automaticallyCheckForUpdates = true,
             ),
             persistence.read(),
         )

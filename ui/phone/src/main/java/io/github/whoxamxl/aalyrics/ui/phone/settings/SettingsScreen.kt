@@ -32,6 +32,7 @@ fun SettingsScreen(
     onPlainLyricsAutoScrollChanged: (Boolean) -> Unit,
     onIgnoreNonAudioAppsChanged: (Boolean) -> Unit,
     onAllowUnclassifiedAppsChanged: (Boolean) -> Unit,
+    onAutomaticallyCheckForUpdatesChanged: (Boolean) -> Unit = {},
     onVerboseDetailsChanged: (Boolean) -> Unit,
     onTranslationEnabledChanged: (Boolean) -> Unit,
     onTranslationTargetSelected: (String) -> Unit,
@@ -41,7 +42,6 @@ fun SettingsScreen(
     onResetAALyrics: () -> Unit,
     onAndroidAutoCompatibilitySetup: () -> Unit,
     onCheckForUpdates: () -> Unit,
-    onDownloadUpdate: () -> Unit,
     onOpenGitHub: () -> Unit,
     onHelpFeedback: (HelpFeedbackDestination) -> Unit,
     onSupportAALyrics: () -> Unit,
@@ -134,12 +134,13 @@ fun SettingsScreen(
             },
             onPlainLyricsAutoScrollChanged = onPlainLyricsAutoScrollChanged,
             onIgnoreNonAudioAppsChanged = onIgnoreNonAudioAppsChanged,
+            onAutomaticallyCheckForUpdatesChanged =
+                onAutomaticallyCheckForUpdatesChanged,
             onTranslationEnabledChanged = onTranslationEnabledChanged,
             onTranslationTargetSelected = onTranslationTargetSelected,
             onTranslationModelDownloadRequested = onTranslationModelDownloadRequested,
             onAndroidAutoCompatibilitySetup = onAndroidAutoCompatibilitySetup,
             onCheckForUpdates = onCheckForUpdates,
-            onDownloadUpdate = onDownloadUpdate,
             onChangelogRequested = { activeSubscreen = SettingsSubscreen.CHANGELOG },
             onPrivacyPolicyRequested = {
                 activeSubscreen = SettingsSubscreen.PRIVACY_POLICY
@@ -160,6 +161,7 @@ fun SettingsScreen(
             bottomOverlayInset = bottomOverlayInset,
         )
     }
+
 }
 
 @Composable
@@ -170,12 +172,12 @@ internal fun SettingsScreenContent(
     onTargetLanguagePickerVisibilityChanged: (Boolean) -> Unit,
     onPlainLyricsAutoScrollChanged: (Boolean) -> Unit,
     onIgnoreNonAudioAppsChanged: (Boolean) -> Unit,
+    onAutomaticallyCheckForUpdatesChanged: (Boolean) -> Unit,
     onTranslationEnabledChanged: (Boolean) -> Unit,
     onTranslationTargetSelected: (String) -> Unit,
     onTranslationModelDownloadRequested: (String) -> Unit,
     onAndroidAutoCompatibilitySetup: () -> Unit,
     onCheckForUpdates: () -> Unit,
-    onDownloadUpdate: () -> Unit,
     onChangelogRequested: () -> Unit,
     onPrivacyPolicyRequested: () -> Unit,
     onTermsOfUseRequested: () -> Unit,
@@ -274,6 +276,22 @@ internal fun SettingsScreenContent(
         SettingsSection(
             title = stringResource(R.string.settings_section_app),
         ) {
+            SettingsSwitchRow(
+                title = stringResource(
+                    R.string.settings_automatically_check_for_updates,
+                ),
+                checked = state.automaticallyCheckForUpdates,
+                onCheckedChange = onAutomaticallyCheckForUpdatesChanged,
+                infoText = stringResource(
+                    R.string.settings_automatically_check_for_updates_info,
+                ),
+                infoContentDescription = stringResource(
+                    R.string.settings_automatically_check_for_updates_info_description,
+                ),
+            )
+
+            SettingsDivider()
+
             AppUpdateRow(
                 versionLabel = stringResource(R.string.settings_version),
                 currentVersionName = state.appVersionName,
@@ -281,22 +299,13 @@ internal fun SettingsScreenContent(
                 checkLabel = stringResource(R.string.settings_check_for_updates),
                 checkingLabel = stringResource(R.string.settings_checking_for_updates),
                 upToDateLabel = stringResource(R.string.settings_up_to_date),
-                updateAvailableLabel = stringResource(R.string.settings_update_available),
-                downloadLabel = stringResource(R.string.settings_download_update),
-                preparingDownloadLabel =
-                    stringResource(R.string.settings_preparing_update_download),
-                downloadingLabel = stringResource(R.string.settings_downloading_update),
-                downloadedLabel = stringResource(R.string.settings_update_downloaded),
                 retryLabel = stringResource(R.string.settings_retry),
                 checkFailedLabel = stringResource(R.string.settings_update_check_failed),
-                downloadFailedLabel = stringResource(R.string.settings_update_download_failed),
                 failureInfoContentDescription =
                     stringResource(R.string.settings_update_failure_info),
                 genericFailureReason =
                     stringResource(R.string.settings_update_failure_generic),
-                unavailableLabel = stringResource(R.string.settings_not_available_yet),
                 onCheckForUpdates = onCheckForUpdates,
-                onDownloadUpdate = onDownloadUpdate,
             )
 
             SettingsDivider()
@@ -432,4 +441,3 @@ private fun androidAutoStatusColor(
     AndroidAutoCompatibilityUiStatus.SKIPPED -> AALyricsColors.Warning
     AndroidAutoCompatibilityUiStatus.NOT_REVIEWED -> AALyricsColors.TextSecondary
 }
-

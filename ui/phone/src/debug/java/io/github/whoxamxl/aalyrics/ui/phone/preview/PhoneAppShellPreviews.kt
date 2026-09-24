@@ -307,7 +307,6 @@ internal fun PreviewSettingsDestination(
         onResetAALyrics = {},
         onAndroidAutoCompatibilitySetup = {},
         onCheckForUpdates = {},
-        onDownloadUpdate = {},
         onOpenGitHub = {},
         onHelpFeedback = {},
         onSupportAALyrics = {},

@@ -11,6 +11,16 @@ on:
         required: false
         default: ""
         type: string
+      update_test_release_signed:
+        description: "Also build the update-test APK with the durable release signing identity"
+        required: false
+        default: false
+        type: boolean
+      update_test_version_code:
+        description: "Android VERSION_CODE for the release-signed update-test APK; must be lower than the target published release"
+        required: false
+        default: "1"
+        type: string
 
 permissions:
   contents: read
@@ -112,6 +122,85 @@ jobs:
 
       # Manual, reusable update-flow fixture. From Actions -> Build -> Run workflow,
       # choose the branch/ref under test and supply an older published version name.
+      - name: Validate release-signed update-test inputs
+        if: github.event_name == 'workflow_dispatch' && inputs.update_test_release_signed
+        shell: bash
+        env:
+          UPDATE_TEST_VERSION: ${{ inputs.update_test_version }}
+          UPDATE_TEST_VERSION_CODE: ${{ inputs.update_test_version_code }}
+        run: |
+          if [[ -z "$UPDATE_TEST_VERSION" ]]; then
+            echo "update_test_version is required for the release-signed update-test APK."
+            exit 1
+          fi
+          if [[ ! "$UPDATE_TEST_VERSION_CODE" =~ ^[1-9][0-9]*$ ]]; then
+            echo "update_test_version_code must be a positive integer."
+            exit 1
+          fi
+
+      - name: Validate release signing secrets for update-test APK
+        if: github.event_name == 'workflow_dispatch' && inputs.update_test_release_signed
+        shell: bash
+        env:
+          RELEASE_KEYSTORE_BASE64: ${{ secrets.AALYRICS_RELEASE_KEYSTORE_BASE64 }}
+          RELEASE_STORE_PASSWORD: ${{ secrets.AALYRICS_RELEASE_STORE_PASSWORD }}
+          RELEASE_KEY_ALIAS: ${{ secrets.AALYRICS_RELEASE_KEY_ALIAS }}
+          RELEASE_KEY_PASSWORD: ${{ secrets.AALYRICS_RELEASE_KEY_PASSWORD }}
+        run: |
+          for key in             RELEASE_KEYSTORE_BASE64             RELEASE_STORE_PASSWORD             RELEASE_KEY_ALIAS             RELEASE_KEY_PASSWORD
+          do
+            if [[ -z "${!key}" ]]; then
+              echo "Missing required release signing secret: $key"
+              exit 1
+            fi
+          done
+
+      - name: Restore release keystore for update-test APK
+        if: github.event_name == 'workflow_dispatch' && inputs.update_test_release_signed
+        shell: bash
+        env:
+          RELEASE_KEYSTORE_BASE64: ${{ secrets.AALYRICS_RELEASE_KEYSTORE_BASE64 }}
+        run: |
+          printf '%s' "$RELEASE_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/aalyrics-release.keystore"
+          chmod 600 "$RUNNER_TEMP/aalyrics-release.keystore"
+
+      - name: Build release-signed update-test APK
+        if: github.event_name == 'workflow_dispatch' && inputs.update_test_release_signed
+        env:
+          AALYRICS_VERSION_NAME: ${{ inputs.update_test_version }}
+          AALYRICS_VERSION_CODE: ${{ inputs.update_test_version_code }}
+          AALYRICS_RELEASE_STORE_FILE: ${{ runner.temp }}/aalyrics-release.keystore
+          AALYRICS_RELEASE_STORE_PASSWORD: ${{ secrets.AALYRICS_RELEASE_STORE_PASSWORD }}
+          AALYRICS_RELEASE_KEY_ALIAS: ${{ secrets.AALYRICS_RELEASE_KEY_ALIAS }}
+          AALYRICS_RELEASE_KEY_PASSWORD: ${{ secrets.AALYRICS_RELEASE_KEY_PASSWORD }}
+        run: |
+          ./gradlew :app:clean :app:assembleRelease --stacktrace
+          mkdir -p update-test-release-signed
+          cp app/build/outputs/apk/release/app-release.apk             "update-test-release-signed/aalyrics-update-test-release-signed-${AALYRICS_VERSION_NAME}.apk"
+
+      - name: Upload release-signed update-test APK
+        if: github.event_name == 'workflow_dispatch' && inputs.update_test_release_signed
+        uses: actions/upload-artifact@v4
+        with:
+          name: aalyrics-update-test-release-signed-${{ inputs.update_test_version }}
+          path: update-test-release-signed/aalyrics-update-test-release-signed-${{ inputs.update_test_version }}.apk
+          if-no-files-found: error
+          retention-days: 3
+
+      - name: Upload direct release-signed update-test APK
+        if: github.event_name == 'workflow_dispatch' && inputs.update_test_release_signed
+        uses: actions/upload-artifact@v7
+        with:
+          path: update-test-release-signed/aalyrics-update-test-release-signed-${{ inputs.update_test_version }}.apk
+          archive: false
+          if-no-files-found: error
+          retention-days: 3
+
+      - name: Remove update-test release keystore
+        if: always() && github.event_name == 'workflow_dispatch' && inputs.update_test_release_signed
+        shell: bash
+        run: rm -f "$RUNNER_TEMP/aalyrics-release.keystore"
+
       - name: Build update-test debug APK
         if: github.event_name == 'workflow_dispatch' && inputs.update_test_version != ''
         env:

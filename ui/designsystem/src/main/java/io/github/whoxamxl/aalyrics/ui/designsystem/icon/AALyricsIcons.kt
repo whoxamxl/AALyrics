@@ -6,6 +6,7 @@ import androidx.compose.material.icons.rounded.ExpandMore
 import androidx.compose.material.icons.rounded.ChevronLeft
 import androidx.compose.material.icons.rounded.Block
 import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.ErrorOutline
 import androidx.compose.material.icons.rounded.LinkOff
 import androidx.compose.material.icons.rounded.ChevronRight
@@ -40,6 +41,7 @@ object AALyricsIcons {
     val Info: ImageVector = Icons.Rounded.Info
     val NavigateNext: ImageVector = Icons.Rounded.ChevronRight
     val Check: ImageVector = Icons.Rounded.Check
+    val Close: ImageVector = Icons.Rounded.Close
     val Download: ImageVector = Icons.Rounded.Download
     val Retry: ImageVector = Icons.Rounded.Sync
     val ExternalLink: ImageVector = Icons.Rounded.OpenInNew

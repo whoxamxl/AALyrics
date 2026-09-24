@@ -5,6 +5,7 @@ import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.browser.customtabs.CustomTabsIntent
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsTheme
 import io.github.whoxamxl.aalyrics.ui.phone.settings.AndroidAutoCompatibilityUiStatus
@@ -17,6 +18,11 @@ class MainActivity : ComponentActivity() {
     private lateinit var androidAutoCompatibilityOnboarding: AndroidAutoCompatibilityOnboarding
     private var renderedEntryState: AppEntryState? = null
     private var compatibilitySetupRequested = false
+    private val installSourceTrustSettingsLauncher =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+            (application as? AALyricsApplication)
+                ?.onInstallSourceTrustReturned()
+        }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -46,6 +52,12 @@ class MainActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
         renderEntryState()
+    }
+
+    override fun onStop() {
+        (application as? AALyricsApplication)
+            ?.dismissInstallPermissionPrompt()
+        super.onStop()
     }
 
     private fun renderEntryState() {
@@ -102,6 +114,12 @@ class MainActivity : ComponentActivity() {
                                 renderedEntryState = null
                                 renderEntryState()
                             },
+                            onOpenInstallSettings = {
+                                val intent = InstallSourceTrustSettingsIntent.create(packageName)
+                                if (intent.resolveActivity(packageManager) != null) {
+                                    installSourceTrustSettingsLauncher.launch(intent)
+                                }
+                            },
                             onOpenSourceCode = {
                                 openUrl(SOURCE_CODE_URL)
                             },
@@ -110,6 +128,12 @@ class MainActivity : ComponentActivity() {
                             },
                             onOpenSupportAALyrics = {
                                 openCustomTabUrl(SUPPORT_URL)
+                            },
+                            onOpenUpdateRelease = { versionName ->
+                                openCustomTabUrl(
+                                    RELEASE_TAG_URL_PREFIX +
+                                        Uri.encode("v$versionName"),
+                                )
                             },
                         )
                     }
@@ -174,6 +198,8 @@ class MainActivity : ComponentActivity() {
         const val ENTRY_PREFERENCES_NAME = "app_entry_setup"
         const val ANDROID_AUTO_COMPATIBILITY_KEY = "android_auto_compatibility"
         const val SOURCE_CODE_URL = "https://github.com/whoxamxl/AALyrics"
+        const val RELEASE_TAG_URL_PREFIX =
+            "https://github.com/whoxamxl/AALyrics/releases/tag/"
         const val SUPPORT_URL = "https://buymeacoffee.com/whoxamxi"
     }
 }

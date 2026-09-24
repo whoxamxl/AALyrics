@@ -2,17 +2,26 @@ package io.github.whoxamxl.aalyrics
 
 import java.io.ByteArrayInputStream
 import java.io.File
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.concurrent.thread
 import kotlin.io.path.createTempDirectory
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -28,13 +37,221 @@ class AppUpdateCheckRuntimeTest {
         )
 
         runtime.checkForUpdates()
-        assertEquals(AppUpdateCheckState.Checking, runtime.state.value)
+        assertEquals(AppUpdateCheckState.Checking(), runtime.state.value)
         runCurrent()
 
         assertEquals(
             AppUpdateCheckState.UpdateAvailable("0.2.0-alpha.2"),
             runtime.state.value,
         )
+    }
+
+    @Test
+    fun `automatic check tags discovered release with automatic origin`() = runTest {
+        val runtime = runtime(
+            installedVersionName = "0.2.0-alpha.1",
+            releases = listOf(
+                release("v0.2.0-alpha.2", prerelease = true),
+            ),
+        )
+
+        assertTrue(
+            runtime.checkForUpdates(
+                origin = UpdateCheckOrigin.AUTOMATIC,
+            ),
+        )
+        runCurrent()
+
+        assertEquals(
+            AppUpdateCheckState.UpdateAvailable(
+                versionName = "0.2.0-alpha.2",
+                origin = UpdateCheckOrigin.AUTOMATIC,
+            ),
+            runtime.state.value,
+        )
+    }
+
+    @Test
+    fun `automatic check preserves origin through checking and up to date states`() = runTest {
+        val gate = CompletableDeferred<Unit>()
+        val runtime = AppUpdateCheckRuntime(
+            installedVersionName = "0.2.0-alpha.1",
+            releaseClient = GitHubReleaseClient {
+                gate.await()
+                Result.success(
+                    listOf(
+                        release("v0.2.0-alpha.1", prerelease = true),
+                    ),
+                )
+            },
+            applicationScope = this,
+        )
+
+        runtime.checkForUpdates(origin = UpdateCheckOrigin.AUTOMATIC)
+        assertEquals(
+            AppUpdateCheckState.Checking(UpdateCheckOrigin.AUTOMATIC),
+            runtime.state.value,
+        )
+
+        gate.complete(Unit)
+        runCurrent()
+
+        assertEquals(
+            AppUpdateCheckState.UpToDate(UpdateCheckOrigin.AUTOMATIC),
+            runtime.state.value,
+        )
+    }
+
+    @Test
+    fun `automatic check failure preserves automatic origin`() = runTest {
+        val runtime = AppUpdateCheckRuntime(
+            installedVersionName = "0.2.0-alpha.1",
+            releaseClient = GitHubReleaseClient {
+                Result.failure(IllegalStateException("network unavailable"))
+            },
+            applicationScope = this,
+        )
+
+        runtime.checkForUpdates(origin = UpdateCheckOrigin.AUTOMATIC)
+        runCurrent()
+
+        assertEquals(
+            AppUpdateCheckState.Failed(UpdateCheckOrigin.AUTOMATIC),
+            runtime.state.value,
+        )
+    }
+
+    @Test
+    fun `manual check promotes in-flight automatic up-to-date query without refetching`() = runTest {
+        val gate = CompletableDeferred<Unit>()
+        var fetchCount = 0
+        val runtime = AppUpdateCheckRuntime(
+            installedVersionName = "0.2.0-alpha.1",
+            releaseClient = GitHubReleaseClient {
+                fetchCount += 1
+                gate.await()
+                Result.success(
+                    listOf(
+                        release("v0.2.0-alpha.1", prerelease = true),
+                    ),
+                )
+            },
+            applicationScope = this,
+        )
+
+        assertTrue(runtime.checkForUpdates(UpdateCheckOrigin.AUTOMATIC))
+        assertEquals(
+            AppUpdateCheckState.Checking(UpdateCheckOrigin.AUTOMATIC),
+            runtime.state.value,
+        )
+
+        assertTrue(runtime.checkForUpdates(UpdateCheckOrigin.MANUAL))
+        assertEquals(
+            AppUpdateCheckState.Checking(UpdateCheckOrigin.MANUAL),
+            runtime.state.value,
+        )
+
+        gate.complete(Unit)
+        runCurrent()
+
+        assertEquals(1, fetchCount)
+        assertEquals(
+            AppUpdateCheckState.UpToDate(UpdateCheckOrigin.MANUAL),
+            runtime.state.value,
+        )
+    }
+
+    @Test
+    fun `manual check promotes in-flight automatic failure to visible manual failure`() = runTest {
+        val gate = CompletableDeferred<Unit>()
+        var fetchCount = 0
+        val runtime = AppUpdateCheckRuntime(
+            installedVersionName = "0.2.0-alpha.1",
+            releaseClient = GitHubReleaseClient {
+                fetchCount += 1
+                gate.await()
+                Result.failure(IllegalStateException("network unavailable"))
+            },
+            applicationScope = this,
+        )
+
+        assertTrue(runtime.checkForUpdates(UpdateCheckOrigin.AUTOMATIC))
+        assertTrue(runtime.checkForUpdates(UpdateCheckOrigin.MANUAL))
+        gate.complete(Unit)
+        runCurrent()
+
+        assertEquals(1, fetchCount)
+        assertEquals(
+            AppUpdateCheckState.Failed(UpdateCheckOrigin.MANUAL),
+            runtime.state.value,
+        )
+    }
+
+    @Test
+    fun `manual check promotes in-flight automatic update result to manual origin`() = runTest {
+        val gate = CompletableDeferred<Unit>()
+        var fetchCount = 0
+        val runtime = AppUpdateCheckRuntime(
+            installedVersionName = "0.2.0-alpha.1",
+            releaseClient = GitHubReleaseClient {
+                fetchCount += 1
+                gate.await()
+                Result.success(
+                    listOf(
+                        release("v0.2.0-alpha.2", prerelease = true),
+                    ),
+                )
+            },
+            applicationScope = this,
+        )
+
+        assertTrue(runtime.checkForUpdates(UpdateCheckOrigin.AUTOMATIC))
+        assertTrue(runtime.checkForUpdates(UpdateCheckOrigin.MANUAL))
+        gate.complete(Unit)
+        runCurrent()
+
+        assertEquals(1, fetchCount)
+        assertEquals(
+            AppUpdateCheckState.UpdateAvailable(
+                versionName = "0.2.0-alpha.2",
+                origin = UpdateCheckOrigin.MANUAL,
+            ),
+            runtime.state.value,
+        )
+    }
+
+    @Test
+    fun `automatic check does not replace retained downloaded state`() = runTest {
+        val root = createTempDirectory("aalyrics-update-runtime").toFile()
+        try {
+            retainedUpdate(root, "0.2.0-alpha.2")
+            var fetchCount = 0
+            val runtime = AppUpdateCheckRuntime(
+                installedVersionName = "0.2.0-alpha.1",
+                releaseClient = GitHubReleaseClient {
+                    fetchCount += 1
+                    Result.success(
+                        listOf(
+                            release("v0.2.0-alpha.3", prerelease = true),
+                        ),
+                    )
+                },
+                applicationScope = this,
+                downloadFileStore = updateStore(root),
+            )
+
+            assertTrue(runtime.state.value is AppUpdateCheckState.Downloaded)
+            assertFalse(
+                runtime.checkForUpdates(
+                    origin = UpdateCheckOrigin.AUTOMATIC,
+                ),
+            )
+
+            assertTrue(runtime.state.value is AppUpdateCheckState.Downloaded)
+            assertEquals(0, fetchCount)
+        } finally {
+            root.deleteRecursively()
+        }
     }
 
     @Test
@@ -50,7 +267,7 @@ class AppUpdateCheckRuntimeTest {
         runtime.checkForUpdates()
         runCurrent()
 
-        assertEquals(AppUpdateCheckState.UpToDate, runtime.state.value)
+        assertEquals(AppUpdateCheckState.UpToDate(), runtime.state.value)
     }
 
     @Test
@@ -66,7 +283,90 @@ class AppUpdateCheckRuntimeTest {
         runtime.checkForUpdates()
         runCurrent()
 
-        assertEquals(AppUpdateCheckState.UpToDate, runtime.state.value)
+        assertEquals(AppUpdateCheckState.UpToDate(), runtime.state.value)
+    }
+
+    @Test
+    fun `successful release query reports manual origin`() = runTest {
+        val origins = mutableListOf<UpdateCheckOrigin>()
+        val runtime = runtime(
+            installedVersionName = "0.2.0-alpha.1",
+            releases = listOf(
+                release("v0.2.0-alpha.1", prerelease = true),
+            ),
+            onReleaseQuerySucceeded = origins::add,
+        )
+
+        runtime.checkForUpdates()
+        runCurrent()
+
+        assertEquals(listOf(UpdateCheckOrigin.MANUAL), origins)
+        assertEquals(AppUpdateCheckState.UpToDate(), runtime.state.value)
+    }
+
+    @Test
+    fun `reset serializes with successful release callback`() = runTest {
+        val callbackEntered = CountDownLatch(1)
+        val resetAttempted = CountDownLatch(1)
+        val resetCompleted = CountDownLatch(1)
+        val releaseCallback = CountDownLatch(1)
+        val cadenceRecorded = AtomicBoolean(false)
+        lateinit var runtime: AppUpdateCheckRuntime
+
+        runtime = runtime(
+            installedVersionName = "0.2.0-alpha.1",
+            releases = listOf(
+                release("v0.2.0-alpha.1", prerelease = true),
+            ),
+            onReleaseQuerySucceeded = {
+                callbackEntered.countDown()
+                check(releaseCallback.await(5, TimeUnit.SECONDS))
+                cadenceRecorded.set(true)
+            },
+        )
+
+        val resetThread = thread(start = true, name = "update-reset-race") {
+            check(callbackEntered.await(5, TimeUnit.SECONDS))
+            resetAttempted.countDown()
+            runtime.reset()
+            cadenceRecorded.set(false)
+            resetCompleted.countDown()
+        }
+        val releaseThread = thread(start = true, name = "update-callback-release") {
+            check(resetAttempted.await(5, TimeUnit.SECONDS))
+            resetCompleted.await(250, TimeUnit.MILLISECONDS)
+            releaseCallback.countDown()
+        }
+
+        runtime.checkForUpdates()
+        runCurrent()
+
+        resetThread.join(5_000)
+        releaseThread.join(5_000)
+
+        assertFalse(resetThread.isAlive)
+        assertFalse(releaseThread.isAlive)
+        assertFalse(cadenceRecorded.get())
+        assertEquals(AppUpdateCheckState.Idle, runtime.state.value)
+    }
+
+    @Test
+    fun `release query failure does not report successful cadence event`() = runTest {
+        val origins = mutableListOf<UpdateCheckOrigin>()
+        val runtime = AppUpdateCheckRuntime(
+            installedVersionName = "0.2.0-alpha.1",
+            releaseClient = GitHubReleaseClient {
+                Result.failure(IllegalStateException("network unavailable"))
+            },
+            applicationScope = this,
+            onReleaseQuerySucceeded = origins::add,
+        )
+
+        runtime.checkForUpdates()
+        runCurrent()
+
+        assertEquals(emptyList(), origins)
+        assertEquals(AppUpdateCheckState.Failed(), runtime.state.value)
     }
 
     @Test
@@ -82,7 +382,7 @@ class AppUpdateCheckRuntimeTest {
         runtime.checkForUpdates()
         runCurrent()
 
-        assertEquals(AppUpdateCheckState.Failed, runtime.state.value)
+        assertEquals(AppUpdateCheckState.Failed(), runtime.state.value)
     }
 
     @Test
@@ -98,7 +398,7 @@ class AppUpdateCheckRuntimeTest {
         runtime.checkForUpdates()
         runCurrent()
 
-        assertEquals(AppUpdateCheckState.Failed, runtime.state.value)
+        assertEquals(AppUpdateCheckState.Failed(), runtime.state.value)
     }
 
     @Test
@@ -116,7 +416,7 @@ class AppUpdateCheckRuntimeTest {
         runtime.checkForUpdates()
         runCurrent()
 
-        assertEquals(AppUpdateCheckState.Failed, runtime.state.value)
+        assertEquals(AppUpdateCheckState.Failed(), runtime.state.value)
         assertEquals(0, fetchCount)
     }
 
@@ -133,7 +433,7 @@ class AppUpdateCheckRuntimeTest {
         runtime.checkForUpdates()
         runCurrent()
 
-        assertEquals(AppUpdateCheckState.Failed, runtime.state.value)
+        assertEquals(AppUpdateCheckState.Failed(), runtime.state.value)
     }
 
     @Test
@@ -155,12 +455,12 @@ class AppUpdateCheckRuntimeTest {
         runtime.checkForUpdates()
         runCurrent()
 
-        assertEquals(AppUpdateCheckState.Checking, runtime.state.value)
+        assertEquals(AppUpdateCheckState.Checking(), runtime.state.value)
         assertEquals(1, fetchCount)
 
         gate.complete(Unit)
         runCurrent()
-        assertEquals(AppUpdateCheckState.UpToDate, runtime.state.value)
+        assertEquals(AppUpdateCheckState.UpToDate(), runtime.state.value)
     }
 
     @Test
@@ -178,14 +478,362 @@ class AppUpdateCheckRuntimeTest {
         runtime.checkForUpdates()
         runCurrent()
         runtime.onSettingsEntered()
-        assertEquals(AppUpdateCheckState.Checking, runtime.state.value)
+        assertEquals(AppUpdateCheckState.Checking(), runtime.state.value)
 
         gate.complete(Unit)
         runCurrent()
-        assertEquals(AppUpdateCheckState.UpToDate, runtime.state.value)
+        assertEquals(AppUpdateCheckState.UpToDate(), runtime.state.value)
 
         runtime.onSettingsEntered()
         assertEquals(AppUpdateCheckState.Idle, runtime.state.value)
+    }
+
+    @Test
+    fun `duplicate accepted update request does not start a second download`() = runTest {
+        val apkBytes = "signed apk bytes".encodeToByteArray()
+        val release = downloadableRelease("v0.2.0-alpha.2")
+        val gate = CompletableDeferred<Unit>()
+        val downloadClient = FakeUpdateAssetDownloadClient(
+            checksumPayload = checksumPayload(apkBytes, release.assets.first().name),
+            apkBytes = apkBytes,
+            downloadGate = gate,
+        )
+        val installer = FakeUpdatePackageInstaller()
+        val root = createTempDirectory("aalyrics-update-runtime").toFile()
+        try {
+            val runtime = runtime(
+                installedVersionName = "0.2.0-alpha.1",
+                releases = listOf(release),
+                assetDownloadClient = downloadClient,
+                downloadFileStore = updateStore(root),
+                installPreparation = installPreparation(
+                    installedVersionName = "0.2.0-alpha.1",
+                    releases = listOf(release),
+                ),
+                packageInstaller = installer,
+                installSourceTrustChecker = InstallSourceTrustChecker { true },
+            )
+
+            runtime.checkForUpdates()
+            runCurrent()
+            runtime.startUpdate()
+            runCurrent()
+
+            assertEquals(
+                AppUpdateCheckState.Downloading(
+                    versionName = "0.2.0-alpha.2",
+                    downloadedBytes = 8L,
+                    totalBytes = 16L,
+                ),
+                runtime.state.value,
+            )
+            assertEquals(1, downloadClient.downloadCount)
+
+            runtime.startUpdate()
+            runCurrent()
+
+            assertEquals(1, downloadClient.downloadCount)
+
+            gate.complete(Unit)
+            runCurrent()
+
+            assertEquals(
+                AppUpdateCheckState.Installing("0.2.0-alpha.2"),
+                runtime.state.value,
+            )
+            assertEquals(1, downloadClient.downloadCount)
+            assertEquals(1, installer.installCount)
+        } finally {
+            gate.complete(Unit)
+            root.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun `duplicate source trust return does not start a second download`() = runTest {
+        val apkBytes = "signed apk bytes".encodeToByteArray()
+        val release = downloadableRelease("v0.2.0-alpha.2")
+        val gate = CompletableDeferred<Unit>()
+        val downloadClient = FakeUpdateAssetDownloadClient(
+            checksumPayload = checksumPayload(apkBytes, release.assets.first().name),
+            apkBytes = apkBytes,
+            downloadGate = gate,
+        )
+        var sourceTrusted = false
+        val installer = FakeUpdatePackageInstaller()
+        val root = createTempDirectory("aalyrics-update-runtime").toFile()
+        try {
+            val runtime = runtime(
+                installedVersionName = "0.2.0-alpha.1",
+                releases = listOf(release),
+                assetDownloadClient = downloadClient,
+                downloadFileStore = updateStore(root),
+                installPreparation = installPreparation(
+                    installedVersionName = "0.2.0-alpha.1",
+                    releases = listOf(release),
+                ),
+                packageInstaller = installer,
+                installSourceTrustChecker = InstallSourceTrustChecker { sourceTrusted },
+            )
+
+            runtime.checkForUpdates()
+            runCurrent()
+            runtime.startUpdate()
+            assertEquals(
+                AppUpdateCheckState.InstallPermissionRequired("0.2.0-alpha.2"),
+                runtime.state.value,
+            )
+
+            sourceTrusted = true
+            runtime.onInstallSourceTrustReturned()
+            runCurrent()
+
+            assertEquals(
+                AppUpdateCheckState.Downloading(
+                    versionName = "0.2.0-alpha.2",
+                    downloadedBytes = 8L,
+                    totalBytes = 16L,
+                ),
+                runtime.state.value,
+            )
+            assertEquals(1, downloadClient.downloadCount)
+
+            runtime.onInstallSourceTrustReturned()
+            runCurrent()
+
+            assertEquals(1, downloadClient.downloadCount)
+
+            gate.complete(Unit)
+            runCurrent()
+
+            assertEquals(
+                AppUpdateCheckState.Installing("0.2.0-alpha.2"),
+                runtime.state.value,
+            )
+            assertEquals(1, downloadClient.downloadCount)
+            assertEquals(1, installer.installCount)
+        } finally {
+            gate.complete(Unit)
+            root.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun `accepted update waits for source trust before download and resumes after grant`() = runTest {
+        val apkBytes = "signed apk bytes".encodeToByteArray()
+        val release = downloadableRelease("v0.2.0-alpha.2")
+        val downloadClient = FakeUpdateAssetDownloadClient(
+            checksumPayload = checksumPayload(apkBytes, release.assets.first().name),
+            apkBytes = apkBytes,
+        )
+        val permissionPromptVersions = mutableListOf<String>()
+        var sourceTrusted = false
+        val installer = FakeUpdatePackageInstaller()
+        val root = createTempDirectory("aalyrics-update-runtime").toFile()
+        try {
+            val runtime = runtime(
+                installedVersionName = "0.2.0-alpha.1",
+                releases = listOf(release),
+                assetDownloadClient = downloadClient,
+                downloadFileStore = updateStore(root),
+                installPreparation = installPreparation(
+                    installedVersionName = "0.2.0-alpha.1",
+                    releases = listOf(release),
+                ),
+                packageInstaller = installer,
+                installSourceTrustChecker = InstallSourceTrustChecker { sourceTrusted },
+                onInstallPermissionRequired = permissionPromptVersions::add,
+            )
+
+            runtime.checkForUpdates()
+            runCurrent()
+            assertEquals(
+                AppUpdateCheckState.UpdateAvailable("0.2.0-alpha.2"),
+                runtime.state.value,
+            )
+
+            runtime.startUpdate()
+
+            assertEquals(
+                AppUpdateCheckState.InstallPermissionRequired("0.2.0-alpha.2"),
+                runtime.state.value,
+            )
+            assertEquals(listOf("0.2.0-alpha.2"), permissionPromptVersions)
+            assertEquals(0, downloadClient.downloadCount)
+
+            runtime.onInstallSourceTrustReturned()
+            runCurrent()
+
+            assertEquals(
+                AppUpdateCheckState.InstallPermissionRequired("0.2.0-alpha.2"),
+                runtime.state.value,
+            )
+            assertEquals(0, downloadClient.downloadCount)
+
+            sourceTrusted = true
+            runtime.onInstallSourceTrustReturned()
+            assertEquals(
+                AppUpdateCheckState.PreparingDownload("0.2.0-alpha.2"),
+                runtime.state.value,
+            )
+            runCurrent()
+
+            assertEquals(
+                AppUpdateCheckState.Installing("0.2.0-alpha.2"),
+                runtime.state.value,
+            )
+            assertEquals(1, downloadClient.downloadCount)
+            assertEquals(1, installer.installCount)
+        } finally {
+            root.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun `dismissing permission presentation for GitHub fallback preserves update process`() = runTest {
+        val apkBytes = "signed apk bytes".encodeToByteArray()
+        val release = downloadableRelease("v0.2.0-alpha.2")
+        val downloadClient = FakeUpdateAssetDownloadClient(
+            checksumPayload = checksumPayload(apkBytes, release.assets.first().name),
+            apkBytes = apkBytes,
+        )
+        val permissionPromptRuntime = UpdateInstallPermissionPromptRuntime()
+        val root = createTempDirectory("aalyrics-update-runtime").toFile()
+        try {
+            val runtime = runtime(
+                installedVersionName = "0.2.0-alpha.1",
+                releases = listOf(release),
+                assetDownloadClient = downloadClient,
+                downloadFileStore = updateStore(root),
+                installSourceTrustChecker = InstallSourceTrustChecker { false },
+                onInstallPermissionRequired = permissionPromptRuntime::request,
+            )
+
+            runtime.checkForUpdates()
+            runCurrent()
+            runtime.startUpdate()
+
+            assertEquals(
+                AppUpdateCheckState.InstallPermissionRequired("0.2.0-alpha.2"),
+                runtime.state.value,
+            )
+            assertEquals(
+                UpdateInstallPermissionPrompt("0.2.0-alpha.2"),
+                permissionPromptRuntime.prompt.value,
+            )
+            assertEquals(0, downloadClient.downloadCount)
+
+            permissionPromptRuntime.dismiss()
+
+            assertNull(permissionPromptRuntime.prompt.value)
+            assertEquals(
+                AppUpdateCheckState.InstallPermissionRequired("0.2.0-alpha.2"),
+                runtime.state.value,
+            )
+            assertEquals(0, downloadClient.downloadCount)
+        } finally {
+            root.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun `accepted update automatically starts install after verified download`() = runTest {
+        val apkBytes = "signed apk bytes".encodeToByteArray()
+        val release = downloadableRelease("v0.2.0-alpha.2")
+        val downloadClient = FakeUpdateAssetDownloadClient(
+            checksumPayload = checksumPayload(apkBytes, release.assets.first().name),
+            apkBytes = apkBytes,
+        )
+        val permissionPromptVersions = mutableListOf<String>()
+        val installer = FakeUpdatePackageInstaller()
+        val root = createTempDirectory("aalyrics-update-runtime").toFile()
+        try {
+            val runtime = runtime(
+                installedVersionName = "0.2.0-alpha.1",
+                releases = listOf(release),
+                assetDownloadClient = downloadClient,
+                downloadFileStore = updateStore(root),
+                installPreparation = installPreparation(
+                    installedVersionName = "0.2.0-alpha.1",
+                    releases = listOf(release),
+                ),
+                packageInstaller = installer,
+                installSourceTrustChecker = InstallSourceTrustChecker { true },
+                onInstallPermissionRequired = permissionPromptVersions::add,
+            )
+
+            runtime.checkForUpdates()
+            runCurrent()
+            runtime.startUpdate()
+
+            assertEquals(
+                AppUpdateCheckState.PreparingDownload("0.2.0-alpha.2"),
+                runtime.state.value,
+            )
+            assertTrue(permissionPromptVersions.isEmpty())
+
+            runCurrent()
+
+            assertEquals(
+                AppUpdateCheckState.Installing("0.2.0-alpha.2"),
+                runtime.state.value,
+            )
+            assertEquals(1, downloadClient.downloadCount)
+            assertEquals(1, installer.installCount)
+        } finally {
+            root.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun `download retry preserves automatic install continuation`() = runTest {
+        val apkBytes = "signed apk bytes".encodeToByteArray()
+        val release = downloadableRelease("v0.2.0-alpha.2")
+        val downloadClient = FakeUpdateAssetDownloadClient(
+            checksumPayload = checksumPayload(apkBytes, release.assets.first().name),
+            apkBytes = apkBytes,
+            failDownloads = 1,
+        )
+        val installer = FakeUpdatePackageInstaller()
+        val root = createTempDirectory("aalyrics-update-runtime").toFile()
+        try {
+            val runtime = runtime(
+                installedVersionName = "0.2.0-alpha.1",
+                releases = listOf(release),
+                assetDownloadClient = downloadClient,
+                downloadFileStore = updateStore(root),
+                installPreparation = installPreparation(
+                    installedVersionName = "0.2.0-alpha.1",
+                    releases = listOf(release),
+                ),
+                installSourceTrustChecker = InstallSourceTrustChecker { true },
+                packageInstaller = installer,
+            )
+
+            runtime.checkForUpdates()
+            runCurrent()
+            runtime.startUpdate()
+            runCurrent()
+
+            assertEquals(
+                AppUpdateCheckState.DownloadFailed("0.2.0-alpha.2"),
+                runtime.state.value,
+            )
+            assertEquals(1, downloadClient.downloadCount)
+            assertEquals(0, installer.installCount)
+
+            runtime.downloadUpdate()
+            runCurrent()
+
+            assertEquals(
+                AppUpdateCheckState.Installing("0.2.0-alpha.2"),
+                runtime.state.value,
+            )
+            assertEquals(2, downloadClient.downloadCount)
+            assertEquals(1, installer.installCount)
+        } finally {
+            root.deleteRecursively()
+        }
     }
 
     @Test
@@ -212,6 +860,11 @@ class AppUpdateCheckRuntimeTest {
                 runtime.state.value,
             )
 
+            val observedStates = mutableListOf<AppUpdateCheckState>()
+            backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+                runtime.state.collect { observedStates += it }
+            }
+
             runtime.downloadUpdate()
             assertEquals(
                 AppUpdateCheckState.PreparingDownload("0.2.0-alpha.2"),
@@ -221,6 +874,11 @@ class AppUpdateCheckRuntimeTest {
 
             val downloaded = runtime.state.value as AppUpdateCheckState.Downloaded
             assertEquals("0.2.0-alpha.2", downloaded.versionName)
+            assertTrue(
+                observedStates.contains(
+                    AppUpdateCheckState.VerifyingDownload("0.2.0-alpha.2"),
+                ),
+            )
             assertEquals(apkBytes.toList(), downloaded.apkFile.readBytes().toList())
             assertEquals(1, downloadClient.downloadCount)
         } finally {
@@ -250,6 +908,13 @@ class AppUpdateCheckRuntimeTest {
             runCurrent()
             runtime.downloadUpdate()
             runCurrent()
+
+            assertEquals(
+                AppUpdateCheckState.DownloadFailed("0.2.0-alpha.2"),
+                runtime.state.value,
+            )
+
+            runtime.onSettingsEntered()
 
             assertEquals(
                 AppUpdateCheckState.DownloadFailed("0.2.0-alpha.2"),
@@ -413,6 +1078,74 @@ class AppUpdateCheckRuntimeTest {
     }
 
     @Test
+    fun `settings reentry does not cancel an active permission first download`() = runTest {
+        val apkBytes = "signed apk bytes".encodeToByteArray()
+        val release = downloadableRelease("v0.2.0-alpha.2")
+        val gate = CompletableDeferred<Unit>()
+        val downloadClient = FakeUpdateAssetDownloadClient(
+            checksumPayload = checksumPayload(apkBytes, release.assets.first().name),
+            apkBytes = apkBytes,
+            downloadGate = gate,
+        )
+        val installer = FakeUpdatePackageInstaller()
+        val root = createTempDirectory("aalyrics-update-runtime").toFile()
+        try {
+            val runtime = runtime(
+                installedVersionName = "0.2.0-alpha.1",
+                releases = listOf(release),
+                assetDownloadClient = downloadClient,
+                downloadFileStore = updateStore(root),
+                installPreparation = installPreparation(
+                    installedVersionName = "0.2.0-alpha.1",
+                    releases = listOf(release),
+                ),
+                installSourceTrustChecker = InstallSourceTrustChecker { true },
+                packageInstaller = installer,
+            )
+
+            runtime.checkForUpdates()
+            runCurrent()
+            runtime.startUpdate()
+            runCurrent()
+
+            assertEquals(
+                AppUpdateCheckState.Downloading(
+                    versionName = "0.2.0-alpha.2",
+                    downloadedBytes = 8L,
+                    totalBytes = 16L,
+                ),
+                runtime.state.value,
+            )
+            assertEquals(1, downloadClient.downloadCount)
+
+            runtime.onSettingsEntered()
+
+            assertEquals(
+                AppUpdateCheckState.Downloading(
+                    versionName = "0.2.0-alpha.2",
+                    downloadedBytes = 8L,
+                    totalBytes = 16L,
+                ),
+                runtime.state.value,
+            )
+            assertEquals(1, downloadClient.downloadCount)
+
+            gate.complete(Unit)
+            runCurrent()
+
+            assertEquals(
+                AppUpdateCheckState.Installing("0.2.0-alpha.2"),
+                runtime.state.value,
+            )
+            assertEquals(1, downloadClient.downloadCount)
+            assertEquals(1, installer.installCount)
+        } finally {
+            gate.complete(Unit)
+            root.deleteRecursively()
+        }
+    }
+
+    @Test
     fun `duplicate download request is ignored while download is active`() = runTest {
         val apkBytes = "signed apk bytes".encodeToByteArray()
         val release = downloadableRelease("v0.2.0-alpha.2")
@@ -558,6 +1291,589 @@ class AppUpdateCheckRuntimeTest {
             downloadGate.complete(Unit)
             root.deleteRecursively()
         }
+    }
+
+    @Test
+    fun `pending update is recorded before installer commit and survives success callback`() = runTest {
+        val root = createTempDirectory("aalyrics-install-runtime").toFile()
+        retainedUpdate(root, "0.2.0-alpha.2")
+        val installer = FakeUpdatePackageInstaller()
+        val recoveryStore = FakeUpdateRecoveryStore()
+        try {
+            val runtime = runtime(
+                installedVersionName = "0.2.0-alpha.1",
+                releases = emptyList(),
+                downloadFileStore = updateStore(root),
+                installPreparation = installPreparation(
+                    installedVersionName = "0.2.0-alpha.1",
+                    releases = listOf(
+                        release("v0.2.0-alpha.2", prerelease = true),
+                    ),
+                    preflightResult =
+                        UpdateApkPreflightResult.Ready(targetVersionCode = 42L),
+                ),
+                installSourceTrustChecker = InstallSourceTrustChecker { true },
+                packageInstaller = installer,
+                updateRecoveryStore = recoveryStore,
+            )
+
+            runtime.installUpdate()
+            runCurrent()
+
+            val pending = PendingUpdate(
+                targetVersion = "0.2.0-alpha.2",
+                targetVersionCode = 42L,
+                installerSessionId = 77,
+                resumeAfterUpdate = true,
+            )
+            assertEquals(1, installer.beforeCommitCount)
+            assertEquals(1, recoveryStore.recordCount)
+            assertEquals(pending, recoveryStore.pendingUpdate())
+
+            installer.emit(UpdatePackageInstallerStatus.Success)
+
+            assertEquals(pending, recoveryStore.pendingUpdate())
+            assertEquals(0, recoveryStore.clearCount)
+        } finally {
+            root.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun `reset racing pending marker write leaves no recovery state`() = runTest {
+        val root = createTempDirectory("aalyrics-install-runtime").toFile()
+        retainedUpdate(root, "0.2.0-alpha.2")
+        val installer = FakeUpdatePackageInstaller()
+        lateinit var runtime: AppUpdateCheckRuntime
+        val recoveryStore = FakeUpdateRecoveryStore(
+            beforeRecord = {
+                runtime.reset()
+            },
+        )
+        try {
+            runtime = runtime(
+                installedVersionName = "0.2.0-alpha.1",
+                releases = emptyList(),
+                downloadFileStore = updateStore(root),
+                installPreparation = installPreparation(
+                    installedVersionName = "0.2.0-alpha.1",
+                    releases = listOf(
+                        release("v0.2.0-alpha.2", prerelease = true),
+                    ),
+                    preflightResult =
+                        UpdateApkPreflightResult.Ready(targetVersionCode = 42L),
+                ),
+                installSourceTrustChecker = InstallSourceTrustChecker { true },
+                packageInstaller = installer,
+                updateRecoveryStore = recoveryStore,
+            )
+
+            runtime.installUpdate()
+            runCurrent()
+
+            assertEquals(AppUpdateCheckState.Idle, runtime.state.value)
+            assertNull(recoveryStore.pendingUpdate())
+            assertEquals(listOf(77), installer.abandonedSessions)
+            assertEquals(0, installer.beforeCommitCount)
+        } finally {
+            root.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun `pending update persistence failure prevents installer commit`() = runTest {
+        val root = createTempDirectory("aalyrics-install-runtime").toFile()
+        retainedUpdate(root, "0.2.0-alpha.2")
+        val installer = FakeUpdatePackageInstaller()
+        val recoveryStore = FakeUpdateRecoveryStore(
+            recordFailure = IllegalStateException("storage unavailable"),
+        )
+        try {
+            val runtime = runtime(
+                installedVersionName = "0.2.0-alpha.1",
+                releases = emptyList(),
+                downloadFileStore = updateStore(root),
+                installPreparation = installPreparation(
+                    installedVersionName = "0.2.0-alpha.1",
+                    releases = listOf(
+                        release("v0.2.0-alpha.2", prerelease = true),
+                    ),
+                ),
+                installSourceTrustChecker = InstallSourceTrustChecker { true },
+                packageInstaller = installer,
+                updateRecoveryStore = recoveryStore,
+            )
+
+            runtime.installUpdate()
+            runCurrent()
+
+            assertEquals(
+                AppUpdateCheckState.InstallFailed(
+                    versionName = "0.2.0-alpha.2",
+                    reason = AppUpdateInstallFailureReason.RECOVERY_STATE_PERSISTENCE_FAILED,
+                ),
+                runtime.state.value,
+            )
+            assertEquals(0, installer.beforeCommitCount)
+            assertNull(recoveryStore.pendingUpdate())
+        } finally {
+            root.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun `terminal installer failure clears pending update marker`() = runTest {
+        val root = createTempDirectory("aalyrics-install-runtime").toFile()
+        retainedUpdate(root, "0.2.0-alpha.2")
+        val installer = FakeUpdatePackageInstaller()
+        val recoveryStore = FakeUpdateRecoveryStore()
+        try {
+            val runtime = runtime(
+                installedVersionName = "0.2.0-alpha.1",
+                releases = emptyList(),
+                downloadFileStore = updateStore(root),
+                installPreparation = installPreparation(
+                    installedVersionName = "0.2.0-alpha.1",
+                    releases = listOf(
+                        release("v0.2.0-alpha.2", prerelease = true),
+                    ),
+                ),
+                installSourceTrustChecker = InstallSourceTrustChecker { true },
+                packageInstaller = installer,
+                updateRecoveryStore = recoveryStore,
+            )
+
+            runtime.installUpdate()
+            runCurrent()
+            assertNotNull(recoveryStore.pendingUpdate())
+
+            installer.emit(
+                UpdatePackageInstallerStatus.Failure(
+                    statusCode = -2,
+                    message = "cancelled",
+                ),
+            )
+
+            assertEquals(
+                AppUpdateCheckState.InstallFailed(
+                    versionName = "0.2.0-alpha.2",
+                    reason = AppUpdateInstallFailureReason.INSTALLER_REJECTED,
+                ),
+                runtime.state.value,
+            )
+            assertNull(recoveryStore.pendingUpdate())
+            assertEquals(1, recoveryStore.clearCount)
+        } finally {
+            root.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun `signing mismatch is exposed as a typed install failure`() = runTest {
+        val root = createTempDirectory("aalyrics-install-runtime").toFile()
+        retainedUpdate(root, "0.2.0-alpha.2")
+        try {
+            val runtime = runtime(
+                installedVersionName = "0.2.0-alpha.1",
+                releases = emptyList(),
+                downloadFileStore = updateStore(root),
+                installPreparation = installPreparation(
+                    installedVersionName = "0.2.0-alpha.1",
+                    releases = listOf(
+                        release("v0.2.0-alpha.2", prerelease = true),
+                    ),
+                    preflightResult = UpdateApkPreflightResult.Rejected(
+                        UpdateApkPreflightRejection.SIGNING_IDENTITY_MISMATCH,
+                    ),
+                ),
+                installSourceTrustChecker = InstallSourceTrustChecker { false },
+                packageInstaller = FakeUpdatePackageInstaller(),
+                updateRecoveryStore = FakeUpdateRecoveryStore(),
+            )
+
+            runtime.installUpdate()
+            runCurrent()
+
+            assertEquals(
+                AppUpdateCheckState.InstallFailed(
+                    versionName = "0.2.0-alpha.2",
+                    reason = AppUpdateInstallFailureReason.SIGNING_IDENTITY_MISMATCH,
+                ),
+                runtime.state.value,
+            )
+        } finally {
+            root.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun `install redirects to newer eligible release before package installer`() = runTest {
+        val root = createTempDirectory("aalyrics-install-runtime").toFile()
+        val retained = retainedUpdate(root, "0.2.0-alpha.2")
+        val installer = FakeUpdatePackageInstaller()
+        try {
+            val runtime = runtime(
+                installedVersionName = "0.2.0-alpha.1",
+                releases = emptyList(),
+                downloadFileStore = updateStore(root),
+                installPreparation = installPreparation(
+                    installedVersionName = "0.2.0-alpha.1",
+                    releases = listOf(
+                        release("v0.2.0-beta.1", prerelease = true),
+                        release("v0.2.0-alpha.2", prerelease = true),
+                    ),
+                ),
+                installSourceTrustChecker = InstallSourceTrustChecker { true },
+                packageInstaller = installer,
+            )
+
+            assertTrue(runtime.state.value is AppUpdateCheckState.Downloaded)
+            runtime.installUpdate()
+            assertEquals(
+                AppUpdateCheckState.PreparingInstall("0.2.0-alpha.2"),
+                runtime.state.value,
+            )
+            runCurrent()
+
+            assertEquals(
+                AppUpdateCheckState.UpdateAvailable(
+                    versionName = "0.2.0-beta.1",
+                    origin = UpdateCheckOrigin.INSTALL_REFRESH,
+                ),
+                runtime.state.value,
+            )
+
+            runtime.onSettingsEntered()
+
+            assertEquals(
+                AppUpdateCheckState.UpdateAvailable(
+                    versionName = "0.2.0-beta.1",
+                    origin = UpdateCheckOrigin.INSTALL_REFRESH,
+                ),
+                runtime.state.value,
+            )
+            assertEquals(0, installer.installCount)
+            assertTrue(retained.isFile)
+        } finally {
+            root.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun `install refresh replacement download is source trust gated`() = runTest {
+        val root = createTempDirectory("aalyrics-install-runtime").toFile()
+        val retained = retainedUpdate(root, "0.2.0-alpha.2")
+        val replacementBytes = "replacement signed apk".encodeToByteArray()
+        val replacement = downloadableRelease(
+            tagName = "v0.2.0-beta.1",
+            apkSizeBytes = replacementBytes.size.toLong(),
+        )
+        val downloadClient = FakeUpdateAssetDownloadClient(
+            checksumPayload = checksumPayload(
+                replacementBytes,
+                replacement.assets.first().name,
+            ),
+            apkBytes = replacementBytes,
+        )
+        val permissionPromptVersions = mutableListOf<String>()
+        val installer = FakeUpdatePackageInstaller()
+        var sourceTrusted = false
+        try {
+            val runtime = runtime(
+                installedVersionName = "0.2.0-alpha.1",
+                releases = emptyList(),
+                assetDownloadClient = downloadClient,
+                downloadFileStore = updateStore(root),
+                installPreparation = installPreparation(
+                    installedVersionName = "0.2.0-alpha.1",
+                    releases = listOf(
+                        replacement,
+                        release("v0.2.0-alpha.2", prerelease = true),
+                    ),
+                ),
+                installSourceTrustChecker = InstallSourceTrustChecker { sourceTrusted },
+                packageInstaller = installer,
+                onInstallPermissionRequired = permissionPromptVersions::add,
+            )
+
+            runtime.installUpdate()
+            runCurrent()
+
+            assertEquals(
+                AppUpdateCheckState.UpdateAvailable(
+                    versionName = "0.2.0-beta.1",
+                    origin = UpdateCheckOrigin.INSTALL_REFRESH,
+                ),
+                runtime.state.value,
+            )
+            assertTrue(retained.isFile)
+
+            runtime.downloadUpdate()
+
+            assertEquals(
+                AppUpdateCheckState.InstallPermissionRequired("0.2.0-beta.1"),
+                runtime.state.value,
+            )
+            assertEquals(listOf("0.2.0-beta.1"), permissionPromptVersions)
+            assertEquals(0, downloadClient.downloadCount)
+
+            sourceTrusted = true
+            runtime.onInstallSourceTrustReturned()
+            assertEquals(
+                AppUpdateCheckState.PreparingDownload("0.2.0-beta.1"),
+                runtime.state.value,
+            )
+            runCurrent()
+
+            assertEquals(
+                AppUpdateCheckState.Installing("0.2.0-beta.1"),
+                runtime.state.value,
+            )
+            assertEquals(1, downloadClient.downloadCount)
+            assertEquals(1, installer.installCount)
+        } finally {
+            root.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun `denied source trust return stays required without reopening prompt`() = runTest {
+        val root = createTempDirectory("aalyrics-install-runtime").toFile()
+        retainedUpdate(root, "0.2.0-alpha.2")
+        val installer = FakeUpdatePackageInstaller()
+        val permissionPromptVersions = mutableListOf<String>()
+        try {
+            val runtime = runtime(
+                installedVersionName = "0.2.0-alpha.1",
+                releases = emptyList(),
+                downloadFileStore = updateStore(root),
+                installPreparation = installPreparation(
+                    installedVersionName = "0.2.0-alpha.1",
+                    releases = listOf(
+                        release("v0.2.0-alpha.2", prerelease = true),
+                    ),
+                ),
+                installSourceTrustChecker = InstallSourceTrustChecker { false },
+                packageInstaller = installer,
+                onInstallPermissionRequired = permissionPromptVersions::add,
+            )
+
+            runtime.installUpdate()
+            runCurrent()
+            assertEquals(
+                AppUpdateCheckState.InstallPermissionRequired("0.2.0-alpha.2"),
+                runtime.state.value,
+            )
+            assertEquals(listOf("0.2.0-alpha.2"), permissionPromptVersions)
+            assertEquals(0, installer.installCount)
+
+            runtime.onInstallSourceTrustReturned()
+            runCurrent()
+
+            assertEquals(
+                AppUpdateCheckState.InstallPermissionRequired("0.2.0-alpha.2"),
+                runtime.state.value,
+            )
+            assertEquals(listOf("0.2.0-alpha.2"), permissionPromptVersions)
+            assertEquals(0, installer.installCount)
+
+            runtime.installUpdate()
+
+            assertEquals(
+                listOf("0.2.0-alpha.2", "0.2.0-alpha.2"),
+                permissionPromptVersions,
+            )
+            assertEquals(0, installer.installCount)
+        } finally {
+            root.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun `granted source trust return resumes install without reopening prompt`() = runTest {
+        val root = createTempDirectory("aalyrics-install-runtime").toFile()
+        retainedUpdate(root, "0.2.0-alpha.2")
+        val installer = FakeUpdatePackageInstaller()
+        val permissionPromptVersions = mutableListOf<String>()
+        var sourceTrusted = false
+        try {
+            val runtime = runtime(
+                installedVersionName = "0.2.0-alpha.1",
+                releases = emptyList(),
+                downloadFileStore = updateStore(root),
+                installPreparation = installPreparation(
+                    installedVersionName = "0.2.0-alpha.1",
+                    releases = listOf(
+                        release("v0.2.0-alpha.2", prerelease = true),
+                    ),
+                ),
+                installSourceTrustChecker = InstallSourceTrustChecker { sourceTrusted },
+                packageInstaller = installer,
+                onInstallPermissionRequired = permissionPromptVersions::add,
+            )
+
+            runtime.installUpdate()
+            runCurrent()
+            assertEquals(
+                AppUpdateCheckState.InstallPermissionRequired("0.2.0-alpha.2"),
+                runtime.state.value,
+            )
+            assertEquals(listOf("0.2.0-alpha.2"), permissionPromptVersions)
+            assertEquals(0, installer.installCount)
+
+            sourceTrusted = true
+            runtime.onInstallSourceTrustReturned()
+            runCurrent()
+
+            assertEquals(
+                AppUpdateCheckState.Installing("0.2.0-alpha.2"),
+                runtime.state.value,
+            )
+            assertEquals(listOf("0.2.0-alpha.2"), permissionPromptVersions)
+            assertEquals(1, installer.installCount)
+        } finally {
+            root.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun `installer failure survives settings reentry for global retry presentation`() = runTest {
+        val root = createTempDirectory("aalyrics-install-runtime").toFile()
+        val retained = retainedUpdate(root, "0.2.0-alpha.2")
+        val installer = FakeUpdatePackageInstaller()
+        try {
+            val runtime = runtime(
+                installedVersionName = "0.2.0-alpha.1",
+                releases = emptyList(),
+                downloadFileStore = updateStore(root),
+                installPreparation = installPreparation(
+                    installedVersionName = "0.2.0-alpha.1",
+                    releases = listOf(
+                        release("v0.2.0-alpha.2", prerelease = true),
+                    ),
+                ),
+                installSourceTrustChecker = InstallSourceTrustChecker { true },
+                packageInstaller = installer,
+            )
+
+            runtime.installUpdate()
+            runCurrent()
+            assertEquals(
+                AppUpdateCheckState.Installing("0.2.0-alpha.2"),
+                runtime.state.value,
+            )
+
+            installer.emit(
+                UpdatePackageInstallerStatus.Failure(
+                    statusCode = -2,
+                    message = "cancelled",
+                ),
+            )
+
+            assertEquals(
+                AppUpdateCheckState.InstallFailed(
+                    versionName = "0.2.0-alpha.2",
+                    reason = AppUpdateInstallFailureReason.INSTALLER_REJECTED,
+                ),
+                runtime.state.value,
+            )
+            assertTrue(retained.isFile)
+
+            runtime.onSettingsEntered()
+
+            assertEquals(
+                AppUpdateCheckState.InstallFailed(
+                    versionName = "0.2.0-alpha.2",
+                    reason = AppUpdateInstallFailureReason.INSTALLER_REJECTED,
+                ),
+                runtime.state.value,
+            )
+            assertTrue(retained.isFile)
+
+            runtime.installUpdate()
+            runCurrent()
+            assertEquals(
+                AppUpdateCheckState.Installing("0.2.0-alpha.2"),
+                runtime.state.value,
+            )
+        } finally {
+            root.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun `reset abandons active install session and clears retained APK`() = runTest {
+        val root = createTempDirectory("aalyrics-install-runtime").toFile()
+        retainedUpdate(root, "0.2.0-alpha.2")
+        val installer = FakeUpdatePackageInstaller(sessionId = 88)
+        val recoveryStore = FakeUpdateRecoveryStore()
+        try {
+            val runtime = runtime(
+                installedVersionName = "0.2.0-alpha.1",
+                releases = emptyList(),
+                downloadFileStore = updateStore(root),
+                installPreparation = installPreparation(
+                    installedVersionName = "0.2.0-alpha.1",
+                    releases = listOf(
+                        release("v0.2.0-alpha.2", prerelease = true),
+                    ),
+                ),
+                installSourceTrustChecker = InstallSourceTrustChecker { true },
+                packageInstaller = installer,
+                updateRecoveryStore = recoveryStore,
+            )
+
+            runtime.installUpdate()
+            runCurrent()
+            assertEquals(
+                AppUpdateCheckState.Installing("0.2.0-alpha.2"),
+                runtime.state.value,
+            )
+            assertNotNull(recoveryStore.pendingUpdate())
+
+            runtime.reset()
+            runCurrent()
+
+            assertEquals(AppUpdateCheckState.Idle, runtime.state.value)
+            assertEquals(listOf(88), installer.abandonedSessions)
+            assertFalse(verifiedRoot(root).exists())
+            assertNull(recoveryStore.pendingUpdate())
+            assertEquals(1, recoveryStore.clearCount)
+
+            installer.emit(
+                UpdatePackageInstallerStatus.Failure(
+                    statusCode = -2,
+                    message = "late",
+                ),
+            )
+            assertEquals(AppUpdateCheckState.Idle, runtime.state.value)
+        } finally {
+            root.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun `reset clears unconsumed successful update recovery state`() = runTest {
+        val successful = SuccessfulUpdate(
+            installedVersion = "0.2.0-alpha.2",
+            installedVersionCode = 42L,
+            resumeAfterUpdate = true,
+        )
+        val recoveryStore = FakeUpdateRecoveryStore(
+            initialSuccessful = successful,
+        )
+        val runtime = runtime(
+            installedVersionName = "0.2.0-alpha.2",
+            releases = emptyList(),
+            updateRecoveryStore = recoveryStore,
+        )
+
+        assertEquals(successful, recoveryStore.successfulUpdate())
+
+        runtime.reset()
+
+        assertNull(recoveryStore.successfulUpdate())
+        assertEquals(1, recoveryStore.clearCount)
     }
 
     @Test
@@ -951,18 +2267,56 @@ class AppUpdateCheckRuntimeTest {
     private fun verifiedRoot(root: File): File =
         root.resolve("files/updates")
 
+    private fun retainedUpdate(
+        root: File,
+        versionName: String,
+    ): File {
+        verifiedRoot(root).mkdirs()
+        return verifiedRoot(root)
+            .resolve("AALyrics-v$versionName.apk")
+            .apply {
+                writeText("verified update")
+            }
+    }
+
     private fun kotlinx.coroutines.test.TestScope.runtime(
         installedVersionName: String,
         releases: List<GitHubRelease>,
         assetDownloadClient: UpdateAssetDownloadClient? = null,
         downloadFileStore: UpdateDownloadFileStore? = null,
+        installPreparation: UpdateInstallPreparation? = null,
+        installSourceTrustChecker: InstallSourceTrustChecker? = null,
+        packageInstaller: UpdatePackageInstaller? = null,
+        updateRecoveryStore: UpdateRecoveryStore? = FakeUpdateRecoveryStore(),
+        onReleaseQuerySucceeded: (UpdateCheckOrigin) -> Unit = {},
+        onInstallPermissionRequired: (String) -> Unit = {},
     ) = AppUpdateCheckRuntime(
         installedVersionName = installedVersionName,
         releaseClient = GitHubReleaseClient { Result.success(releases) },
         applicationScope = this,
         assetDownloadClient = assetDownloadClient,
         downloadFileStore = downloadFileStore,
+        installPreparation = installPreparation,
+        installSourceTrustChecker = installSourceTrustChecker,
+        packageInstaller = packageInstaller,
+        updateRecoveryStore = updateRecoveryStore,
+        onReleaseQuerySucceeded = onReleaseQuerySucceeded,
+        onInstallPermissionRequired = onInstallPermissionRequired,
     )
+
+    private fun installPreparation(
+        installedVersionName: String,
+        releases: List<GitHubRelease>,
+        preflightResult: UpdateApkPreflightResult =
+            UpdateApkPreflightResult.Ready(targetVersionCode = 41L),
+    ) = UpdateInstallPreparation(
+        installedVersionName = installedVersionName,
+        releaseClient = GitHubReleaseClient { Result.success(releases) },
+        preflightEvaluator = UpdateApkPreflightEvaluator { _, _ ->
+            preflightResult
+        },
+    )
+
 
     private fun release(
         tagName: String,
@@ -1006,6 +2360,92 @@ class AppUpdateCheckRuntimeTest {
     ): String {
         val digest = AALyricsSha256.calculate(ByteArrayInputStream(bytes))
         return "${digest.hex}  $apkFileName\n"
+    }
+
+    private class FakeUpdatePackageInstaller(
+        private val sessionId: Int = 77,
+        private var installFailure: Throwable? = null,
+        private val statusDuringInstall: UpdatePackageInstallerStatus? = null,
+    ) : UpdatePackageInstaller {
+        var installCount: Int = 0
+            private set
+        val abandonedSessions = mutableListOf<Int>()
+        private var statusSink: UpdatePackageInstallerStatusSink? = null
+
+        var beforeCommitCount: Int = 0
+            private set
+
+        override suspend fun install(
+            apkFile: File,
+            statusSink: UpdatePackageInstallerStatusSink,
+            onSessionCreated: (Int) -> Unit,
+            onBeforeCommit: (Int) -> Unit,
+        ): Result<Int> {
+            installCount += 1
+            this.statusSink = statusSink
+            onSessionCreated(sessionId)
+            return runCatching {
+                onBeforeCommit(sessionId)
+                beforeCommitCount += 1
+                installFailure?.let { throw it }
+                statusDuringInstall?.let(statusSink::onStatus)
+                sessionId
+            }
+        }
+
+        override fun abandon(sessionId: Int) {
+            abandonedSessions += sessionId
+            statusSink = null
+        }
+
+        fun emit(status: UpdatePackageInstallerStatus) {
+            statusSink?.onStatus(status)
+        }
+    }
+
+    private class FakeUpdateRecoveryStore(
+        private val recordFailure: Throwable? = null,
+        private val beforeRecord: (() -> Unit)? = null,
+        initialSuccessful: SuccessfulUpdate? = null,
+    ) : UpdateRecoveryStore {
+        private var pending: PendingUpdate? = null
+        private var successful: SuccessfulUpdate? = initialSuccessful
+        var recordCount: Int = 0
+            private set
+        var clearCount: Int = 0
+            private set
+
+        override fun pendingUpdate(): PendingUpdate? = pending
+
+        override fun successfulUpdate(): SuccessfulUpdate? = successful
+
+        override fun recordPendingUpdate(pendingUpdate: PendingUpdate) {
+            recordFailure?.let { throw it }
+            beforeRecord?.invoke()
+            recordCount += 1
+            pending = pendingUpdate
+        }
+
+        override fun promotePendingUpdateToSuccess(successfulUpdate: SuccessfulUpdate) {
+            pending = null
+            successful = successfulUpdate
+        }
+
+        override fun clearPendingUpdate() {
+            clearCount += 1
+            pending = null
+        }
+
+        override fun clearSuccessfulUpdate() {
+            clearCount += 1
+            successful = null
+        }
+
+        override fun clearAll() {
+            clearCount += 1
+            pending = null
+            successful = null
+        }
     }
 
     private class FakeUpdateAssetDownloadClient(

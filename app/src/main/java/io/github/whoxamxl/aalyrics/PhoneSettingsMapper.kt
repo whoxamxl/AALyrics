@@ -20,6 +20,7 @@ internal fun mapPhoneSettingsState(
     plainLyricsAutoScrollEnabled: Boolean,
     ignoreNonAudioApps: Boolean,
     allowUnclassifiedApps: Boolean,
+    automaticallyCheckForUpdates: Boolean = true,
     androidAutoStatus: AndroidAutoCompatibilityUiStatus,
     appVersionName: String,
     currentYear: Int,
@@ -60,6 +61,7 @@ internal fun mapPhoneSettingsState(
         plainLyricsAutoScrollEnabled = plainLyricsAutoScrollEnabled,
         ignoreNonAudioApps = ignoreNonAudioApps,
         allowUnclassifiedApps = allowUnclassifiedApps,
+        automaticallyCheckForUpdates = automaticallyCheckForUpdates,
         verboseDetailsEnabled = verboseDetailsEnabled,
         translationEnabled = translationSettings.enabled,
         translationTarget = selected,
@@ -81,47 +83,40 @@ internal fun mapPhoneSettingsState(
         appUpdate = when (appUpdateCheckState) {
             AppUpdateCheckState.Idle ->
                 AppUpdateUiState(phase = AppUpdateUiPhase.IDLE)
-            AppUpdateCheckState.Checking ->
-                AppUpdateUiState(phase = AppUpdateUiPhase.CHECKING)
-            AppUpdateCheckState.UpToDate ->
-                AppUpdateUiState(phase = AppUpdateUiPhase.UP_TO_DATE)
+            is AppUpdateCheckState.Checking ->
+                if (appUpdateCheckState.origin == UpdateCheckOrigin.MANUAL) {
+                    AppUpdateUiState(phase = AppUpdateUiPhase.CHECKING)
+                } else {
+                    AppUpdateUiState(phase = AppUpdateUiPhase.IDLE)
+                }
+            is AppUpdateCheckState.UpToDate ->
+                if (appUpdateCheckState.origin == UpdateCheckOrigin.MANUAL) {
+                    AppUpdateUiState(phase = AppUpdateUiPhase.UP_TO_DATE)
+                } else {
+                    AppUpdateUiState(phase = AppUpdateUiPhase.IDLE)
+                }
             is AppUpdateCheckState.UpdateAvailable ->
-                AppUpdateUiState(
-                    phase = AppUpdateUiPhase.UPDATE_AVAILABLE,
-                    availableVersionName = appUpdateCheckState.versionName,
-                )
-            AppUpdateCheckState.Failed ->
-                AppUpdateUiState(phase = AppUpdateUiPhase.CHECK_FAILED)
-            is AppUpdateCheckState.PreparingDownload ->
-                AppUpdateUiState(
-                    phase = AppUpdateUiPhase.PREPARING_DOWNLOAD,
-                    availableVersionName = appUpdateCheckState.versionName,
-                )
-            is AppUpdateCheckState.Downloading ->
-                AppUpdateUiState(
-                    phase = AppUpdateUiPhase.DOWNLOADING,
-                    availableVersionName = appUpdateCheckState.versionName,
-                    downloadProgress = if (appUpdateCheckState.totalBytes > 0L) {
-                        (
-                            appUpdateCheckState.downloadedBytes.toDouble() /
-                                appUpdateCheckState.totalBytes.toDouble()
-                            )
-                            .coerceIn(0.0, 1.0)
-                            .toFloat()
-                    } else {
-                        0f
-                    },
-                )
+                AppUpdateUiState(phase = AppUpdateUiPhase.IDLE)
+            is AppUpdateCheckState.Failed ->
+                if (appUpdateCheckState.origin == UpdateCheckOrigin.MANUAL) {
+                    AppUpdateUiState(phase = AppUpdateUiPhase.CHECK_FAILED)
+                } else {
+                    AppUpdateUiState(phase = AppUpdateUiPhase.IDLE)
+                }
+            is AppUpdateCheckState.PreparingDownload,
+            is AppUpdateCheckState.Downloading,
+            is AppUpdateCheckState.VerifyingDownload ->
+                AppUpdateUiState(phase = AppUpdateUiPhase.IDLE)
             is AppUpdateCheckState.Downloaded ->
-                AppUpdateUiState(
-                    phase = AppUpdateUiPhase.DOWNLOADED,
-                    availableVersionName = appUpdateCheckState.versionName,
-                )
+                AppUpdateUiState(phase = AppUpdateUiPhase.IDLE)
             is AppUpdateCheckState.DownloadFailed ->
-                AppUpdateUiState(
-                    phase = AppUpdateUiPhase.DOWNLOAD_FAILED,
-                    availableVersionName = appUpdateCheckState.versionName,
-                )
+                AppUpdateUiState(phase = AppUpdateUiPhase.IDLE)
+            is AppUpdateCheckState.PreparingInstall,
+            is AppUpdateCheckState.InstallPermissionRequired,
+            is AppUpdateCheckState.Installing ->
+                AppUpdateUiState(phase = AppUpdateUiPhase.IDLE)
+            is AppUpdateCheckState.InstallFailed ->
+                AppUpdateUiState(phase = AppUpdateUiPhase.IDLE)
         },
     )
 }
