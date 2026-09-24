@@ -97,8 +97,6 @@ internal fun PhoneRuntimeHost(
     val automaticallyCheckForUpdates by
         application.automaticallyCheckForUpdates.collectAsStateWithLifecycle()
     val appUpdateCheckState by application.appUpdateCheckState.collectAsStateWithLifecycle()
-    val installPermissionPrompt by
-        application.installPermissionPrompt.collectAsStateWithLifecycle()
     val successfulUpdate by
         application.successfulUpdate.collectAsStateWithLifecycle()
     val updateReleasePrompt by
@@ -201,7 +199,6 @@ internal fun PhoneRuntimeHost(
         thirdPartyLicensesText = application.thirdPartyLicensesText,
         translationModelCleanupState = translationModelCleanupState,
         appUpdateCheckState = appUpdateCheckState,
-        installPermissionPrompt = installPermissionPrompt,
     )
 
     PhoneAppShell(
@@ -309,10 +306,6 @@ internal fun PhoneRuntimeHost(
                 onCheckForUpdates = application::checkForUpdates,
                 onDownloadUpdate = application::downloadUpdate,
                 onInstallUpdate = application::installUpdate,
-                onOpenInstallSettings = onOpenInstallSettings,
-                onDismissInstallPermissionDialog =
-                    application::dismissInstallPermissionPrompt,
-                onDownloadUpdateFromGitHub = onOpenUpdateRelease,
                 onOpenGitHub = onOpenSourceCode,
                 onHelpFeedback = onOpenHelpFeedback,
                 onSupportAALyrics = onOpenSupportAALyrics,
