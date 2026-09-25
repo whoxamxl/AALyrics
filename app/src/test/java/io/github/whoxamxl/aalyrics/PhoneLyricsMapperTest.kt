@@ -643,6 +643,39 @@ class PhoneLyricsMapperTest {
     }
 
     @Test
+    fun `PLAIN playback progress uses local sample anchor when source timestamp is unavailable`() {
+        val playback = PlaybackSnapshot(
+            track = track(),
+            status = PlaybackStatus.PLAYING,
+            positionMs = 4_000L,
+            playbackRate = 1f,
+            source = PlaybackSource("com.example.player"),
+            positionUpdatedAtMonotonicMs = null,
+            positionSampledAtMonotonicMs = 10_000L,
+        )
+        val lyrics = LyricsState.Ready(
+            lookup = LyricsLookup(
+                id = LyricsLookupId(1L),
+                track = requireNotNull(playback.track),
+                playbackIdentity = requireNotNull(playback.trackIdentity),
+            ),
+            lyrics = LyricsDocument(lines = listOf(PlainLyricLine("Untimed"))),
+        )
+
+        val state = mapPhoneLyricsState(
+            playback = playback,
+            lyricsState = lyrics,
+            plainLyricsAutoScrollEnabled = true,
+            interactionMode = LyricsViewportInteractionMode.FOLLOW,
+            currentMonotonicTimeMs = 12_000L,
+        )
+
+        assertEquals(LyricsSyncType.PLAIN, state.viewport.syncType)
+        assertEquals(0.3f, state.viewport.playbackProgress)
+        assertNull(state.viewport.currentLineIndex)
+    }
+
+    @Test
     fun `source playback timestamp takes precedence over local sample anchor`() {
         val playback = PlaybackSnapshot(
             track = track(),
