@@ -17,6 +17,7 @@ import io.github.whoxamxl.aalyrics.ui.phone.lyrics.LyricsScreenUiState
 import io.github.whoxamxl.aalyrics.ui.phone.lyrics.LyricsViewportInteractionMode
 import io.github.whoxamxl.aalyrics.ui.phone.lyrics.LyricsViewportLineUiState
 import io.github.whoxamxl.aalyrics.ui.phone.lyrics.LyricsViewportUiState
+import io.github.whoxamxl.aalyrics.ui.phone.lyrics.KaraokeLineUiState
 import io.github.whoxamxl.aalyrics.ui.phone.lyrics.KaraokeSweepUiState
 import io.github.whoxamxl.aalyrics.ui.phone.lyrics.TrackCardLyricsStatus
 import io.github.whoxamxl.aalyrics.ui.phone.lyrics.TrackCardTranslationUiState
@@ -140,7 +141,10 @@ internal object PhonePreviewFixtures {
         currentLineIndex = 4,
         currentWordIndex = 3,
         currentWordProgress = 0.62f,
-        karaokeSweep = KaraokeSweepUiState(start = 13, end = 20, progress = 0.62f),
+        karaokeLine = KaraokeLineUiState(
+            completedEnd = 13,
+            sweep = KaraokeSweepUiState(start = 13, end = 20, progress = 0.62f),
+        ),
     )
 
     val viewportPlain = LyricsViewportUiState(

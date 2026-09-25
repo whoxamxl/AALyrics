@@ -30,7 +30,7 @@ private fun LyricsViewportWordOffPreview() {
     LyricsViewportPreview(PhonePreviewFixtures.viewportWord.copy(
         currentWordIndex = null,
         currentWordProgress = 0f,
-        karaokeSweep = null,
+        karaokeLine = null,
     ))
 }
 

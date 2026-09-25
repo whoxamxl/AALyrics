@@ -670,8 +670,8 @@ class PhoneLyricsMapperTest {
 
         assertEquals(0, state.viewport.currentWordIndex)
         assertEquals(0.5f, state.viewport.currentWordProgress)
-        assertEquals(0.5f, state.viewport.karaokeSweep?.progress)
-        assertEquals(0 to 5, state.viewport.karaokeSweep?.let { it.start to it.end })
+        assertEquals(0.5f, state.viewport.karaokeLine?.sweep?.progress)
+        assertEquals(0 to 5, state.viewport.karaokeLine?.sweep?.let { it.start to it.end })
     }
 
     @Test
@@ -713,8 +713,8 @@ class PhoneLyricsMapperTest {
         )
 
         assertEquals(0, state.viewport.currentLineIndex)
-        assertEquals(0 to 5, state.viewport.karaokeSweep?.let { it.start to it.end })
-        assertEquals(0.5f, state.viewport.karaokeSweep?.progress)
+        assertEquals(0 to 5, state.viewport.karaokeLine?.sweep?.let { it.start to it.end })
+        assertEquals(0.5f, state.viewport.karaokeLine?.sweep?.progress)
     }
 
     @Test
@@ -818,12 +818,12 @@ class PhoneLyricsMapperTest {
         assertEquals(featureOff.playbackProgress, karaokeOn.playbackProgress)
         assertNull(featureOff.currentWordIndex)
         assertNull(featureOn.currentWordIndex)
-        assertNull(featureOff.karaokeSweep)
-        assertNull(featureOn.karaokeSweep)
+        assertNull(featureOff.karaokeLine)
+        assertNull(featureOn.karaokeLine)
         assertEquals(0, karaokeOn.currentWordIndex)
         assertEquals(0.5f, karaokeOn.currentWordProgress)
-        assertEquals(0.5f, karaokeOn.karaokeSweep?.progress)
-        assertEquals(0 to 6, karaokeOn.karaokeSweep?.let { it.start to it.end })
+        assertEquals(0.5f, karaokeOn.karaokeLine?.sweep?.progress)
+        assertEquals(0 to 6, karaokeOn.karaokeLine?.sweep?.let { it.start to it.end })
     }
 
     @Test
@@ -931,13 +931,13 @@ class PhoneLyricsMapperTest {
         assertEquals(0, active.currentLineIndex)
         assertEquals(0, active.currentWordIndex)
         assertEquals(0.5f, active.currentWordProgress)
-        assertEquals(0 to 5, active.karaokeSweep?.let { it.start to it.end })
-        assertEquals(0.5f, active.karaokeSweep?.progress)
+        assertEquals(0 to 5, active.karaokeLine?.sweep?.let { it.start to it.end })
+        assertEquals(0.5f, active.karaokeLine?.sweep?.progress)
         assertEquals("Hello world", active.lines.single().text)
 
         assertNull(mapped(true, true, ready(playback, listOf(
             TimedLyricLine("Line only", 0L),
-        ))).karaokeSweep)
+        ))).karaokeLine)
         val plainLyrics = LyricsState.Ready(
             lookup = LyricsLookup(
                 id = LyricsLookupId(1L),
@@ -946,7 +946,7 @@ class PhoneLyricsMapperTest {
             ),
             lyrics = LyricsDocument(listOf(PlainLyricLine("Plain only"))),
         )
-        assertNull(mapped(true, true, plainLyrics).karaokeSweep)
+        assertNull(mapped(true, true, plainLyrics).karaokeLine)
     }
 
     @Test

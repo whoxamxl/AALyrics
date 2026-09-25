@@ -118,6 +118,45 @@ class PhoneKaraokePresentationTest {
     }
 
     @Test
+    fun `before first word keeps the whole Karaoke line pending`() {
+        val line = TimedLyricLine("hello world", 0L, words = listOf(
+            TimedWord("hello", 300L, 700L),
+            TimedWord("world", 800L, 1_200L),
+        ))
+
+        val state = lineState(line, 150L)
+
+        assertEquals(0, state?.completedEnd)
+        assertNull(state?.sweep)
+    }
+
+    @Test
+    fun `inter word gap keeps completed prefix and future suffix pending`() {
+        val line = TimedLyricLine("hello world", 0L, words = listOf(
+            TimedWord("hello", 0L, 300L),
+            TimedWord("world", 1_000L, 1_500L),
+        ))
+
+        val state = lineState(line, 700L)
+
+        assertEquals(5, state?.completedEnd)
+        assertNull(state?.sweep)
+    }
+
+    @Test
+    fun `after last word keeps the complete Karaoke line finished`() {
+        val line = TimedLyricLine("hello world", 0L, words = listOf(
+            TimedWord("hello", 0L, 300L),
+            TimedWord("world", 500L, 900L),
+        ))
+
+        val state = lineState(line, 1_100L)
+
+        assertEquals(line.text.length, state?.completedEnd)
+        assertNull(state?.sweep)
+    }
+
+    @Test
     fun `line wide Japanese pseudo token does not enable Karaoke sweep`() {
         val text = "あなたと二人で踊ろうよ"
         val line = TimedLyricLine(
@@ -215,7 +254,21 @@ class PhoneKaraokePresentationTest {
         line: TimedLyricLine,
         positionMs: Long,
         nextTimedLineStartMs: Long? = null,
-    ) = mapPhoneKaraokeSweep(
+    ) = mapPhoneKaraokeLine(
+        line = line,
+        timing = projectLyricsTiming(
+            LyricsDocument(listOf(line)),
+            EffectiveLyricsPosition(positionMs),
+        ),
+        effectivePositionMs = positionMs,
+        nextTimedLineStartMs = nextTimedLineStartMs,
+    )?.sweep
+
+    private fun lineState(
+        line: TimedLyricLine,
+        positionMs: Long,
+        nextTimedLineStartMs: Long? = null,
+    ) = mapPhoneKaraokeLine(
         line = line,
         timing = projectLyricsTiming(
             LyricsDocument(listOf(line)),
