@@ -54,6 +54,9 @@ fun PlaybackSurface(
     onQueueItemSelected: (Long) -> Unit,
     onOpenPlaybackApp: () -> Unit,
     onTranslationEnabledChanged: (Boolean) -> Unit,
+    karaokeFeatureEnabled: Boolean = false,
+    karaokeModeEnabled: Boolean = false,
+    onKaraokeModeEnabledChanged: (Boolean) -> Unit = {},
     modifier: Modifier = Modifier,
     artwork: (@Composable BoxScope.() -> Unit)? = null,
     queueArtwork: (@Composable BoxScope.(PlaybackQueueItemUiState) -> Unit)? = null,
@@ -261,6 +264,9 @@ fun PlaybackSurface(
                 onQueueItemSelected = onQueueItemSelected,
                 onOpenPlaybackApp = onOpenPlaybackApp,
                 onTranslationEnabledChanged = onTranslationEnabledChanged,
+                karaokeFeatureEnabled = karaokeFeatureEnabled,
+                karaokeModeEnabled = karaokeModeEnabled,
+                onKaraokeModeEnabledChanged = onKaraokeModeEnabledChanged,
                 transformationDragModifier = expandedTransformDragModifier,
                 modifier = Modifier
                     .align(Alignment.BottomCenter)

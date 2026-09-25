@@ -122,7 +122,7 @@ Do not:
 
 1. [x] docs: align Phone Karaoke activation/mapping/rendering, working-fork reuse policy, and deferred Android Auto.
 2. [x] settings: persist Experimental feature gate + live Karaoke mode; defaults/reset OFF.
-3. [ ] playback: expose Quick-controls Karaoke toggle only behind the feature gate.
+3. [x] playback: expose Quick-controls Karaoke toggle only behind the feature gate.
 4. [ ] mapping: expose WORD presentation facts and conservative token ranges only when effective Karaoke is active.
 5. [ ] rendering: implement current-line continuous sweep with normal-style fallback.
 6. [ ] tests/previews: cover gate/mode/WORD matrix and current behaviour when disabled.

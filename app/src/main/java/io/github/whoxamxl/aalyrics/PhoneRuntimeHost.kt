@@ -96,6 +96,7 @@ internal fun PhoneRuntimeHost(
         application.translationModelCleanupState.collectAsStateWithLifecycle()
     val verboseDetailsEnabled by application.verboseDetailsEnabled.collectAsStateWithLifecycle()
     val karaokeFeatureEnabled by application.karaokeFeatureEnabled.collectAsStateWithLifecycle()
+    val karaokeModeEnabled by application.karaokeModeEnabled.collectAsStateWithLifecycle()
     val ignoreNonAudioApps by application.ignoreNonAudioApps.collectAsStateWithLifecycle()
     val allowUnclassifiedApps by application.allowUnclassifiedApps.collectAsStateWithLifecycle()
     val automaticallyCheckForUpdates by
@@ -258,6 +259,9 @@ internal fun PhoneRuntimeHost(
         onQueueItemSelected = application::skipToQueueItem,
         onOpenPlaybackApp = { application.openSelectedPlaybackApp() },
         onTranslationEnabledChanged = application::setTranslationEnabled,
+        karaokeFeatureEnabled = karaokeFeatureEnabled,
+        karaokeModeEnabled = karaokeModeEnabled,
+        onKaraokeModeEnabledChanged = application::setKaraokeModeEnabled,
         mediaSourceIconPainter = playbackSourceIconPainter,
         playbackArtwork = {
             AlbumArtwork(image = playbackArtworkImage)

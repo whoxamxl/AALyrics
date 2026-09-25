@@ -92,6 +92,9 @@ internal fun ExpandedPlayer(
     onQueueItemSelected: (Long) -> Unit,
     onOpenPlaybackApp: () -> Unit,
     onTranslationEnabledChanged: (Boolean) -> Unit,
+    karaokeFeatureEnabled: Boolean = false,
+    karaokeModeEnabled: Boolean = false,
+    onKaraokeModeEnabledChanged: (Boolean) -> Unit = {},
     transformationDragModifier: Modifier = Modifier,
     modifier: Modifier = Modifier,
     artwork: (@Composable BoxScope.() -> Unit)? = null,
@@ -163,6 +166,9 @@ internal fun ExpandedPlayer(
                 onQueue = { queueVisible = true },
                 onOpenPlaybackApp = onOpenPlaybackApp,
                 onTranslationEnabledChanged = onTranslationEnabledChanged,
+                karaokeFeatureEnabled = karaokeFeatureEnabled,
+                karaokeModeEnabled = karaokeModeEnabled,
+                onKaraokeModeEnabledChanged = onKaraokeModeEnabledChanged,
             )
         }
     }
@@ -381,6 +387,9 @@ private fun ExpandedTransportRow(
     onQueue: () -> Unit,
     onOpenPlaybackApp: () -> Unit,
     onTranslationEnabledChanged: (Boolean) -> Unit,
+    karaokeFeatureEnabled: Boolean,
+    karaokeModeEnabled: Boolean,
+    onKaraokeModeEnabledChanged: (Boolean) -> Unit,
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -390,6 +399,9 @@ private fun ExpandedTransportRow(
         QuickControlsButton(
             translationEnabled = state.translationEnabled,
             onTranslationEnabledChanged = onTranslationEnabledChanged,
+            karaokeFeatureEnabled = karaokeFeatureEnabled,
+            karaokeModeEnabled = karaokeModeEnabled,
+            onKaraokeModeEnabledChanged = onKaraokeModeEnabledChanged,
         )
 
         key(state.playbackIdentityKey) {
@@ -479,6 +491,9 @@ private fun PlayerIconAction(
 private fun QuickControlsButton(
     translationEnabled: Boolean,
     onTranslationEnabledChanged: (Boolean) -> Unit,
+    karaokeFeatureEnabled: Boolean,
+    karaokeModeEnabled: Boolean,
+    onKaraokeModeEnabledChanged: (Boolean) -> Unit,
 ) {
     var expanded by remember { mutableStateOf(false) }
 
@@ -498,12 +513,34 @@ private fun QuickControlsButton(
                 enabled = translationEnabled,
                 onEnabledChanged = onTranslationEnabledChanged,
             )
+            if (karaokeFeatureEnabled) {
+                QuickControlToggleRow(
+                    label = stringResource(R.string.playback_karaoke),
+                    enabled = karaokeModeEnabled,
+                    onEnabledChanged = onKaraokeModeEnabledChanged,
+                )
+            }
         }
     }
 }
 
 @Composable
 internal fun QuickControlTranslationRow(
+    enabled: Boolean,
+    onEnabledChanged: (Boolean) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    QuickControlToggleRow(
+        label = stringResource(R.string.playback_translation),
+        enabled = enabled,
+        onEnabledChanged = onEnabledChanged,
+        modifier = modifier,
+    )
+}
+
+@Composable
+private fun QuickControlToggleRow(
+    label: String,
     enabled: Boolean,
     onEnabledChanged: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
@@ -526,7 +563,7 @@ internal fun QuickControlTranslationRow(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
-            text = stringResource(R.string.playback_translation),
+            text = label,
             style = AALyricsTypography.TrackArtist,
             color = AALyricsColors.TextPrimary,
             modifier = Modifier.weight(1f),
