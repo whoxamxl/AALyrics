@@ -115,7 +115,7 @@ private fun TrackIdentity(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     CircularProgressIndicator(
-                        modifier = Modifier.size(12.dp),
+                        modifier = Modifier.size(10.dp),
                         color = AALyricsColors.AccentCyan,
                         strokeWidth = 1.5.dp,
                     )
