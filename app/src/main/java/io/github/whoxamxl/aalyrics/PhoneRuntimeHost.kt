@@ -145,6 +145,13 @@ internal fun PhoneRuntimeHost(
     var monotonicTimeMs by rememberSaveable(playback.trackIdentity) {
         mutableStateOf(SystemClock.elapsedRealtime())
     }
+    // Some MediaSession implementations expose position without a valid
+    // lastPositionUpdateTime. Keep a Phone-presentation receipt anchor so the
+    // 33 ms Karaoke ticker can still project position continuously between
+    // coarse playback callbacks. A real source timestamp always wins downstream.
+    val playbackSnapshotReceivedAtMonotonicMs = remember(playback) {
+        SystemClock.elapsedRealtime()
+    }
 
     LaunchedEffect(
         playback.isPlaying,
@@ -181,6 +188,8 @@ internal fun PhoneRuntimeHost(
         plainLyricsAutoScrollEnabled = plainLyricsAutoScrollEnabled,
         interactionMode = lyricsInteractionMode,
         currentMonotonicTimeMs = monotonicTimeMs,
+        playbackPositionFallbackUpdatedAtMonotonicMs =
+            playbackSnapshotReceivedAtMonotonicMs,
         karaokeFeatureEnabled = karaokeFeatureEnabled,
         karaokeModeEnabled = karaokeModeEnabled,
     )

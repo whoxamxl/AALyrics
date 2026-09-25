@@ -592,6 +592,89 @@ class PhoneLyricsMapperTest {
     }
 
     @Test
+    fun `Phone receipt anchor advances playing position when source timestamp is unavailable`() {
+        val playback = PlaybackSnapshot(
+            track = track(),
+            status = PlaybackStatus.PLAYING,
+            positionMs = 4_000L,
+            playbackRate = 1f,
+            source = PlaybackSource("com.spotify.music"),
+            positionUpdatedAtMonotonicMs = null,
+        )
+
+        assertEquals(
+            6_000L,
+            projectedPlaybackPosition(
+                playback = playback,
+                currentMonotonicTimeMs = 12_000L,
+                fallbackUpdatedAtMonotonicMs = 10_000L,
+            ),
+        )
+    }
+
+    @Test
+    fun `source playback timestamp takes precedence over Phone receipt anchor`() {
+        val playback = PlaybackSnapshot(
+            track = track(),
+            status = PlaybackStatus.PLAYING,
+            positionMs = 4_000L,
+            playbackRate = 1f,
+            source = PlaybackSource("com.spotify.music"),
+            positionUpdatedAtMonotonicMs = 10_000L,
+        )
+
+        assertEquals(
+            6_000L,
+            projectedPlaybackPosition(
+                playback = playback,
+                currentMonotonicTimeMs = 12_000L,
+                fallbackUpdatedAtMonotonicMs = 5_000L,
+            ),
+        )
+    }
+
+    @Test
+    fun `Karaoke sweep advances after mid track enable when source timestamp is unavailable`() {
+        val playback = PlaybackSnapshot(
+            track = track(),
+            status = PlaybackStatus.PLAYING,
+            positionMs = 1_000L,
+            playbackRate = 1f,
+            source = PlaybackSource("com.spotify.music"),
+            positionUpdatedAtMonotonicMs = null,
+        )
+        val lyrics = ready(
+            playback = playback,
+            lines = listOf(
+                TimedLyricLine(
+                    text = "Hello world",
+                    startMs = 1_000L,
+                    words = listOf(
+                        TimedWord("Hello", 1_000L, 2_000L),
+                        TimedWord("world", 2_000L, 3_000L),
+                    ),
+                ),
+            ),
+        )
+
+        val state = mapPhoneLyricsState(
+            playback = playback,
+            lyricsState = lyrics,
+            plainLyricsAutoScrollEnabled = true,
+            interactionMode = LyricsViewportInteractionMode.FOLLOW,
+            currentMonotonicTimeMs = 1_500L,
+            playbackPositionFallbackUpdatedAtMonotonicMs = 1_000L,
+            karaokeFeatureEnabled = true,
+            karaokeModeEnabled = true,
+        )
+
+        assertEquals(0, state.viewport.currentWordIndex)
+        assertEquals(0.5f, state.viewport.currentWordProgress)
+        assertEquals(0.5f, state.viewport.karaokeSweep?.progress)
+        assertEquals(0 to 5, state.viewport.karaokeSweep?.let { it.start to it.end })
+    }
+
+    @Test
     fun `lyrics timing offset shifts line selection across canonical boundaries`() {
         val track = track()
         val lyricsLines = listOf(

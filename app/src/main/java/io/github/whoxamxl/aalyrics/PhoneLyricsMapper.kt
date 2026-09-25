@@ -31,6 +31,7 @@ internal fun mapPhoneLyricsState(
     plainLyricsAutoScrollEnabled: Boolean,
     interactionMode: LyricsViewportInteractionMode,
     currentMonotonicTimeMs: Long,
+    playbackPositionFallbackUpdatedAtMonotonicMs: Long? = null,
     translationState: TranslationState = TranslationState.Idle,
     translationSettings: TranslationSettings = TranslationSettings(enabled = false),
     translationModelStates: Map<String, TranslationModelState> = emptyMap(),
@@ -70,7 +71,11 @@ internal fun mapPhoneLyricsState(
         currentCanonicalIdentity = currentCanonicalIdentity,
         fallbackSourceLanguage = document?.languageTag,
     )
-    val projectedPlaybackPositionMs = projectedPlaybackPosition(playback, currentMonotonicTimeMs)
+    val projectedPlaybackPositionMs = projectedPlaybackPosition(
+        playback = playback,
+        currentMonotonicTimeMs = currentMonotonicTimeMs,
+        fallbackUpdatedAtMonotonicMs = playbackPositionFallbackUpdatedAtMonotonicMs,
+    )
     val lyricsPosition = effectiveLyricsPosition(
         projectedPlaybackPositionMs = projectedPlaybackPositionMs,
         offset = lyricsTimingOffset,
@@ -264,13 +269,16 @@ private fun shortLanguageLabel(languageTag: String?): String =
 internal fun projectedPlaybackPosition(
     playback: PlaybackSnapshot,
     currentMonotonicTimeMs: Long,
+    fallbackUpdatedAtMonotonicMs: Long? = null,
 ): Long {
     val base = playback.positionMs
     if (!playback.isPlaying || playback.playbackRate <= 0f) {
         return playback.track?.durationMs?.let { base.coerceIn(0L, it) } ?: base
     }
 
-    val elapsedMs = playback.positionUpdatedAtMonotonicMs
+    val updatedAtMonotonicMs = playback.positionUpdatedAtMonotonicMs
+        ?: fallbackUpdatedAtMonotonicMs
+    val elapsedMs = updatedAtMonotonicMs
         ?.let { updatedAt -> (currentMonotonicTimeMs - updatedAt).coerceAtLeast(0L) }
         ?: 0L
     val projected = base + (elapsedMs * playback.playbackRate)
