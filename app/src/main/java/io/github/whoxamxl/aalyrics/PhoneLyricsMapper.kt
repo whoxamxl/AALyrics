@@ -222,11 +222,7 @@ private fun mapTrackCardTranslationState(
                     state.request.targetLanguage,
                 )
             ) {
-                return if (modelPreparationActive(state.profile)) {
-                    TrackCardTranslationUiState.DownloadingModels
-                } else {
-                    TrackCardTranslationUiState.Failed
-                }
+                return TrackCardTranslationUiState.Failed
             }
         }
 

@@ -344,6 +344,31 @@ class PhoneLyricsMapperTest {
             TrackCardTranslationUiState.Failed,
             unrelatedDownloadWhileFailed.trackCard.translation,
         )
+
+        val currentRouteDownloadWhileFailed = mapPhoneLyricsState(
+            playback = playback,
+            lyricsState = lyrics,
+            plainLyricsAutoScrollEnabled = true,
+            interactionMode = LyricsViewportInteractionMode.FOLLOW,
+            currentMonotonicTimeMs = 1_000L,
+            translationState = TranslationState.Failed(
+                request = request,
+                profile = LanguageProfile(
+                    primary = "ja",
+                    secondaryCandidate = null,
+                    secondaryActivation = SecondaryActivation.NONE,
+                    lines = emptyList(),
+                ),
+            ),
+            translationSettings = enabledTranslation,
+            translationModelStates = mapOf(
+                "ja" to TranslationModelState("ja", TranslationModelPhase.DOWNLOADING),
+            ),
+        )
+        assertEquals(
+            TrackCardTranslationUiState.Failed,
+            currentRouteDownloadWhileFailed.trackCard.translation,
+        )
     }
 
     @Test
