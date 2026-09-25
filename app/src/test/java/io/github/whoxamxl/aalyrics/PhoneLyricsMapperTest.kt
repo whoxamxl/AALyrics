@@ -592,7 +592,7 @@ class PhoneLyricsMapperTest {
     }
 
     @Test
-    fun `Phone receipt anchor advances playing position when source timestamp is unavailable`() {
+    fun `local sample anchor advances playing position when source timestamp is unavailable`() {
         val playback = PlaybackSnapshot(
             track = track(),
             status = PlaybackStatus.PLAYING,
@@ -600,6 +600,7 @@ class PhoneLyricsMapperTest {
             playbackRate = 1f,
             source = PlaybackSource("com.spotify.music"),
             positionUpdatedAtMonotonicMs = null,
+            positionSampledAtMonotonicMs = 10_000L,
         )
 
         assertEquals(
@@ -607,13 +608,42 @@ class PhoneLyricsMapperTest {
             projectedPlaybackPosition(
                 playback = playback,
                 currentMonotonicTimeMs = 12_000L,
-                fallbackUpdatedAtMonotonicMs = 10_000L,
             ),
         )
     }
 
     @Test
-    fun `source playback timestamp takes precedence over Phone receipt anchor`() {
+    fun `LINE lyrics use local sample anchor when source timestamp is unavailable`() {
+        val playback = PlaybackSnapshot(
+            track = track(),
+            status = PlaybackStatus.PLAYING,
+            positionMs = 4_000L,
+            playbackRate = 1f,
+            source = PlaybackSource("com.example.player"),
+            positionUpdatedAtMonotonicMs = null,
+            positionSampledAtMonotonicMs = 10_000L,
+        )
+        val state = mapPhoneLyricsState(
+            playback = playback,
+            lyricsState = ready(
+                playback = playback,
+                lines = listOf(
+                    TimedLyricLine("First", 0L),
+                    TimedLyricLine("Second", 5_000L),
+                    TimedLyricLine("Third", 10_000L),
+                ),
+            ),
+            plainLyricsAutoScrollEnabled = true,
+            interactionMode = LyricsViewportInteractionMode.FOLLOW,
+            currentMonotonicTimeMs = 12_000L,
+        )
+
+        assertEquals(1, state.viewport.currentLineIndex)
+        assertEquals(0.3f, state.viewport.playbackProgress)
+    }
+
+    @Test
+    fun `source playback timestamp takes precedence over local sample anchor`() {
         val playback = PlaybackSnapshot(
             track = track(),
             status = PlaybackStatus.PLAYING,
@@ -621,6 +651,7 @@ class PhoneLyricsMapperTest {
             playbackRate = 1f,
             source = PlaybackSource("com.spotify.music"),
             positionUpdatedAtMonotonicMs = 10_000L,
+            positionSampledAtMonotonicMs = 5_000L,
         )
 
         assertEquals(
@@ -628,7 +659,6 @@ class PhoneLyricsMapperTest {
             projectedPlaybackPosition(
                 playback = playback,
                 currentMonotonicTimeMs = 12_000L,
-                fallbackUpdatedAtMonotonicMs = 5_000L,
             ),
         )
     }
@@ -642,6 +672,7 @@ class PhoneLyricsMapperTest {
             playbackRate = 1f,
             source = PlaybackSource("com.spotify.music"),
             positionUpdatedAtMonotonicMs = null,
+            positionSampledAtMonotonicMs = 1_000L,
         )
         val lyrics = ready(
             playback = playback,
@@ -663,7 +694,6 @@ class PhoneLyricsMapperTest {
             plainLyricsAutoScrollEnabled = true,
             interactionMode = LyricsViewportInteractionMode.FOLLOW,
             currentMonotonicTimeMs = 1_500L,
-            playbackPositionFallbackUpdatedAtMonotonicMs = 1_000L,
             karaokeFeatureEnabled = true,
             karaokeModeEnabled = true,
         )
@@ -773,6 +803,7 @@ class PhoneLyricsMapperTest {
             playbackRate = 1f,
             source = PlaybackSource("com.spotify.music"),
             positionUpdatedAtMonotonicMs = null,
+            positionSampledAtMonotonicMs = 10_000L,
         )
         val lyrics = ready(
             playback = playback,
@@ -802,7 +833,6 @@ class PhoneLyricsMapperTest {
             plainLyricsAutoScrollEnabled = true,
             interactionMode = LyricsViewportInteractionMode.FOLLOW,
             currentMonotonicTimeMs = 11_500L,
-            playbackPositionFallbackUpdatedAtMonotonicMs = 10_000L,
             karaokeFeatureEnabled = gate,
             karaokeModeEnabled = mode,
         ).viewport

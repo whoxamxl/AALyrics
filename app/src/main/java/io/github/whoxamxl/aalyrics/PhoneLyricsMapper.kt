@@ -31,7 +31,6 @@ internal fun mapPhoneLyricsState(
     plainLyricsAutoScrollEnabled: Boolean,
     interactionMode: LyricsViewportInteractionMode,
     currentMonotonicTimeMs: Long,
-    playbackPositionFallbackUpdatedAtMonotonicMs: Long? = null,
     translationState: TranslationState = TranslationState.Idle,
     translationSettings: TranslationSettings = TranslationSettings(enabled = false),
     translationModelStates: Map<String, TranslationModelState> = emptyMap(),
@@ -77,9 +76,6 @@ internal fun mapPhoneLyricsState(
     val projectedPlaybackPositionMs = projectedPlaybackPosition(
         playback = playback,
         currentMonotonicTimeMs = currentMonotonicTimeMs,
-        fallbackUpdatedAtMonotonicMs =
-            playbackPositionFallbackUpdatedAtMonotonicMs
-                .takeIf { sourceSyncType == LyricsSyncType.WORD },
     )
     val lyricsPosition = effectiveLyricsPosition(
         projectedPlaybackPositionMs = projectedPlaybackPositionMs,
@@ -299,7 +295,6 @@ internal fun hasCurrentWordSyncedLyrics(
 internal fun projectedPlaybackPosition(
     playback: PlaybackSnapshot,
     currentMonotonicTimeMs: Long,
-    fallbackUpdatedAtMonotonicMs: Long? = null,
 ): Long {
     val base = playback.positionMs
     if (!playback.isPlaying || playback.playbackRate <= 0f) {
@@ -307,7 +302,7 @@ internal fun projectedPlaybackPosition(
     }
 
     val updatedAtMonotonicMs = playback.positionUpdatedAtMonotonicMs
-        ?: fallbackUpdatedAtMonotonicMs
+        ?: playback.positionSampledAtMonotonicMs
     val elapsedMs = updatedAtMonotonicMs
         ?.let { updatedAt -> (currentMonotonicTimeMs - updatedAt).coerceAtLeast(0L) }
         ?: 0L

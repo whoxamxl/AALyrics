@@ -775,7 +775,7 @@ class PhoneDetailsMapperTest {
     }
 
     @Test
-    fun `Verbose Details shares WORD Phone receipt anchor when source timestamp is unavailable`() {
+    fun `Verbose Details shares local sample anchor when source timestamp is unavailable`() {
         val track = currentTrack()
         val playback = PlaybackSnapshot(
             track = track,
@@ -784,6 +784,7 @@ class PhoneDetailsMapperTest {
             playbackRate = 1.0f,
             source = PlaybackSource(id = "com.spotify.music"),
             positionUpdatedAtMonotonicMs = null,
+            positionSampledAtMonotonicMs = 2_000L,
         )
         val identity = requireNotNull(playback.trackIdentity)
         val lyrics = LyricsState.Ready(
@@ -818,7 +819,6 @@ class PhoneDetailsMapperTest {
             playback = playback,
             lyricsState = lyrics,
             currentMonotonicTimeMs = 5_500L,
-            playbackPositionFallbackUpdatedAtMonotonicMs = 2_000L,
         )
 
         assertEquals("0:04", progress.playbackPositionLabel)

@@ -398,15 +398,11 @@ internal fun mapPhoneDetailsVerboseProgress(
     playback: PlaybackSnapshot,
     lyricsState: LyricsState,
     currentMonotonicTimeMs: Long,
-    playbackPositionFallbackUpdatedAtMonotonicMs: Long? = null,
 ): DetailsVerboseProgressUiState {
     val lyricsDocument = currentLyrics(playback, lyricsState).document
     val positionMs = projectedPlaybackPosition(
         playback = playback,
         currentMonotonicTimeMs = currentMonotonicTimeMs,
-        fallbackUpdatedAtMonotonicMs =
-            playbackPositionFallbackUpdatedAtMonotonicMs
-                .takeIf { lyricsDocument?.syncType == LyricsSyncType.WORD },
     )
     val lyricsPosition = effectiveLyricsPosition(positionMs, LyricsTimingOffset.ZERO)
 
