@@ -775,6 +775,32 @@ class PhoneDetailsMapperTest {
     }
 
     @Test
+    fun `Verbose Details shares Phone receipt anchor when source timestamp is unavailable`() {
+        val track = currentTrack()
+        val playback = PlaybackSnapshot(
+            track = track,
+            status = PlaybackStatus.PLAYING,
+            positionMs = 1_000L,
+            playbackRate = 1.0f,
+            source = PlaybackSource(id = "com.spotify.music"),
+            positionUpdatedAtMonotonicMs = null,
+        )
+
+        val progress = mapPhoneDetailsVerboseProgress(
+            playback = playback,
+            lyricsState = readyLyrics(
+                track,
+                requireNotNull(playback.trackIdentity),
+            ),
+            currentMonotonicTimeMs = 5_500L,
+            playbackPositionFallbackUpdatedAtMonotonicMs = 2_000L,
+        )
+
+        assertEquals("0:04", progress.playbackPositionLabel)
+        assertEquals(2, progress.currentLineNumber)
+    }
+
+    @Test
     fun `Verbose Details progress projects playback time and current synced line`() {
         val track = currentTrack()
         val playback = PlaybackSnapshot(

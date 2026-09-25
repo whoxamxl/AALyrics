@@ -312,6 +312,8 @@ internal fun PhoneRuntimeHost(
                             playback = playback,
                             lyricsState = lyricsState,
                             currentMonotonicTimeMs = monotonicTimeMs,
+                            playbackPositionFallbackUpdatedAtMonotonicMs =
+                                playbackSnapshotReceivedAtMonotonicMs,
                         ),
                     )
                 } else {
