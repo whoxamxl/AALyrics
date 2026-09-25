@@ -71,24 +71,25 @@ internal fun mapPhoneLyricsState(
         currentCanonicalIdentity = currentCanonicalIdentity,
         fallbackSourceLanguage = document?.languageTag,
     )
+    val sourceSyncType = document?.syncType ?: LyricsSyncType.PLAIN
+    val karaokeActive = karaokeFeatureEnabled && karaokeModeEnabled &&
+        sourceSyncType == LyricsSyncType.WORD
     val projectedPlaybackPositionMs = projectedPlaybackPosition(
         playback = playback,
         currentMonotonicTimeMs = currentMonotonicTimeMs,
-        fallbackUpdatedAtMonotonicMs = playbackPositionFallbackUpdatedAtMonotonicMs,
+        fallbackUpdatedAtMonotonicMs =
+            playbackPositionFallbackUpdatedAtMonotonicMs.takeIf { karaokeActive },
     )
     val lyricsPosition = effectiveLyricsPosition(
         projectedPlaybackPositionMs = projectedPlaybackPositionMs,
         offset = lyricsTimingOffset,
     )
     val timingProjection = document?.let { projectLyricsTiming(it, lyricsPosition) }
-    val sourceSyncType = document?.syncType ?: LyricsSyncType.PLAIN
     val displaySyncType = if (sourceSyncType == LyricsSyncType.WORD) {
         LyricsSyncType.LINE
     } else {
         sourceSyncType
     }
-    val karaokeActive = karaokeFeatureEnabled && karaokeModeEnabled &&
-        sourceSyncType == LyricsSyncType.WORD
     val karaokeSweep = if (karaokeActive) {
         val activeLine = timingProjection?.activeLineIndex
             ?.let { document?.lines?.getOrNull(it) as? TimedLyricLine }
