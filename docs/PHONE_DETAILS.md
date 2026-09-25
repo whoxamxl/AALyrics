@@ -139,7 +139,7 @@ TRANSLATION
 Source language          English (Spanish)
 Target language          Japanese
 Runtime state            Ready
-Source model (EN, ES)    Ready
+Source model (EN (ES))   Ready (Ready)
 Target model (JA)        Ready
 ```
 
@@ -170,13 +170,28 @@ Model-state semantics are availability-oriented, not "currently needed" semantic
 - when Translation is ON, a missing required model must not be presented as `Not required`; it should resolve through the active preparation lifecycle (`Checking`, `Downloading`, or `Waiting for system`) or a terminal failure state;
 - a process-local missing model-state entry is not proof that a model is absent until startup inventory reconciliation has established that fact.
 
-The source-model row is one compact aggregate row rather than one row per source language. The label lists the Translation-relevant source ISO tags: Primary plus ACTIVE Secondary when present, for example `Source model (EN, ES)`. Do not suppress the Source model row merely because the Primary ISO equals the Target ISO; Verbose Details keeps Source model and Target model as two distinct diagnostic rows. Its value summarizes the source-side model requirements:
+The Source model row preserves Primary/ACTIVE-Secondary pairing instead of collapsing multiple source languages into one aggregate state.
 
-- `Ready` only when every required source-side model is available; built-in source languages count as Ready;
-- an active preparation phase is shown when any required source-side model is still preparing;
-- `Failed` or `Timed out` is shown when any required source-side model reaches that terminal state;
-- when multiple source models have different nonterminal states, present the most actionable state in this order: `Waiting for system` -> `Downloading` -> `Checking` -> `Ready`;
-- terminal failure takes precedence over nonterminal/Ready states, and the failure tooltip identifies the affected ISO language(s).
+Examples:
+
+```text
+Source model (EN)        Ready
+Source model (EN (ES))   Ready (Ready)
+Source model (EN (ES))   Ready (Downloading)
+Source model (EN (AR))   Ready (—)
+```
+
+Rules:
+
+- the label mirrors Source language structure using ISO tags: Primary first, ACTIVE Secondary in parentheses;
+- the value mirrors that exact position: Primary model state first, ACTIVE Secondary model state in parentheses;
+- do not suppress the Source model row merely because the Primary ISO equals the Target ISO; Verbose Details keeps Source model and Target model as distinct diagnostics;
+- supported source-model languages are currently limited to `EN / JA / FR / DE / ES / KO / ZH / IT / PT`;
+- a detected source language outside that product-supported model set is shown as `—` rather than `Ready`, `Not required`, or a fabricated lifecycle phase;
+- `—` means "detected language, no AALyrics Translation model support"; it is not a failure state and has no failure tooltip;
+- each supported model position keeps its own lifecycle state (`Not required`, `Checking`, `Downloading`, `Waiting for system`, `Ready`, `Failed`, `Timed out`);
+- when Primary and ACTIVE Secondary have different states, do not aggregate them into one "most actionable" value;
+- a `Failed` or `Timed out` position uses the standard reason tooltip for that specific language.
 
 If no authoritative current source profile exists yet, omit the Source language and Source model rows instead of guessing from provider metadata. The Target language/model rows remain independently representable because the target setting is known before profiling.
 
@@ -192,8 +207,8 @@ Examples:
 
 ```text
 Runtime state            Failed ⓘ
-Source model (JA)        Failed ⓘ
-Target model (EN)        Ready
+Source model (EN (ES))   Ready (Failed ⓘ)
+Target model (JA)        Ready
 ```
 
 Rules:

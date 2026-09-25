@@ -31,9 +31,10 @@ The default `LanguageProfilerPolicy` is named and testable:
 - ordinary line evidence requires confidence `0.45`;
 - complete-document Language ID contributes `0.20` of aggregate substantive-character weight;
 - Primary requires evidence weight `4.0`;
-- a Secondary candidate requires evidence weight `0.25`;
-- Secondary becomes ACTIVE only with at least 2 meaningful lines, 12 substantive characters, `0.15` character share, and either a 2-line contiguous run or presence in at least 2 song regions;
-- common borrowed phrases (`Oh`, `Ooh`, `Yeah`, `Baby`, `Hey`, `La`, `Na`) contribute only `0.10` evidence weight and cannot activate Secondary by themselves.
+- a Secondary candidate requires evidence weight `0.25`; candidate detection intentionally remains permissive because a candidate is only evidence, not routing authority;
+- Secondary becomes ACTIVE only with at least 3 meaningful lines, 18 substantive characters, `0.20` character share, average candidate-line confidence `0.75`, and either a 2-line contiguous run or presence in at least 2 song regions;
+- common borrowed phrases (`Oh`, `Ooh`, `Yeah`, `Baby`, `Hey`, `La`, `Na`) contribute only `0.10` evidence weight and cannot activate Secondary by themselves;
+- the ACTIVE gate is language-agnostic. Do not add one-off rules such as "reject Arabic on Latin text" or language-specific false-positive patches unless a later architecture decision explicitly requires them.
 
 The default `TranslationBlockPolicy` uses 3 Core lines, a 240-character Core limit, a one-line Context Halo, and a 10-second timestamp-gap hard boundary. Blank/preserved lines and language changes also split hard groups. The current canonical model has no reliable verse/chorus marker, so the planner does not invent one.
 
@@ -203,27 +204,31 @@ Provider language metadata may be retained later for diagnostics or profiler val
 
 AALyrics should recognize a meaningful Primary and at most one Secondary candidate for Translation routing.
 
-A Secondary candidate being detected does **not** mean it must be translated.
+A Secondary candidate being detected does **not** mean it must be translated. Language ID false positives are expected at candidate level; the product protects routing by making ACTIVE promotion deliberately conservative.
 
-Secondary activation considers evidence such as:
+Secondary activation considers only generic evidence such as:
 
 - line coverage;
 - substantive text/token coverage;
+- average line-level confidence;
 - contiguous runs;
 - distribution across the song;
 - whether the evidence is mostly short borrowed phrases such as `Oh`, `Yeah`, or `Baby`.
 
-The implemented thresholds are documented above and remain explicit policy values covered by synthetic tests.
+The implemented thresholds are documented above and remain explicit policy values covered by synthetic tests. False negatives are preferred over false-positive ACTIVE promotion because an ACTIVE Secondary changes Translation routing and model acquisition, while an INCIDENTAL candidate remains diagnostic-only.
 
 Routing intent:
 
 ```text
-PRIMARY              -> translation eligible
-SECONDARY / ACTIVE   -> translation eligible
-SECONDARY / INCIDENTAL -> preserve original
-UNCERTAIN            -> preserve original
-TARGET LANGUAGE      -> preserve original
+PRIMARY, model-supported          -> translation eligible
+SECONDARY / ACTIVE, model-supported -> translation eligible
+PRIMARY or ACTIVE Secondary, unsupported -> preserve original
+SECONDARY / INCIDENTAL            -> preserve original
+UNCERTAIN                         -> preserve original
+TARGET LANGUAGE                   -> preserve original
 ```
+
+For the current alpha product policy, the Translation-model-supported language set is the same nine-language set exposed for targets: `EN / JA / FR / DE / ES / KO / ZH / IT / PT`. Language identification may still report other normalized languages (for example Arabic), but detection does not imply model support and must not by itself trigger model preparation outside this product set.
 
 A third language is not promoted into another routing lane in the initial design. Small or uncertain third-language passages remain original unless a later explicit decision expands the model.
 

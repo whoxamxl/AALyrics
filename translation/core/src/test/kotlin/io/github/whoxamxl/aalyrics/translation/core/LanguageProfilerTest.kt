@@ -62,6 +62,7 @@ class LanguageProfilerTest {
                 "The quiet avenue is bright",
                 "우리는 함께 노래하며 걷는다",
                 "새로운 아침을 향해서 간다",
+                "오늘의 목소리를 오래 기억한다",
             ),
         )
         val profiler = LanguageProfiler(identifier { text ->
@@ -77,7 +78,71 @@ class LanguageProfilerTest {
         assertEquals("en", profile.primary)
         assertEquals("ko", profile.secondaryCandidate)
         assertEquals(SecondaryActivation.ACTIVE, profile.secondaryActivation)
-        assertEquals(2, profile.lines.count { it.role == ProfiledLineRole.SECONDARY })
+        assertEquals(3, profile.lines.count { it.role == ProfiledLineRole.SECONDARY })
+    }
+
+    @Test
+    fun `two high-confidence false Secondary lines remain INCIDENTAL`() = runTest {
+        val falseSecondaryLines = setOf(
+            "canto breve na rua",
+            "volto cedo para casa",
+        )
+        val lyrics = document(
+            listOf(
+                "a noite segue devagar",
+                "o vento passa pela janela",
+                "canto breve na rua",
+                "volto cedo para casa",
+                "amanha nasce outro dia",
+                "a cidade dorme tranquila",
+            ),
+        )
+        val profiler = LanguageProfiler(identifier { text ->
+            when {
+                '\n' in text -> candidates("pt" to 0.99f)
+                text in falseSecondaryLines -> candidates("ar" to 0.93f)
+                else -> candidates("pt" to 0.98f)
+            }
+        })
+
+        val profile = profiler.profile(lyrics, targetLanguage = "ja")
+
+        assertEquals("pt", profile.primary)
+        assertEquals("ar", profile.secondaryCandidate)
+        assertEquals(SecondaryActivation.INCIDENTAL, profile.secondaryActivation)
+    }
+
+    @Test
+    fun `low-confidence Secondary passage remains INCIDENTAL even with three lines`() = runTest {
+        val weakSecondaryLines = setOf(
+            "first weak secondary line",
+            "second weak secondary line",
+            "third weak secondary line",
+        )
+        val lyrics = document(
+            listOf(
+                "main language line one",
+                "main language line two",
+                "main language line three",
+                "first weak secondary line",
+                "second weak secondary line",
+                "third weak secondary line",
+                "main language line four",
+            ),
+        )
+        val profiler = LanguageProfiler(identifier { text ->
+            when {
+                '\n' in text -> candidates("en" to 0.99f)
+                text in weakSecondaryLines -> candidates("es" to 0.60f)
+                else -> candidates("en" to 0.98f)
+            }
+        })
+
+        val profile = profiler.profile(lyrics, targetLanguage = "ja")
+
+        assertEquals("en", profile.primary)
+        assertEquals("es", profile.secondaryCandidate)
+        assertEquals(SecondaryActivation.INCIDENTAL, profile.secondaryActivation)
     }
 
     @Test

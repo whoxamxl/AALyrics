@@ -5,7 +5,7 @@
 - Branch: `feature/translation-runtime`.
 - Base: `main` at `4083588a250092e47f1efeb01e06a099b72a3604`.
 - Classification: TRANSLATION / PHONE PRESENTATION / RUNTIME COMPOSITION.
-- Status: Phone lyric Translation, Track Card Translation feedback/retry, and Phone Details Translation metadata/diagnostics are implemented through Checkpoint 7e. Static regression/alignment is complete; current-head Build/CI/Codex validation remains next.
+- Status: Phone Translation/Details implementation was validated through Build #1173, then reopened for a profiler/model-diagnostics refinement after device evidence showed an implausible ACTIVE Secondary language. The current checkpoint is spec/test alignment; production behavior has not yet been changed for this refinement.
 - Authoritative references: `AGENTS.md`, `docs/TRANSLATION_ARCHITECTURE.md`, `docs/PHONE_LYRICS_VIEWPORT.md`, `docs/PHONE_RUNTIME_HOST.md`, `docs/PHONE_UI_SPEC.md`, `docs/PHONE_DETAILS.md`, `docs/PRESENTATION_STATE_ARCHITECTURE.md`, and the current production code/tests on this branch.
 
 ## Goal
@@ -242,7 +242,18 @@ Use small, reviewable commits and keep each checkpoint independently coherent.
    - [x] **Checkpoint 7d — deterministic Previews/tests:** cover Primary only, ACTIVE Secondary, no profile yet, all six runtime states, all seven model presentation states, OFF+absent Not required, built-in/downloaded Ready while OFF, multi-source aggregate, and authoritative failure-tooltip payloads;
    - [x] **Checkpoint 7e — regression/alignment:** verified Details open/Verbose toggle remain presentation-only; fixed the Verbose live-progress effect key and preserved separate Source/Target model rows when the ISO is the same; no provider/profile/model download/retry trigger is introduced by Details.
 
-8. [ ] **Validation before PR readiness**
+8. [ ] **Secondary activation + Source model diagnostics refinement**
+   - [x] keep `secondaryCandidate` permissive and make only `SecondaryActivation.ACTIVE` conservative;
+   - [x] define a language-agnostic ACTIVE gate: >=3 meaningful lines, >=18 substantive characters, >=20% character share, >=0.75 average candidate-line confidence, plus a 2-line contiguous run or >=2 song regions;
+   - [x] add synthetic regressions for a two-line high-confidence false Secondary and a three-line low-confidence Secondary;
+   - [x] define the product-supported Translation model set as `EN / JA / FR / DE / ES / KO / ZH / IT / PT` while allowing Language ID to report other languages;
+   - [x] redefine Verbose Source model pairing as `Source model (EN (ES))  Ready (Ready)`; unsupported detected languages use `—`;
+   - [ ] implement the new ACTIVE gate in `LanguageProfiler`;
+   - [ ] enforce product-supported source-model routing/model preparation without adding per-language false-positive patches;
+   - [ ] replace aggregate Source model presentation state with positional Primary/Secondary model states and align Previews/tests;
+   - [ ] rerun build/tests/review after production changes.
+
+9. [ ] **Validation before PR readiness**
    - run the repository architecture checks;
    - run focused Translation/Phone unit tests;
    - run the normal JVM/unit test suite required by the repository;
@@ -294,8 +305,8 @@ The slice is complete when all of the following are true:
 - Track Card Translation status transitions do not change Track Card height or shift the LyricsViewport.
 - Ready presentation uses concise source/target language labels with a real centered forward-arrow icon between them.
 - Normal Details presents Translation Source language from the matching LanguageProfile and current Target language without confusing provider `LyricsDocument.languageTag` with profiler truth.
-- ACTIVE Secondary is appended as `Primary (Secondary)`; incidental Secondary is not promoted into Normal Details.
-- Verbose Details adds only Runtime state, aggregated Source model, and Target model rows rather than dumping request/provider internals.
+- ACTIVE Secondary is appended as `Primary (Secondary)`; incidental Secondary is not promoted into Normal Details. ACTIVE promotion uses only the documented generic evidence gate and does not accumulate language-specific false-positive patches.
+- Verbose Details adds only Runtime state, positional Source model, and Target model rows rather than dumping request/provider internals. Source model mirrors Primary/ACTIVE Secondary as `EN (ES)` with state `Ready (Ready)`; unsupported detected model languages render `—`.
 - Built-in and confirmed downloaded models display Ready even while Translation is OFF; Details-only Not required is limited to Translation OFF + confirmed absent remote model.
 - Details Failed/Timed out states expose authoritative reasons through the shared info-tooltip contract; raw engine exceptions do not enter `:ui:phone`.
 - Opening Details or enabling Verbose Details does not start profiling, Translation, provider lookup, model download, or retry; toggling Verbose while already on Details only starts/stops the presentation-local live progress ticker.
