@@ -434,6 +434,7 @@ Preview coverage should eventually exercise at least:
 - Unavailable status with app-identity and generic-fallback forms plus concise reason tooltip
 - Error status with concise reason tooltip
 - Track Card / Expanded Player title-only overflow, artist-only overflow, and both-overflow synchronized auto marquee + manual horizontal drag
+- permanent Track Card Translation row across OFF / ON / model-download / translating / ready route / not-required / failed + Retry states, with unchanged card height between Translation states
 - Collapsed Playback Bar title/artist ellipsis without marquee
 - no artwork
 - loading / ready / degraded / not found / failed lyrics states
