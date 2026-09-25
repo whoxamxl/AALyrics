@@ -5,7 +5,7 @@
 - Branch: `feature/translation-runtime`.
 - Base: `main` at `4083588a250092e47f1efeb01e06a099b72a3604`.
 - Classification: TRANSLATION / PHONE PRESENTATION / RUNTIME COMPOSITION.
-- Status: Phone lyric Translation and the permanent Track Card Translation status/retry path are implemented. The next authorized slice is Translation metadata + compact Verbose diagnostics in Phone Details; documentation is aligned first and production code has not yet been changed for this Details slice.
+- Status: Phone lyric Translation, Track Card Translation feedback/retry, and Phone Details Translation metadata/diagnostics are implemented through Checkpoint 7d. The next checkpoint is 7e regression/alignment; current-head Build/CI/Codex validation has not yet been rerun after the Details follow-up.
 - Authoritative references: `AGENTS.md`, `docs/TRANSLATION_ARCHITECTURE.md`, `docs/PHONE_LYRICS_VIEWPORT.md`, `docs/PHONE_RUNTIME_HOST.md`, `docs/PHONE_UI_SPEC.md`, `docs/PHONE_DETAILS.md`, `docs/PRESENTATION_STATE_ARCHITECTURE.md`, and the current production code/tests on this branch.
 
 ## Goal
@@ -46,7 +46,7 @@ The following already exists and is the baseline to preserve:
 - `mapPhoneLyricsState` already projects eligible translated lines and the permanent Track Card Translation state.
 - `LyricsViewportLineUiState` already carries optional translated presentation and `LyricsViewport` renders canonical + translated text as one measured row.
 - Track Card automatic-model-download / translating / Ready route / Failed + Retry presentation is implemented.
-- `phoneDetailsState` now combines playback + canonical lyrics + playback-source diagnostics with Translation settings/state/profile/model lifecycle facts and emits Phone-local Translation Details state. Compose rendering is intentionally still pending.
+- `phoneDetailsState` combines playback + canonical lyrics + playback-source diagnostics with Translation settings/state/profile/model lifecycle facts and emits Phone-local Translation Details state. Production `DetailsScreen` rendering plus deterministic Translation Details Previews are implemented.
 - `TranslationState.Translating` now retains the current-request LanguageProfile after profiling completes, and `TranslationState.Failed` retains that profile when available plus a framework-neutral `TranslationFailureReason`. This diagnostic evidence remains owned by the existing Translation lifecycle and is stale-request guarded.
 
 ## Scope
@@ -239,7 +239,7 @@ Use small, reviewable commits and keep each checkpoint independently coherent.
    - [x] **Checkpoint 7a — diagnostic evidence contract:** preserve the current request LanguageProfile after profiling while Translating/Failed and preserve a framework-neutral runtime failure reason; do not expose raw engine exceptions to Phone UI;
    - [x] **Checkpoint 7b — application Details mapping:** extend application-owned `phoneDetailsState` / `PhoneDetailsMapper` with Translation settings, current matching profile/runtime state, model lifecycle projection, and explicit startup model-inventory reconciliation;
    - [x] **Checkpoint 7c — Phone-local state + rendering:** add the `TRANSLATION` section, compact Verbose rows, and shared `PhoneInfoTooltip` treatment for Failed/Timed out;
-   - [ ] **Checkpoint 7d — deterministic Previews/tests:** cover Primary only, ACTIVE Secondary, no profile yet, all six runtime states, all model states, OFF+absent Not required, built-in/downloaded Ready while OFF, multi-source aggregate, and failure tooltips;
+   - [x] **Checkpoint 7d — deterministic Previews/tests:** cover Primary only, ACTIVE Secondary, no profile yet, all six runtime states, all seven model presentation states, OFF+absent Not required, built-in/downloaded Ready while OFF, multi-source aggregate, and authoritative failure-tooltip payloads;
    - [ ] **Checkpoint 7e — regression/alignment:** verify Verbose toggle remains presentation-only and no provider/profile/model work is triggered merely by opening Details.
 
 8. [ ] **Validation before PR readiness**
@@ -251,18 +251,23 @@ Use small, reviewable commits and keep each checkpoint independently coherent.
    - run bounded Codex review under `AGENTS.md`;
    - perform a physical-device smoke test for Translation ON/OFF and at least one actual translated song before merge.
 
-Local validation on the implementation head:
+Current-head validation after the Details follow-up:
 
-- [x] `scripts/verify-architecture.sh` passed.
-- [x] Focused `PhoneLyricsMapperTest` passed.
-- [x] Repository `test` task passed.
-- [x] `:app:assembleDebug` passed.
-- [x] Final implementation diff and commit-message CI gate checked; no accidental scope expansion found.
-- [x] One bounded local Codex review found no actionable correctness issue.
-- [x] Physical-device Translation ON/OFF and actual translated-song smoke test confirmed translated rows appear once the required source/target route models are available.
-- [x] Device finding documented and Target language info tooltip added: both source and target language models are required for a route; English is built in.
-- [x] Missing-model UX decision revised after device testing: keep automatic model acquisition; use the permanent Track Card status row instead of a normal pre-download dialog.
-- [x] Live Track Card model-download / translating / route / failed-retry mapping is implemented; physical-device validation remains before merge.
+- [ ] `scripts/verify-architecture.sh`.
+- [ ] Focused Translation / `PhoneLyricsMapperTest` / `PhoneDetailsMapperTest`.
+- [ ] Repository `test` task.
+- [ ] `:app:assembleDebug`.
+- [ ] Final branch diff / commit-message CI gate.
+- [ ] Bounded Codex review under `AGENTS.md`.
+- [ ] Physical-device smoke test for Translation Details, including Verbose OFF/ON and at least one failure/info-tooltip path where practical.
+
+Historical baseline evidence retained from before the Details follow-up:
+
+- Phone Translation ON/OFF and an actual translated-song smoke test passed once required route models were available.
+- The Target language tooltip/model-requirement explanation was device-informed.
+- Automatic model acquisition + permanent Track Card feedback/retry was validated before the Details extension.
+
+These historical checks do not count as validation of the current Details implementation head.
 
 Do not merge without explicit user authorization.
 

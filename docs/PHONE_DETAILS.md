@@ -4,7 +4,7 @@
 
 This document defines the approved presentation contract for the Phone `Details` destination.
 
-PR #49 implemented the original production `DetailsScreen`, Phone-local presentation state, application-owned runtime mapping, deterministic Previews, and focused mapper tests. On `feature/translation-runtime`, Translation Details state/mapping and production Compose rendering are implemented; deterministic Translation Details Previews remain the next checkpoint. Details remains read-only: it presents already-owned runtime facts and must not start Translation, download models, retry work, or trigger provider/network activity.
+PR #49 implemented the original production `DetailsScreen`, Phone-local presentation state, application-owned runtime mapping, deterministic Previews, and focused mapper tests. On `feature/translation-runtime`, Translation Details state/mapping, production Compose rendering, deterministic Translation Details Previews, and focused mapper coverage are implemented. The remaining implementation checkpoint is regression/alignment before final repository validation. Details remains read-only: it presents already-owned runtime facts and must not start Translation, download models, retry work, or trigger provider/network activity.
 
 ## Product intent
 
@@ -331,7 +331,7 @@ Labels and values should remain distinguishable through semantics, not color alo
 
 ## Preview matrix
 
-PR #49 provides deterministic Previews covering:
+PR #49 plus the Translation Details follow-up provide deterministic Preview/test coverage for:
 
 - normal Details with complete metadata;
 - normal Details with partial metadata;
@@ -342,7 +342,7 @@ PR #49 provides deterministic Previews covering:
 - Verbose Details with every runtime state: Disabled / Idle / Translating / Not required / Ready / Failed;
 - source/target model states covering Ready, Not required, Checking, Downloading, Waiting for system, Failed, and Timed out;
 - built-in English and already-downloaded remote models shown as Ready while Translation is OFF;
-- Failed and Timed out rows with the standard reason tooltip;
+- Failed and Timed out rows with the shared info-tooltip affordance, with focused mapper tests preserving the authoritative reason payload and forbidding invented fallback reasons;
 - aggregated multi-source model presentation such as `Source model (EN, ES)`;
 - Verbose Details ON with playback package/category/SDK levels, provider/source IDs, and track references;
 - Verbose Details ON with missing optional diagnostic values;
