@@ -5,6 +5,7 @@ import io.github.whoxamxl.aalyrics.translation.api.TranslationLanguages
 import io.github.whoxamxl.aalyrics.translation.api.TranslationSettings
 import io.github.whoxamxl.aalyrics.translation.api.TranslationSettingsStore
 import io.github.whoxamxl.aalyrics.translation.core.CanonicalLyrics
+import io.github.whoxamxl.aalyrics.translation.core.CanonicalLyricsIdentity
 import io.github.whoxamxl.aalyrics.translation.core.SecondaryActivation
 import io.github.whoxamxl.aalyrics.translation.core.TranslationLifecycle
 import io.github.whoxamxl.aalyrics.translation.core.TranslationState
@@ -51,20 +52,26 @@ internal class TranslationExecutionRuntime(
 internal fun translationRetryModelLanguages(
     state: TranslationState,
     settings: TranslationSettings,
+    currentCanonicalIdentity: CanonicalLyricsIdentity?,
 ): Set<String> {
+    if (!settings.enabled) return emptySet()
+
     val targetLanguage = TranslationLanguages.normalizeTargetLanguage(settings.targetLanguage)
     val languages = linkedSetOf(targetLanguage)
 
     val failed = state as? TranslationState.Failed
-    if (failed?.request?.targetLanguage == targetLanguage) {
-        failed.profile
-            ?.primary
+    val profile = failed?.profile
+    if (
+        failed?.request?.targetLanguage == targetLanguage &&
+        failed.request.canonicalLyrics == currentCanonicalIdentity &&
+        profile != null
+    ) {
+        profile.primary
             ?.let(TranslationLanguages::normalizeLanguageTag)
             ?.let(languages::add)
 
-        failed.profile
-            ?.secondaryCandidate
-            ?.takeIf { failed.profile.secondaryActivation == SecondaryActivation.ACTIVE }
+        profile.secondaryCandidate
+            ?.takeIf { profile.secondaryActivation == SecondaryActivation.ACTIVE }
             ?.let(TranslationLanguages::normalizeLanguageTag)
             ?.let(languages::add)
     }

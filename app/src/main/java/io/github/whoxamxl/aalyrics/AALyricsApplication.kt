@@ -301,6 +301,8 @@ class AALyricsApplication : Application() {
             val retryLanguages = translationRetryModelLanguages(
                 state = translationCoordinator.state.value,
                 settings = translationSettingsStore.settings.value,
+                currentCanonicalIdentity =
+                    graph.lyricsState.value.canonicalLyricsOrNull()?.identity,
             )
             retryLanguages.forEach { languageTag ->
                 val phase = translationModelManager.states.value[languageTag]?.phase

@@ -19,7 +19,6 @@ import io.github.whoxamxl.aalyrics.translation.core.TranslationRequestId
 import io.github.whoxamxl.aalyrics.translation.core.TranslationRequestIdentity
 import io.github.whoxamxl.aalyrics.translation.core.TranslationState
 import io.github.whoxamxl.aalyrics.translation.core.TranslationLifecycle
-import io.github.whoxamxl.aalyrics.translation.core.TranslationState
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -66,6 +65,7 @@ class TranslationExecutionRuntimeTest {
             translationRetryModelLanguages(
                 state = state,
                 settings = TranslationSettings(enabled = true, targetLanguage = "ja"),
+                currentCanonicalIdentity = canonical.identity,
             ),
         )
     }
@@ -95,6 +95,7 @@ class TranslationExecutionRuntimeTest {
             translationRetryModelLanguages(
                 state = staleState,
                 settings = TranslationSettings(enabled = true, targetLanguage = "ja"),
+                currentCanonicalIdentity = canonical.identity,
             ),
         )
         assertEquals(
@@ -102,6 +103,15 @@ class TranslationExecutionRuntimeTest {
             translationRetryModelLanguages(
                 state = TranslationState.Idle,
                 settings = TranslationSettings(enabled = true, targetLanguage = "en"),
+                currentCanonicalIdentity = canonical.identity,
+            ),
+        )
+        assertEquals(
+            emptySet(),
+            translationRetryModelLanguages(
+                state = staleState,
+                settings = TranslationSettings(enabled = false, targetLanguage = "ja"),
+                currentCanonicalIdentity = canonical.identity,
             ),
         )
     }
