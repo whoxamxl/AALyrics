@@ -44,8 +44,8 @@ import io.github.whoxamxl.aalyrics.ui.phone.component.TrackIdentityMarquee
 fun TrackCard(
     state: TrackCardUiState,
     modifier: Modifier = Modifier,
-    artwork: (@Composable BoxScope.() -> Unit)? = null,
     onTranslationRetry: (() -> Unit)? = null,
+    artwork: (@Composable BoxScope.() -> Unit)? = null,
 ) {
     Surface(
         modifier = modifier.fillMaxWidth(),
