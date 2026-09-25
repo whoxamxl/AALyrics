@@ -55,6 +55,7 @@ network_api_refs='(android\.net\.http\.|okhttp3\.|retrofit2\.|io\.ktor\.|org\.ap
 
 pure_modules=(
   "core/model"
+  "core/timing"
   "provider/api"
   "provider/matching"
   "provider/lrc"
@@ -75,7 +76,7 @@ for module in "${pure_modules[@]}"; do
 
   production_dependencies="$(production_dependency_expressions "$build_file")"
   case "$module" in
-    "core/model"|"provider/matching")
+    "core/model"|"core/timing"|"provider/matching")
       forbidden_dependencies="$production_dependencies"
       ;;
     "provider/api"|"provider/lrc")
