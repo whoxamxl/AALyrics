@@ -251,11 +251,11 @@ Use small, reviewable commits and keep each checkpoint independently coherent.
    - run bounded Codex review under `AGENTS.md`;
    - perform a physical-device smoke test for Translation ON/OFF and at least one actual translated song before merge.
 
-Current-head validation after the Details follow-up:
+Validation after the Details follow-up (Build #1173 validated implementation head `7aaf94e7`; subsequent commits in this section are documentation-only validation records):
 
-- [x] GitHub Build #1173 on current head passed `scripts/verify-architecture.sh`.
-- [x] GitHub Build #1173 on current head passed the repository unit-test task, including the focused Translation / mapper coverage in the branch.
-- [x] GitHub Build #1173 on current head passed `:app:assembleDebug`.
+- [x] GitHub Build #1173 on validated implementation head `7aaf94e7` passed `scripts/verify-architecture.sh`.
+- [x] GitHub Build #1173 on validated implementation head `7aaf94e7` passed the repository unit-test task, including the focused Translation / mapper coverage in the branch.
+- [x] GitHub Build #1173 on validated implementation head `7aaf94e7` passed `:app:assembleDebug`.
 - [x] Branch-name + all current branch commit-message gates reproduced directly against GitHub state; added-line architecture ownership scan found no new boundary leak and no build dependency files changed (full script execution still pending).
 - [x] Bounded current-head diff review found and fixed route Retry overreach: Retry now targets only current-route failed/timed-out models, not unrelated historical failures.
 - [x] Codex round 1 P2 validated and fixed: Track Card model-download status is now restricted to current-route target/Profile languages, so unrelated model work cannot hide Failed/Retry or replace Translating.
