@@ -48,6 +48,118 @@ class TranslationBlockPlannerTest {
     }
 
     @Test
+    fun `unsupported detected source language is preserved instead of routed`() {
+        val lyrics = LyricsDocument(
+            lines = listOf(
+                PlainLyricLine("Supported primary line"),
+                PlainLyricLine("Unsupported active secondary line"),
+                PlainLyricLine("Supported primary line two"),
+            ),
+        )
+        val profile = LanguageProfile(
+            primary = "en",
+            secondaryCandidate = "ar",
+            secondaryActivation = SecondaryActivation.ACTIVE,
+            lines = listOf(
+                ProfiledLyricLine(
+                    index = 0,
+                    languageTag = "en",
+                    confidence = 0.98f,
+                    role = ProfiledLineRole.PRIMARY,
+                ),
+                ProfiledLyricLine(
+                    index = 1,
+                    languageTag = "ar",
+                    confidence = 0.95f,
+                    role = ProfiledLineRole.SECONDARY,
+                ),
+                ProfiledLyricLine(
+                    index = 2,
+                    languageTag = "en",
+                    confidence = 0.98f,
+                    role = ProfiledLineRole.PRIMARY,
+                ),
+            ),
+        )
+
+        val plan = TranslationBlockPlanner(
+            TranslationBlockPolicy(contextHaloLines = 0),
+        ).plan(
+            lyrics = lyrics,
+            profile = profile,
+            targetLanguage = "ja",
+        )
+
+        assertEquals(
+            listOf(
+                TranslationLineDisposition.TRANSLATE,
+                TranslationLineDisposition.PRESERVE,
+                TranslationLineDisposition.TRANSLATE,
+            ),
+            plan.lines.map { it.disposition },
+        )
+        assertEquals(
+            listOf(listOf(0), listOf(2)),
+            plan.blocks.map { it.coreLineIndices },
+        )
+    }
+
+    @Test
+    fun `unsupported primary document produces no translation blocks`() {
+        val lyrics = LyricsDocument(
+            lines = listOf(
+                PlainLyricLine("Unsupported primary one"),
+                PlainLyricLine("Unsupported primary two"),
+            ),
+        )
+        val profile = LanguageProfile(
+            primary = "ar",
+            secondaryCandidate = null,
+            secondaryActivation = SecondaryActivation.NONE,
+            lines = listOf(
+                ProfiledLyricLine(0, "ar", 0.98f, ProfiledLineRole.PRIMARY),
+                ProfiledLyricLine(1, "ar", 0.98f, ProfiledLineRole.PRIMARY),
+            ),
+        )
+
+        val plan = TranslationBlockPlanner().plan(
+            lyrics = lyrics,
+            profile = profile,
+            targetLanguage = "ja",
+        )
+
+        assertTrue(plan.blocks.isEmpty())
+        assertTrue(
+            plan.lines.all { it.disposition == TranslationLineDisposition.PRESERVE },
+        )
+    }
+
+    @Test
+    fun `unsupported target produces no translation blocks`() {
+        val lyrics = LyricsDocument(
+            lines = listOf(
+                PlainLyricLine("Supported source one"),
+                PlainLyricLine("Supported source two"),
+            ),
+        )
+        val profile = profile(
+            languages = listOf("en", "en"),
+            roles = listOf(ProfiledLineRole.PRIMARY, ProfiledLineRole.PRIMARY),
+        )
+
+        val plan = TranslationBlockPlanner().plan(
+            lyrics = lyrics,
+            profile = profile,
+            targetLanguage = "ar",
+        )
+
+        assertTrue(plan.blocks.isEmpty())
+        assertTrue(
+            plan.lines.all { it.disposition == TranslationLineDisposition.PRESERVE },
+        )
+    }
+
+    @Test
     fun `soft splits overlap Context Halo without duplicate Core ownership`() {
         val lyrics = LyricsDocument(
             lines = List(7) { index -> PlainLyricLine("Synthetic English line $index") },

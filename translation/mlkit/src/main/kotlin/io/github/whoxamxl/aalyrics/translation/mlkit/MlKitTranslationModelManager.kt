@@ -61,6 +61,8 @@ class MlKitTranslationModelManager(
         },
     )
     override val states: StateFlow<Map<String, TranslationModelState>> = _states.asStateFlow()
+    private val _inventoryReconciled = MutableStateFlow(false)
+    override val inventoryReconciled: StateFlow<Boolean> = _inventoryReconciled.asStateFlow()
 
     init {
         applicationScope.launch {
@@ -114,11 +116,13 @@ class MlKitTranslationModelManager(
                     }
             }
         }
+        _inventoryReconciled.value = true
     }
 
     override suspend fun ensureAvailable(languageTag: String): Boolean {
         val normalized = TranslationLanguages.normalizeLanguageTag(languageTag)
             ?: return false
+        if (!TranslationLanguages.isModelSupported(normalized)) return false
 
         if (normalized == MlKitModelPlanner.BUILT_IN_LANGUAGE) {
             publish(normalized, TranslationModelPhase.READY)
@@ -201,6 +205,7 @@ class MlKitTranslationModelManager(
     override suspend fun retry(languageTag: String): Boolean {
         val normalized = TranslationLanguages.normalizeLanguageTag(languageTag)
             ?: return false
+        if (!TranslationLanguages.isModelSupported(normalized)) return false
         _states.update { current -> current - normalized }
         return ensureAvailable(normalized)
     }
@@ -261,9 +266,18 @@ class MlKitTranslationModelManager(
         sourceLanguage: String,
         targetLanguage: String,
     ): Boolean {
+        val source = TranslationLanguages.normalizeLanguageTag(sourceLanguage) ?: return false
+        val target = TranslationLanguages.normalizeLanguageTag(targetLanguage) ?: return false
+        if (
+            !TranslationLanguages.isModelSupported(source) ||
+            !TranslationLanguages.isModelSupported(target)
+        ) {
+            return false
+        }
+
         val requiredModels = MlKitModelPlanner.requiredModelLanguages(
-            sourceLanguage = sourceLanguage,
-            targetLanguage = targetLanguage,
+            sourceLanguage = source,
+            targetLanguage = target,
         )
 
         for (modelLanguage in requiredModels) {

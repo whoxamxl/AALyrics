@@ -1,9 +1,14 @@
 package io.github.whoxamxl.aalyrics
 
 import io.github.whoxamxl.aalyrics.core.lyrics.LyricsState
+import io.github.whoxamxl.aalyrics.translation.api.TranslationLanguages
+import io.github.whoxamxl.aalyrics.translation.api.TranslationSettings
 import io.github.whoxamxl.aalyrics.translation.api.TranslationSettingsStore
 import io.github.whoxamxl.aalyrics.translation.core.CanonicalLyrics
+import io.github.whoxamxl.aalyrics.translation.core.CanonicalLyricsIdentity
+import io.github.whoxamxl.aalyrics.translation.core.SecondaryActivation
 import io.github.whoxamxl.aalyrics.translation.core.TranslationLifecycle
+import io.github.whoxamxl.aalyrics.translation.core.TranslationState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.StateFlow
@@ -29,6 +34,14 @@ internal class TranslationExecutionRuntime(
         }
     }
 
+    fun retry() {
+        lifecycle.clear()
+        lifecycle.update(
+            canonical = lyricsState.value.canonicalLyricsOrNull(),
+            settings = settingsStore.settings.value,
+        )
+    }
+
     fun stop() {
         job?.cancel()
         job = null
@@ -36,7 +49,41 @@ internal class TranslationExecutionRuntime(
     }
 }
 
-private fun LyricsState.canonicalLyricsOrNull(): CanonicalLyrics? = when (this) {
+internal fun translationRetryModelLanguages(
+    state: TranslationState,
+    settings: TranslationSettings,
+    currentCanonicalIdentity: CanonicalLyricsIdentity?,
+): Set<String> {
+    if (!settings.enabled) return emptySet()
+
+    val targetLanguage = TranslationLanguages.normalizeTargetLanguage(settings.targetLanguage)
+    val languages = linkedSetOf(targetLanguage)
+
+    val failed = state as? TranslationState.Failed
+    val request = failed?.request
+    val profile = failed?.profile
+    if (
+        request?.targetLanguage == targetLanguage &&
+        request.canonicalLyrics == currentCanonicalIdentity &&
+        profile != null
+    ) {
+        profile.primary
+            ?.let(TranslationLanguages::normalizeLanguageTag)
+            ?.takeIf { languageTag -> TranslationLanguages.isModelSupported(languageTag) }
+            ?.let(languages::add)
+
+        profile.secondaryCandidate
+            ?.takeIf { profile.secondaryActivation == SecondaryActivation.ACTIVE }
+            ?.let(TranslationLanguages::normalizeLanguageTag)
+            ?.takeIf { languageTag -> TranslationLanguages.isModelSupported(languageTag) }
+            ?.let(languages::add)
+    }
+
+    languages.remove("en")
+    return languages
+}
+
+internal fun LyricsState.canonicalLyricsOrNull(): CanonicalLyrics? = when (this) {
     is LyricsState.Ready -> CanonicalLyrics.create(
         ownerId = "lyrics-lookup-${lookup.id.value}",
         document = lyrics,

@@ -62,6 +62,13 @@ internal enum class TranslationModelCleanupState {
     FAILED,
 }
 
+private data class TranslationDetailsFacts(
+    val settings: TranslationSettings,
+    val state: TranslationState,
+    val modelStates: Map<String, TranslationModelState>,
+    val modelInventoryReconciled: Boolean,
+)
+
 /** Process-level owner of the first production lyrics object graph. */
 class AALyricsApplication : Application() {
     private val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
@@ -289,6 +296,27 @@ class AALyricsApplication : Application() {
         }
     }
 
+    internal fun retryTranslation() {
+        applicationScope.launch {
+            val retryLanguages = translationRetryModelLanguages(
+                state = translationCoordinator.state.value,
+                settings = translationSettingsStore.settings.value,
+                currentCanonicalIdentity =
+                    graph.lyricsState.value.canonicalLyricsOrNull()?.identity,
+            )
+            retryLanguages.forEach { languageTag ->
+                val phase = translationModelManager.states.value[languageTag]?.phase
+                if (phase == TranslationModelPhase.FAILED ||
+                    phase == TranslationModelPhase.TIMED_OUT
+                ) {
+                    translationModelManager.retry(languageTag)
+                }
+            }
+
+            translationExecutionRuntime.retry()
+        }
+    }
+
     fun setVerboseDetailsEnabled(enabled: Boolean) {
         phonePresentationSettingsStore.setVerboseDetailsEnabled(enabled)
     }
@@ -497,24 +525,6 @@ class AALyricsApplication : Application() {
             started = SharingStarted.Eagerly,
             initialValue = null,
         )
-        phoneDetailsStateFlow = combine(
-            graph.playbackState,
-            graph.lyricsState,
-            phonePresentationSettingsStore.verboseDetailsEnabled,
-        ) { playback, lyrics, verboseDetailsEnabled ->
-            mapPhoneDetailsState(
-                playback = playback,
-                lyricsState = lyrics,
-                verboseDetailsEnabled = verboseDetailsEnabled,
-                playbackSourceAppInfo = playbackSourceAppInfoResolver
-                    .resolve(playback.source?.id),
-            )
-        }.stateIn(
-            scope = applicationScope,
-            started = SharingStarted.Eagerly,
-            initialValue = DetailsScreenUiState(),
-        )
-
         translationModelManager = MlKitTranslationModelManager(
             context = this,
             applicationScope = applicationScope,
@@ -537,6 +547,42 @@ class AALyricsApplication : Application() {
             lifecycle = translationCoordinator,
             applicationScope = applicationScope,
         ).also { it.start() }
+        val translationDetailsFacts = combine(
+            translationSettingsStore.settings,
+            translationCoordinator.state,
+            translationModelManager.states,
+            translationModelManager.inventoryReconciled,
+        ) { settings, state, modelStates, inventoryReconciled ->
+            TranslationDetailsFacts(
+                settings = settings,
+                state = state,
+                modelStates = modelStates,
+                modelInventoryReconciled = inventoryReconciled,
+            )
+        }
+        phoneDetailsStateFlow = combine(
+            graph.playbackState,
+            graph.lyricsState,
+            phonePresentationSettingsStore.verboseDetailsEnabled,
+            translationDetailsFacts,
+        ) { playback, lyrics, verboseDetailsEnabled, translationFacts ->
+            mapPhoneDetailsState(
+                playback = playback,
+                lyricsState = lyrics,
+                verboseDetailsEnabled = verboseDetailsEnabled,
+                playbackSourceAppInfo = playbackSourceAppInfoResolver
+                    .resolve(playback.source?.id),
+                translationSettings = translationFacts.settings,
+                translationState = translationFacts.state,
+                translationModelStates = translationFacts.modelStates,
+                translationModelInventoryReconciled =
+                    translationFacts.modelInventoryReconciled,
+            )
+        }.stateIn(
+            scope = applicationScope,
+            started = SharingStarted.Eagerly,
+            initialValue = DetailsScreenUiState(),
+        )
         MediaSessionRuntimeHost.attach(playbackSnapshotSink)
         MediaSessionRuntimeHost.attachControlState(graph.playbackControlStateSink)
         MediaSessionRuntimeHost.attachArtwork(playbackArtworkSink)

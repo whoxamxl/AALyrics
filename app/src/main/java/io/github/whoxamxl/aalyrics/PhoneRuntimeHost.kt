@@ -81,6 +81,7 @@ internal fun PhoneRuntimeHost(
     val playbackSourceRuntimeState by
         application.playbackSourceRuntimeState.collectAsStateWithLifecycle()
     val lyricsState by application.lyricsState.collectAsStateWithLifecycle()
+    val translationState by application.translationState.collectAsStateWithLifecycle()
     val playbackSurface by application.phonePlaybackSurfaceState.collectAsStateWithLifecycle()
     val playbackSourceAppInfo by
         application.phonePlaybackSourceAppInfo.collectAsStateWithLifecycle()
@@ -143,7 +144,12 @@ internal fun PhoneRuntimeHost(
         mutableStateOf(SystemClock.elapsedRealtime())
     }
 
-    LaunchedEffect(playback.isPlaying, playback.trackIdentity, selectedDestination) {
+    LaunchedEffect(
+        playback.isPlaying,
+        playback.trackIdentity,
+        selectedDestination,
+        verboseDetailsEnabled,
+    ) {
         monotonicTimeMs = SystemClock.elapsedRealtime()
         while (
             isActive &&
@@ -164,6 +170,9 @@ internal fun PhoneRuntimeHost(
     val lyricsUiState = mapPhoneLyricsState(
         playback = playback,
         lyricsState = lyricsState,
+        translationState = translationState,
+        translationSettings = translationSettings,
+        translationModelStates = translationModelStates,
         plainLyricsAutoScrollEnabled = plainLyricsAutoScrollEnabled,
         interactionMode = lyricsInteractionMode,
         currentMonotonicTimeMs = monotonicTimeMs,
@@ -269,6 +278,7 @@ internal fun PhoneRuntimeHost(
                     AlbumArtwork(image = playbackArtworkImage)
                 },
                 onViewportInteractionModeChange = { lyricsInteractionMode = it },
+                onTranslationRetry = application::retryTranslation,
             )
 
             PhoneDestination.Sync -> SyncScreen(

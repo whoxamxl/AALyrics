@@ -26,6 +26,13 @@ data class TranslationModelState(
 interface TranslationModelManager {
     val states: StateFlow<Map<String, TranslationModelState>>
 
+    /**
+     * True after persisted remote-model inventory has been successfully
+     * reconciled for this process. Before that, a missing state entry is not
+     * authoritative evidence that a remote model is absent.
+     */
+    val inventoryReconciled: StateFlow<Boolean>
+
     suspend fun ensureAvailable(languageTag: String): Boolean
 
     /**

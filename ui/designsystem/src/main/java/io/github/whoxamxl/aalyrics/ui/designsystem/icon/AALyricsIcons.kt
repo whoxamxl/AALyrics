@@ -2,6 +2,7 @@ package io.github.whoxamxl.aalyrics.ui.designsystem.icon
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ExpandLess
+import androidx.compose.material.icons.rounded.ArrowForward
 import androidx.compose.material.icons.rounded.ExpandMore
 import androidx.compose.material.icons.rounded.ChevronLeft
 import androidx.compose.material.icons.rounded.Block
@@ -44,6 +45,7 @@ object AALyricsIcons {
     val Close: ImageVector = Icons.Rounded.Close
     val Download: ImageVector = Icons.Rounded.Download
     val Retry: ImageVector = Icons.Rounded.Sync
+    val TranslationDirection: ImageVector = Icons.Rounded.ArrowForward
     val ExternalLink: ImageVector = Icons.Rounded.OpenInNew
     val QuickControls: ImageVector = Icons.Rounded.Tune
     val Queue: ImageVector = Icons.Rounded.QueueMusic

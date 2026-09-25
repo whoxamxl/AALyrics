@@ -25,6 +25,16 @@ class MlKitModelPlannerTest {
     }
 
     @Test
+    fun unsupportedSourceDoesNotPlanModels() {
+        assertEquals(emptyList(), MlKitModelPlanner.requiredModelLanguages("ar", "ja"))
+    }
+
+    @Test
+    fun unsupportedTargetDoesNotPlanModels() {
+        assertEquals(emptyList(), MlKitModelPlanner.requiredModelLanguages("en", "ar"))
+    }
+
+    @Test
     fun sameLanguageNeedsNoTranslationModelPreparation() {
         assertEquals(emptyList(), MlKitModelPlanner.requiredModelLanguages("ko", "ko-KR"))
     }

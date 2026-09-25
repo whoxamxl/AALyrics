@@ -2,6 +2,7 @@ package io.github.whoxamxl.aalyrics.ui.phone.details
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -30,6 +31,7 @@ import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsSpacing
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsStroke
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsTypography
 import io.github.whoxamxl.aalyrics.ui.phone.R
+import io.github.whoxamxl.aalyrics.ui.phone.component.PhoneInfoTooltip
 
 @Composable
 fun DetailsScreen(
@@ -154,6 +156,96 @@ fun DetailsScreen(
             }
         }
 
+        state.translation?.let { translation ->
+            Spacer(Modifier.height(AALyricsSpacing.Space20))
+
+            DetailsSection(
+                title = stringResource(R.string.details_section_translation),
+            ) {
+                var hasValue = false
+
+                translation.sourceLanguageLabel?.let { sourceLanguage ->
+                    hasValue = true
+                    DetailsValueRow(
+                        label = stringResource(R.string.details_translation_source_language),
+                        value = sourceLanguage,
+                    )
+                }
+
+                if (hasValue) DetailsDivider()
+                hasValue = true
+                DetailsValueRow(
+                    label = stringResource(R.string.details_translation_target_language),
+                    value = translation.targetLanguageLabel,
+                )
+
+                translation.runtimeState?.let { runtimeState ->
+                    DetailsDivider()
+                    val failureReason = translation.runtimeFailureReason
+                        ?.takeIf { runtimeState == DetailsTranslationRuntimeUiState.FAILED }
+                        ?.let { translationRuntimeFailureReasonLabel(it) }
+                    DetailsValueRow(
+                        label = stringResource(R.string.details_translation_runtime_state),
+                        value = translationRuntimeStateLabel(runtimeState),
+                        infoText = failureReason,
+                        infoContentDescription = failureReason?.let {
+                            stringResource(
+                                R.string.details_translation_runtime_failure_details_description,
+                            )
+                        },
+                    )
+                }
+
+                translation.sourceModel?.let { sourceModels ->
+                    DetailsDivider()
+                    val languageLabel = sourceModels.secondary?.let { secondary ->
+                        "${sourceModels.primary.languageLabel} (${secondary.languageLabel})"
+                    } ?: sourceModels.primary.languageLabel
+                    val value = sourceModels.secondary?.let { secondary ->
+                        "${translationModelPhaseLabel(sourceModels.primary.phase)} " +
+                            "(${translationModelPhaseLabel(secondary.phase)})"
+                    } ?: translationModelPhaseLabel(sourceModels.primary.phase)
+                    val failureReason = sourceModelFailureReason(sourceModels)
+                    DetailsValueRow(
+                        label = stringResource(
+                            R.string.details_translation_source_model,
+                            languageLabel,
+                        ),
+                        value = value,
+                        infoText = failureReason,
+                        infoContentDescription = failureReason?.let {
+                            stringResource(
+                                R.string.details_translation_source_model_failure_details_description,
+                            )
+                        },
+                    )
+                }
+
+                translation.targetModel?.let { targetModel ->
+                    DetailsDivider()
+                    val failureReason = targetModel.failureReason
+                        ?.takeIf {
+                            targetModel.phase == DetailsTranslationModelPhaseUiState.FAILED ||
+                                targetModel.phase ==
+                                DetailsTranslationModelPhaseUiState.TIMED_OUT
+                        }
+                    DetailsValueRow(
+                        label = stringResource(
+                            R.string.details_translation_target_model,
+                            targetModel.languageLabel,
+                        ),
+                        value = translationModelPhaseLabel(targetModel.phase),
+                        infoText = failureReason,
+                        infoContentDescription = failureReason?.let {
+                            stringResource(
+                                R.string.details_translation_target_model_failure_details_description,
+                            )
+                        },
+                    )
+                }
+            }
+        }
+
         state.diagnostics?.let { diagnostics ->
             Spacer(Modifier.height(AALyricsSpacing.Space20))
 
@@ -268,6 +360,8 @@ private fun DetailsSection(
 private fun DetailsValueRow(
     label: String,
     value: String,
+    infoText: String? = null,
+    infoContentDescription: String? = null,
 ) {
     Row(
         modifier = Modifier
@@ -285,15 +379,38 @@ private fun DetailsValueRow(
             color = AALyricsColors.TextSecondary,
             modifier = Modifier.weight(0.42f),
         )
-        Text(
-            text = value,
-            style = AALyricsTypography.AppTitle,
-            color = AALyricsColors.TextPrimary,
-            textAlign = TextAlign.End,
-            modifier = Modifier
-                .weight(0.58f)
-                .padding(start = AALyricsSpacing.Space12),
-        )
+
+        if (infoText != null && infoContentDescription != null) {
+            Row(
+                modifier = Modifier
+                    .weight(0.58f)
+                    .padding(start = AALyricsSpacing.Space12),
+                horizontalArrangement = Arrangement.End,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = value,
+                    style = AALyricsTypography.AppTitle,
+                    color = AALyricsColors.TextPrimary,
+                    textAlign = TextAlign.End,
+                    modifier = Modifier.weight(1f),
+                )
+                PhoneInfoTooltip(
+                    text = infoText,
+                    contentDescription = infoContentDescription,
+                )
+            }
+        } else {
+            Text(
+                text = value,
+                style = AALyricsTypography.AppTitle,
+                color = AALyricsColors.TextPrimary,
+                textAlign = TextAlign.End,
+                modifier = Modifier
+                    .weight(0.58f)
+                    .padding(start = AALyricsSpacing.Space12),
+            )
+        }
     }
 }
 
@@ -333,6 +450,80 @@ private fun syncTypeLabel(syncType: LyricsSyncType): String = when (syncType) {
     LyricsSyncType.LINE -> stringResource(R.string.details_sync_line)
     LyricsSyncType.WORD -> stringResource(R.string.details_sync_word)
 }
+
+@Composable
+private fun translationRuntimeStateLabel(
+    state: DetailsTranslationRuntimeUiState,
+): String = when (state) {
+    DetailsTranslationRuntimeUiState.DISABLED ->
+        stringResource(R.string.details_translation_runtime_disabled)
+    DetailsTranslationRuntimeUiState.IDLE ->
+        stringResource(R.string.details_translation_runtime_idle)
+    DetailsTranslationRuntimeUiState.TRANSLATING ->
+        stringResource(R.string.details_translation_runtime_translating)
+    DetailsTranslationRuntimeUiState.NOT_REQUIRED ->
+        stringResource(R.string.details_translation_runtime_not_required)
+    DetailsTranslationRuntimeUiState.READY ->
+        stringResource(R.string.details_translation_runtime_ready)
+    DetailsTranslationRuntimeUiState.FAILED ->
+        stringResource(R.string.details_translation_runtime_failed)
+}
+
+@Composable
+private fun translationRuntimeFailureReasonLabel(
+    reason: DetailsTranslationRuntimeFailureUiReason,
+): String = when (reason) {
+    DetailsTranslationRuntimeFailureUiReason.LANGUAGE_PROFILING_FAILED ->
+        stringResource(R.string.details_translation_failure_language_profiling)
+    DetailsTranslationRuntimeFailureUiReason.TRANSLATION_PLANNING_FAILED ->
+        stringResource(R.string.details_translation_failure_planning)
+    DetailsTranslationRuntimeFailureUiReason.PROVIDER_EXECUTION_FAILED ->
+        stringResource(R.string.details_translation_failure_provider_execution)
+    DetailsTranslationRuntimeFailureUiReason.UNEXPECTED ->
+        stringResource(R.string.details_translation_failure_unexpected)
+}
+
+@Composable
+private fun translationModelPhaseLabel(
+    phase: DetailsTranslationModelPhaseUiState,
+): String = when (phase) {
+    DetailsTranslationModelPhaseUiState.UNSUPPORTED ->
+        stringResource(R.string.details_translation_model_unsupported)
+    DetailsTranslationModelPhaseUiState.NOT_REQUIRED ->
+        stringResource(R.string.details_translation_model_not_required)
+    DetailsTranslationModelPhaseUiState.CHECKING ->
+        stringResource(R.string.details_translation_model_checking)
+    DetailsTranslationModelPhaseUiState.DOWNLOADING ->
+        stringResource(R.string.details_translation_model_downloading)
+    DetailsTranslationModelPhaseUiState.WAITING_FOR_SYSTEM ->
+        stringResource(R.string.details_translation_model_waiting_for_system)
+    DetailsTranslationModelPhaseUiState.READY ->
+        stringResource(R.string.details_translation_model_ready)
+    DetailsTranslationModelPhaseUiState.FAILED ->
+        stringResource(R.string.details_translation_model_failed)
+    DetailsTranslationModelPhaseUiState.TIMED_OUT ->
+        stringResource(R.string.details_translation_model_timed_out)
+}
+
+private fun sourceModelFailureReason(
+    sourceModels: DetailsTranslationSourceModelsUiState,
+): String? = buildList {
+    listOfNotNull(
+        sourceModels.primary,
+        sourceModels.secondary,
+    ).forEach { model ->
+        if (
+            model.phase == DetailsTranslationModelPhaseUiState.FAILED ||
+            model.phase == DetailsTranslationModelPhaseUiState.TIMED_OUT
+        ) {
+            model.failureReason?.let { reason ->
+                add("${model.languageLabel}: $reason")
+            }
+        }
+    }
+}
+    .joinToString(separator = "\n")
+    .ifBlank { null }
 
 @Composable
 private fun detailsVerboseLabel(

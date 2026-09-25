@@ -22,7 +22,7 @@ The Translation execution slice implements the approved design through three bou
   ML Kit language evidence, model preparation, and Translation sessions
 ```
 
-`:app` observes completed canonical `LyricsState` plus persisted Translation settings, assigns the exact lookup/content identity, and hands that input to `TranslationCoordinator`. It exposes the coordinator's atomic `TranslationState` for later presentation work without changing Phone or Android Auto UI in this slice.
+`:app` observes completed canonical `LyricsState` plus persisted Translation settings, assigns the exact lookup/content identity, and hands that input to `TranslationCoordinator`. It exposes the coordinator's atomic `TranslationState` for Phone presentation without changing Android Auto UI.
 
 The default `LanguageProfilerPolicy` is named and testable:
 
@@ -31,15 +31,55 @@ The default `LanguageProfilerPolicy` is named and testable:
 - ordinary line evidence requires confidence `0.45`;
 - complete-document Language ID contributes `0.20` of aggregate substantive-character weight;
 - Primary requires evidence weight `4.0`;
-- a Secondary candidate requires evidence weight `0.25`;
-- Secondary becomes ACTIVE only with at least 2 meaningful lines, 12 substantive characters, `0.15` character share, and either a 2-line contiguous run or presence in at least 2 song regions;
-- common borrowed phrases (`Oh`, `Ooh`, `Yeah`, `Baby`, `Hey`, `La`, `Na`) contribute only `0.10` evidence weight and cannot activate Secondary by themselves.
+- a Secondary candidate requires evidence weight `0.25`; candidate detection intentionally remains permissive because a candidate is only evidence, not routing authority;
+- Secondary becomes ACTIVE only with at least 3 meaningful lines, 18 substantive characters, `0.20` character share, average candidate-line confidence `0.75`, and either a 2-line contiguous run or presence in at least 2 song regions;
+- common borrowed phrases (`Oh`, `Ooh`, `Yeah`, `Baby`, `Hey`, `La`, `Na`) contribute only `0.10` evidence weight and cannot activate Secondary by themselves;
+- the ACTIVE gate is language-agnostic. Do not add one-off rules such as "reject Arabic on Latin text" or language-specific false-positive patches unless a later architecture decision explicitly requires them.
 
 The default `TranslationBlockPolicy` uses 3 Core lines, a 240-character Core limit, a one-line Context Halo, and a 10-second timestamp-gap hard boundary. Blank/preserved lines and language changes also split hard groups. The current canonical model has no reliable verse/chorus marker, so the planner does not invent one.
 
 Block text uses indexed `AALYRICS_LINE` markers. Results are accepted only when every expected marker appears exactly once and in order with nonblank mapped text. Invalid contextual output is retried in smaller Core chunks and then per line. An unrecoverable line retains its canonical text. No partial map is published.
 
 `TranslationCoordinator` cancels superseded work and guards completion by canonical identity, target language, and a monotonic request id. A completed artifact records exactly one Translation Provider id. If one provider cannot prepare every required route or produce any acceptable translated line, the whole candidate is rejected before the next provider is tried.
+
+## Phone presentation integration
+
+The Phone presentation integration on `feature/translation-runtime` consumes the execution architecture above; it does not redesign it.
+
+Production presentation path:
+
+```text
+AALyricsApplication.translationState
+             ↓
+       Phone lyrics mapper
+             ↓
+   LyricsViewport lyric rows
+```
+
+The Phone integration closes only that downstream gap:
+
+- `PhoneRuntimeHost` observes the existing application-owned `TranslationState`;
+- the app-owned Phone lyrics mapper combines canonical lyrics with Translation presentation facts;
+- `:ui:phone` receives optional presentation-ready translated text per canonical lyric row plus a Phone-local Track Card Translation status;
+- `:ui:phone` does not import Translation core, ML Kit, persistence, or provider execution types.
+
+A `TranslationState.Ready` artifact is eligible for display only when current Translation settings are enabled, its `request.targetLanguage` equals the current normalized target language, and its `request.canonicalLyrics` exactly matches the canonical lyrics currently being projected. The Phone mapping reuses the canonical-identity construction from `TranslationExecutionRuntime` rather than reimplementing owner/fingerprint semantics independently. Disabled state, target mismatch, or canonical-identity mismatch fails closed to original-only presentation. This extra downstream gate prevents brief propagation windows from surfacing an old-target Ready artifact while settings changes are reaching the coordinator.
+
+Track Card runtime feedback is a downstream presentation concern. The app-owned Phone mapper combines Translation state/settings with model lifecycle state and emits a permanent Track Card status row. Required route-model acquisition stays automatic: active download/system-wait phases are presented as `Downloading language models…`, subsequent execution as `Translating…`, Ready as a concise source → target route, and failure as `Translation failed` with one semantic Retry callback. The Retry callback is handled by `:app`: latched failed/timed-out models are retried through the model-manager boundary and the current Translation execution is republished. This does not move model management or retry policy into `:ui:phone`.
+
+Artifact projection rules:
+
+- canonical/source text always remains the primary displayed lyric;
+- only artifact lines with `translated == true` and nonblank translated text create secondary translated presentation;
+- a preserved artifact line with `translated == false` must not duplicate its canonical text;
+- `Disabled`, `Idle`, `Translating`, `NotRequired`, and `Failed` all leave usable canonical lyrics visible without a Translation-specific Lyrics failure state;
+- no partial line map is exposed. Phone consumes the existing atomically published `Ready` artifact only.
+
+The translated text is additive content inside the same logical Phone lyric row. Canonical timing/current-line ownership remains unchanged. The canonical + translated pair is measured and moved as one viewport row so the existing Follow/Browse geometry remains the only scrolling authority. Translated text does not gain independent WORD progress, current-line calculation, or timing.
+
+This slice intentionally does **not** add Android Auto Translation presentation, Musixmatch native Translation, persistent Translation Cache, new Translation algorithms, or Translation-specific Lyrics error chrome.
+
+The executable scope and acceptance criteria are recorded in `TASK.md`; the visual row contract is defined in `docs/PHONE_LYRICS_VIEWPORT.md`.
 
 ## Stable ownership rules
 
@@ -164,27 +204,31 @@ Provider language metadata may be retained later for diagnostics or profiler val
 
 AALyrics should recognize a meaningful Primary and at most one Secondary candidate for Translation routing.
 
-A Secondary candidate being detected does **not** mean it must be translated.
+A Secondary candidate being detected does **not** mean it must be translated. Language ID false positives are expected at candidate level; the product protects routing by making ACTIVE promotion deliberately conservative.
 
-Secondary activation considers evidence such as:
+Secondary activation considers only generic evidence such as:
 
 - line coverage;
 - substantive text/token coverage;
+- average line-level confidence;
 - contiguous runs;
 - distribution across the song;
 - whether the evidence is mostly short borrowed phrases such as `Oh`, `Yeah`, or `Baby`.
 
-The implemented thresholds are documented above and remain explicit policy values covered by synthetic tests.
+The implemented thresholds are documented above and remain explicit policy values covered by synthetic tests. False negatives are preferred over false-positive ACTIVE promotion because an ACTIVE Secondary changes Translation routing and model acquisition, while an INCIDENTAL candidate remains diagnostic-only.
 
 Routing intent:
 
 ```text
-PRIMARY              -> translation eligible
-SECONDARY / ACTIVE   -> translation eligible
-SECONDARY / INCIDENTAL -> preserve original
-UNCERTAIN            -> preserve original
-TARGET LANGUAGE      -> preserve original
+PRIMARY, model-supported          -> translation eligible
+SECONDARY / ACTIVE, model-supported -> translation eligible
+PRIMARY or ACTIVE Secondary, unsupported -> preserve original
+SECONDARY / INCIDENTAL            -> preserve original
+UNCERTAIN                         -> preserve original
+TARGET LANGUAGE                   -> preserve original
 ```
+
+For the current alpha product policy, the Translation-model-supported language set is the same nine-language set exposed for targets: `EN / JA / FR / DE / ES / KO / ZH / IT / PT`. Language identification may still report other normalized languages (for example Arabic), but detection does not imply model support and must not by itself trigger model preparation outside this product set.
 
 A third language is not promoted into another routing lane in the initial design. Small or uncertain third-language passages remain original unless a later explicit decision expands the model.
 
@@ -356,7 +400,7 @@ The background scaffold implements ML Kit model lifecycle:
 - thermal waiting;
 - timeout based on active rather than thermally blocked download time.
 
-The concrete ML Kit manager's in-memory lifecycle map is process-local, while ML Kit language packs can survive a normal app process restart or an Android Studio update install. On manager startup, supported non-English targets therefore begin in CHECKING state while `RemoteModelManager.getDownloadedModels(...)` restores which packs are actually present. Downloaded packs become READY; absent packs fall back to NOT_DOWNLOADED presentation. A missing process-local state entry must not by itself be treated as evidence that a previously downloaded ML Kit pack was removed.
+The concrete ML Kit manager's in-memory lifecycle map is process-local, while ML Kit language packs can survive a normal app process restart or an Android Studio update install. On manager startup, supported non-English targets therefore begin in CHECKING state while `RemoteModelManager.getDownloadedModels(...)` restores which packs are actually present. Downloaded packs become READY; absent packs fall back to NOT_DOWNLOADED presentation. A missing process-local state entry must not by itself be treated as evidence that a previously downloaded ML Kit pack was removed. `TranslationModelManager.inventoryReconciled` becomes true only after the startup persisted-model inventory pass succeeds; Details uses that fact before interpreting a missing remote-model entry as confirmed absence.
 
 The execution slice adds actual text/block translation and LanguageProfiler integration while reusing this model lifecycle unchanged.
 
@@ -422,6 +466,37 @@ Do not introduce speculative mixed-language rerouting, automatic correction, or 
 
 A later implementation may add non-invasive debug diagnostics for suspicious source/target/output combinations. Diagnostics must not silently alter runtime output until evidence justifies a correction policy.
 
+## Details diagnostic evidence
+
+Phone Details consumes Translation diagnostics as a read-only projection of existing Translation work. It must not run LanguageProfiler independently, open Translation sessions, prepare models, or retain stale per-track evidence merely to populate Details.
+
+The compact Details contract requires two pieces of execution evidence that the original atomic presentation state did not preserve in every phase:
+
+1. the current request's authoritative `LanguageProfile` once profiling has completed, including while the request is still Translating or later fails; and
+2. a framework-neutral failure diagnostic when `TranslationState.Failed` is published.
+
+The implementation extends the existing Translation lifecycle state rather than creating an adjacent parallel runtime. `TranslationState.Translating` carries an optional current-request `LanguageProfile` after profiling completes; `TranslationState.Failed` carries that profile when available plus a stable `TranslationFailureReason`. The ownership rules remain fixed:
+
+- profiling remains performed exactly once by the existing Translation execution path;
+- Details reuses that profile; it does not re-profile lyrics;
+- profile evidence is keyed to the same canonical identity + target/request ownership as Translation execution and is cleared/superseded with that request;
+- `Ready` continues to obtain its profile from the atomic artifact and `NotRequired` from its existing profile;
+- a Translating state may expose the profile after profiling has completed without implying that a partial Translation artifact is displayable;
+- a Failed state may expose the current profile when failure happened after profiling;
+- runtime failure diagnostics use `TranslationFailureReason`: `LANGUAGE_PROFILING_FAILED`, `TRANSLATION_PLANNING_FAILED`, `PROVIDER_EXECUTION_FAILED`, or `UNEXPECTED`; raw ML Kit/Google exceptions must not cross into `:ui:phone`;
+- model-specific failure/timeout details continue to come from `TranslationModelState.error` through application-owned presentation mapping.
+
+The exact internal Kotlin shape is implementation-level, but it must support a Phone-local Details projection equivalent to:
+
+```text
+current request identity
+current LanguageProfile?      // null before/if profiling unavailable
+TranslationFailureReason?     // present for Failed
+model lifecycle states        // existing model-manager boundary
+```
+
+This diagnostic evidence is observational only. It must not change cancellation, provider fallback, atomic artifact publication, or retry behavior.
+
 ## Status and failure semantics
 
 Translation lifecycle must remain separate from lyrics lookup lifecycle.
@@ -437,7 +512,9 @@ FAILED
 TIMED_OUT
 ```
 
-The Translation execution lifecycle distinguishes disabled, idle, translating, not-required, ready, and failed.
+The Translation execution lifecycle distinguishes disabled, idle, translating, not-required, ready, and failed. Phone Details renders those as `Disabled`, `Idle`, `Translating`, `Not required`, `Ready`, and `Failed`; it does not invent extra runtime states.
+
+For model diagnostics, built-in capability and confirmed downloaded inventory are both `Ready`. Details-only `Not required` means Translation is OFF and the relevant remote model is confirmed absent, so no preparation is currently required. It must not be used as a synonym for built-in or "not used by this exact route."
 
 Stable rules:
 
@@ -481,7 +558,7 @@ It must not prematurely implement:
 - Phone/Android Auto Translation presentation;
 - persistent Translation Cache.
 
-Those exclusions defined Phase 11.2a. Phase 11.2b implements the execution responsibilities described in "Current execution implementation" while preserving the scaffold's settings and model-lifecycle ownership.
+Those exclusions defined Phase 11.2a only. Phase 11.2b subsequently implemented the execution responsibilities described in "Current execution implementation" while preserving the scaffold's settings and model-lifecycle ownership. The active Phase 11.2c now explicitly authorizes **Phone** Translation presentation integration under the downstream rules above; Android Auto Translation presentation remains deferred.
 
 ## Invariants
 

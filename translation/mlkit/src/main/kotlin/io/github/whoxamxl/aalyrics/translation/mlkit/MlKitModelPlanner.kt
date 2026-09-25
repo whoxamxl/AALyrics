@@ -10,7 +10,15 @@ internal object MlKitModelPlanner {
         val source = TranslationLanguages.normalizeLanguageTag(sourceLanguage)
         val target = TranslationLanguages.normalizeLanguageTag(targetLanguage)
 
-        if (source == null || target == null || source == target) return emptyList()
+        if (
+            source == null ||
+            target == null ||
+            source == target ||
+            !TranslationLanguages.isModelSupported(source) ||
+            !TranslationLanguages.isModelSupported(target)
+        ) {
+            return emptyList()
+        }
 
         // ML Kit ships English translation support with the SDK. Other languages
         // are downloaded as language-specific packs and are reusable across routes.

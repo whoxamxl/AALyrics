@@ -11,6 +11,27 @@ enum class TrackCardLyricsStatus {
     FAILED,
 }
 
+/** Presentation-only Translation status reserved as the fourth Track Card row. */
+@Immutable
+sealed interface TrackCardTranslationUiState {
+    data object Off : TrackCardTranslationUiState
+    data object Enabled : TrackCardTranslationUiState
+    data object DownloadingModels : TrackCardTranslationUiState
+    data object Translating : TrackCardTranslationUiState
+    data object NotRequired : TrackCardTranslationUiState
+    data object Failed : TrackCardTranslationUiState
+
+    data class Ready(
+        val sourceLanguageLabel: String,
+        val targetLanguageLabel: String,
+    ) : TrackCardTranslationUiState {
+        init {
+            require(sourceLanguageLabel.isNotBlank()) { "Source language label must not be blank" }
+            require(targetLanguageLabel.isNotBlank()) { "Target language label must not be blank" }
+        }
+    }
+}
+
 /** Presentation-ready current-track identity shown at the top of the Lyrics destination. */
 @Immutable
 data class TrackCardUiState(
@@ -19,6 +40,7 @@ data class TrackCardUiState(
     val providerLabel: String? = null,
     val syncLabel: String? = null,
     val lyricsStatus: TrackCardLyricsStatus = TrackCardLyricsStatus.IDLE,
+    val translation: TrackCardTranslationUiState = TrackCardTranslationUiState.Off,
 )
 
 /** Which owner currently controls the vertical position of the lyrics viewport. */
@@ -32,6 +54,7 @@ enum class LyricsViewportInteractionMode {
 data class LyricsViewportLineUiState(
     val text: String,
     val words: List<String> = emptyList(),
+    val translatedText: String? = null,
 )
 
 /**

@@ -2,11 +2,11 @@
 
 ## Status
 
-This document defines the implemented interaction and visual contract for the Phone `LyricsViewport`.
+This document defines the implemented interaction and visual contract for the Phone `LyricsViewport` and the active additive Translation-row extension.
 
 The viewport is the primary reading surface of the Lyrics destination. It must remain responsive to available height, width, text wrapping, and system font scale rather than targeting a fixed visible-line count.
 
-Implementation branch: `feature/phone-lyrics-viewport`.
+The established scrolling/focus behavior is production baseline. The active `feature/translation-runtime` slice may add translated secondary text inside that existing row geometry, but must not create a second timing or scrolling model.
 
 ## Product intent
 
@@ -209,6 +209,77 @@ The estimate should improve on the legacy discrete `position / duration * lineCo
 
 If track duration is unknown or invalid, PLAIN auto-scroll does not run.
 
+## Translation row composition
+
+Phone Translation is additive to the canonical lyric row.
+
+When the app-owned Phone mapper has a matching atomic `TranslationState.Ready` artifact, a row may contain:
+
+```text
+Canonical lyric text
+Translated secondary text
+```
+
+The canonical/source text remains the authoritative primary text. A translated secondary line is rendered only when the corresponding artifact line is explicitly marked `translated == true` and contains nonblank translated text. Artifact lines preserved as original (`translated == false`) do not create a duplicate secondary line.
+
+While Translation is disabled, idle, translating, not required, failed, unavailable, or stale for the current canonical lyrics identity, the viewport renders the normal canonical row with no Translation placeholder, error banner, or empty reserved slot.
+
+### Visual hierarchy
+
+Translation is an **annotation inside the lyric typography**, not a second subtitle surface.
+
+Do not introduce Translation-specific cards, backgrounds, pills/badges, language labels, icons, separators, dividers, or per-line chrome. The existing lyric document must remain visually continuous.
+
+- Keep the existing canonical WORD/LINE/PLAIN typography, weight, color, and focus behavior unchanged.
+- Place translated text directly below its canonical text.
+- Use an initial **4dp intra-row gap** between canonical and translated text. This gap must remain clearly smaller than the existing inter-row spacing.
+- Use an initial translated-text target of approximately **15sp / Medium**, with a compact supporting line height (approximately **21sp**) unless an existing AALyrics typography token provides the same hierarchy more cleanly.
+- Use `TextSecondary`-class color with an initial local opacity target of approximately **0.76**. This local opacity is inherited through the existing whole-row focus alpha; do not create separate Translation-specific current/past/future alpha animations.
+- Keep canonical text visually dominant at all times. Translation must be readable when intentionally viewed but should not compete with the canonical line at a glance.
+- Do not make translated text bold merely because its canonical row is current.
+- Do not apply word-progress highlighting to translated text.
+- Do not introduce an independent Translation focus animation, scale, timing state, or current-line state.
+
+The intended hierarchy is therefore:
+
+```text
+canonical lyric       <- primary lyric typography
+    4dp
+translation           <- ~15sp Medium / secondary emphasis
+```
+
+The numeric values above are the initial production tuning target for Preview/device implementation. Small visual tuning is allowed if real rendering demonstrates a problem, but changing the hierarchy model itself requires an explicit design decision.
+
+### Geometry and focus
+
+Canonical text plus optional translated text form **one logical measured lyric row**.
+
+For LINE/WORD presentation:
+
+- measure the complete canonical + translated block as the row height;
+- apply the existing row focus scale/alpha transform to the complete block as one unit;
+- calculate the row center and approximately 45% Follow target from that complete measured block;
+- keep `currentLineIndex` derived solely from canonical source timing;
+- keep the opening `♪` virtual row and all existing focus interpolation unchanged.
+
+For PLAIN presentation:
+
+- the complete canonical + translated block participates in the existing measured document extent;
+- PLAIN auto-scroll continues to map playback progress over that measured extent;
+- Translation does not invent a current row.
+
+Atomic arrival of a complete Translation Artifact may therefore change measured document height. The viewport should naturally re-measure and continue using its existing single Follow/Browse owner; it must not maintain a separate Translation scroll offset.
+
+### Translation appearance transition
+
+Translation availability must not introduce a large layout animation that makes the focused lyric document visibly stretch or wobble.
+
+- Do not animate row height with `animateContentSize` or an equivalent geometry tween merely to reveal Translation.
+- Re-measure the complete canonical + translated row immediately when the atomic artifact arrives.
+- If an appearance animation is used, animate **translated-text alpha only**, with an initial target of about **150ms**.
+- The canonical lyric must not fade, move independently, or replay its focus animation when Translation arrives.
+- No loading spinner, `Translating…` placeholder, failure banner, or reserved blank Translation slot belongs inside the Lyrics viewport.
+
 ## Plain lyrics auto-scroll setting
 
 PLAIN auto-scroll is intended to be user-configurable and defaults to ON.
@@ -254,7 +325,12 @@ At minimum cover:
 - Browse mode with playback below,
 - return control visible in both directions,
 - PLAIN estimated playback region,
-- PLAIN with auto-scroll unavailable because duration is unknown.
+- PLAIN with auto-scroll unavailable because duration is unknown;
+- LINE lyrics with translated secondary text;
+- PLAIN lyrics with translated secondary text;
+- mixed translated/preserved lines where preserved lines are not duplicated;
+- long/wrapped translated text;
+- translated rows at narrow width and enlarged font scale.
 
 Responsive Preview coverage should validate behavior rather than target a fixed visible-line count.
 
@@ -269,7 +345,7 @@ The viewport accepts presentation-ready state and emits UI actions. It does not 
 - Settings persistence,
 - Android Auto presentation.
 
-Runtime state mapping will later supply playback position, duration, lyrics timing, and settings into the Phone presentation model.
+Runtime state mapping supplies playback position, duration, canonical lyrics timing, settings, and—on the active Translation integration slice—identity-validated optional translated text into the Phone presentation model. The viewport must not import or interpret `TranslationState`, `TranslationArtifact`, ML Kit, or Translation Provider types directly.
 
 ## Deferred tuning
 

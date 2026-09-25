@@ -255,6 +255,9 @@ internal fun SettingsScreenContent(
                 title = stringResource(R.string.settings_translation_target),
                 value = state.translationTarget.displayName,
                 onClick = { onTargetLanguagePickerVisibilityChanged(true) },
+                infoText = stringResource(R.string.settings_translation_target_info),
+                infoContentDescription =
+                    stringResource(R.string.settings_translation_target_info_description),
             )
         }
 

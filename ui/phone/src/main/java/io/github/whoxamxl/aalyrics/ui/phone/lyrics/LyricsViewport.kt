@@ -102,6 +102,7 @@ fun LyricsViewport(
             0
         }
         val lineHeights = remember(state.lines) { mutableStateMapOf<Int, Int>() }
+        val canonicalRows = state.lines.map { it.text to it.words }
         val lastLineHeightPx = lineHeights[state.lines.lastIndex] ?: 0
         val openingContentStartPx = (viewportHeightPx * TopEdgeFadeFraction).roundToInt()
         val endingBoundaryStartPx = (
@@ -124,7 +125,7 @@ fun LyricsViewport(
         val scope = rememberCoroutineScope()
 
         val targetFocusIndex = timedFocusIndex(state)
-        val animatedFocusIndex = remember(state.lines, state.syncType) {
+        val animatedFocusIndex = remember(canonicalRows, state.syncType) {
             Animatable(targetFocusIndex)
         }
 
@@ -170,7 +171,7 @@ fun LyricsViewport(
             LyricsSyncType.WORD -> syncedPlaybackTargetScrollPx
         }
 
-        LaunchedEffect(targetFocusIndex, state.syncType, state.lines) {
+        LaunchedEffect(targetFocusIndex, state.syncType, canonicalRows) {
             if (state.syncType == LyricsSyncType.PLAIN) return@LaunchedEffect
             if (abs(targetFocusIndex - animatedFocusIndex.value) > FocusSnapJumpRows) {
                 animatedFocusIndex.snapTo(targetFocusIndex)
@@ -393,8 +394,7 @@ private fun LyricsViewportRow(
             modifier
         },
     ) {
-        Text(
-            text = text,
+        Column(
             modifier = Modifier
                 .fillMaxWidth(
                     fraction = if (state.syncType == LyricsSyncType.PLAIN) {
@@ -439,26 +439,43 @@ private fun LyricsViewportRow(
                         transformOrigin = TransformOrigin(0f, 0.5f)
                     }
                 },
-            style = AALyricsTypography.LyricsSupporting.copy(
-                fontSize = if (state.syncType == LyricsSyncType.PLAIN) {
-                    PlainLyricsFontSize
+            verticalArrangement = Arrangement.spacedBy(TranslationIntraRowGap),
+        ) {
+            Text(
+                text = text,
+                style = AALyricsTypography.LyricsSupporting.copy(
+                    fontSize = if (state.syncType == LyricsSyncType.PLAIN) {
+                        PlainLyricsFontSize
+                    } else {
+                        StableLyricsFontSize
+                    },
+                    lineHeight = StableLyricsLineHeight,
+                    fontWeight = if (state.syncType == LyricsSyncType.PLAIN) {
+                        FontWeight.Medium
+                    } else {
+                        FontWeight.Bold
+                    },
+                ),
+                color = if (state.syncType == LyricsSyncType.PLAIN) {
+                    AALyricsColors.TextSecondary
                 } else {
-                    StableLyricsFontSize
+                    AALyricsColors.TextPrimary
                 },
-                lineHeight = StableLyricsLineHeight,
-                fontWeight = if (state.syncType == LyricsSyncType.PLAIN) {
-                    FontWeight.Medium
-                } else {
-                    FontWeight.Bold
-                },
-            ),
-            color = if (state.syncType == LyricsSyncType.PLAIN) {
-                AALyricsColors.TextSecondary
-            } else {
-                AALyricsColors.TextPrimary
-            },
-            textAlign = TextAlign.Start,
-        )
+                textAlign = TextAlign.Start,
+            )
+            line.translatedText?.let { translatedText ->
+                Text(
+                    text = translatedText,
+                    style = AALyricsTypography.LyricsSupporting.copy(
+                        fontSize = TranslationFontSize,
+                        lineHeight = TranslationLineHeight,
+                        fontWeight = FontWeight.Medium,
+                    ),
+                    color = AALyricsColors.TextSecondary.copy(alpha = TranslationTextAlpha),
+                    textAlign = TextAlign.Start,
+                )
+            }
+        }
     }
 }
 
@@ -771,6 +788,10 @@ private const val ReturnBounceStartDelayMillis = 90L
 private val PlainLyricsFontSize = 18.sp
 private val StableLyricsFontSize = 20.sp
 private val StableLyricsLineHeight = 30.sp
+private val TranslationFontSize = 15.sp
+private val TranslationLineHeight = 21.sp
+private val TranslationIntraRowGap = 4.dp
+private const val TranslationTextAlpha = 0.76f
 private val ReturnControlVisualSize = 36.dp
 private val ReturnChevronSize = 28.dp
 private val ReturnControlBottomInset = 3.dp

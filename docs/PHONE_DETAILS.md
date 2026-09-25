@@ -2,9 +2,9 @@
 
 ## Status
 
-This document defines the first approved presentation contract for the Phone `Details` destination.
+This document defines the approved presentation contract for the Phone `Details` destination.
 
-PR #49 implements this contract with a production `DetailsScreen`, Phone-local presentation state, application-owned runtime mapping, deterministic Previews, and focused mapper tests. The Details destination remains read-only. Its purpose is to make useful current track and lyrics metadata visible without crowding the Lyrics destination, while optionally exposing deeper framework-neutral diagnostics when the user enables `Settings > Advanced > Verbose details`.
+PR #49 implemented the original production `DetailsScreen`, Phone-local presentation state, application-owned runtime mapping, deterministic Previews, and focused mapper tests. On `feature/translation-runtime`, Translation Details state/mapping, production Compose rendering, deterministic Translation Details Previews, focused mapper coverage, and regression/alignment are implemented. The next phase is current-head repository validation. Details remains read-only: it presents already-owned runtime facts and must not start Translation, download models, retry work, or trigger provider/network activity. The refined Secondary/model-scope behavior has also completed physical-device verification without a blocking Details issue.
 
 ## Product intent
 
@@ -79,6 +79,28 @@ Initial fields:
 
 Normal Details must not expose `providerId` or `sourceId` merely because they exist in the domain model.
 
+### Translation section
+
+When a current canonical lyric document exists, Normal Details may add a dedicated `TRANSLATION` section below `LYRICS` rather than mixing profiler/runtime facts into canonical Lyrics metadata. The current target language is always available from Translation settings; source-language presentation appears only when an authoritative current-profile result exists for the same canonical lyrics identity. Do not synthesize Source language from `LyricsDocument.languageTag` merely to fill the row.
+
+Conceptually:
+
+```text
+TRANSLATION
+Source language          English (Spanish)
+Target language          Japanese
+```
+
+Rules:
+
+- `Source language` comes from the Translation language profile, not from `LyricsDocument.languageTag`;
+- show the Primary language as the main value;
+- append the Secondary language in parentheses only when `secondaryActivation == ACTIVE`, for example `English (Spanish)`; incidental Secondary evidence remains an internal profiler fact and is not promoted into Normal Details;
+- omit the Secondary suffix when there is no ACTIVE Secondary language;
+- a Source language row is shown only for a profile whose canonical identity matches the current canonical lyrics; a stale profile from the previous track/request must never be reused;
+- `Target language` is the current normalized Translation target rendered as a user-facing language name and may remain visible even when Translation is disabled;
+- do not expose request IDs, provider IDs, model IDs, or other machine-facing Translation internals in Normal Details.
+
 WORD is a valid source sync type even while the Phone experience remains line-oriented by default. Displaying `Word synced` in Details does not enable Karaoke mode or change rendering behavior.
 
 ## Verbose Details
@@ -109,6 +131,94 @@ Suitable first fields include:
 - normalized track references such as `namespace:value`, when available.
 
 These values are useful for reproducing provider and identity issues but are not primary user-facing metadata.
+
+When Verbose Details is enabled, the existing `TRANSLATION` section gains only the compact runtime diagnostics needed to understand the current Translation state:
+
+```text
+TRANSLATION
+Source language          English (Spanish)
+Target language          Japanese
+Runtime state            Ready
+Source model (EN (ES))   Ready (Ready)
+Target model (JA)        Ready
+```
+
+The Translation runtime row uses exactly these stable presentation states:
+
+- `Disabled`;
+- `Idle`;
+- `Translating`;
+- `Not required`;
+- `Ready`;
+- `Failed`.
+
+The source/target model rows use:
+
+- `Not required`;
+- `Checking`;
+- `Downloading`;
+- `Waiting for system`;
+- `Ready`;
+- `Failed`;
+- `Timed out`.
+
+Model-state semantics are availability-oriented, not "currently needed" semantics:
+
+- a built-in model is `Ready`;
+- an already-present downloaded model is `Ready`, including while Translation is OFF;
+- `Not required` is reserved for the specific case where Translation is OFF, the relevant remote model is not present, and AALyrics therefore has no current reason to prepare it;
+- when Translation is ON, a missing required model must not be presented as `Not required`; it should resolve through the active preparation lifecycle (`Checking`, `Downloading`, or `Waiting for system`) or a terminal failure state;
+- a process-local missing model-state entry is not proof that a model is absent until startup inventory reconciliation has established that fact.
+
+The Source model row preserves Primary/ACTIVE-Secondary pairing instead of collapsing multiple source languages into one aggregate state. Production state now stores Primary and optional ACTIVE Secondary model diagnostics separately, so `Ready (Downloading)` / `Ready (—)` are rendered from independent model facts rather than by parsing or synthesizing a combined string.
+
+Examples:
+
+```text
+Source model (EN)        Ready
+Source model (EN (ES))   Ready (Ready)
+Source model (EN (ES))   Ready (Downloading)
+Source model (EN (AR))   Ready (—)
+```
+
+Rules:
+
+- the label mirrors Source language structure using ISO tags: Primary first, ACTIVE Secondary in parentheses;
+- the value mirrors that exact position: Primary model state first, ACTIVE Secondary model state in parentheses;
+- do not suppress the Source model row merely because the Primary ISO equals the Target ISO; Verbose Details keeps Source model and Target model as distinct diagnostics;
+- supported source-model languages are currently limited to `EN / JA / FR / DE / ES / KO / ZH / IT / PT`;
+- a detected source language outside that product-supported model set is shown as `—` rather than `Ready`, `Not required`, or a fabricated lifecycle phase;
+- `—` means "detected language, no AALyrics Translation model support"; it is not a failure state and has no failure tooltip;
+- each supported model position keeps its own lifecycle state (`Not required`, `Checking`, `Downloading`, `Waiting for system`, `Ready`, `Failed`, `Timed out`);
+- when Primary and ACTIVE Secondary have different states, do not aggregate them into one "most actionable" value;
+- a `Failed` or `Timed out` position uses the standard reason tooltip for that specific language.
+
+If no authoritative current source profile exists yet, omit the Source language and Source model rows instead of guessing from provider metadata. The Target language/model rows remain independently representable because the target setting is known before profiling.
+
+Do not expand Verbose Details into a dump of Translation request IDs, provider IDs, profiler internals, or per-model implementation data. The goal is to answer "what is Translation doing, and which model is blocking it?" in a few rows.
+
+### Failure reason tooltip standard
+
+Details uses one consistent rule for failure states: **a displayed failure state must expose its authoritative reason through the standard info-tooltip affordance**.
+
+This applies to Translation runtime/model rows and to future Details status/diagnostic rows added elsewhere.
+
+Examples:
+
+```text
+Runtime state            Failed ⓘ
+Source model (EN (ES))   Ready (Failed ⓘ)
+Target model (JA)        Ready
+```
+
+Rules:
+
+- `Failed` and `Timed out` values must show the shared semantic info icon and expose an authoritative reason; production Phone Details uses the shared `PhoneInfoTooltip` component (also used by Settings) so icon, popup surface, touch target, and dismissal behavior stay consistent; an unexplained visible failure state is not considered complete Details implementation;
+- the tooltip contains the concrete framework-neutral reason/detail supplied by the owning runtime; for the positional Source model row it identifies the affected Primary/Secondary ISO language(s) while preserving each model's independent lifecycle state;
+- do not inline long exception/error text into the Details row;
+- do not invent a reason in `:ui:phone`;
+- if a Details feature wants to expose a failure state but the owning runtime does not provide a reason, treat that as a missing diagnostic contract to resolve during implementation rather than silently adding an unexplained failure row;
+- future additions to Details must re-check this rule whenever they introduce a new failure-capable status.
 
 ### Diagnostic boundary
 
@@ -180,6 +290,15 @@ DetailsScreenUiState
 │  ├─ syncTypeLabel
 │  ├─ languageLabel
 │  └─ lineCount
+├─ translation
+│  ├─ sourceLanguageLabel
+│  ├─ targetLanguageLabel
+│  ├─ runtimeState (verbose only)
+│  ├─ runtimeFailureReason (verbose failure only)
+│  ├─ sourceModelLabels / aggregateState (verbose only)
+│  ├─ sourceModelFailureReason (verbose failure only)
+│  ├─ targetModelLabel / state (verbose only)
+│  └─ targetModelFailureReason (verbose failure only)
 ├─ verboseDetailsEnabled
 └─ diagnostics
    ├─ appPackageName
@@ -191,7 +310,7 @@ DetailsScreenUiState
    └─ trackReferences
 ```
 
-PR #49 established the concrete `DetailsScreenUiState` shape and application-owned `phoneDetailsState` mapping. The Phone runtime host defined in `docs/PHONE_RUNTIME_HOST.md` should consume that existing state rather than remapping provider/media facts in the Activity. Do not pass provider DTOs, `MediaController`, `PlaybackState`, framework queue objects, or Android intents into the screen.
+PR #49 established the concrete `DetailsScreenUiState` shape and application-owned `phoneDetailsState` mapping. The Phone runtime host consumes that state directly and only adds the existing live Verbose progress projection; it does not remap provider/media/Translation facts in the Activity. Do not pass provider DTOs, `MediaController`, `PlaybackState`, framework queue objects, Android intents, or Translation runtime types into the screen.
 
 ## Empty and partial state
 
@@ -208,7 +327,7 @@ Examples:
 - playback package available while app category metadata is undefined or unavailable;
 - playback package available while SDK metadata is unavailable because application metadata lookup failed.
 
-The screen should show only facts that are authoritative for the current state and avoid stale values from the previous track.
+The screen should show only facts that are authoritative for the current state and avoid stale values from the previous track. Translation profile/runtime facts must be canonical-identity gated just like translated lyric presentation. Target settings/model inventory are process/application facts and must not be confused with a stale per-track profile.
 
 Exact loading/empty visual treatment will be tuned during implementation.
 
@@ -227,12 +346,19 @@ Labels and values should remain distinguishable through semantics, not color alo
 
 ## Preview matrix
 
-PR #49 provides deterministic Previews covering:
+PR #49 plus the Translation Details follow-up provide deterministic Preview/test coverage for:
 
 - normal Details with complete metadata;
 - normal Details with partial metadata;
 - lyrics loading/unavailable;
 - Verbose Details OFF;
+- Normal Details with Translation Primary only and Primary + ACTIVE Secondary (`English (Spanish)`);
+- Translation target visible with no authoritative source profile yet;
+- Verbose Details with every runtime state: Disabled / Idle / Translating / Not required / Ready / Failed;
+- source/target model states covering Ready, Not required, Checking, Downloading, Waiting for system, Failed, and Timed out;
+- built-in English and already-downloaded remote models shown as Ready while Translation is OFF;
+- Failed and Timed out rows with the shared info-tooltip affordance, with focused mapper tests preserving the authoritative reason payload and forbidding invented fallback reasons;
+- positional multi-source model presentation such as `Source model (EN (ES))` with independently paired values such as `Ready (Ready)` or `Ready (—)`;
 - Verbose Details ON with playback package/category/SDK levels, provider/source IDs, and track references;
 - Verbose Details ON with missing optional diagnostic values;
 - narrow width;

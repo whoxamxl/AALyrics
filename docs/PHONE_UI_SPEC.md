@@ -181,6 +181,7 @@ Intended content:
 - title
 - artist
 - compact lyrics/provider/sync metadata
+- permanent Translation status / recovery row
 
 Conceptually:
 
@@ -189,10 +190,25 @@ Conceptually:
 │ [Artwork]  Track title       │
 │            Artist            │
 │            Provider • Sync   │
+│                              │  ← Translation OFF: reserved status slot
 └──────────────────────────────┘
 ```
 
-The card is informational. Playback transport actions stay in the persistent Playback Bar so information and actions have separate, predictable locations.
+The card is informational except for the narrowly scoped Translation failure recovery action. Playback transport actions stay in the persistent Playback Bar. When Translation fails, only the permanent Translation status row exposes a compact trailing `Retry` text action.
+
+The Track Card reserves a permanent fourth text/status row for Translation so Translation state changes never alter the card/viewport boundary. Its approved states are:
+
+- while Translation is OFF, render no status text but keep the dedicated row height reserved;
+- `Translation enabled` while enabled but no current route is active yet;
+- compact spinner + `Downloading language models…` while required source/target route models are being prepared automatically;
+- compact spinner + `Translating…` after model readiness while Translation execution remains active;
+- `Translation EN` + centered forward-arrow icon + `JA`-style short route labels while an eligible artifact is active;
+- `Translation not required` when the current source/target requires no Translation work;
+- `Translation failed` with a compact trailing Retry icon + `Retry` text action on failure.
+
+Status colors intentionally separate Translation feedback from the cyan provider/sync metadata row: OFF renders no text; Enabled and Not required use TextSecondary (`#A9B7C9`); model download and Translating use AccentBlue (`#1B8EFF`); an active Ready route uses Success (`#62D6A7`); failure uses Error (`#FF6B7A`); and the Retry action retains the normal AccentCyan action color (`#49E6FB`). The Ready route uses a real centered 10dp `AALyricsIcons.TranslationDirection` forward-arrow icon rather than a Unicode arrow glyph, and Retry reuses `AALyricsIcons.Retry` with the same compact icon/text treatment used by existing retry actions.
+
+Automatic model acquisition remains the normal path; the Track Card makes that background work visible rather than interrupting it with a normal confirmation dialog. The Retry action is a semantic Phone callback only. `:ui:phone` does not decide whether retry means model preparation, route preparation, or Translation execution.
 
 The production Track Card keeps album artwork caller-owned in a compact 64dp slot. The READY runtime host forwards artwork from the selected Android MediaSession without moving Android media objects into `:ui:phone`. When artwork is unavailable, the shared AALyrics foreground mark derived from `branding/android/AALyrics_foreground_android.svg` is shown over the existing artwork background instead of leaving the slot visually empty.
 
@@ -208,10 +224,20 @@ Goals:
 
 - current lyric remains visually dominant
 - previous and next lines provide context
+- canonical/source lyric text remains the primary hierarchy when Translation is shown
+- matching translated text appears as a typographic annotation directly below its canonical line, not as a separate subtitle/card surface
+- Translation adds no per-line cards, backgrounds, pills/badges, language labels, icons, separators, or dividers
+- the initial translated-text target is approximately 15sp Medium with a 4dp canonical-to-translation gap and restrained TextSecondary-class emphasis
+- canonical + translated text remains one measured/focused row rather than two independently timed rows
+- the whole row keeps the existing focus scale/alpha behavior; Translation does not get its own current/past/future animation
+- preserved/non-translated artifact lines are not duplicated
+- Translation pending/failure/stale identity falls back to the normal original-only row without changing Lyrics status
 - normal phone layouts should preserve roughly five to six visible lyric lines where practical
 - fixed shell elements should remain compact enough not to consume the majority of vertical space
 
-This is a layout target, not a hard line-count guarantee. Exact typography, spacing, and dp values must be tuned in Compose Preview and device testing rather than frozen in this architecture document.
+The active Phone Translation integration consumes only atomically published Translation output that is eligible under the current enabled/target settings and exact canonical identity. It does not move Translation execution, ML Kit, provider selection, or timing ownership into `:ui:phone`. Android Auto Translation remains a separate later surface integration.
+
+This is a layout target, not a hard line-count guarantee. The 15sp Medium / 4dp / restrained-secondary treatment is the initial production target rather than a new independent design system. Preview/device tuning may make small numerical adjustments, but the canonical-first, chrome-free annotation hierarchy and single-row geometry are the stable contract defined in `docs/PHONE_LYRICS_VIEWPORT.md`.
 
 ## Persistent playback surface
 
@@ -410,10 +436,14 @@ Preview coverage should eventually exercise at least:
 - Unavailable status with app-identity and generic-fallback forms plus concise reason tooltip
 - Error status with concise reason tooltip
 - Track Card / Expanded Player title-only overflow, artist-only overflow, and both-overflow synchronized auto marquee + manual horizontal drag
+- permanent Track Card Translation row across OFF / ON / model-download / translating / ready route / not-required / failed + Retry states, with unchanged card height between Translation states
 - Collapsed Playback Bar title/artist ellipsis without marquee
 - no artwork
 - loading / ready / degraded / not found / failed lyrics states
 - line-synced / word-synced / unsynced lyrics
+- matching translated LINE/PLAIN rows with canonical text kept primary
+- mixed translated/preserved lines without duplicated preserved text
+- long/wrapped translated text at typical, narrow, and enlarged-font configurations
 - long lyric lines
 - first/last-line boundaries
 - follow vs manual browse

@@ -262,7 +262,7 @@ Prepare Translation without changing unfinished foreground presentation:
 - refactor mature ML Kit model availability/download/retry/thermal behavior into an Android adapter;
 - allow background preparation of the persisted target language model;
 - define only the smallest contracts required by that background work;
-- do not wire translated lyrics into Phone or Android Auto yet.
+- at Phase 11.2a, do not wire translated lyrics into Phone or Android Auto yet; Phone presentation is now explicitly authorized by Phase 11.2c below, while Android Auto remains deferred.
 
 The scaffold must not implement speculative LanguageProfiler thresholds, contextual block algorithms, Musixmatch Translation alignment, Translation Provider selection, or persistent Translation Cache.
 
@@ -277,6 +277,24 @@ The implementation includes the approved complete-lyrics LanguageProfiler, Prima
 Musixmatch native Translation remains deferred until its endpoint/entitlement is re-verified and its source text can be aligned confidently to canonical lyrics.
 
 The durable ownership contract remains `docs/TRANSLATION_ARCHITECTURE.md`.
+
+### Phase 11.2c — Phone Translation presentation/integration — active
+
+Connect the already-implemented atomic Translation result to the Phone Lyrics surface without reopening Translation execution architecture.
+
+This slice:
+
+- lifecycle-observes `AALyricsApplication.translationState` in the Phone runtime host;
+- projects only a `TranslationState.Ready` artifact when Translation is currently enabled, its request target matches the current normalized target setting, and its canonical lyrics identity matches exactly;
+- keeps canonical/source text primary and adds actual translated lines as secondary text within the same logical viewport row;
+- keeps pending/not-required/failed Translation original-only and never converts Translation failure into lyrics failure;
+- preserves canonical timing, sync/current-line ownership, provider attribution, Lyrics Provider selection, and the existing LyricsViewport Follow/Browse geometry;
+- does not duplicate artifact lines that were intentionally preserved rather than translated;
+- adds focused mapper, rendering, and Preview coverage.
+
+Android Auto Translation presentation, Musixmatch native Translation, persistent Translation Cache, timing/calibration, and Karaoke Translation behavior remain outside this slice.
+
+The active implementation contract is recorded in `TASK.md`, `docs/TRANSLATION_ARCHITECTURE.md`, `docs/PHONE_LYRICS_VIEWPORT.md`, and `docs/PHONE_RUNTIME_HOST.md`.
 
 ### Phase 11.3 — Timing / calibration
 

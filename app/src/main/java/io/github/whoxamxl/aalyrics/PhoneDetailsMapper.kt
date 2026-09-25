@@ -3,11 +3,27 @@ package io.github.whoxamxl.aalyrics
 import io.github.whoxamxl.aalyrics.core.lyrics.LyricsState
 import io.github.whoxamxl.aalyrics.core.model.LyricsDocument
 import io.github.whoxamxl.aalyrics.core.model.PlaybackSnapshot
+import io.github.whoxamxl.aalyrics.translation.api.TranslationLanguages
+import io.github.whoxamxl.aalyrics.translation.api.TranslationModelPhase
+import io.github.whoxamxl.aalyrics.translation.api.TranslationModelState
+import io.github.whoxamxl.aalyrics.translation.api.TranslationSettings
+import io.github.whoxamxl.aalyrics.translation.core.CanonicalLyricsIdentity
+import io.github.whoxamxl.aalyrics.translation.core.LanguageProfile
+import io.github.whoxamxl.aalyrics.translation.core.SecondaryActivation
+import io.github.whoxamxl.aalyrics.translation.core.TranslationFailureReason
+import io.github.whoxamxl.aalyrics.translation.core.TranslationRequestIdentity
+import io.github.whoxamxl.aalyrics.translation.core.TranslationState
 import io.github.whoxamxl.aalyrics.ui.phone.details.DetailsDiagnosticsUiState
 import io.github.whoxamxl.aalyrics.ui.phone.details.DetailsLyricsUiState
 import io.github.whoxamxl.aalyrics.ui.phone.details.DetailsLyricsUiStatus
 import io.github.whoxamxl.aalyrics.ui.phone.details.DetailsScreenUiState
 import io.github.whoxamxl.aalyrics.ui.phone.details.DetailsTrackUiState
+import io.github.whoxamxl.aalyrics.ui.phone.details.DetailsTranslationModelPhaseUiState
+import io.github.whoxamxl.aalyrics.ui.phone.details.DetailsTranslationModelUiState
+import io.github.whoxamxl.aalyrics.ui.phone.details.DetailsTranslationRuntimeFailureUiReason
+import io.github.whoxamxl.aalyrics.ui.phone.details.DetailsTranslationSourceModelsUiState
+import io.github.whoxamxl.aalyrics.ui.phone.details.DetailsTranslationRuntimeUiState
+import io.github.whoxamxl.aalyrics.ui.phone.details.DetailsTranslationUiState
 import io.github.whoxamxl.aalyrics.ui.phone.details.DetailsVerboseProgressUiState
 import java.util.Locale
 
@@ -17,6 +33,10 @@ internal fun mapPhoneDetailsState(
     lyricsState: LyricsState,
     verboseDetailsEnabled: Boolean,
     playbackSourceAppInfo: PlaybackSourceAppInfo? = null,
+    translationSettings: TranslationSettings = TranslationSettings(enabled = false),
+    translationState: TranslationState = TranslationState.Disabled,
+    translationModelStates: Map<String, TranslationModelState> = emptyMap(),
+    translationModelInventoryReconciled: Boolean = false,
     displayLocale: Locale = Locale.getDefault(),
 ): DetailsScreenUiState {
     val track = playback.track
@@ -48,6 +68,17 @@ internal fun mapPhoneDetailsState(
             )
         },
         lyricsStatus = resolvedLyrics.status,
+        translation = resolvedLyrics.canonicalIdentity?.let { canonicalIdentity ->
+            mapDetailsTranslationState(
+                canonicalIdentity = canonicalIdentity,
+                settings = translationSettings,
+                state = translationState,
+                modelStates = translationModelStates,
+                modelInventoryReconciled = translationModelInventoryReconciled,
+                verboseDetailsEnabled = verboseDetailsEnabled,
+                displayLocale = displayLocale,
+            )
+        },
         diagnostics = if (verboseDetailsEnabled) {
             DetailsDiagnosticsUiState(
                 appPackageName = playback.source?.id,
@@ -71,6 +102,7 @@ internal fun mapPhoneDetailsState(
 private data class CurrentLyrics(
     val document: LyricsDocument?,
     val status: DetailsLyricsUiStatus,
+    val canonicalIdentity: CanonicalLyricsIdentity? = null,
 )
 
 private fun currentLyrics(
@@ -93,9 +125,17 @@ private fun currentLyrics(
 
     return when (state) {
         is LyricsState.Ready ->
-            CurrentLyrics(state.lyrics, DetailsLyricsUiStatus.READY)
+            CurrentLyrics(
+                document = state.lyrics,
+                status = DetailsLyricsUiStatus.READY,
+                canonicalIdentity = state.canonicalLyricsOrNull()?.identity,
+            )
         is LyricsState.Degraded ->
-            CurrentLyrics(state.lyrics, DetailsLyricsUiStatus.READY)
+            CurrentLyrics(
+                document = state.lyrics,
+                status = DetailsLyricsUiStatus.READY,
+                canonicalIdentity = state.canonicalLyricsOrNull()?.identity,
+            )
         is LyricsState.Loading ->
             CurrentLyrics(null, DetailsLyricsUiStatus.LOADING)
         is LyricsState.NotFound ->
@@ -106,6 +146,218 @@ private fun currentLyrics(
             CurrentLyrics(null, DetailsLyricsUiStatus.UNAVAILABLE)
     }
 }
+
+private fun mapDetailsTranslationState(
+    canonicalIdentity: CanonicalLyricsIdentity,
+    settings: TranslationSettings,
+    state: TranslationState,
+    modelStates: Map<String, TranslationModelState>,
+    modelInventoryReconciled: Boolean,
+    verboseDetailsEnabled: Boolean,
+    displayLocale: Locale,
+): DetailsTranslationUiState {
+    val targetLanguage = TranslationLanguages.normalizeTargetLanguage(settings.targetLanguage)
+    val matchingProfile = state.matchingProfile(
+        canonicalIdentity = canonicalIdentity,
+        targetLanguage = targetLanguage,
+    )
+    val primary = matchingProfile?.primary
+    val activeSecondary = matchingProfile
+        ?.secondaryCandidate
+        ?.takeIf { matchingProfile.secondaryActivation == SecondaryActivation.ACTIVE }
+
+    val sourceLanguageLabel = primary?.let { primaryLanguage ->
+        val primaryLabel = TranslationLanguages.displayName(primaryLanguage, displayLocale)
+        activeSecondary?.let { secondaryLanguage ->
+            "$primaryLabel (${TranslationLanguages.displayName(secondaryLanguage, displayLocale)})"
+        } ?: primaryLabel
+    }
+
+    if (!verboseDetailsEnabled) {
+        return DetailsTranslationUiState(
+            sourceLanguageLabel = sourceLanguageLabel,
+            targetLanguageLabel = TranslationLanguages.displayName(targetLanguage, displayLocale),
+        )
+    }
+
+    return DetailsTranslationUiState(
+        sourceLanguageLabel = sourceLanguageLabel,
+        targetLanguageLabel = TranslationLanguages.displayName(targetLanguage, displayLocale),
+        runtimeState = state.runtimeUiStateFor(
+            settingsEnabled = settings.enabled,
+            canonicalIdentity = canonicalIdentity,
+            targetLanguage = targetLanguage,
+        ),
+        runtimeFailureReason = state.runtimeFailureUiReasonFor(
+            canonicalIdentity = canonicalIdentity,
+            targetLanguage = targetLanguage,
+        ),
+        sourceModel = primary?.let { primaryLanguage ->
+            DetailsTranslationSourceModelsUiState(
+                primary = modelUiState(
+                    languageTag = primaryLanguage,
+                    translationEnabled = settings.enabled,
+                    modelStates = modelStates,
+                    modelInventoryReconciled = modelInventoryReconciled,
+                ),
+                secondary = activeSecondary?.let { secondaryLanguage ->
+                    modelUiState(
+                        languageTag = secondaryLanguage,
+                        translationEnabled = settings.enabled,
+                        modelStates = modelStates,
+                        modelInventoryReconciled = modelInventoryReconciled,
+                    )
+                },
+            )
+        },
+        targetModel = modelUiState(
+            languageTag = targetLanguage,
+            translationEnabled = settings.enabled,
+            modelStates = modelStates,
+            modelInventoryReconciled = modelInventoryReconciled,
+        ),
+    )
+}
+
+private fun TranslationState.matchingProfile(
+    canonicalIdentity: CanonicalLyricsIdentity,
+    targetLanguage: String,
+): LanguageProfile? = when (this) {
+    is TranslationState.Translating ->
+        profile.takeIf { request.matches(canonicalIdentity, targetLanguage) }
+    is TranslationState.NotRequired ->
+        profile.takeIf { request.matches(canonicalIdentity, targetLanguage) }
+    is TranslationState.Ready ->
+        artifact.profile.takeIf { artifact.request.matches(canonicalIdentity, targetLanguage) }
+    is TranslationState.Failed ->
+        profile.takeIf { request.matches(canonicalIdentity, targetLanguage) }
+    TranslationState.Disabled,
+    TranslationState.Idle -> null
+}
+
+private fun TranslationState.runtimeUiStateFor(
+    settingsEnabled: Boolean,
+    canonicalIdentity: CanonicalLyricsIdentity,
+    targetLanguage: String,
+): DetailsTranslationRuntimeUiState {
+    if (!settingsEnabled) return DetailsTranslationRuntimeUiState.DISABLED
+
+    return when (this) {
+        TranslationState.Disabled -> DetailsTranslationRuntimeUiState.DISABLED
+        TranslationState.Idle -> DetailsTranslationRuntimeUiState.IDLE
+        is TranslationState.Translating ->
+            if (request.matches(canonicalIdentity, targetLanguage)) {
+                DetailsTranslationRuntimeUiState.TRANSLATING
+            } else {
+                DetailsTranslationRuntimeUiState.IDLE
+            }
+        is TranslationState.NotRequired ->
+            if (request.matches(canonicalIdentity, targetLanguage)) {
+                DetailsTranslationRuntimeUiState.NOT_REQUIRED
+            } else {
+                DetailsTranslationRuntimeUiState.IDLE
+            }
+        is TranslationState.Ready ->
+            if (artifact.request.matches(canonicalIdentity, targetLanguage)) {
+                DetailsTranslationRuntimeUiState.READY
+            } else {
+                DetailsTranslationRuntimeUiState.IDLE
+            }
+        is TranslationState.Failed ->
+            if (request.matches(canonicalIdentity, targetLanguage)) {
+                DetailsTranslationRuntimeUiState.FAILED
+            } else {
+                DetailsTranslationRuntimeUiState.IDLE
+            }
+    }
+}
+
+private fun TranslationState.runtimeFailureUiReasonFor(
+    canonicalIdentity: CanonicalLyricsIdentity,
+    targetLanguage: String,
+): DetailsTranslationRuntimeFailureUiReason? =
+    (this as? TranslationState.Failed)
+        ?.takeIf { it.request.matches(canonicalIdentity, targetLanguage) }
+        ?.reason
+        ?.let { reason ->
+            when (reason) {
+                TranslationFailureReason.LANGUAGE_PROFILING_FAILED ->
+                    DetailsTranslationRuntimeFailureUiReason.LANGUAGE_PROFILING_FAILED
+                TranslationFailureReason.TRANSLATION_PLANNING_FAILED ->
+                    DetailsTranslationRuntimeFailureUiReason.TRANSLATION_PLANNING_FAILED
+                TranslationFailureReason.PROVIDER_EXECUTION_FAILED ->
+                    DetailsTranslationRuntimeFailureUiReason.PROVIDER_EXECUTION_FAILED
+                TranslationFailureReason.UNEXPECTED ->
+                    DetailsTranslationRuntimeFailureUiReason.UNEXPECTED
+            }
+        }
+
+private fun TranslationRequestIdentity.matches(
+    canonicalIdentity: CanonicalLyricsIdentity,
+    targetLanguage: String,
+): Boolean =
+    canonicalLyrics == canonicalIdentity &&
+        this.targetLanguage == targetLanguage
+
+private fun modelUiState(
+    languageTag: String,
+    translationEnabled: Boolean,
+    modelStates: Map<String, TranslationModelState>,
+    modelInventoryReconciled: Boolean,
+): DetailsTranslationModelUiState {
+    val normalized = TranslationLanguages.normalizeLanguageTag(languageTag)
+        ?: languageTag.lowercase(Locale.US)
+    if (!TranslationLanguages.isModelSupported(normalized)) {
+        return DetailsTranslationModelUiState(
+            languageLabel = shortLanguageLabel(normalized),
+            phase = DetailsTranslationModelPhaseUiState.UNSUPPORTED,
+        )
+    }
+    if (normalized == "en") {
+        return DetailsTranslationModelUiState(
+            languageLabel = shortLanguageLabel(normalized),
+            phase = DetailsTranslationModelPhaseUiState.READY,
+        )
+    }
+
+    val modelState = modelStates[normalized]
+    val phase = when {
+        modelState == null && !modelInventoryReconciled ->
+            DetailsTranslationModelPhaseUiState.CHECKING
+        modelState == null && !translationEnabled ->
+            DetailsTranslationModelPhaseUiState.NOT_REQUIRED
+        modelState == null ->
+            DetailsTranslationModelPhaseUiState.CHECKING
+        modelState.phase == TranslationModelPhase.CHECKING ->
+            DetailsTranslationModelPhaseUiState.CHECKING
+        modelState.phase == TranslationModelPhase.DOWNLOADING ->
+            DetailsTranslationModelPhaseUiState.DOWNLOADING
+        modelState.phase == TranslationModelPhase.WAITING_FOR_SYSTEM ->
+            DetailsTranslationModelPhaseUiState.WAITING_FOR_SYSTEM
+        modelState.phase == TranslationModelPhase.READY ->
+            DetailsTranslationModelPhaseUiState.READY
+        modelState.phase == TranslationModelPhase.FAILED ->
+            DetailsTranslationModelPhaseUiState.FAILED
+        else ->
+            DetailsTranslationModelPhaseUiState.TIMED_OUT
+    }
+    val failureReason = when (phase) {
+        DetailsTranslationModelPhaseUiState.FAILED,
+        DetailsTranslationModelPhaseUiState.TIMED_OUT ->
+            modelState?.error?.trim()?.takeIf(String::isNotEmpty)
+        else -> null
+    }
+
+    return DetailsTranslationModelUiState(
+        languageLabel = shortLanguageLabel(normalized),
+        phase = phase,
+        failureReason = failureReason,
+    )
+}
+
+private fun shortLanguageLabel(languageTag: String): String =
+    (TranslationLanguages.normalizeLanguageTag(languageTag) ?: languageTag)
+        .uppercase(Locale.US)
 
 private fun formatDuration(durationMs: Long): String {
     val totalSeconds = durationMs / 1_000L

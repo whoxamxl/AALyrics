@@ -24,7 +24,7 @@ The current production branch state now has:
 - an explicit non-functional Sync placeholder;
 - unsupported Update controls presented unavailable rather than wired to no-ops, while Changelog is supplied offline from the bundled repository `CHANGELOG.md`.
 
-The debug APK now builds with the real Phone shell reachable after onboarding prerequisites are satisfied. Physical-device smoke testing remains the final empirical validation step; CI alone does not claim that device interaction has been observed.
+The debug APK builds with the real Phone shell reachable after onboarding prerequisites are satisfied. Physical-device smoke testing has been exercised for the production Phone shell and, for the Translation follow-up, the refined Secondary/Details behavior; CI/build results and device observations remain separate validation evidence.
 
 The Settings extension implemented on `feature/settings-about-support` preserves this host boundary: `:app` supplies bundled `PRIVACY.md` text and owns the external Buy Me a Coffee browser/Custom-Tab launch, while `:ui:phone` remains presentation-only.
 
@@ -181,29 +181,41 @@ This slice does not change media-session selection policy.
 
 ## Lyrics destination
 
-`LyricsScreen` is production Compose, but the production runtime route/mapping is still incomplete.
+`LyricsScreen` and the canonical Phone lyrics mapper are production Compose/runtime behavior. `PhoneRuntimeHost` now collects the already-running `TranslationCoordinator` output through `AALyricsApplication.translationState`, and `mapPhoneLyricsState` projects eligible translated lines without changing canonical lyrics ownership.
 
-This slice may add the minimal app-owned Phone lyrics presentation mapper/route necessary to render live data from the existing canonical sources:
+The active `feature/translation-runtime` slice closes that gap with the minimal application-owned presentation composition:
 
 ```text
-PlaybackSnapshot
-LyricsState
-TranslationState / Translation settings where already approved
-Phone presentation preference state
-        ↓
-LyricsScreenUiState
-        ↓
-LyricsScreen
+PlaybackSnapshot ----------------------┐
+LyricsState ---------------------------┤
+TranslationState ----------------------┤
+TranslationSettings -------------------┼─> Phone lyrics mapper
+Phone presentation preference state ---┘
+                                            ↓
+                                   LyricsScreenUiState
+                                            ↓
+                                     LyricsScreen
 ```
+
+The host lifecycle-collects the existing `translationState`, `translationSettings`, and model lifecycle state for presentation. It does not start or cancel Translation execution merely to render state. Explicit Track Card Retry remains an application-owned action through the existing retry boundary.
+
+The Phone mapper owns presentation composition for the permanent Track Card Translation status row. It combines current Translation settings/state with the existing model-lifecycle presentation facts so the UI distinguishes active automatic model download from actual Translation execution. Model-preparation feedback is route-scoped: only the current target plus matching **model-supported** Profile Primary/ACTIVE Secondary may produce `Downloading language models…`; unsupported detected languages, unrelated model work, and superseded model work must not affect the row. The UI receives only a Phone-local state such as OFF / ENABLED / DOWNLOADING_MODELS / TRANSLATING / READY(route) / NOT_REQUIRED / FAILED; it does not inspect ML Kit or Translation core types directly.
+
+The status row is always reserved, preventing Translation transitions from changing Track Card height or shifting the LyricsViewport. A Failed row emits a semantic Retry callback to `:app`. The application retries only failed/timed-out models belonging to the current route (current target plus matching Profile Primary/ACTIVE Secondary, excluding built-in English), then republishes the current canonical lyrics/settings through `TranslationExecutionRuntime`; stale or unrelated model failures are not retried. Retry ownership remains application/capability-side.
 
 The mapper must preserve existing approved semantics:
 
 - canonical lyrics ownership stays in `:core:lyrics`;
+- a Ready Translation artifact is used only when Translation is currently enabled, its request target equals the current normalized target setting, and its canonical identity exactly matches the canonical lyrics being mapped;
+- preserved artifact lines are not duplicated as translated text;
+- pending/not-required/failed Translation stays original-only and never becomes Lyrics failure;
 - current-line timing is derived from existing playback/lyrics facts rather than a new timing algorithm;
 - PLAIN auto-scroll follows the existing presentation contract;
-- WORD-capable source lyrics do not implicitly enable Karaoke mode;
+- WORD-capable source lyrics do not implicitly enable Karaoke mode or translated-word highlighting;
 - Translation remains an additive derived capability;
-- provider DTOs and provider-specific logic do not enter `:ui:phone`.
+- provider DTOs, Translation engines, ML Kit, and provider-specific logic do not enter `:ui:phone`.
+
+The full Phone Translation handoff contract and acceptance criteria are in `TASK.md`, `docs/TRANSLATION_ARCHITECTURE.md`, and `docs/PHONE_LYRICS_VIEWPORT.md`.
 
 The runtime now forwards selected-session artwork from `METADATA_KEY_ALBUM_ART`, `METADATA_KEY_ART`, or `MediaDescription.iconBitmap` through `:app` into the existing renderable artwork slots. Android Bitmap/MediaSession ownership does not enter `:ui:phone`. Missing artwork uses the shared AALyrics foreground mark derived from `branding/android/AALyrics_foreground_android.svg`.
 
@@ -226,9 +238,23 @@ A placeholder is presentation only and does not freeze the future Sync design.
 
 ## Details destination
 
-The host should render the production `DetailsScreen` from the existing application-owned `phoneDetailsState`.
+The host renders the production `DetailsScreen` from the application-owned `phoneDetailsState`. Translation Details extends that same state boundary rather than creating a second Details mapper inside the Composable or host.
 
-The existing canonical playback-identity/stale-state rules remain unchanged.
+The existing canonical playback-identity/stale-state rules remain unchanged. Translation source/profile diagnostics must use the same current canonical identity gate; target setting/model inventory remain application-level facts.
+
+Normal Translation Details uses:
+
+- current matching LanguageProfile Primary;
+- ACTIVE Secondary only, formatted as `Primary (Secondary)`;
+- current normalized target language.
+
+Verbose Details adds only:
+
+- Runtime state;
+- one positional Source model row that preserves Primary plus optional ACTIVE Secondary ISO/state pairing;
+- one Target model row.
+
+Application-owned mapping adapts Translation/core/model facts into Phone-local Details state. `:ui:phone` must not depend on `TranslationState`, `LanguageProfile`, `TranslationModelState`, ML Kit types, or raw exceptions.
 
 Verbose Details remains presentation-only:
 
@@ -237,12 +263,18 @@ Settings > Advanced > Verbose details
         ↓
 application-owned persisted preference
         ↓
+playback + lyrics + Translation diagnostics
+        ↓
 AALyricsApplication.phoneDetailsState
         ↓
 DetailsScreen
 ```
 
-The runtime-host slice must not add provider/network requests for diagnostics. Verbose Details may reuse the already-resolved playback-source app metadata to show the Android application category and min/target SDK levels alongside the raw playback package; this metadata must not influence MediaSession selection, compatibility gating, playback behavior, or feature availability.
+The application-owned `phoneDetailsState` now combines the existing Translation settings/state/diagnostic evidence, model lifecycle state, and startup model-inventory reconciliation fact. `PhoneDetailsMapper` canonical-identity gates per-track profile/runtime evidence and emits Phone-local Translation Details state. Source-model diagnostics remain application-owned and positional: Primary plus optional ACTIVE Secondary are projected independently, and unsupported detected languages are represented as presentation-only `—` rather than model lifecycle work. The host continues consuming that resolved state rather than reconstructing Translation diagnostics ad hoc.
+
+The runtime-host slice must not add provider/network requests for diagnostics. Verbose Details may reuse already-owned playback-source and Translation/model facts. Enabling Verbose Details must not start profiling, Translation, model download, retry, or provider lookup. Opening the Details destination itself also has no such side effects. The only destination-dependent work is presentation-local live progress ticking while playback is active; `verboseDetailsEnabled` is part of that effect's key so toggling Verbose while already on Details starts/stops the ticker immediately.
+
+Failure-capable Details rows follow the `docs/PHONE_DETAILS.md` standard: `Failed` and `Timed out` carry a presentation-ready authoritative reason and use the shared semantic info-tooltip affordance. Missing runtime failure evidence must be fixed at the owning Translation contract rather than replaced by a guessed UI string.
 
 ## Settings destination
 
@@ -309,7 +341,7 @@ Before merge:
 - the final diff receives bounded Codex review;
 - no current-scope blocking P0/P1/P2 remains.
 
-A physical-device smoke test is strongly useful once the APK is produced, but merge authorization remains a separate user decision.
+A physical-device smoke test remains useful evidence in addition to CI/build checks. The current Translation follow-up has completed that device verification; merge authorization remains a separate explicit user decision.
 
 ## Explicitly deferred
 

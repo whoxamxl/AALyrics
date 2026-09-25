@@ -10,8 +10,15 @@ import io.github.whoxamxl.aalyrics.translation.api.TranslationLanguages
 import io.github.whoxamxl.aalyrics.translation.api.TranslationSettings
 import io.github.whoxamxl.aalyrics.translation.api.TranslationSettingsStore
 import io.github.whoxamxl.aalyrics.translation.core.CanonicalLyrics
-import io.github.whoxamxl.aalyrics.translation.core.TranslationLifecycle
+import io.github.whoxamxl.aalyrics.translation.core.LanguageProfile
+import io.github.whoxamxl.aalyrics.translation.core.ProfiledLineRole
+import io.github.whoxamxl.aalyrics.translation.core.ProfiledLyricLine
+import io.github.whoxamxl.aalyrics.translation.core.SecondaryActivation
+import io.github.whoxamxl.aalyrics.translation.core.TranslationFailureReason
+import io.github.whoxamxl.aalyrics.translation.core.TranslationRequestId
+import io.github.whoxamxl.aalyrics.translation.core.TranslationRequestIdentity
 import io.github.whoxamxl.aalyrics.translation.core.TranslationState
+import io.github.whoxamxl.aalyrics.translation.core.TranslationLifecycle
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -24,6 +31,122 @@ import kotlin.test.assertSame
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class TranslationExecutionRuntimeTest {
+    @Test
+    fun `retry model selection stays on current failed route`() {
+        val canonical = CanonicalLyrics.create(
+            ownerId = "retry-route",
+            document = LyricsDocument(listOf(PlainLyricLine("Line"))),
+        )
+        val request = TranslationRequestIdentity(
+            id = TranslationRequestId(7L),
+            canonicalLyrics = canonical.identity,
+            targetLanguage = "ja",
+        )
+        val state = TranslationState.Failed(
+            request = request,
+            profile = LanguageProfile(
+                primary = "en",
+                secondaryCandidate = "es",
+                secondaryActivation = SecondaryActivation.ACTIVE,
+                lines = listOf(
+                    ProfiledLyricLine(
+                        index = 0,
+                        languageTag = "en",
+                        confidence = 0.99f,
+                        role = ProfiledLineRole.PRIMARY,
+                    ),
+                ),
+            ),
+            reason = TranslationFailureReason.PROVIDER_EXECUTION_FAILED,
+        )
+
+        assertEquals(
+            setOf("ja", "es"),
+            translationRetryModelLanguages(
+                state = state,
+                settings = TranslationSettings(enabled = true, targetLanguage = "ja"),
+                currentCanonicalIdentity = canonical.identity,
+            ),
+        )
+    }
+
+    @Test
+    fun `retry model selection ignores unsupported active Secondary`() {
+        val canonical = CanonicalLyrics.create(
+            ownerId = "unsupported-secondary-retry",
+            document = LyricsDocument(listOf(PlainLyricLine("Line"))),
+        )
+        val state = TranslationState.Failed(
+            request = TranslationRequestIdentity(
+                id = TranslationRequestId(9L),
+                canonicalLyrics = canonical.identity,
+                targetLanguage = "ja",
+            ),
+            profile = LanguageProfile(
+                primary = "en",
+                secondaryCandidate = "ar",
+                secondaryActivation = SecondaryActivation.ACTIVE,
+                lines = emptyList(),
+            ),
+            reason = TranslationFailureReason.PROVIDER_EXECUTION_FAILED,
+        )
+
+        assertEquals(
+            setOf("ja"),
+            translationRetryModelLanguages(
+                state = state,
+                settings = TranslationSettings(enabled = true, targetLanguage = "ja"),
+                currentCanonicalIdentity = canonical.identity,
+            ),
+        )
+    }
+
+    @Test
+    fun `retry model selection ignores stale route profile and built in English`() {
+        val canonical = CanonicalLyrics.create(
+            ownerId = "stale-retry-route",
+            document = LyricsDocument(listOf(PlainLyricLine("Line"))),
+        )
+        val staleState = TranslationState.Failed(
+            request = TranslationRequestIdentity(
+                id = TranslationRequestId(8L),
+                canonicalLyrics = canonical.identity,
+                targetLanguage = "fr",
+            ),
+            profile = LanguageProfile(
+                primary = "es",
+                secondaryCandidate = null,
+                secondaryActivation = SecondaryActivation.NONE,
+                lines = emptyList(),
+            ),
+        )
+
+        assertEquals(
+            setOf("ja"),
+            translationRetryModelLanguages(
+                state = staleState,
+                settings = TranslationSettings(enabled = true, targetLanguage = "ja"),
+                currentCanonicalIdentity = canonical.identity,
+            ),
+        )
+        assertEquals(
+            emptySet(),
+            translationRetryModelLanguages(
+                state = TranslationState.Idle,
+                settings = TranslationSettings(enabled = true, targetLanguage = "en"),
+                currentCanonicalIdentity = canonical.identity,
+            ),
+        )
+        assertEquals(
+            emptySet(),
+            translationRetryModelLanguages(
+                state = staleState,
+                settings = TranslationSettings(enabled = false, targetLanguage = "ja"),
+                currentCanonicalIdentity = canonical.identity,
+            ),
+        )
+    }
+
     @Test
     fun `runtime maps completed canonical lyrics and settings into Translation ownership`() = runTest {
         val lyricsState = MutableStateFlow<LyricsState>(LyricsState.Idle)
@@ -59,6 +182,31 @@ class TranslationExecutionRuntimeTest {
 
         runtime.stop()
         assertEquals(1, lifecycle.clearCalls)
+    }
+
+    @Test
+    fun `retry republishes current canonical lyrics and settings after clearing lifecycle`() = runTest {
+        val document = LyricsDocument(listOf(PlainLyricLine("Synthetic lyric line")))
+        val lyricsState = MutableStateFlow<LyricsState>(LyricsState.Ready(lookup(1), document))
+        val settings = FakeSettingsStore().apply {
+            setEnabled(true)
+            setTargetLanguage("ja")
+        }
+        val lifecycle = RecordingLifecycle()
+        val runtime = TranslationExecutionRuntime(
+            lyricsState = lyricsState,
+            settingsStore = settings,
+            lifecycle = lifecycle,
+            applicationScope = this,
+        )
+
+        runtime.retry()
+
+        assertEquals(1, lifecycle.clearCalls)
+        val (canonical, retrySettings) = lifecycle.updates.single()
+        assertSame(document, canonical?.document)
+        assertEquals(true, retrySettings.enabled)
+        assertEquals("ja", retrySettings.targetLanguage)
     }
 
     @Test

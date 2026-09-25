@@ -57,6 +57,40 @@ class MlKitTranslationProviderTest {
     }
 
     @Test
+    fun `unsupported source is rejected before model preparation or translator creation`() = runTest {
+        val modelManager = RecordingModelManager(routeAvailable = true)
+        var created = false
+        val provider = MlKitTranslationProvider(
+            modelManager = modelManager,
+            translatorFactory = MlKitTranslatorFactory { _, _ ->
+                created = true
+                RecordingTranslator()
+            },
+        )
+
+        assertNull(provider.openSession(TranslationRoute("ar", "ja")))
+        assertTrue(modelManager.routes.isEmpty())
+        assertFalse(created)
+    }
+
+    @Test
+    fun `unsupported target is rejected before model preparation or translator creation`() = runTest {
+        val modelManager = RecordingModelManager(routeAvailable = true)
+        var created = false
+        val provider = MlKitTranslationProvider(
+            modelManager = modelManager,
+            translatorFactory = MlKitTranslatorFactory { _, _ ->
+                created = true
+                RecordingTranslator()
+            },
+        )
+
+        assertNull(provider.openSession(TranslationRoute("en", "ar")))
+        assertTrue(modelManager.routes.isEmpty())
+        assertFalse(created)
+    }
+
+    @Test
     fun `same source and target is a no-op before model preparation`() = runTest {
         val modelManager = RecordingModelManager(routeAvailable = true)
         val provider = MlKitTranslationProvider(
@@ -72,6 +106,7 @@ class MlKitTranslationProviderTest {
         private val routeAvailable: Boolean,
     ) : TranslationModelManager {
         override val states: StateFlow<Map<String, TranslationModelState>> = MutableStateFlow(emptyMap())
+        override val inventoryReconciled: StateFlow<Boolean> = MutableStateFlow(true)
         val routes = mutableListOf<Pair<String, String>>()
 
         override suspend fun ensureAvailable(languageTag: String): Boolean = routeAvailable

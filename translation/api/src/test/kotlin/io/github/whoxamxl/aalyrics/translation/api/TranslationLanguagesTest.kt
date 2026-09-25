@@ -21,6 +21,19 @@ class TranslationLanguagesTest {
     }
 
     @Test
+    fun modelSupportUsesTheNineLanguageProductScope() {
+        assertEquals(true, TranslationLanguages.isModelSupported("pt-BR"))
+        assertEquals(true, TranslationLanguages.isModelSupported("en"))
+        assertEquals(false, TranslationLanguages.isModelSupported("ar"))
+        assertEquals(false, TranslationLanguages.isModelSupported("ru"))
+        assertEquals(false, TranslationLanguages.isModelSupported(null))
+        assertEquals(
+            setOf("en", "ja", "fr", "de", "es", "ko", "zh", "it", "pt"),
+            TranslationLanguages.supportedModelLanguages,
+        )
+    }
+
+    @Test
     fun supportedTargetSetMatchesProductScope() {
         assertEquals(
             listOf("en", "ja", "fr", "de", "es", "ko", "zh", "it", "pt"),

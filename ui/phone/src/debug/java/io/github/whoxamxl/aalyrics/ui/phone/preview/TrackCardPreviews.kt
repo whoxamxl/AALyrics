@@ -12,13 +12,52 @@ import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsTheme
 import io.github.whoxamxl.aalyrics.ui.phone.lyrics.TrackCard
 import io.github.whoxamxl.aalyrics.ui.phone.lyrics.TrackCardUiState
 
-@Preview(name = "Ready", group = "TrackCard", widthDp = 412, showBackground = true)
+@Preview(name = "Translation off · slot reserved", group = "TrackCard · Translation", widthDp = 412, showBackground = true)
 @Composable
 private fun TrackCardReadyPreview() {
     TrackCardPreview(
         state = PhonePreviewFixtures.trackCardReady,
         showArtwork = true,
     )
+}
+
+@Preview(name = "Translation enabled", group = "TrackCard · Translation", widthDp = 412, showBackground = true)
+@Composable
+private fun TrackCardTranslationEnabledPreview() {
+    TrackCardPreview(state = PhonePreviewFixtures.trackCardTranslationEnabled, showArtwork = true)
+}
+
+@Preview(name = "Downloading models", group = "TrackCard · Translation", widthDp = 412, showBackground = true)
+@Composable
+private fun TrackCardTranslationDownloadingModelsPreview() {
+    TrackCardPreview(
+        state = PhonePreviewFixtures.trackCardTranslationDownloadingModels,
+        showArtwork = true,
+    )
+}
+
+@Preview(name = "Translating", group = "TrackCard · Translation", widthDp = 412, showBackground = true)
+@Composable
+private fun TrackCardTranslationTranslatingPreview() {
+    TrackCardPreview(state = PhonePreviewFixtures.trackCardTranslationTranslating, showArtwork = true)
+}
+
+@Preview(name = "Ready EN → JA", group = "TrackCard · Translation", widthDp = 412, showBackground = true)
+@Composable
+private fun TrackCardTranslationReadyPreview() {
+    TrackCardPreview(state = PhonePreviewFixtures.trackCardTranslationReady, showArtwork = true)
+}
+
+@Preview(name = "Not required", group = "TrackCard · Translation", widthDp = 412, showBackground = true)
+@Composable
+private fun TrackCardTranslationNotRequiredPreview() {
+    TrackCardPreview(state = PhonePreviewFixtures.trackCardTranslationNotRequired, showArtwork = true)
+}
+
+@Preview(name = "Failed + Retry", group = "TrackCard · Translation", widthDp = 412, showBackground = true)
+@Composable
+private fun TrackCardTranslationFailedPreview() {
+    TrackCardPreview(state = PhonePreviewFixtures.trackCardTranslationFailed, showArtwork = true)
 }
 
 @Preview(name = "Artwork placeholder", group = "TrackCard", widthDp = 412, showBackground = true)
@@ -103,7 +142,10 @@ private fun TrackCardPreview(
 ) {
     AALyricsTheme {
         if (showArtwork) {
-            TrackCard(state = state) {
+            TrackCard(
+                state = state,
+                onTranslationRetry = {},
+            ) {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
@@ -119,7 +161,10 @@ private fun TrackCardPreview(
                 )
             }
         } else {
-            TrackCard(state = state)
+            TrackCard(
+                state = state,
+                onTranslationRetry = {},
+            )
         }
     }
 }
