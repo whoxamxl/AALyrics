@@ -360,3 +360,27 @@ The following details are intentionally not frozen until the first interactive P
 - exact PLAIN lead-in/lead-out weighting.
 
 These are visual/behavioral tuning parameters, not reasons to change the ownership model above.
+
+
+## WORD_SYNC Karaoke sweep
+
+Phone Karaoke is authorized only for genuine WORD_SYNC lyrics and only when both application-owned Karaoke toggles resolve to active.
+
+The existing LyricsViewport remains the owner of row geometry, Follow/Browse behaviour, line focus, scale, alpha, edge fades, and Translation placement.
+
+Karaoke changes only the canonical text rendering of the current line:
+
+```text
+completed text | active timed token | pending text
+primary        | continuous sweep    | secondary
+```
+
+Rules:
+
+- preserve the canonical source line as the rendered text;
+- token-to-character mapping is supplied as presentation-ready state;
+- the viewport does not inspect `TimedWord` or timing-engine types directly;
+- sweep progress comes from the shared timing projection;
+- if the active token cannot be mapped safely or progress is unavailable, fall back to normal current-line styling;
+- translated text remains secondary and receives no independent word progress;
+- LINE_SYNC never receives synthetic Karaoke rendering.

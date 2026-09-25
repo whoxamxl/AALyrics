@@ -2,7 +2,7 @@
 
 ## Status
 
-Karaoke rendering remains deferred.
+Phone Karaoke presentation mapping and rendering are authorized on `feature/phone-karaoke-rendering`. Android Auto Karaoke remains deferred to documentation-only Phase 11.4d.
 
 The shared LINE/WORD timing semantics are no longer owned by a Karaoke-specific engine. They belong to the shared Timing Semantic Engine defined in `docs/TIMING_ARCHITECTURE.md`.
 
@@ -322,3 +322,89 @@ Before implementing Karaoke consumer/rendering:
 7. test rendering/consumer behaviour separately from timing-engine tests;
 8. keep Phone and automotive presentation independent;
 9. stop before merge according to `AGENTS.md`.
+
+
+## Approved Phone Karaoke policy
+
+The first production Karaoke surface is intentionally narrow:
+
+- Karaoke rendering is **WORD_SYNC only**.
+- LINE_SYNC must not synthesize or imitate Karaoke progress.
+- PLAIN lyrics never enter Karaoke presentation.
+- Phone uses the **continuous current-word sweep** direction from the working fork's normal Phone renderer, not the Performance-mode whole-word pulse renderer.
+- The existing LyricsViewport line focus, Follow/Browse ownership, Translation secondary text, and scroll geometry remain the outer presentation model.
+
+The activation contract is:
+
+```text
+Advanced > Experimental features > Karaoke mode
+        │
+        └─ feature gate ON
+                ↓
+Expanded Player > Quick controls
+        └─ Karaoke toggle visible
+                │
+                └─ runtime toggle ON
+                        +
+                   source == WORD_SYNC
+                        ↓
+              Phone Karaoke display active
+```
+
+Both persisted booleans default to **OFF**.
+
+The Experimental toggle is a feature-availability gate, not the live Karaoke mode switch. Turning the Experimental gate OFF must also turn the Quick-controls Karaoke state OFF so re-enabling the experiment cannot silently reactivate Karaoke.
+
+The Quick-controls Karaoke toggle is shown only while the Experimental gate is enabled.
+
+Effective Phone Karaoke is therefore:
+
+```text
+karaokeFeatureEnabled &&
+karaokeModeEnabled &&
+sourceSyncType == WORD
+```
+
+The timing engine remains unaware of both toggles.
+
+### 11.4b — Phone presentation mapping
+
+The application mapper may consume `LyricsTimingProjection` and canonical `TimedWord` text to create presentation-ready display ranges.
+
+Stable rules:
+
+- preserve canonical line text;
+- align provider timing tokens conservatively to ranges in that canonical text;
+- do not rewrite `TimedWord` timestamps;
+- if token-to-text alignment is not credible, render the normal current line rather than invent a Karaoke range;
+- expose WORD timing facts only when effective Phone Karaoke is active;
+- when Karaoke is disabled, WORD source keeps the existing line-oriented Phone behaviour.
+
+Display mapping is presentation policy, not a second timing engine.
+
+### 11.4c — Phone continuous sweep
+
+For the current line only:
+
+- text before the active token range is completed/emphasized;
+- the active token range uses continuous left-to-right progress;
+- text after the active token range remains pending/dim;
+- translated text is never word-swept;
+- existing line scale/alpha/focus behaviour continues to wrap the whole canonical + translated row;
+- semantic GAP / BEFORE_FIRST / unavailable-progress states may fall back to normal current-line styling rather than fabricate timing;
+- no arbitrary synthetic LINE_SYNC progress is permitted.
+
+A continuous sweep may use a presentation-only gradient/clip implementation. It must consume `wordProgress`; it must not calculate current-word timing itself.
+
+### 11.4d — Android Auto Karaoke — documented, deferred
+
+No Android Auto Karaoke production code is authorized in this slice.
+
+Future Android Auto work must:
+
+- consume the same shared `LyricsTimingProjection`;
+- remain WORD_SYNC only unless a later explicit product decision changes that rule;
+- respect host update/throttling constraints;
+- not copy Phone Compose rendering machinery;
+- not duplicate line/word timing semantics;
+- define its own host-appropriate emphasis strategy in a dedicated implementation slice.

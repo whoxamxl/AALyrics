@@ -1122,3 +1122,20 @@ The first Settings slice does not define or implement:
 - functional Karaoke mode or any Karaoke runtime wiring;
 - embedded donation/payment WebViews, in-app payment handling, or undocumented Buy Me a Coffee prefill behavior;
 - additional developer/experimental controls beyond the approved Advanced contract, including playback-source overrides other than `Allow unclassified apps`.
+
+
+## Karaoke Experimental feature gate
+
+Advanced > Experimental features > Karaoke mode is now a persisted **feature gate**.
+
+It does not directly turn Karaoke rendering on.
+
+Approved behaviour:
+
+- default: OFF;
+- OFF: Karaoke is unavailable to Phone presentation and the Expanded Player Quick-controls Karaoke row is hidden;
+- ON: the Quick-controls Karaoke row becomes available;
+- turning this gate OFF also clears the persisted live Karaoke-mode toggle;
+- Reset AALyrics restores both the feature gate and live Karaoke-mode toggle to OFF.
+
+The row's info text should explain that Karaoke is experimental, is enabled from the media player's Quick controls after this gate is turned on, and only applies to word-synced lyrics.

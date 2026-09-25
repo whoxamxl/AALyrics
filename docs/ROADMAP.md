@@ -353,11 +353,19 @@ Only after shared timing semantics and behaviour-preserving wiring are proven, d
 
 Do not infer these choices from the legacy app or from the current placeholder.
 
-### Phase 11.4b — Karaoke consumer/rendering — deferred
+### Phase 11.4b — Karaoke presentation mapping — active on Phone topic branch
 
-Karaoke presentation will consume the already-computed shared timing projection rather than own current-line/current-word/progress calculations.
+Map shared WORD timing facts plus canonical token text into conservative Phone presentation-ready character ranges. Karaoke remains WORD_SYNC only; LINE_SYNC and PLAIN do not synthesize Karaoke timing.
 
-The Karaoke consumer/rendering contract is now documented in `docs/KARAOKE_ARCHITECTURE.md`: Karaoke enablement is presentation/application state, the shared Timing Semantic Engine is mode-agnostic, Normal presentation consumes line facts, and future Karaoke presentation may consume additional word/progress/boundary facts. Phone Compose and Android Auto may render differently, but neither may duplicate timing semantics.
+### Phase 11.4c — Phone Karaoke rendering — active on Phone topic branch
+
+Implement current-line continuous sweep inside the existing LyricsViewport. Activation requires both the Advanced Experimental feature gate and the Expanded Player Quick-controls Karaoke toggle. Both default OFF.
+
+The existing line focus, Follow/Browse behaviour, Translation layout, and timing engine ownership remain unchanged.
+
+### Phase 11.4d — Android Auto Karaoke — documented / deferred
+
+Android Auto will eventually consume the same shared timing projection through its own host-appropriate presentation. No Android Auto Karaoke production code belongs to the Phone implementation branch.
 
 ### Phase 11.5 — Presentation state integration
 

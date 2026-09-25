@@ -626,3 +626,19 @@ PR #46 implemented this contract in the following bounded layers:
 10. run CI and bounded Codex review before merge.
 
 No implementation step should move Android framework types into `:ui:phone`.
+
+
+## Karaoke Quick control
+
+When the persisted Experimental Karaoke feature gate is ON, Expanded Player > Quick controls includes a Karaoke switch next to the existing Translation control.
+
+Contract:
+
+- the Quick-controls Karaoke row is hidden while the Experimental gate is OFF;
+- the live Karaoke toggle defaults to OFF;
+- toggling it does not trigger provider lookup or mutate lyrics;
+- effective rendering additionally requires a WORD_SYNC source;
+- LINE_SYNC and PLAIN sources ignore the live Karaoke toggle;
+- disabling the Experimental gate clears the live Karaoke toggle.
+
+Quick controls owns only the user interaction. Application-owned persisted state remains outside `:ui:phone`.
