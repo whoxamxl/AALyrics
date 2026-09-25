@@ -23,6 +23,8 @@ object TranslationLanguages {
         "pt",
     )
 
+    val supportedModelLanguages: Set<String> = supportedTargets.toSet()
+
     fun normalizeLanguageTag(languageTag: String?): String? {
         if (languageTag.isNullOrBlank()) return null
         val normalized = Locale.forLanguageTag(languageTag).language
@@ -42,7 +44,7 @@ object TranslationLanguages {
      * or Translation routing.
      */
     fun isModelSupported(languageTag: String?): Boolean =
-        normalizeLanguageTag(languageTag) in supportedTargets
+        normalizeLanguageTag(languageTag) in supportedModelLanguages
 
     fun displayName(
         languageTag: String?,

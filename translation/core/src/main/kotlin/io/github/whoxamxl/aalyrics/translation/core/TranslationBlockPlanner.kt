@@ -32,14 +32,18 @@ class TranslationBlockPlanner(
         }
         val target = TranslationLanguages.normalizeLanguageTag(targetLanguage)
             ?: targetLanguage
+        val targetModelSupported = TranslationLanguages.isModelSupported(target)
         val linePlans = profile.lines.map { line ->
             val sourceModelSupported =
                 TranslationLanguages.isModelSupported(line.languageTag)
             val shouldTranslate = when (line.role) {
                 ProfiledLineRole.PRIMARY ->
-                    sourceModelSupported && line.languageTag != target
+                    targetModelSupported &&
+                        sourceModelSupported &&
+                        line.languageTag != target
                 ProfiledLineRole.SECONDARY ->
-                    sourceModelSupported &&
+                    targetModelSupported &&
+                        sourceModelSupported &&
                         profile.secondaryActivation == SecondaryActivation.ACTIVE &&
                         line.languageTag != target
                 ProfiledLineRole.TARGET,

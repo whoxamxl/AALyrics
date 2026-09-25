@@ -27,6 +27,10 @@ class TranslationLanguagesTest {
         assertEquals(false, TranslationLanguages.isModelSupported("ar"))
         assertEquals(false, TranslationLanguages.isModelSupported("ru"))
         assertEquals(false, TranslationLanguages.isModelSupported(null))
+        assertEquals(
+            setOf("en", "ja", "fr", "de", "es", "ko", "zh", "it", "pt"),
+            TranslationLanguages.supportedModelLanguages,
+        )
     }
 
     @Test

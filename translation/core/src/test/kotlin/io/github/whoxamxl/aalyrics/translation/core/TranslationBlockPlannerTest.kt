@@ -135,6 +135,31 @@ class TranslationBlockPlannerTest {
     }
 
     @Test
+    fun `unsupported target produces no translation blocks`() {
+        val lyrics = LyricsDocument(
+            lines = listOf(
+                PlainLyricLine("Supported source one"),
+                PlainLyricLine("Supported source two"),
+            ),
+        )
+        val profile = profile(
+            languages = listOf("en", "en"),
+            roles = listOf(ProfiledLineRole.PRIMARY, ProfiledLineRole.PRIMARY),
+        )
+
+        val plan = TranslationBlockPlanner().plan(
+            lyrics = lyrics,
+            profile = profile,
+            targetLanguage = "ar",
+        )
+
+        assertTrue(plan.blocks.isEmpty())
+        assertTrue(
+            plan.lines.all { it.disposition == TranslationLineDisposition.PRESERVE },
+        )
+    }
+
+    @Test
     fun `soft splits overlap Context Halo without duplicate Core ownership`() {
         val lyrics = LyricsDocument(
             lines = List(7) { index -> PlainLyricLine("Synthetic English line $index") },
