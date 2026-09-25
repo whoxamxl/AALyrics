@@ -179,6 +179,65 @@ class SelectedMediaSessionRuntimeTest {
     }
 
     @Test
+    fun `initial playing snapshot is resampled to reject stale source timestamp paired with moving position`() {
+        val scheduler = FakeScheduler()
+        val snapshots = mutableListOf<PlaybackSnapshot>()
+        val session = controller("session", "Track", playing = true)
+        session.snapshot = snapshot(
+            title = "Track",
+            status = PlaybackStatus.PLAYING,
+            positionMs = 40_000L,
+            sourceTimestampMs = 10_000L,
+            sampleTimestampMs = 20_000L,
+        )
+        val runtime = runtime(scheduler, snapshots)
+
+        runtime.updateSessions(listOf(session))
+        assertEquals(listOf(250L), scheduler.scheduledDelays)
+
+        session.snapshot = snapshot(
+            title = "Track",
+            status = PlaybackStatus.PLAYING,
+            positionMs = 40_250L,
+            sourceTimestampMs = 10_000L,
+            sampleTimestampMs = 20_250L,
+        )
+        scheduler.runPending()
+
+        assertEquals(2, snapshots.size)
+        assertNull(snapshots.last().positionUpdatedAtMonotonicMs)
+        assertEquals(20_250L, snapshots.last().positionSampledAtMonotonicMs)
+    }
+
+    @Test
+    fun `initial resample does not reject a valid old stationary MediaSession anchor`() {
+        val scheduler = FakeScheduler()
+        val snapshots = mutableListOf<PlaybackSnapshot>()
+        val session = controller("session", "Track", playing = true)
+        session.snapshot = snapshot(
+            title = "Track",
+            status = PlaybackStatus.PLAYING,
+            positionMs = 40_000L,
+            sourceTimestampMs = 10_000L,
+            sampleTimestampMs = 20_000L,
+        )
+        val runtime = runtime(scheduler, snapshots)
+
+        runtime.updateSessions(listOf(session))
+        session.snapshot = snapshot(
+            title = "Track",
+            status = PlaybackStatus.PLAYING,
+            positionMs = 40_000L,
+            sourceTimestampMs = 10_000L,
+            sampleTimestampMs = 20_250L,
+        )
+        scheduler.runPending()
+
+        assertEquals(1, snapshots.size)
+        assertEquals(10_000L, snapshots.single().positionUpdatedAtMonotonicMs)
+    }
+
+    @Test
     fun `metadata identity is stabilized while playback churn remains immediate`() {
         val scheduler = FakeScheduler()
         val snapshots = mutableListOf<PlaybackSnapshot>()
@@ -372,11 +431,15 @@ class SelectedMediaSessionRuntimeTest {
             title: String,
             status: PlaybackStatus = PlaybackStatus.PLAYING,
             positionMs: Long = 0L,
+            sourceTimestampMs: Long? = null,
+            sampleTimestampMs: Long? = null,
         ) = PlaybackSnapshot(
             track = Track(title = title, artists = listOf("Artist")),
             status = status,
             positionMs = positionMs,
             source = PlaybackSource(id = "com.example.player", mediaId = title.lowercase()),
+            positionUpdatedAtMonotonicMs = sourceTimestampMs,
+            positionSampledAtMonotonicMs = sampleTimestampMs,
         )
     }
 }
