@@ -5,7 +5,7 @@
 - Branch: `feature/translation-runtime`.
 - Base: `main` at `4083588a250092e47f1efeb01e06a099b72a3604`.
 - Classification: TRANSLATION / PHONE PRESENTATION / RUNTIME COMPOSITION.
-- Status: Phone Translation/Details implementation was validated through Build #1173, then reopened for a profiler/model-diagnostics refinement after device evidence showed an implausible ACTIVE Secondary language. The current checkpoint is spec/test alignment; production behavior has not yet been changed for this refinement.
+- Status: Phone Translation/Details plus the conservative Secondary/model-scope refinement are implemented. GitHub Build #1185 validated implementation head `65e8ed5` with branch/commit gates, architecture checks, debug APK build, and unit tests all passing. Targeted refinement diff review found no remaining blocking production defect; physical-device verification remains.
 - Authoritative references: `AGENTS.md`, `docs/TRANSLATION_ARCHITECTURE.md`, `docs/PHONE_LYRICS_VIEWPORT.md`, `docs/PHONE_RUNTIME_HOST.md`, `docs/PHONE_UI_SPEC.md`, `docs/PHONE_DETAILS.md`, `docs/PRESENTATION_STATE_ARCHITECTURE.md`, and the current production code/tests on this branch.
 
 ## Goal
@@ -239,10 +239,10 @@ Use small, reviewable commits and keep each checkpoint independently coherent.
    - [x] **Checkpoint 7a — diagnostic evidence contract:** preserve the current request LanguageProfile after profiling while Translating/Failed and preserve a framework-neutral runtime failure reason; do not expose raw engine exceptions to Phone UI;
    - [x] **Checkpoint 7b — application Details mapping:** extend application-owned `phoneDetailsState` / `PhoneDetailsMapper` with Translation settings, current matching profile/runtime state, model lifecycle projection, and explicit startup model-inventory reconciliation;
    - [x] **Checkpoint 7c — Phone-local state + rendering:** add the `TRANSLATION` section, compact Verbose rows, and shared `PhoneInfoTooltip` treatment for Failed/Timed out;
-   - [x] **Checkpoint 7d — deterministic Previews/tests:** cover Primary only, ACTIVE Secondary, no profile yet, all six runtime states, all seven model presentation states, OFF+absent Not required, built-in/downloaded Ready while OFF, multi-source aggregate, and authoritative failure-tooltip payloads;
+   - [x] **Checkpoint 7d — deterministic Previews/tests:** cover Primary only, ACTIVE Secondary, no profile yet, all six runtime states, model lifecycle presentation, OFF+absent Not required, built-in/downloaded Ready while OFF, positional multi-source diagnostics, and authoritative failure-tooltip payloads;
    - [x] **Checkpoint 7e — regression/alignment:** verified Details open/Verbose toggle remain presentation-only; fixed the Verbose live-progress effect key and preserved separate Source/Target model rows when the ISO is the same; no provider/profile/model download/retry trigger is introduced by Details.
 
-8. [ ] **Secondary activation + Source model diagnostics refinement**
+8. [x] **Secondary activation + Source model diagnostics refinement**
    - [x] keep `secondaryCandidate` permissive and make only `SecondaryActivation.ACTIVE` conservative;
    - [x] define a language-agnostic ACTIVE gate: >=3 meaningful lines, >=18 substantive characters, >=20% character share, >=0.75 average candidate-line confidence, plus a 2-line contiguous run or >=2 song regions;
    - [x] add synthetic regressions for a two-line high-confidence false Secondary and a three-line low-confidence Secondary;
@@ -251,29 +251,29 @@ Use small, reviewable commits and keep each checkpoint independently coherent.
    - [x] implement the new generic ACTIVE gate in `LanguageProfiler` with no language-specific false-positive branches;
    - [x] enforce product-supported source-model routing/model preparation across core planning, ML Kit route/model guards, Track Card status, and Retry without adding per-language false-positive patches;
    - [x] replace aggregate Source model presentation state with positional Primary/Secondary model states; production UI now renders `EN (ES)` / `Ready (Ready)`, unsupported detected models render `—`, and Previews/tests cover positional lifecycle/failure state;
-   - [ ] rerun build/tests/review after production changes.
+   - [x] rerun build/tests after production changes via Build #1185 and complete a targeted `7aaf94e7 -> 65e8ed5` refinement review; no third broad Codex round was started because the PR already reached the two-normal-round limit in `AGENTS.md`.
 
 9. [ ] **Validation before PR readiness**
-   - run the repository architecture checks;
-   - run focused Translation/Phone unit tests;
-   - run the normal JVM/unit test suite required by the repository;
-   - build the debug APK;
-   - inspect the complete branch diff for scope/regressions;
-   - run bounded Codex review under `AGENTS.md`;
-   - perform a physical-device smoke test for Translation ON/OFF and at least one actual translated song before merge.
+   - [x] repository architecture checks passed in Build #1185;
+   - [x] focused Translation/Phone coverage passed as part of the repository unit-test task in Build #1185;
+   - [x] normal JVM/unit test suite passed in Build #1185;
+   - [x] debug APK build passed in Build #1185;
+   - [x] complete refinement diff inspected for scope/regressions; no blocking current-scope defect found;
+   - [x] review policy satisfied: two normal Codex rounds were already completed earlier in this PR, and the later Secondary/model-scope refinement received targeted review rather than an impermissible third broad round;
+   - [ ] perform a physical-device smoke test for the refined Secondary behavior and Translation Details before merge.
 
-Validation after the Details follow-up (Build #1173 validated implementation head `7aaf94e7`; subsequent commits in this section are documentation-only validation records):
+Current validation after the Secondary/model-scope refinement:
 
-- [x] GitHub Build #1173 on validated implementation head `7aaf94e7` passed `scripts/verify-architecture.sh`.
-- [x] GitHub Build #1173 on validated implementation head `7aaf94e7` passed the repository unit-test task, including the focused Translation / mapper coverage in the branch.
-- [x] GitHub Build #1173 on validated implementation head `7aaf94e7` passed `:app:assembleDebug`.
-- [x] Branch-name + all current branch commit-message gates reproduced directly against GitHub state; added-line architecture ownership scan found no new boundary leak and no build dependency files changed (full script execution still pending).
-- [x] Bounded current-head diff review found and fixed route Retry overreach: Retry now targets only current-route failed/timed-out models, not unrelated historical failures.
-- [x] Codex round 1 P2 validated and fixed: Track Card model-download status is now restricted to current-route target/Profile languages, so unrelated model work cannot hide Failed/Retry or replace Translating.
-- [x] Track Card terminal-state precedence aligned: a matching `TranslationState.Failed` always renders `Translation failed + Retry`; active model preparation cannot mask the terminal failure.
-- [x] Final branch diff / static alignment rechecked after executable validation; no new blocking issue found.
-- [x] Two normal Codex review rounds completed under `AGENTS.md`: round 1 P2 was fixed; round 2 reported no major issues on `226bd08`. Subsequent targeted compile-safety / terminal-state fixes were statically rechecked without starting a third broad review.
-- [ ] Physical-device smoke test for Translation Details, including Verbose OFF/ON and at least one failure/info-tooltip path where practical.
+- [x] GitHub Build #1185 validated implementation head `65e8ed5` successfully.
+- [x] Build #1185 passed branch-name validation and commit-message validation.
+- [x] Build #1185 passed `scripts/verify-architecture.sh`.
+- [x] Build #1185 passed `:app:assembleDebug` and uploaded the debug APK artifacts.
+- [x] Build #1185 passed the repository unit-test task, including the new LanguageProfiler, routing/model-scope, Track Card/Retry, Details mapper, and positional Source model coverage.
+- [x] Independent current-branch gate reproduction found 78 branch commits and 0 invalid commit subjects.
+- [x] PR added-line architecture scan found no new pure-core Android/network import, UI provider ownership leak, UI concrete ML Kit dependency, or Android media framework leak; no `build.gradle.kts` changed.
+- [x] Targeted review of the 12 commits from `7aaf94e7` to `65e8ed5` found no remaining blocking production defect.
+- [x] PR review thread count is clean: the earlier Codex P2 remains resolved; two normal Codex rounds have already completed per `AGENTS.md`.
+- [ ] Physical-device smoke test remains for the refined Secondary behavior and Translation Details.
 
 Historical baseline evidence retained from before the Details follow-up:
 
@@ -281,7 +281,7 @@ Historical baseline evidence retained from before the Details follow-up:
 - The Target language tooltip/model-requirement explanation was device-informed.
 - Automatic model acquisition + permanent Track Card feedback/retry was validated before the Details extension.
 
-These historical checks do not count as validation of the current Details implementation head.
+These historical checks remain useful baseline evidence but do not replace the current device check for the Secondary/model-scope refinement.
 
 Do not merge without explicit user authorization.
 
