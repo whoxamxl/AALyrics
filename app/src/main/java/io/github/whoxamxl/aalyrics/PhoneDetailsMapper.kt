@@ -180,8 +180,8 @@ private fun mapDetailsTranslationState(
     }
 
     val sourceModelLanguages = buildList {
-        primary?.let(::add)
-        activeSecondary?.let(::add)
+        primary?.let { add(it) }
+        activeSecondary?.let { add(it) }
     }
         .mapNotNull(TranslationLanguages::normalizeLanguageTag)
         .filter { it != targetLanguage }
@@ -314,7 +314,7 @@ private fun aggregateModelState(
     }
     val aggregatePhase = perLanguage
         .map { it.second.phase }
-        .maxBy(::modelPhasePriority)
+        .maxBy { phase -> modelPhasePriority(phase) }
     val failureReason = perLanguage
         .filter { (_, model) ->
             model.phase == DetailsTranslationModelPhaseUiState.FAILED ||
