@@ -663,6 +663,27 @@ internal object PhonePreviewFixtures {
             ),
         ),
     )
+    val detailsTranslationBuiltInReadyWhileOff = detailsTypical.copy(
+        translation = DetailsTranslationUiState(
+            targetLanguageLabel = "English",
+            runtimeState = DetailsTranslationRuntimeUiState.DISABLED,
+            targetModel = DetailsTranslationModelUiState(
+                languageLabel = "EN",
+                phase = DetailsTranslationModelPhaseUiState.READY,
+            ),
+        ),
+    )
+    val detailsTranslationDownloadedReadyWhileOff = detailsTypical.copy(
+        translation = DetailsTranslationUiState(
+            targetLanguageLabel = "Japanese",
+            runtimeState = DetailsTranslationRuntimeUiState.DISABLED,
+            targetModel = DetailsTranslationModelUiState(
+                languageLabel = "JA",
+                phase = DetailsTranslationModelPhaseUiState.READY,
+            ),
+        ),
+    )
+
     val detailsTranslationModelsPreparing = detailsTypical.copy(
         translation = DetailsTranslationUiState(
             sourceLanguageLabel = "Spanish",

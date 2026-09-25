@@ -134,6 +134,28 @@ private fun DetailsTranslationModelsCheckingPreview() {
 }
 
 @Preview(
+    name = "Models · built-in Ready while OFF",
+    group = "DetailsScreen · Translation models",
+    widthDp = 412,
+    heightDp = 880,
+)
+@Composable
+private fun DetailsTranslationBuiltInReadyWhileOffPreview() {
+    DetailsScreenPreview(PhonePreviewFixtures.detailsTranslationBuiltInReadyWhileOff)
+}
+
+@Preview(
+    name = "Models · downloaded Ready while OFF",
+    group = "DetailsScreen · Translation models",
+    widthDp = 412,
+    heightDp = 880,
+)
+@Composable
+private fun DetailsTranslationDownloadedReadyWhileOffPreview() {
+    DetailsScreenPreview(PhonePreviewFixtures.detailsTranslationDownloadedReadyWhileOff)
+}
+
+@Preview(
     name = "Models · Downloading + waiting",
     group = "DetailsScreen · Translation models",
     widthDp = 412,
