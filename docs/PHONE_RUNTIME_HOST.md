@@ -270,7 +270,7 @@ AALyricsApplication.phoneDetailsState
 DetailsScreen
 ```
 
-The application-owned `phoneDetailsState` now combines the existing Translation settings/state/diagnostic evidence, model lifecycle state, and startup model-inventory reconciliation fact. `PhoneDetailsMapper` canonical-identity gates per-track profile/runtime evidence and emits Phone-local Translation Details state. The host continues consuming that resolved state rather than reconstructing Translation diagnostics ad hoc.
+The application-owned `phoneDetailsState` now combines the existing Translation settings/state/diagnostic evidence, model lifecycle state, and startup model-inventory reconciliation fact. `PhoneDetailsMapper` canonical-identity gates per-track profile/runtime evidence and emits Phone-local Translation Details state. Source-model diagnostics remain application-owned and positional: Primary plus optional ACTIVE Secondary are projected independently, and unsupported detected languages are represented as presentation-only `—` rather than model lifecycle work. The host continues consuming that resolved state rather than reconstructing Translation diagnostics ad hoc.
 
 The runtime-host slice must not add provider/network requests for diagnostics. Verbose Details may reuse already-owned playback-source and Translation/model facts. Enabling Verbose Details must not start profiling, Translation, model download, retry, or provider lookup. Opening the Details destination itself also has no such side effects. The only destination-dependent work is presentation-local live progress ticking while playback is active; `verboseDetailsEnabled` is part of that effect's key so toggling Verbose while already on Details starts/stops the ticker immediately.
 

@@ -170,7 +170,7 @@ Model-state semantics are availability-oriented, not "currently needed" semantic
 - when Translation is ON, a missing required model must not be presented as `Not required`; it should resolve through the active preparation lifecycle (`Checking`, `Downloading`, or `Waiting for system`) or a terminal failure state;
 - a process-local missing model-state entry is not proof that a model is absent until startup inventory reconciliation has established that fact.
 
-The Source model row preserves Primary/ACTIVE-Secondary pairing instead of collapsing multiple source languages into one aggregate state.
+The Source model row preserves Primary/ACTIVE-Secondary pairing instead of collapsing multiple source languages into one aggregate state. Production state now stores Primary and optional ACTIVE Secondary model diagnostics separately, so `Ready (Downloading)` / `Ready (—)` are rendered from independent model facts rather than by parsing or synthesizing a combined string.
 
 Examples:
 
@@ -214,7 +214,7 @@ Target model (JA)        Ready
 Rules:
 
 - `Failed` and `Timed out` values must show the shared semantic info icon and expose an authoritative reason; production Phone Details uses the shared `PhoneInfoTooltip` component (also used by Settings) so icon, popup surface, touch target, and dismissal behavior stay consistent; an unexplained visible failure state is not considered complete Details implementation;
-- the tooltip contains the concrete framework-neutral reason/detail supplied by the owning runtime; for an aggregated Source model row it also identifies the affected source ISO language(s);
+- the tooltip contains the concrete framework-neutral reason/detail supplied by the owning runtime; for the positional Source model row it identifies the affected Primary/Secondary ISO language(s) while preserving each model's independent lifecycle state;
 - do not inline long exception/error text into the Details row;
 - do not invent a reason in `:ui:phone`;
 - if a Details feature wants to expose a failure state but the owning runtime does not provide a reason, treat that as a missing diagnostic contract to resolve during implementation rather than silently adding an unexplained failure row;

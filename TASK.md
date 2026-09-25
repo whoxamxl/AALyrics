@@ -250,7 +250,7 @@ Use small, reviewable commits and keep each checkpoint independently coherent.
    - [x] redefine Verbose Source model pairing as `Source model (EN (ES))  Ready (Ready)`; unsupported detected languages use `—`;
    - [x] implement the new generic ACTIVE gate in `LanguageProfiler` with no language-specific false-positive branches;
    - [x] enforce product-supported source-model routing/model preparation across core planning, ML Kit route/model guards, Track Card status, and Retry without adding per-language false-positive patches;
-   - [ ] replace aggregate Source model presentation state with positional Primary/Secondary model states and align Previews/tests;
+   - [x] replace aggregate Source model presentation state with positional Primary/Secondary model states; production UI now renders `EN (ES)` / `Ready (Ready)`, unsupported detected models render `—`, and Previews/tests cover positional lifecycle/failure state;
    - [ ] rerun build/tests/review after production changes.
 
 9. [ ] **Validation before PR readiness**
