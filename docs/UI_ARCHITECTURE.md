@@ -333,6 +333,22 @@ Avoid introducing new one-off values in a screen when an existing token expresse
 
 Raw palette values are available for design-system construction. Reusable Compose production components should normally consume semantic values. Automotive adapters should preserve the same semantic intent where the host API allows it rather than duplicating unrelated visual policy.
 
+### Semantic icon usage
+
+AALyrics uses a shared semantic icon vocabulary rather than choosing icons independently per screen.
+
+Rules:
+
+- production Compose UI should consume shared semantic aliases from `AALyricsIcons` when an icon represents a product action, state, direction, or destination;
+- once an icon has been established for a semantic meaning, every other place that needs that same meaning should reuse the same semantic icon. For example, Retry uses `AALyricsIcons.Retry`, external navigation uses `AALyricsIcons.ExternalLink`, and Translation direction uses `AALyricsIcons.TranslationDirection`;
+- feature/screen code should not import a different Material icon for an already-established semantic meaning merely for local visual preference;
+- when a genuinely new semantic meaning needs an icon, add or approve one shared alias centrally before repeating it across feature code;
+- prefer a real semantic icon over Unicode symbol glyphs for UI actions/directions when the icon participates in layout or alignment. Text punctuation remains text when it is grammatical content rather than an icon;
+- icon size, tint, and surrounding layout may vary by component contract, but the semantic glyph identity should remain consistent;
+- Android Auto or other host-rendered surfaces may need a platform-supported equivalent rather than the exact Compose `ImageVector`; preserve the same semantic meaning and visual vocabulary as closely as the host permits.
+
+This rule prevents the same action from acquiring different glyphs across Settings, Track Card, dialogs, playback, and future surfaces, and keeps icon choice in the shared design system instead of scattering it through feature code.
+
 ## Preview catalog
 
 The design-system module contains a high-level `DesignSystemPreview` plus focused previews such as palette and typography.
