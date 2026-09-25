@@ -155,7 +155,7 @@ Presentation uses `:ui:designsystem` for shared tokens/components, `:ui:phone` f
 
 PR #49 implements the approved read-only Details destination plus the Settings-owned Advanced surface with a persisted presentation-only Verbose Details preference and an intentionally disabled/unwired Karaoke affordance. Sync remains the only primary Phone destination that is both a placeholder and interaction-model-deferred pending timing/calibration redesign.
 
-PR #50 established the **Phone runtime host / device-test enablement** boundary documented in `docs/PHONE_RUNTIME_HOST.md`. Subsequent merged Phone work completed the Settings legal/help surfaces, playback-source eligibility and diagnostics, storage/reset controls, queue/artwork refinements, and the verified in-app update flow. `MainActivity` continues to preserve onboarding while hosting live application-owned Lyrics/Playback/Details/Settings state. Sync remains a deliberate non-functional placeholder. Karaoke was disabled/unwired at that merged baseline and is now being activated by the separately authorized Phase 11.4b/11.4c Phone slice.
+PR #50 established the **Phone runtime host / device-test enablement** boundary documented in `docs/PHONE_RUNTIME_HOST.md`. Subsequent merged Phone work completed the Settings legal/help surfaces, playback-source eligibility and diagnostics, storage/reset controls, queue/artwork refinements, and the verified in-app update flow. `MainActivity` continues to preserve onboarding while hosting live application-owned Lyrics/Playback/Details/Settings state. Sync remains a deliberate non-functional placeholder. The separately authorized Phase 11.4b/11.4c Phone slice adds gated WORD_SYNC Karaoke presentation; Android Auto Karaoke remains deferred.
 
 The production Settings information architecture is now merged on `main`: Version/Changelog/Source code and automatic/manual update controls live under `APP`; Privacy Policy, Terms of Use, License/third-party licenses, Help & Feedback, and Support AALyrics live under `ABOUT & SUPPORT`; Advanced remains a separate application-owned settings surface. External browser/payment handoffs remain app-owned and do not move runtime capability ownership into `:ui:phone`.
 
@@ -353,11 +353,11 @@ Only after shared timing semantics and behaviour-preserving wiring are proven, d
 
 Do not infer these choices from the legacy app or from the current placeholder.
 
-### Phase 11.4b — Karaoke presentation mapping — active on Phone topic branch
+### Phase 11.4b — Karaoke presentation mapping — implemented on Phone topic branch
 
 Map shared WORD timing facts plus canonical token text into conservative Phone presentation-ready character ranges. Karaoke remains WORD_SYNC only; LINE_SYNC and PLAIN do not synthesize Karaoke timing.
 
-### Phase 11.4c — Phone Karaoke rendering — active on Phone topic branch
+### Phase 11.4c — Phone Karaoke rendering — implemented on Phone topic branch
 
 Implement current-line continuous sweep inside the existing LyricsViewport. Activation requires both the Advanced Experimental feature gate and the Expanded Player Quick-controls Karaoke toggle. Both default OFF.
 

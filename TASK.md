@@ -126,7 +126,7 @@ Do not:
 4. [x] mapping: expose WORD presentation facts and conservative token ranges only when effective Karaoke is active.
 5. [x] rendering: implement current-line continuous sweep with normal-style fallback.
 6. [x] tests/previews: cover gate/mode/WORD matrix and current behaviour when disabled.
-7. [ ] final validation: architecture, unit tests, debug APK, regression/scope audit, docs alignment.
+7. [x] final validation: architecture, unit tests, debug APK, regression/scope audit, docs alignment.
 8. [ ] open a new Draft PR and stop.
 
 ## Acceptance criteria
@@ -144,3 +144,11 @@ Do not:
 - Canonical line text and Translation remain intact.
 - Reset AALyrics restores both Karaoke settings to OFF.
 - Android Auto production code is unchanged.
+
+## Validation record
+
+- `scripts/verify-architecture.sh` passed locally and in [Build run 36115022837](https://github.com/whoxamxl/AALyrics/actions/runs/36115022837).
+- Build run 36115022837 passed `:app:assembleDebug` and the repository `test` task, including the new Phone Karaoke tests.
+- `:app:compileDebugKotlin` and `:ui:phone:compileDebugKotlin` passed locally. The local Windows Gradle test worker could not establish its loopback connection; the Linux CI run executed the tests successfully.
+- Branch merge base with `origin/main` is the documented `fa17dcbd364718aa1ab475b93b29c8d39581c331`. The complete diff against that baseline contains Phone settings, Quick controls, mapping, viewport rendering, tests/Previews, and task/documentation alignment. Android Auto production, provider, Translation execution, `:core:timing`, Sync UX/persistence, and Performance Karaoke code are unchanged.
+- Reset AALyrics explicitly restores both new persisted Karaoke switches to OFF. Phase 11.4d Android Auto Karaoke remains documentation-only and deferred.

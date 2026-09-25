@@ -4,7 +4,7 @@
 
 The Phone information architecture and persistent Compose shell are established. Lyrics, Settings, and the shell-owned Playback Surface are implemented in production Compose. PR #46 replaced the legacy fixed three-button playback bar with the compact collapsed Playback Bar plus on-demand Expanded Player defined in `docs/PHONE_PLAYBACK_SURFACE.md`.
 
-PR #49 implements the approved Details contract from `docs/PHONE_DETAILS.md` together with the narrow `Settings > Advanced` extension from `docs/PHONE_SETTINGS.md`. Details remains read-only, Verbose Details is presentation-only, and Karaoke mode remains disabled/unwired. Sync remains intentionally deferred while its timing/calibration interaction model is reconsidered.
+PR #49 implements the approved Details contract from `docs/PHONE_DETAILS.md` together with the narrow `Settings > Advanced` extension from `docs/PHONE_SETTINGS.md`. Details remains read-only and Verbose Details is presentation-only. The later Phone Karaoke slice makes the Advanced Karaoke row a persisted experimental gate and adds a separate live switch in Expanded Player Quick controls. Sync remains intentionally deferred while its timing/calibration interaction model is reconsidered.
 
 PR #50 implements the application-composition slice defined in `docs/PHONE_RUNTIME_HOST.md`. `MainActivity` preserves the existing entry gates and now hosts the production `PhoneAppShell` for READY. Live app-owned state drives Lyrics, Playback Surface, Details, and Settings; Sync remains an explicit non-functional placeholder. Physical-device iteration on this branch also established selected-session artwork with branded fallback, Translation opt-in defaults, human-readable playback-source labeling with package fallback, in-app License presentation, and shared Phone popup/subscreen/Markdown primitives. The playback-source metadata contract now extends that application-owned package resolution to the selected app icon for the persistent Top Bar and Android application category plus min/target SDK levels for Verbose Details diagnostics. The generated debug APK is suitable for continued physical-device Phone UI validation.
 
@@ -125,7 +125,7 @@ The production Settings contract is defined in `docs/PHONE_SETTINGS.md`. The mer
 - standalone `Advanced` card containing:
   - `Playback source > Allow unclassified apps` escape hatch (default OFF);
   - functional `Verbose details` presentation preference;
-  - disabled/unwired `Karaoke mode` future affordance;
+  - persisted experimental `Karaoke mode` feature gate (default OFF), with a separate live switch in Expanded Player Quick controls;
   - `Storage > Clear translation models`, which keeps built-in English, turns Translation off, and restores English as the target;
   - `Reset > Reset AALyrics`, which resets AALyrics-owned settings/onboarding/update state, clears app-owned update recovery/cadence state and retained update artifacts, without deleting translation models or changing Android/system settings such as install-source trust;
 - permanent AALyrics branding/GitHub footer after Advanced.
