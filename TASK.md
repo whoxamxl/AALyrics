@@ -92,7 +92,7 @@ Reserve one permanent fourth status row in the Lyrics Track Card for Translation
 
 Approved presentation states:
 
-- OFF -> `Translation off`;
+- OFF -> render no text, while retaining the full Translation status-row placeholder height;
 - enabled but no active canonical route yet -> `Translation enabled`;
 - required route models are checking/downloading/waiting for the system -> compact spinner + `Downloading language models…`;
 - route models are ready and Translation execution is still running -> compact spinner + `Translating…`;
@@ -243,7 +243,7 @@ Do not merge without explicit user authorization.
 
 The slice is complete when all of the following are true:
 
-- Translation OFF keeps canonical lyrics behavior unchanged and the permanent Track Card Translation row reads `Translation off`.
+- Translation OFF keeps canonical lyrics behavior unchanged; the permanent Track Card Translation row remains reserved but visually empty.
 - While Translation is pending or fails, canonical lyrics remain visible and usable; the Track Card alone exposes `Downloading language models…`, `Translating…`, or `Translation failed` + `Retry` without turning Lyrics into a failure state.
 - A matching atomic Ready artifact displays translated text only on lines actually marked translated.
 - Preserved/uncertain/target-language lines are not duplicated.

@@ -181,10 +181,7 @@ private fun TranslationStatusRow(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         when (state) {
-            TrackCardTranslationUiState.Off -> TranslationStatusText(
-                text = stringResource(R.string.track_card_translation_off),
-                color = AALyricsColors.TextTertiary,
-            )
+            TrackCardTranslationUiState.Off -> Unit
 
             TrackCardTranslationUiState.On -> TranslationStatusText(
                 text = stringResource(R.string.track_card_translation_on),

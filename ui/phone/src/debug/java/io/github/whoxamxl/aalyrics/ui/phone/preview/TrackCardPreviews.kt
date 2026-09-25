@@ -12,7 +12,7 @@ import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsTheme
 import io.github.whoxamxl.aalyrics.ui.phone.lyrics.TrackCard
 import io.github.whoxamxl.aalyrics.ui.phone.lyrics.TrackCardUiState
 
-@Preview(name = "Ready", group = "TrackCard", widthDp = 412, showBackground = true)
+@Preview(name = "Translation off · slot reserved", group = "TrackCard · Translation", widthDp = 412, showBackground = true)
 @Composable
 private fun TrackCardReadyPreview() {
     TrackCardPreview(
@@ -21,7 +21,7 @@ private fun TrackCardReadyPreview() {
     )
 }
 
-@Preview(name = "Translation on", group = "TrackCard · Translation", widthDp = 412, showBackground = true)
+@Preview(name = "Translation enabled", group = "TrackCard · Translation", widthDp = 412, showBackground = true)
 @Composable
 private fun TrackCardTranslationOnPreview() {
     TrackCardPreview(state = PhonePreviewFixtures.trackCardTranslationOn, showArtwork = true)
