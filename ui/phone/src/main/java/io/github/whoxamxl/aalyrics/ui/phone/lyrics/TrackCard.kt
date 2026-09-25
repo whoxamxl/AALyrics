@@ -198,13 +198,9 @@ private fun TranslationStatusRow(
                 color = AALyricsColors.AccentBlue,
             )
 
-            is TrackCardTranslationUiState.Ready -> TranslationStatusText(
-                text = stringResource(
-                    R.string.track_card_translation_route,
-                    state.sourceLanguageLabel,
-                    state.targetLanguageLabel,
-                ),
-                color = AALyricsColors.Success,
+            is TrackCardTranslationUiState.Ready -> TranslationReadyStatus(
+                sourceLanguageLabel = state.sourceLanguageLabel,
+                targetLanguageLabel = state.targetLanguageLabel,
             )
 
             TrackCardTranslationUiState.NotRequired -> TranslationStatusText(
@@ -248,6 +244,36 @@ private fun TranslationStatusRow(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun TranslationReadyStatus(
+    sourceLanguageLabel: String,
+    targetLanguageLabel: String,
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        TranslationStatusText(
+            text = stringResource(
+                R.string.track_card_translation_route_source,
+                sourceLanguageLabel,
+            ),
+            color = AALyricsColors.Success,
+        )
+        Spacer(Modifier.width(AALyricsSpacing.Space4))
+        Icon(
+            imageVector = AALyricsIcons.TranslationDirection,
+            contentDescription = null,
+            tint = AALyricsColors.Success,
+            modifier = Modifier.size(14.dp),
+        )
+        Spacer(Modifier.width(AALyricsSpacing.Space4))
+        TranslationStatusText(
+            text = targetLanguageLabel,
+            color = AALyricsColors.Success,
+        )
     }
 }
 

@@ -191,7 +191,7 @@
     <string name="track_card_translation_on">Translation enabled</string>
     <string name="track_card_translation_downloading_models">Downloading language models…</string>
     <string name="track_card_translation_translating">Translating…</string>
-    <string name="track_card_translation_route">Translation %1$s → %2$s</string>
+    <string name="track_card_translation_route_source">Translation %1$s</string>
     <string name="track_card_translation_not_required">Translation not required</string>
     <string name="track_card_translation_failed">Translation failed</string>
     <string name="track_card_translation_retry">Retry</string>

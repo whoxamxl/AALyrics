@@ -96,7 +96,7 @@ Approved presentation states:
 - enabled but no active canonical route yet -> `Translation enabled`;
 - required route models are checking/downloading/waiting for the system -> compact spinner + `Downloading language models…`;
 - route models are ready and Translation execution is still running -> compact spinner + `Translating…`;
-- an eligible atomic artifact is active -> `Translation EN → JA`-style short source/target labels;
+- an eligible atomic artifact is active -> short source/target labels separated by the shared centered Translation-direction icon;
 - Translation determines no work is required -> `Translation not required`;
 - current Translation attempt fails -> `Translation failed` plus the shared Retry icon and compact trailing `Retry` text action.
 
@@ -257,7 +257,7 @@ The slice is complete when all of the following are true:
 - Android Auto behavior is unchanged.
 - No persistent Translation cache is introduced.
 - Track Card Translation status transitions do not change Track Card height or shift the LyricsViewport.
-- Ready presentation uses concise source → target language labels such as `Translation EN → JA`.
+- Ready presentation uses concise source/target language labels with a real centered forward-arrow icon between them.
 - Tests, Previews, implementation, and documentation describe the same behavior.
 - CI/build/review requirements in `AGENTS.md` are satisfied before merge.
 
