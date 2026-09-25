@@ -485,3 +485,22 @@ A single provider token may:
 `LyricWordLayout` must therefore map an aligned token spanning multiple lexical ranges to the complete canonical range from its first overlap through its last overlap. Mapping such a token only to the first lexical range causes the skipped remainder to become completed abruptly when the next token starts.
 
 This rule is language-independent and preserves sequential source alignment for repeated text.
+
+
+## Final open-ended group boundary
+
+The 650ms visual duration is the last fallback, not the default end for a final open-ended word.
+
+Phone presentation resolves a final display group's visual end from existing canonical timing before synthesizing any duration:
+
+```text
+explicit word end
+    -> next word start
+    -> line end
+    -> next timed line start
+    -> 650ms Phone-only fallback
+```
+
+A timed `♪` line participates naturally as the next timed line, so an interlude transition does not require a separate inferred-gap rule.
+
+The shared timing engine remains unchanged. An open-ended provider word may still have semantic `wordProgress = null`; only the Phone renderer derives a bounded visual duration from later canonical timing.

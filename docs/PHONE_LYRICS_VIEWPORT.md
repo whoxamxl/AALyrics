@@ -420,3 +420,12 @@ This check is language-independent. Japanese lexical grouping remains a display 
 Karaoke rendering must not assume that a provider timing token is a lexical word. When one aligned token spans multiple readable lexical ranges, sweep the complete visible span covered by those ranges. Do not map only the first overlapped word.
 
 This avoids abrupt completed-color jumps for chunked timing payloads such as `Just a boy, ` followed by `just a boy,`, while retaining same-range grouping for sub-word fragments.
+
+
+### Open-ended final group timing
+
+When the last visible timed group in a line has no provider `endMs`, the viewport must not immediately apply the 650ms fallback if later canonical timing is available.
+
+Use, in order, the word end, next word start, line end, or next timed line start. A `♪` timed line is a valid next-line boundary. Use the 650ms visual fallback only when the document provides no later timing boundary.
+
+This prevents an artificial completed-line hold between the end of a sweep and the next lyric/interlude line while preserving canonical source timing.

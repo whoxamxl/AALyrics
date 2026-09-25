@@ -179,3 +179,16 @@ Do not assume one provider timing token equals one lexical word.
 If a timing token overlaps multiple readable lexical ranges in the canonical line, its Phone display range is the union from the first overlapping lexical range through the last overlapping lexical range. This preserves the complete visible chunk and prevents skipped text from becoming completed instantly when the next timing token starts.
 
 Repeated chunks must remain aligned sequentially to canonical source order. Existing same-visible-range grouping for fragments such as `Pro / vi / der -> Provider` remains unchanged.
+
+
+### Final open-ended visual group end resolution
+
+For a final visible Karaoke group whose provider word has no explicit `endMs`, Phone presentation resolves the visual end in this order:
+
+1. explicit final word `endMs`;
+2. next word `startMs` when the display group is not the final token group;
+3. current line `endMs`;
+4. next timed lyric line `startMs`, including a timed music/interlude marker such as `♪`;
+5. only when no later canonical timing exists, the Phone-only 650ms visual fallback.
+
+This resolution is presentation-only. It must not mutate canonical `TimedWord.endMs`, line timing, or shared `LyricsTimingProjection`.
