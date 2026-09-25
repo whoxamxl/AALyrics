@@ -36,6 +36,14 @@ object TranslationLanguages {
         return normalized?.takeIf { it in supportedTargets } ?: DEFAULT_TARGET_LANGUAGE
     }
 
+    /**
+     * Product-level model support. Language identification may return languages
+     * outside this set; that does not make them eligible for model preparation
+     * or Translation routing.
+     */
+    fun isModelSupported(languageTag: String?): Boolean =
+        normalizeLanguageTag(languageTag) in supportedTargets
+
     fun displayName(
         languageTag: String?,
         locale: Locale = Locale.ENGLISH,
