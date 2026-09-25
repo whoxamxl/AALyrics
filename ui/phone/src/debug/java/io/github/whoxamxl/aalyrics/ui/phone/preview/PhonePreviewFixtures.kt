@@ -624,6 +624,10 @@ internal object PhonePreviewFixtures {
             sourceLanguageLabel = "Japanese",
             targetLanguageLabel = "Japanese",
             runtimeState = DetailsTranslationRuntimeUiState.NOT_REQUIRED,
+            sourceModel = DetailsTranslationModelUiState(
+                languageLabel = "JA",
+                phase = DetailsTranslationModelPhaseUiState.READY,
+            ),
             targetModel = DetailsTranslationModelUiState(
                 languageLabel = "JA",
                 phase = DetailsTranslationModelPhaseUiState.READY,

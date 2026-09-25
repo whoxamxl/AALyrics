@@ -184,7 +184,6 @@ private fun mapDetailsTranslationState(
         activeSecondary?.let { add(it) }
     }
         .mapNotNull(TranslationLanguages::normalizeLanguageTag)
-        .filter { it != targetLanguage }
         .distinct()
 
     return DetailsTranslationUiState(

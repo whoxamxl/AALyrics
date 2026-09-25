@@ -523,15 +523,26 @@ class PhoneDetailsMapperTest {
                 ),
             )?.runtimeState,
         )
+        val notRequired = mapped(
+            true,
+            TranslationState.NotRequired(
+                request = request,
+                profile = japaneseProfile,
+            ),
+        )
         assertEquals(
             DetailsTranslationRuntimeUiState.NOT_REQUIRED,
-            mapped(
-                true,
-                TranslationState.NotRequired(
-                    request = request,
-                    profile = japaneseProfile,
-                ),
-            )?.runtimeState,
+            notRequired?.runtimeState,
+        )
+        assertEquals("JA", notRequired?.sourceModel?.languageLabel)
+        assertEquals(
+            DetailsTranslationModelPhaseUiState.READY,
+            notRequired?.sourceModel?.phase,
+        )
+        assertEquals("JA", notRequired?.targetModel?.languageLabel)
+        assertEquals(
+            DetailsTranslationModelPhaseUiState.READY,
+            notRequired?.targetModel?.phase,
         )
         assertEquals(
             DetailsTranslationRuntimeUiState.READY,
