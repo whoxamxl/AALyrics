@@ -320,10 +320,12 @@ private fun aggregateModelState(
             model.phase == DetailsTranslationModelPhaseUiState.FAILED ||
                 model.phase == DetailsTranslationModelPhaseUiState.TIMED_OUT
         }
-        .joinToString(separator = "\n") { (language, model) ->
-            val reason = model.failureReason ?: defaultModelFailureReason(model.phase)
-            "${shortLanguageLabel(language)}: $reason"
+        .mapNotNull { (language, model) ->
+            model.failureReason?.let { reason ->
+                "${shortLanguageLabel(language)}: $reason"
+            }
         }
+        .joinToString(separator = "\n")
         .ifBlank { null }
 
     return DetailsTranslationModelUiState(
@@ -373,7 +375,6 @@ private fun modelUiState(
         DetailsTranslationModelPhaseUiState.FAILED,
         DetailsTranslationModelPhaseUiState.TIMED_OUT ->
             modelState?.error?.trim()?.takeIf(String::isNotEmpty)
-                ?: defaultModelFailureReason(phase)
         else -> null
     }
 
@@ -394,15 +395,6 @@ private fun modelPhasePriority(
     DetailsTranslationModelPhaseUiState.WAITING_FOR_SYSTEM -> 4
     DetailsTranslationModelPhaseUiState.TIMED_OUT -> 5
     DetailsTranslationModelPhaseUiState.FAILED -> 6
-}
-
-private fun defaultModelFailureReason(
-    phase: DetailsTranslationModelPhaseUiState,
-): String = when (phase) {
-    DetailsTranslationModelPhaseUiState.TIMED_OUT ->
-        "Translation model preparation timed out."
-    else ->
-        "Translation model preparation failed."
 }
 
 private fun shortLanguageLabel(languageTag: String): String =
