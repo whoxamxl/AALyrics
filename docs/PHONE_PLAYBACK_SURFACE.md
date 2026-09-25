@@ -651,11 +651,13 @@ The playback surface must not reset its live position merely because unrelated m
 For missing source timestamps:
 
 - the AALyrics-side monotonic timestamp captured when the MediaController snapshot is sampled is the Phone fallback anchor;
-- source timestamps remain authoritative whenever present;
+- source timestamps remain authoritative whenever present and internally consistent;
 - Activity/Compose recreation must not create a new anchor for an existing snapshot;
 - the collapsed/expanded playback surface and Phone lyrics projection consume the same stable snapshot anchor;
 - title/artist/late-duration metadata changes must not rewind the displayed playback position;
 - pause must stop projection;
 - seek reconciliation remains authoritative when a new position sample arrives.
+
+A source timestamp is not considered invalid only because it is old. If MediaSession publishes a changed raw position with the exact same source timestamp, or a timestamp later than the local sample time, the source clock is rejected and the stable sample clock is used until a new source timestamp arrives. A newly selected playing session is re-sampled once after 250ms so this contradiction can be detected even when AALyrics attaches in the middle of a track.
 
 This keeps the player clock aligned with LINE/WORD Phone lyrics timing and PLAIN playback progress without making Karaoke enablement part of playback timing.

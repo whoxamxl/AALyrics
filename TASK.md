@@ -162,6 +162,8 @@ Do not:
 - Phone playback projection falls back to `positionSampledAtMonotonicMs` only when the source timestamp is unavailable.
 - The fallback is no longer created by Compose and is no longer WORD-only; LINE and WORD presentation share the same playback clock, while PLAIN playback progress also benefits from the same projection.
 - This changes playback-clock anchoring only. `:core:timing` line/word/boundary semantics remain unchanged.
+- MediaSession source timestamps are sanity-checked before reaching Phone projection. An old timestamp remains valid by itself; AALyrics rejects it only when the snapshot values are internally contradictory, such as a changed raw position paired with the exact same source timestamp or a source timestamp later than the local sample time.
+- A newly selected playing session with both source and local sample timestamps is re-sampled once after 250ms. If the raw position moves while the source timestamp stays unchanged, that source timestamp is quarantined until the source publishes a new timestamp and Phone falls back to the stable local sample clock.
 
 ## Validation record
 

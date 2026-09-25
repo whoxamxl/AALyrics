@@ -116,7 +116,16 @@ Normal callback churn relies on the existing `PlaybackLyricsController` identity
 
 The local sample timestamp is a fallback only for media sessions that publish a position without a usable `lastPositionUpdateTime`. It stays attached to the immutable snapshot as it crosses the application boundary, so opening/recreating the Phone UI later cannot reinterpret an old `positionMs` value as newly sampled.
 
-Phone presentation projects playing position from the source timestamp when present, otherwise from the stable local sample timestamp. The fallback clock is presentation-independent: LINE/WORD timing and PLAIN playback progress do not create separate anchors, and Karaoke enablement does not affect playback-time projection.
+A source timestamp is not rejected merely because it is old. Old anchors are normal Android playback-state semantics. `PlaybackClockReconciler` rejects a source timestamp only when the published clock values contradict each other:
+
+- the same source timestamp is observed again with a different raw `positionMs`;
+- the source timestamp is later than the AALyrics local sample time.
+
+Once a specific source timestamp is rejected, snapshots carrying that same timestamp continue to use the local sample clock until the source publishes a new timestamp.
+
+A newly selected playing session that exposes both timestamps receives one 250ms validation re-sample. This catches the mid-track attach case where a player returns a current-looking raw position while retaining an older `lastPositionUpdateTime`. A valid Android anchor remains stationary at the raw position during that re-sample and is preserved.
+
+Phone presentation projects playing position from the source timestamp when valid, otherwise from the stable local sample timestamp. The fallback clock is presentation-independent: LINE/WORD timing, PLAIN playback progress, Details progress, and the Playback Surface do not create separate anchors, and Karaoke enablement does not affect playback-time projection.
 
 ## Metadata stabilization
 
