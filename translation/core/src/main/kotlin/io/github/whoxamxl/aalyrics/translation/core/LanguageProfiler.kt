@@ -14,9 +14,10 @@ data class LanguageProfilerPolicy(
     val aggregateEvidenceWeight: Float = 0.20f,
     val minimumPrimaryEvidence: Float = 4f,
     val minimumSecondaryEvidence: Float = 0.25f,
-    val minimumActiveSecondaryLines: Int = 2,
-    val minimumActiveSecondaryCharacters: Int = 12,
-    val minimumActiveSecondaryCharacterShare: Float = 0.15f,
+    val minimumActiveSecondaryLines: Int = 3,
+    val minimumActiveSecondaryCharacters: Int = 18,
+    val minimumActiveSecondaryCharacterShare: Float = 0.20f,
+    val minimumActiveSecondaryAverageConfidence: Float = 0.75f,
     val minimumActiveSecondaryContiguousRun: Int = 2,
     val minimumActiveSecondaryRegions: Int = 2,
 ) {
@@ -30,6 +31,7 @@ data class LanguageProfilerPolicy(
         require(minimumActiveSecondaryLines > 0)
         require(minimumActiveSecondaryCharacters > 0)
         require(minimumActiveSecondaryCharacterShare in 0f..1f)
+        require(minimumActiveSecondaryAverageConfidence in 0f..1f)
         require(minimumActiveSecondaryContiguousRun > 0)
         require(minimumActiveSecondaryRegions > 0)
     }
@@ -202,6 +204,10 @@ class LanguageProfiler(
         } else {
             candidateCharacters.toFloat() / totalCharacters
         }
+        val averageConfidence = candidateLines
+            .map { it.confidence }
+            .average()
+            .toFloat()
         val indices = candidateLines.map { it.index }.sorted()
         var longestRun = 0
         var currentRun = 0
@@ -219,6 +225,7 @@ class LanguageProfiler(
         val active = candidateLines.size >= policy.minimumActiveSecondaryLines &&
             candidateCharacters >= policy.minimumActiveSecondaryCharacters &&
             characterShare >= policy.minimumActiveSecondaryCharacterShare &&
+            averageConfidence >= policy.minimumActiveSecondaryAverageConfidence &&
             (
                 longestRun >= policy.minimumActiveSecondaryContiguousRun ||
                     regions >= policy.minimumActiveSecondaryRegions
