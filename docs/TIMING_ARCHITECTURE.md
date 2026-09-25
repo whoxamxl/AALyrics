@@ -6,7 +6,7 @@ The timing/calibration architecture is now authorized for a first implementation
 
 The first slice establishes a framework-independent effective-lyrics clock and its sign semantics only. It does **not** add Sync controls, persistence, per-track/provider/device calibration, drift correction, or Karaoke projection.
 
-The working fork contains `lyrics/KaraokeTiming.kt` and `util/SyncCalibration.kt`. These remain behavioral references to re-check before implementation. Proven timing math may be **PRESERVE / REFACTOR**; Android/UI coupling must not be carried into the new boundary.
+The working fork contains `lyrics/KaraokeTiming.kt` and `util/SyncCalibration.kt`. They were re-checked at `v1.13.0` on 2026-09-25. `SyncCalibration.offsetForTap(targetTimeMs, rawPositionMs) = targetTimeMs - rawPositionMs` already uses the same sign behavior required here when combined with `effective = projected + offset`, so that sign convention is **PRESERVE / REFACTOR**. The legacy three-tap/upcoming-line workflow remains deferred. `KaraokeTiming` remains Phase 11.4 evidence and must not be migrated into this foundation.
 
 ## Purpose
 

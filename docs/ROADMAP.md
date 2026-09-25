@@ -241,7 +241,7 @@ It intentionally leaves concrete modules, API signatures, storage engines, trans
 
 ## Next implementation slices
 
-No capability implementation slice is active merely because the foundation exists. Select and explicitly authorize one responsibility before production implementation.
+The capability foundation does not by itself authorize implementation. Phase 11.3a below is now the explicitly authorized active responsibility on `feature/effective-timing-foundation`; unrelated capability slices remain inactive until separately authorized.
 
 The expected dependency-friendly sequence is:
 
@@ -296,11 +296,43 @@ Android Auto Translation presentation, Musixmatch native Translation, persistent
 
 The durable merged contract is recorded in `docs/TRANSLATION_ARCHITECTURE.md`, `docs/PHONE_LYRICS_VIEWPORT.md`, `docs/PHONE_RUNTIME_HOST.md`, and `docs/PHONE_DETAILS.md`.
 
-### Phase 11.3 — Timing / calibration
+### Phase 11.3a — Effective Timing Foundation — active
 
-Introduce source-versus-effective timing and the smallest calibration transform justified by product behavior and working-fork regressions.
+Establish the framework-independent timing engine before any Sync UI is introduced.
 
-Must follow `docs/TIMING_ARCHITECTURE.md`. A first implementation may remain constant-offset only; calibration scope, persistence, precedence, and later drift correction must be explicit rather than hidden in UI state.
+Approved first-slice semantics:
+
+- canonical LINE/WORD source timestamps remain immutable;
+- define a signed lyrics timing offset;
+- positive offset advances lyrics and negative offset delays lyrics;
+- derive `effectiveLyricsPosition = projectedPlaybackPosition + lyricsOffset`;
+- zero offset preserves current behavior;
+- add a pure Kotlin/JVM `:core:timing` capability plus deterministic tests and architecture guardrails;
+- do not integrate the new engine into Phone/Android Auto presentation yet;
+- do not add persistence, calibration controls, drift correction, or Karaoke semantics.
+
+The working-fork `SyncCalibration.offsetForTap(target, raw) = target - raw` sign behavior was re-checked at `v1.13.0` and is compatible with this contract. The old tap workflow itself remains deferred.
+
+The active implementation contract is `TASK.md` plus `docs/TIMING_ARCHITECTURE.md`.
+
+### Phase 11.3b — Existing timed-lyrics integration — deferred
+
+After Phase 11.3a is validated, route existing synchronized-line/current-line decisions through the effective lyrics position while the offset remains zero by default.
+
+This slice must prove that introducing the timing boundary causes no visible regression before any user calibration state exists.
+
+### Phase 11.3c — Sync calibration UX — deferred
+
+Only after the engine and zero-offset integration are proven, define the actual Sync interaction:
+
+- adjustment controls and step sizes;
+- scope (session/global/track/provider/presentation-specific);
+- persistence;
+- reset semantics;
+- Phone/Android Auto compensation policy;
+- any later manual/automatic calibration workflow.
+
+Do not infer these choices from the legacy app or from the current placeholder.
 
 ### Phase 11.4 — Karaoke projection
 
