@@ -219,7 +219,7 @@ The runtime now forwards selected-session artwork from `METADATA_KEY_ALBUM_ART`,
 
 ## Sync destination
 
-Sync remains interaction-model-deferred.
+Sync remains a deliberate non-functional placeholder. The timing architecture now fixes the downstream clock semantics (`effectiveLyricsPosition = projectedPlaybackPosition + lyricsOffset`, positive = advance lyrics, negative = delay lyrics), but this runtime-host slice still does not own a user offset, persistence, or calibration controls.
 
 For device navigation testing, the runtime host may render a deliberate non-functional placeholder that clearly indicates Sync is not available yet.
 

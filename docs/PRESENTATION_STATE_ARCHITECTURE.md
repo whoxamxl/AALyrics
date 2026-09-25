@@ -31,7 +31,7 @@ Shared presentation-ready facts may eventually include semantically common infor
 - current normalized track metadata;
 - current canonical lyrics availability/state;
 - optional translation availability/result;
-- effective timing/calibration facts;
+- effective lyrics position / calibration facts;
 - karaoke projection facts;
 - provider/source attribution needed for display;
 - capability flags derived from domain state.
@@ -74,7 +74,7 @@ Forbidden ownership:
 - UI must not read cache storage directly;
 - UI must not own translation engine execution;
 - UI must not normalize MediaSession data;
-- UI must not implement calibration formulas;
+- UI must not implement calibration formulas or compute `projectedPlaybackPosition + lyricsOffset` itself;
 - UI must not duplicate karaoke current-line/current-word algorithms;
 - `:ui:phone` and `:ui:automotive` must not depend on each other.
 
@@ -117,7 +117,7 @@ Conceptually:
 ```text
 LyricsState
 Translation state/result
-Timing/calibration state
+Timing/calibration state / effective lyrics position
 Karaoke projection
 Track/playback facts
         ↓

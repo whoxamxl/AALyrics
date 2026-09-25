@@ -52,7 +52,7 @@ The capability foundation is conceptually:
           caching       translation   timing/calibration
              │              │              │
              │              │              v
-             │              │       effective timing
+             │              │   effective lyrics position
              │              │              │
              │              └──────┐       │
              │                     │       v
@@ -82,7 +82,7 @@ canonical lyrics
 ├─ normalized metadata/source facts
 │
 ├─ derived translation
-├─ derived effective timing/calibration
+├─ derived effective lyrics position / calibration
 └─ derived karaoke projection
 ```
 
@@ -122,15 +122,15 @@ See `docs/TRANSLATION_ARCHITECTURE.md`.
 
 ### Timing and calibration
 
-Timing/calibration transforms canonical source timing into effective timing for playback-dependent behavior without overwriting source timestamps.
+Timing/calibration preserves canonical source timing and derives a lyrics-only virtual clock for playback-dependent behavior. The first authorized foundation fixes the sign convention and equation `effectiveLyricsPosition = projectedPlaybackPosition + lyricsOffset`: positive advances lyrics, negative delays lyrics, and zero preserves current behavior.
 
-The exact calibration scope and transform remain deferred.
+Offset scope, persistence, Sync UI, provider/track/device-specific correction, and drift/rate correction remain deferred.
 
 See `docs/TIMING_ARCHITECTURE.md`.
 
 ### Karaoke projection
 
-Karaoke is a framework-neutral semantic projection over timed lyrics, effective timing, and playback position. It decides semantic playback facts such as active line/word/progress; it does not render Compose, spans, canvas primitives, or Android Auto templates.
+Karaoke is a framework-neutral semantic projection over canonical timed lyrics and the timing capability's effective lyrics position. It decides semantic playback facts such as active line/word/progress; it does not render Compose, spans, canvas primitives, or Android Auto templates.
 
 See `docs/KARAOKE_ARCHITECTURE.md`.
 

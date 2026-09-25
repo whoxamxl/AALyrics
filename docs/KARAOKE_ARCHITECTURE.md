@@ -14,9 +14,8 @@ Karaoke has two distinct layers:
 2. surface-specific rendering.
 
 ```text
-timed lyrics
-+ effective playback position
-+ effective timing/calibration
+canonical timed lyrics
++ effective lyrics position
         ↓
 karaoke projection
         ↓
@@ -40,16 +39,16 @@ The future karaoke projection boundary may expose facts such as:
 - line or word transition boundaries;
 - whether the current lyrics payload supports word-level progression.
 
-The exact output type is deferred. The stable rule is that these are semantic facts derived from normalized lyrics and effective timing, not UI objects.
+The exact output type is deferred. The stable rule is that these are semantic facts derived from normalized lyrics plus the timing capability's effective lyrics position, not UI objects.
 
 ## Timing source
 
-Karaoke consumes effective timing from the timing/calibration capability.
+Karaoke consumes the already-derived effective lyrics position from the timing/calibration capability and compares it against canonical timed lyrics.
 
 It must not:
 
 - mutate source timestamps;
-- reapply calibration independently;
+- add/reapply the lyrics offset independently;
 - infer provider-specific timing units;
 - talk to providers or parsers;
 - own playback-source normalization.
@@ -58,7 +57,7 @@ This keeps one source of truth for timestamp transformation.
 
 ## Playback clock
 
-Playback position is an input to projection. The engine should be deterministic for a given lyrics payload, effective timing policy, and playback position.
+Effective lyrics position is the playback-clock input to projection. The engine should be deterministic for a given canonical lyrics payload and effective lyrics position. Raw projected playback position plus calibration must not be recombined inside Karaoke.
 
 Animation frame scheduling, recomposition cadence, template invalidation cadence, and interpolation frequency are presentation concerns. They must not become part of karaoke domain semantics.
 
@@ -119,7 +118,7 @@ Before implementing karaoke:
 1. re-check working-fork `KaraokeTiming`, `LyricWordLayout`, rendering call sites, and regressions;
 2. separate semantics worth preserving from Android-specific rendering machinery;
 3. define deterministic boundary behavior at exact word/line start/end timestamps;
-4. consume effective timing rather than raw/calibrated timestamps independently;
+4. consume the timing capability's effective lyrics position and never reapply the lyrics offset;
 5. test plain, line-timed, word-timed, malformed, boundary, seek, and track-change cases;
 6. prove Phone and automotive adapters can consume the projection without importing each other's UI technology;
 7. implement projection and surface rendering in separate responsibilities and stop before merge for approval.

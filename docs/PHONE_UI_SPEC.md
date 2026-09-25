@@ -79,7 +79,7 @@ Before provider lookup starts, the application layer evaluates the selected sour
 
 ### Sync
 
-Reserved for synchronization-focused controls and status. Its final timing/calibration interaction model is intentionally not frozen. Do not infer Sync UI behavior from the presence of the destination placeholder; the project is reconsidering synchronization ownership before implementing this screen.
+Reserved for synchronization-focused controls and status. The underlying timing foundation now fixes one semantic rule before any controls exist: `effectiveLyricsPosition = projectedPlaybackPosition + lyricsOffset`, where positive advances lyrics and negative delays them. The Sync destination itself remains a non-functional placeholder; control layout, step sizes, scope, persistence, and calibration workflow are still intentionally deferred.
 
 ### Details
 
