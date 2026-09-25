@@ -71,8 +71,12 @@ sealed interface PlaybackTrackIdentity {
  *
  * [positionUpdatedAtMonotonicMs] is optional because not every playback source
  * supplies a sample timestamp. When present, it is on the source platform's
- * monotonic clock and lets a downstream adapter advance [positionMs] without
- * pretending the snapshot was sampled when AALyrics happened to receive it.
+ * monotonic clock and is the authoritative anchor for advancing [positionMs].
+ *
+ * [positionSampledAtMonotonicMs] is the AALyrics-side monotonic time at which the
+ * platform snapshot was sampled. It is a fallback anchor only when the source
+ * does not provide [positionUpdatedAtMonotonicMs], so presentation does not have
+ * to invent a new anchor when an Activity or Compose host is created later.
  */
 data class PlaybackSnapshot(
     val track: Track? = null,
@@ -81,6 +85,7 @@ data class PlaybackSnapshot(
     val playbackRate: Float = 1.0f,
     val source: PlaybackSource? = null,
     val positionUpdatedAtMonotonicMs: Long? = null,
+    val positionSampledAtMonotonicMs: Long? = null,
 ) {
     init {
         require(positionMs >= 0L) { "Playback position must not be negative" }
@@ -89,6 +94,9 @@ data class PlaybackSnapshot(
         }
         require(positionUpdatedAtMonotonicMs == null || positionUpdatedAtMonotonicMs >= 0L) {
             "Playback position update time must be null or non-negative"
+        }
+        require(positionSampledAtMonotonicMs == null || positionSampledAtMonotonicMs >= 0L) {
+            "Playback position sample time must be null or non-negative"
         }
     }
 
