@@ -13,6 +13,7 @@ import io.github.whoxamxl.aalyrics.core.model.TimedLyricLine
 import io.github.whoxamxl.aalyrics.core.model.TimedWord
 import io.github.whoxamxl.aalyrics.core.model.Track
 import io.github.whoxamxl.aalyrics.core.model.TrackReference
+import io.github.whoxamxl.aalyrics.core.timing.LyricsTimingOffset
 import io.github.whoxamxl.aalyrics.translation.api.TranslationModelPhase
 import io.github.whoxamxl.aalyrics.translation.api.TranslationModelState
 import io.github.whoxamxl.aalyrics.translation.api.TranslationProviderId
@@ -587,6 +588,43 @@ class PhoneLyricsMapperTest {
         assertEquals("Musixmatch", state.trackCard.providerLabel)
         assertEquals("Line synced", state.trackCard.syncLabel)
         assertEquals(TrackCardLyricsStatus.READY, state.trackCard.lyricsStatus)
+    }
+
+    @Test
+    fun `lyrics timing offset shifts line selection across canonical boundaries`() {
+        val track = track()
+        val lyricsLines = listOf(
+            TimedLyricLine("First", 0L),
+            TimedLyricLine("Second", 5_000L),
+            TimedLyricLine("Third", 10_000L),
+        )
+
+        val advancedPlayback = PlaybackSnapshot(
+            track = track,
+            positionMs = 4_500L,
+            source = PlaybackSource("com.spotify.music"),
+        )
+        val advanced = mapPhoneLyricsState(
+            playback = advancedPlayback,
+            lyricsState = ready(advancedPlayback, lyricsLines),
+            plainLyricsAutoScrollEnabled = true,
+            interactionMode = LyricsViewportInteractionMode.FOLLOW,
+            currentMonotonicTimeMs = 1_000L,
+            lyricsTimingOffset = LyricsTimingOffset(750L),
+        )
+
+        val delayedPlayback = advancedPlayback.copy(positionMs = 5_500L)
+        val delayed = mapPhoneLyricsState(
+            playback = delayedPlayback,
+            lyricsState = ready(delayedPlayback, lyricsLines),
+            plainLyricsAutoScrollEnabled = true,
+            interactionMode = LyricsViewportInteractionMode.FOLLOW,
+            currentMonotonicTimeMs = 1_000L,
+            lyricsTimingOffset = LyricsTimingOffset(-750L),
+        )
+
+        assertEquals(1, advanced.viewport.currentLineIndex)
+        assertEquals(0, delayed.viewport.currentLineIndex)
     }
 
     @Test
