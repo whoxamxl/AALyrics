@@ -149,7 +149,13 @@ internal fun PhoneRuntimeHost(
     // lastPositionUpdateTime. Keep a Phone-presentation receipt anchor so the
     // 33 ms Karaoke ticker can still project position continuously between
     // coarse playback callbacks. A real source timestamp always wins downstream.
-    val playbackSnapshotReceivedAtMonotonicMs = remember(playback) {
+    val playbackSnapshotReceivedAtMonotonicMs = remember(
+        playback.trackIdentity,
+        playback.positionMs,
+        playback.playbackRate,
+        playback.status,
+        playback.positionUpdatedAtMonotonicMs,
+    ) {
         SystemClock.elapsedRealtime()
     }
 
