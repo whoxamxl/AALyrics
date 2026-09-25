@@ -1,16 +1,16 @@
-# Effective Timing Foundation
+# Effective Timing Foundation + Existing Line Integration
 
 ## Branch and baseline
 
 - Branch: `feature/effective-timing-foundation`.
 - Base: `main` at `ae9ed3f27097388b32537ad4b40147679567efaf` (PR #79 merged).
 - Classification: TIMING / ARCHITECTURE / PURE CORE FOUNDATION.
-- Status: Phase 11.3a implementation and validation are complete on this branch; the Draft PR is the stop point.
+- Status: Phase 11.3a is complete. Phase 11.3b was separately authorized on the same branch; implementation is complete and final re-validation is pending.
 - Authoritative references: `AGENTS.md`, `docs/ARCHITECTURE.md`, `docs/LYRICS_PIPELINE_ARCHITECTURE.md`, `docs/TIMING_ARCHITECTURE.md`, `docs/KARAOKE_ARCHITECTURE.md`, `docs/PRESENTATION_STATE_ARCHITECTURE.md`, `docs/MIGRATION_INVENTORY.md`, and current `main` code/tests.
 
 ## Goal
 
-Implement only the framework-independent foundation that future Sync/calibration and Karaoke can share.
+Complete the framework-independent Phase 11.3a foundation and the separately authorized Phase 11.3b integration that routes the existing Phone current-line decision through that foundation.
 
 The completed foundation must provide a tested, reusable engine for one lyrics-specific virtual clock:
 
@@ -27,7 +27,7 @@ negative offset -> delay lyrics
 zero offset     -> preserve current behavior
 ```
 
-This PR must stop with the engine ready. It must **not** add Sync UI, persistence, Phone timing integration, Android Auto timing integration, or Karaoke projection.
+Phase 11.3b is now explicitly authorized on this branch. It may connect the existing Phone current-line decision to `EffectiveLyricsPosition`, while the production offset remains zero by default. It must **not** add Sync UI, persistence, Android Auto timing integration, or Karaoke/WORD projection.
 
 ## User-facing sign contract
 
@@ -66,7 +66,7 @@ Current `main` already has:
 - no effective-timing core module yet;
 - no production Karaoke/WORD projection.
 
-Do not move the existing Phone playback projection helper during this foundation PR merely to create a call site. Phase 11.3b will decide the smallest integration/refactor after the pure engine exists.
+Phase 11.3b keeps the existing Phone playback projection helper in place. `PhoneLyricsMapper` derives `EffectiveLyricsPosition` from that projected position and a default-zero `LyricsTimingOffset`, then feeds only the existing current-line selector through the effective position. Playback progress continues to use the real projected playback position.
 
 ## Working-fork re-check
 
@@ -196,7 +196,7 @@ The foundation is considered architecturally integrated when:
 - `scripts/verify-architecture.sh` treats `core/timing` as a pure module and rejects Android/network/unauthorized production dependencies;
 - its unit tests run in the normal repository test/build path.
 
-Do **not** add an `:app` dependency only to manufacture usage. Phase 11.3b will introduce the first real consumer.
+Phase 11.3b introduces the first real consumer: `:app` may depend on `:core:timing` because `PhoneLyricsMapper` now routes current-line selection through the effective position. Do not add any other consumer merely to manufacture usage.
 
 ## Deterministic test contract
 
@@ -290,16 +290,27 @@ Implement in small coherent commits.
    - register `core/timing` as a pure module in `verify-architecture.sh`;
    - ensure no unauthorized production dependencies are introduced.
 
-3. [x] **Validation + final alignment**
+3. [x] **11.3a validation + final alignment**
+   - architecture checks, unit tests, and debug APK build passed;
+   - the initial Draft PR was opened after 11.3a validation.
+
+4. [x] **11.3b existing line integration**
+   - add the real `:app -> :core:timing` consumer;
+   - keep the existing playback projection helper unchanged;
+   - derive effective lyrics position with a default-zero offset;
+   - route only `currentTimedLineIndex(...)` through effective lyrics position;
+   - keep playback progress on the real projected playback position;
+   - add positive/negative boundary-crossing regression coverage.
+
+5. [ ] **11.3b final re-validation**
    - run architecture checks;
    - run unit tests;
    - build the debug APK/repository build path;
-   - inspect the diff for accidental app/UI/persistence changes;
-   - re-evaluate Reset and record "no persisted state / no reset change";
-   - align docs only if implementation evidence changed a contract;
-   - open a Draft PR, then stop before review or merge.
+   - inspect the branch-wide diff for scope drift;
+   - confirm no Sync UI, persistence, Reset, Android Auto, or Karaoke behavior was added;
+   - update the existing Draft PR evidence, then stop.
 
-Validation: the architecture guard, debug APK build, and repository unit tests passed in [Build run 36098879658](https://github.com/whoxamxl/AALyrics/actions/runs/36098879658). The implementation adds no persisted state, so `Reset AALyrics` needs no change.
+Phase 11.3a validation previously passed in Build runs 36098879658 and 36099140235. Phase 11.3b adds no persisted state, so `Reset AALyrics` still needs no change.
 
 ## Documentation alignment checkpoints
 
@@ -320,14 +331,14 @@ Phase 11.3a is complete when:
 - `:core:timing` is part of the build and architecture guard;
 - there is no user-visible behavior change;
 - no persistence/reset scope is added;
-- no existing Phone/Android Auto/Karaoke call site is silently changed;
+- the existing Phone current-line call site explicitly consumes effective lyrics position with a default-zero offset;
+- playback progress remains based on real projected playback position;
+- Android Auto and Karaoke call sites remain unchanged;
 - CI/build/tests are green;
 - review finds no current-scope blocking issue.
 
 ## Stop point
 
-After the foundation is implemented and validated, **stop**.
+After Phase 11.3b is re-validated, **stop** at the existing Draft PR.
 
-Do not continue automatically into Phase 11.3b.
-
-The next separately authorized slice will route existing timed-lyrics/current-line presentation through effective lyrics position with an initial offset of zero. Only after that integration is proven should Phase 11.3c define Sync controls, scope, and persistence.
+Do not continue automatically into Sync UX/persistence. Phase 11.3c remains deferred. Karaoke/WORD timing semantics remain a separate engine slice even if later authorized on this branch.

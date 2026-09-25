@@ -315,11 +315,13 @@ The working-fork `SyncCalibration.offsetForTap(target, raw) = target - raw` sign
 
 The implementation contract and validation record are `TASK.md` plus `docs/TIMING_ARCHITECTURE.md`.
 
-### Phase 11.3b — Existing timed-lyrics integration — deferred
+### Phase 11.3b — Existing timed-lyrics integration — implemented on topic branch
 
-After Phase 11.3a is validated, route existing synchronized-line/current-line decisions through the effective lyrics position while the offset remains zero by default.
+The existing Phone synchronized-line/current-line decision now consumes `EffectiveLyricsPosition` from `:core:timing` while the production offset remains zero by default.
 
-This slice must prove that introducing the timing boundary causes no visible regression before any user calibration state exists.
+The integration deliberately keeps `projectedPlaybackPosition(...)` unchanged, keeps canonical source timestamps immutable, and keeps playback progress based on the real projected playback position. Focused regression coverage proves positive/negative timing offsets can cross canonical line boundaries without introducing Sync UI or persistence.
+
+This slice establishes the real timing-consumer boundary before any user calibration state exists.
 
 ### Phase 11.3c — Sync calibration UX — deferred
 

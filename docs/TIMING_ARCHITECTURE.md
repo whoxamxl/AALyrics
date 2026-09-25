@@ -153,7 +153,7 @@ effective lyrics position
 current line / current word / progress
 ```
 
-Existing LINE_SYNC lookup can later consume effective lyrics position instead of raw projected playback position. Future Karaoke may derive word/progress facts from the same effective position.
+Phase 11.3b routes the existing Phone LINE/current-line lookup through effective lyrics position instead of raw projected playback position. The production offset remains zero by default, so visible behavior is unchanged. Future Karaoke may derive word/progress facts from the same effective position.
 
 The timing foundation itself must not grow a second current-line/current-word implementation merely to prove the offset transform.
 
@@ -199,7 +199,7 @@ effective lyrics position = 17,500 ms
 => line B is active under the existing line-boundary semantics
 ```
 
-The first foundation does not change the existing line-boundary semantics. It only provides the position that later integration will feed into them.
+Phase 11.3a does not change the existing line-boundary semantics. Phase 11.3b keeps those semantics unchanged and only replaces their position input with effective lyrics position. Playback progress remains tied to the real projected playback position.
 
 ## Relationship to WORD_SYNC / Karaoke
 
@@ -325,7 +325,7 @@ Phase 11.3a — Effective Timing Foundation
     pure offset model + effective lyrics position engine
             ↓
 Phase 11.3b — Existing timed-lyrics integration
-    route Phone/current-line timing through effective lyrics position
+    implemented: Phone/current-line timing consumes effective lyrics position
             ↓
 Phase 11.3c — Sync calibration UX
     user controls + scope/persistence only after explicit decisions
