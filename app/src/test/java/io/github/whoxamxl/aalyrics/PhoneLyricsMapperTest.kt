@@ -753,29 +753,34 @@ class PhoneLyricsMapperTest {
             ),
         )
 
-        fun mapped(mode: Boolean) = mapPhoneLyricsState(
+        fun mapped(gate: Boolean, mode: Boolean) = mapPhoneLyricsState(
             playback = playback,
             lyricsState = lyrics,
             plainLyricsAutoScrollEnabled = true,
             interactionMode = LyricsViewportInteractionMode.FOLLOW,
             currentMonotonicTimeMs = 11_500L,
             playbackPositionFallbackUpdatedAtMonotonicMs = 10_000L,
-            karaokeFeatureEnabled = true,
+            karaokeFeatureEnabled = gate,
             karaokeModeEnabled = mode,
         ).viewport
 
-        val off = mapped(false)
-        val on = mapped(true)
+        val featureOff = mapped(gate = false, mode = false)
+        val featureOn = mapped(gate = true, mode = false)
+        val karaokeOn = mapped(gate = true, mode = true)
 
-        assertEquals(1, off.currentLineIndex)
-        assertEquals(off.currentLineIndex, on.currentLineIndex)
-        assertEquals(off.playbackProgress, on.playbackProgress)
-        assertNull(off.currentWordIndex)
-        assertNull(off.karaokeSweep)
-        assertEquals(0, on.currentWordIndex)
-        assertEquals(0.5f, on.currentWordProgress)
-        assertEquals(0.5f, on.karaokeSweep?.progress)
-        assertEquals(0 to 6, on.karaokeSweep?.let { it.start to it.end })
+        assertEquals(1, featureOff.currentLineIndex)
+        assertEquals(featureOff.currentLineIndex, featureOn.currentLineIndex)
+        assertEquals(featureOff.currentLineIndex, karaokeOn.currentLineIndex)
+        assertEquals(featureOff.playbackProgress, featureOn.playbackProgress)
+        assertEquals(featureOff.playbackProgress, karaokeOn.playbackProgress)
+        assertNull(featureOff.currentWordIndex)
+        assertNull(featureOn.currentWordIndex)
+        assertNull(featureOff.karaokeSweep)
+        assertNull(featureOn.karaokeSweep)
+        assertEquals(0, karaokeOn.currentWordIndex)
+        assertEquals(0.5f, karaokeOn.currentWordProgress)
+        assertEquals(0.5f, karaokeOn.karaokeSweep?.progress)
+        assertEquals(0 to 6, karaokeOn.karaokeSweep?.let { it.start to it.end })
     }
 
     @Test

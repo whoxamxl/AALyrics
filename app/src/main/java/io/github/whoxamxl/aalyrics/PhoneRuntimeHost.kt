@@ -146,9 +146,9 @@ internal fun PhoneRuntimeHost(
         mutableStateOf(SystemClock.elapsedRealtime())
     }
     // Some MediaSession implementations expose position without a valid
-    // lastPositionUpdateTime. Keep a Phone-presentation receipt anchor so the
-    // 33 ms Karaoke ticker can still project position continuously between
-    // coarse playback callbacks. A real source timestamp always wins downstream.
+    // lastPositionUpdateTime. Keep a timing-sample receipt anchor so WORD_SYNC
+    // presentation uses one continuous Phone clock whether Karaoke is OFF or ON.
+    // A real source timestamp always wins downstream.
     val playbackSnapshotReceivedAtMonotonicMs = remember(
         playback.trackIdentity,
         playback.positionMs,
