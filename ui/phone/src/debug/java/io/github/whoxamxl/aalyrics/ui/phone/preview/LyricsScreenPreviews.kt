@@ -33,6 +33,18 @@ private fun LyricsScreenTranslatedPlainPreview() {
     LyricsScreenPreview(PhonePreviewFixtures.lyricsScreenTranslatedPlain)
 }
 
+@Preview(name = "LINE · models downloading", group = "LyricsScreen", widthDp = 412, heightDp = 650)
+@Composable
+private fun LyricsScreenModelsDownloadingPreview() {
+    LyricsScreenPreview(PhonePreviewFixtures.lyricsScreenTranslationDownloadingModels)
+}
+
+@Preview(name = "LINE · Translation failed", group = "LyricsScreen", widthDp = 412, heightDp = 650)
+@Composable
+private fun LyricsScreenTranslationFailedPreview() {
+    LyricsScreenPreview(PhonePreviewFixtures.lyricsScreenTranslationFailed)
+}
+
 @Preview(name = "WORD", group = "LyricsScreen", widthDp = 412, heightDp = 650)
 @Composable
 private fun LyricsScreenWordPreview() {
@@ -78,6 +90,7 @@ internal fun LyricsScreenPreview(
                         viewport = state.viewport.copy(interactionMode = mode),
                     )
                 },
+                onTranslationRetry = {},
             )
         }
     }

@@ -21,6 +21,45 @@ private fun TrackCardReadyPreview() {
     )
 }
 
+@Preview(name = "Translation on", group = "TrackCard · Translation", widthDp = 412, showBackground = true)
+@Composable
+private fun TrackCardTranslationOnPreview() {
+    TrackCardPreview(state = PhonePreviewFixtures.trackCardTranslationOn, showArtwork = true)
+}
+
+@Preview(name = "Downloading models", group = "TrackCard · Translation", widthDp = 412, showBackground = true)
+@Composable
+private fun TrackCardTranslationDownloadingModelsPreview() {
+    TrackCardPreview(
+        state = PhonePreviewFixtures.trackCardTranslationDownloadingModels,
+        showArtwork = true,
+    )
+}
+
+@Preview(name = "Translating", group = "TrackCard · Translation", widthDp = 412, showBackground = true)
+@Composable
+private fun TrackCardTranslationTranslatingPreview() {
+    TrackCardPreview(state = PhonePreviewFixtures.trackCardTranslationTranslating, showArtwork = true)
+}
+
+@Preview(name = "Ready EN → JA", group = "TrackCard · Translation", widthDp = 412, showBackground = true)
+@Composable
+private fun TrackCardTranslationReadyPreview() {
+    TrackCardPreview(state = PhonePreviewFixtures.trackCardTranslationReady, showArtwork = true)
+}
+
+@Preview(name = "Not required", group = "TrackCard · Translation", widthDp = 412, showBackground = true)
+@Composable
+private fun TrackCardTranslationNotRequiredPreview() {
+    TrackCardPreview(state = PhonePreviewFixtures.trackCardTranslationNotRequired, showArtwork = true)
+}
+
+@Preview(name = "Failed + Retry", group = "TrackCard · Translation", widthDp = 412, showBackground = true)
+@Composable
+private fun TrackCardTranslationFailedPreview() {
+    TrackCardPreview(state = PhonePreviewFixtures.trackCardTranslationFailed, showArtwork = true)
+}
+
 @Preview(name = "Artwork placeholder", group = "TrackCard", widthDp = 412, showBackground = true)
 @Composable
 private fun TrackCardArtworkPlaceholderPreview() {
@@ -103,7 +142,10 @@ private fun TrackCardPreview(
 ) {
     AALyricsTheme {
         if (showArtwork) {
-            TrackCard(state = state) {
+            TrackCard(
+                state = state,
+                onTranslationRetry = {},
+            ) {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
@@ -119,7 +161,10 @@ private fun TrackCardPreview(
                 )
             }
         } else {
-            TrackCard(state = state)
+            TrackCard(
+                state = state,
+                onTranslationRetry = {},
+            )
         }
     }
 }

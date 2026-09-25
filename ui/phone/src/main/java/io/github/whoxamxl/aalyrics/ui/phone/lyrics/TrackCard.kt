@@ -2,12 +2,14 @@ package io.github.whoxamxl.aalyrics.ui.phone.lyrics
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -20,6 +22,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.github.whoxamxl.aalyrics.ui.phone.R
@@ -42,6 +45,7 @@ fun TrackCard(
     state: TrackCardUiState,
     modifier: Modifier = Modifier,
     artwork: (@Composable BoxScope.() -> Unit)? = null,
+    onTranslationRetry: (() -> Unit)? = null,
 ) {
     Surface(
         modifier = modifier.fillMaxWidth(),
@@ -60,6 +64,7 @@ fun TrackCard(
             Spacer(Modifier.width(AALyricsSpacing.Space12))
             TrackIdentity(
                 state = state,
+                onTranslationRetry = onTranslationRetry,
                 modifier = Modifier.weight(1f),
             )
         }
@@ -88,6 +93,7 @@ private fun TrackArtwork(
 @Composable
 private fun TrackIdentity(
     state: TrackCardUiState,
+    onTranslationRetry: (() -> Unit)?,
     modifier: Modifier = Modifier,
 ) {
     val artist = state.artist?.takeIf { it.isNotBlank() }
@@ -153,6 +159,117 @@ private fun TrackIdentity(
 
             TrackCardLyricsStatus.IDLE -> Unit
         }
+
+        TranslationStatusRow(
+            state = state.translation,
+            onRetry = onTranslationRetry,
+        )
     }
 }
+
+@Composable
+private fun TranslationStatusRow(
+    state: TrackCardTranslationUiState,
+    onRetry: (() -> Unit)?,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = TranslationStatusRowMinHeight),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        when (state) {
+            TrackCardTranslationUiState.Off -> TranslationStatusText(
+                text = stringResource(R.string.track_card_translation_off),
+                color = AALyricsColors.TextTertiary,
+            )
+
+            TrackCardTranslationUiState.On -> TranslationStatusText(
+                text = stringResource(R.string.track_card_translation_on),
+                color = AALyricsColors.TextSecondary,
+            )
+
+            TrackCardTranslationUiState.DownloadingModels -> TranslationLoadingStatus(
+                text = stringResource(R.string.track_card_translation_downloading_models),
+            )
+
+            TrackCardTranslationUiState.Translating -> TranslationLoadingStatus(
+                text = stringResource(R.string.track_card_translation_translating),
+            )
+
+            is TrackCardTranslationUiState.Ready -> TranslationStatusText(
+                text = stringResource(
+                    R.string.track_card_translation_route,
+                    state.sourceLanguageLabel,
+                    state.targetLanguageLabel,
+                ),
+                color = AALyricsColors.AccentCyan,
+            )
+
+            TrackCardTranslationUiState.NotRequired -> TranslationStatusText(
+                text = stringResource(R.string.track_card_translation_not_required),
+                color = AALyricsColors.TextSecondary,
+            )
+
+            TrackCardTranslationUiState.Failed -> {
+                TranslationStatusText(
+                    text = stringResource(R.string.track_card_translation_failed),
+                    color = AALyricsColors.Error,
+                    modifier = Modifier.weight(1f),
+                )
+                onRetry?.let { retry ->
+                    Text(
+                        text = stringResource(R.string.track_card_translation_retry),
+                        style = AALyricsTypography.Label,
+                        color = AALyricsColors.AccentCyan,
+                        maxLines = 1,
+                        modifier = Modifier
+                            .clickable(
+                                role = Role.Button,
+                                onClick = retry,
+                            )
+                            .padding(
+                                horizontal = AALyricsSpacing.Space8,
+                                vertical = 2.dp,
+                            ),
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun TranslationLoadingStatus(
+    text: String,
+) {
+    CircularProgressIndicator(
+        modifier = Modifier.size(12.dp),
+        color = AALyricsColors.AccentCyan,
+        strokeWidth = 1.5.dp,
+    )
+    Spacer(Modifier.width(AALyricsSpacing.Space4))
+    TranslationStatusText(
+        text = text,
+        color = AALyricsColors.AccentCyan,
+    )
+}
+
+@Composable
+private fun TranslationStatusText(
+    text: String,
+    color: androidx.compose.ui.graphics.Color,
+    modifier: Modifier = Modifier,
+) {
+    Text(
+        text = text,
+        style = AALyricsTypography.Label,
+        color = color,
+        maxLines = 1,
+        overflow = TextOverflow.Ellipsis,
+        modifier = modifier,
+    )
+}
+
+private val TranslationStatusRowMinHeight = 20.dp
 

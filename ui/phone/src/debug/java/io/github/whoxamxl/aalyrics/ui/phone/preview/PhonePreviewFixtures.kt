@@ -12,6 +12,7 @@ import io.github.whoxamxl.aalyrics.ui.phone.lyrics.LyricsViewportInteractionMode
 import io.github.whoxamxl.aalyrics.ui.phone.lyrics.LyricsViewportLineUiState
 import io.github.whoxamxl.aalyrics.ui.phone.lyrics.LyricsViewportUiState
 import io.github.whoxamxl.aalyrics.ui.phone.lyrics.TrackCardLyricsStatus
+import io.github.whoxamxl.aalyrics.ui.phone.lyrics.TrackCardTranslationUiState
 import io.github.whoxamxl.aalyrics.ui.phone.lyrics.TrackCardUiState
 import io.github.whoxamxl.aalyrics.ui.phone.navigation.PhoneDestination
 import io.github.whoxamxl.aalyrics.ui.phone.settings.AndroidAutoCompatibilityUiStatus
@@ -35,6 +36,27 @@ internal object PhonePreviewFixtures {
         providerLabel = "Musixmatch",
         syncLabel = "Word synced",
         lyricsStatus = TrackCardLyricsStatus.READY,
+    )
+    val trackCardTranslationOn = trackCardReady.copy(
+        translation = TrackCardTranslationUiState.On,
+    )
+    val trackCardTranslationDownloadingModels = trackCardReady.copy(
+        translation = TrackCardTranslationUiState.DownloadingModels,
+    )
+    val trackCardTranslationTranslating = trackCardReady.copy(
+        translation = TrackCardTranslationUiState.Translating,
+    )
+    val trackCardTranslationReady = trackCardReady.copy(
+        translation = TrackCardTranslationUiState.Ready(
+            sourceLanguageLabel = "EN",
+            targetLanguageLabel = "JA",
+        ),
+    )
+    val trackCardTranslationNotRequired = trackCardReady.copy(
+        translation = TrackCardTranslationUiState.NotRequired,
+    )
+    val trackCardTranslationFailed = trackCardReady.copy(
+        translation = TrackCardTranslationUiState.Failed,
     )
     val trackCardLongTitle = TrackCardUiState(
         title = "A Track Title Long Enough to Demonstrate the Overflow Marquee Behavior",
@@ -170,8 +192,30 @@ internal object PhonePreviewFixtures {
         ),
         viewport = viewportPlain,
     )
-    val lyricsScreenTranslatedLine = lyricsScreenLine.copy(viewport = viewportTranslatedLine)
-    val lyricsScreenTranslatedPlain = lyricsScreenPlain.copy(viewport = viewportTranslatedPlain)
+    val lyricsScreenTranslatedLine = lyricsScreenLine.copy(
+        trackCard = lyricsScreenLine.trackCard.copy(
+            translation = TrackCardTranslationUiState.Ready(
+                sourceLanguageLabel = "EN",
+                targetLanguageLabel = "JA",
+            ),
+        ),
+        viewport = viewportTranslatedLine,
+    )
+    val lyricsScreenTranslatedPlain = lyricsScreenPlain.copy(
+        trackCard = lyricsScreenPlain.trackCard.copy(
+            translation = TrackCardTranslationUiState.Ready(
+                sourceLanguageLabel = "EN",
+                targetLanguageLabel = "JA",
+            ),
+        ),
+        viewport = viewportTranslatedPlain,
+    )
+    val lyricsScreenTranslationDownloadingModels = lyricsScreenLine.copy(
+        trackCard = trackCardTranslationDownloadingModels.copy(syncLabel = "Line synced"),
+    )
+    val lyricsScreenTranslationFailed = lyricsScreenLine.copy(
+        trackCard = trackCardTranslationFailed.copy(syncLabel = "Line synced"),
+    )
     val lyricsScreenLongMetadata = LyricsScreenUiState(
         trackCard = trackCardLongTitleAndArtist,
         viewport = viewportLineMiddle,
