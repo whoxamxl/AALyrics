@@ -298,16 +298,18 @@ class AALyricsApplication : Application() {
 
     internal fun retryTranslation() {
         applicationScope.launch {
-            translationModelManager.states.value.values
-                .filter { model ->
-                    model.phase == TranslationModelPhase.FAILED ||
-                        model.phase == TranslationModelPhase.TIMED_OUT
-                }
-                .map { it.languageTag }
-                .distinct()
-                .forEach { languageTag ->
+            val retryLanguages = translationRetryModelLanguages(
+                state = translationCoordinator.state.value,
+                settings = translationSettingsStore.settings.value,
+            )
+            retryLanguages.forEach { languageTag ->
+                val phase = translationModelManager.states.value[languageTag]?.phase
+                if (phase == TranslationModelPhase.FAILED ||
+                    phase == TranslationModelPhase.TIMED_OUT
+                ) {
                     translationModelManager.retry(languageTag)
                 }
+            }
 
             translationExecutionRuntime.retry()
         }

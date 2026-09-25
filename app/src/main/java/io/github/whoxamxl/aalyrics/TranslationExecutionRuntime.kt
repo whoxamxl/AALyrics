@@ -1,9 +1,13 @@
 package io.github.whoxamxl.aalyrics
 
 import io.github.whoxamxl.aalyrics.core.lyrics.LyricsState
+import io.github.whoxamxl.aalyrics.translation.api.TranslationLanguages
+import io.github.whoxamxl.aalyrics.translation.api.TranslationSettings
 import io.github.whoxamxl.aalyrics.translation.api.TranslationSettingsStore
 import io.github.whoxamxl.aalyrics.translation.core.CanonicalLyrics
+import io.github.whoxamxl.aalyrics.translation.core.SecondaryActivation
 import io.github.whoxamxl.aalyrics.translation.core.TranslationLifecycle
+import io.github.whoxamxl.aalyrics.translation.core.TranslationState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.StateFlow
@@ -42,6 +46,31 @@ internal class TranslationExecutionRuntime(
         job = null
         lifecycle.clear()
     }
+}
+
+internal fun translationRetryModelLanguages(
+    state: TranslationState,
+    settings: TranslationSettings,
+): Set<String> {
+    val targetLanguage = TranslationLanguages.normalizeTargetLanguage(settings.targetLanguage)
+    val languages = linkedSetOf(targetLanguage)
+
+    val failed = state as? TranslationState.Failed
+    if (failed?.request?.targetLanguage == targetLanguage) {
+        failed.profile
+            ?.primary
+            ?.let(TranslationLanguages::normalizeLanguageTag)
+            ?.let(languages::add)
+
+        failed.profile
+            ?.secondaryCandidate
+            ?.takeIf { failed.profile.secondaryActivation == SecondaryActivation.ACTIVE }
+            ?.let(TranslationLanguages::normalizeLanguageTag)
+            ?.let(languages::add)
+    }
+
+    languages.remove("en")
+    return languages
 }
 
 internal fun LyricsState.canonicalLyricsOrNull(): CanonicalLyrics? = when (this) {

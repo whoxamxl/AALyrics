@@ -201,7 +201,7 @@ The host lifecycle-collects the existing `translationState`, `translationSetting
 
 The Phone mapper owns presentation composition for the permanent Track Card Translation status row. It combines current Translation settings/state with the existing model-lifecycle presentation facts so the UI distinguishes active automatic model download from actual Translation execution. The UI receives only a Phone-local state such as OFF / ENABLED / DOWNLOADING_MODELS / TRANSLATING / READY(route) / NOT_REQUIRED / FAILED; it does not inspect ML Kit or Translation core types directly.
 
-The status row is always reserved, preventing Translation transitions from changing Track Card height or shifting the LyricsViewport. A Failed row emits a semantic Retry callback to `:app`. The application retries any latched failed/timed-out Translation models through the existing model-manager boundary, then republishes the current canonical lyrics/settings through `TranslationExecutionRuntime`; retry ownership remains application/capability-side.
+The status row is always reserved, preventing Translation transitions from changing Track Card height or shifting the LyricsViewport. A Failed row emits a semantic Retry callback to `:app`. The application retries only failed/timed-out models belonging to the current route (current target plus matching Profile Primary/ACTIVE Secondary, excluding built-in English), then republishes the current canonical lyrics/settings through `TranslationExecutionRuntime`; stale or unrelated model failures are not retried. Retry ownership remains application/capability-side.
 
 The mapper must preserve existing approved semantics:
 
