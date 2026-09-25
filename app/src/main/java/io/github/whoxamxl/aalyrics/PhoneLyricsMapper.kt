@@ -272,14 +272,14 @@ private fun shortLanguageLabel(languageTag: String?): String =
 internal fun hasCurrentWordSyncedLyrics(
     playback: PlaybackSnapshot,
     lyricsState: LyricsState,
-): Boolean {
-    val current = when (lyricsState) {
-        is LyricsState.Ready -> lyricsState
-        is LyricsState.Degraded -> lyricsState
-        else -> return false
-    }
-    return current.lookup.playbackIdentity == playback.trackIdentity &&
-        current.lyrics.syncType == LyricsSyncType.WORD
+): Boolean = when (lyricsState) {
+    is LyricsState.Ready ->
+        lyricsState.lookup.playbackIdentity == playback.trackIdentity &&
+            lyricsState.lyrics.syncType == LyricsSyncType.WORD
+    is LyricsState.Degraded ->
+        lyricsState.lookup.playbackIdentity == playback.trackIdentity &&
+            lyricsState.lyrics.syncType == LyricsSyncType.WORD
+    else -> false
 }
 
 internal fun projectedPlaybackPosition(
