@@ -188,7 +188,7 @@ private fun TranslationStatusRow(
 
             TrackCardTranslationUiState.On -> TranslationStatusText(
                 text = stringResource(R.string.track_card_translation_on),
-                color = AALyricsColors.TextSecondary,
+                color = AALyricsColors.AccentBlue,
             )
 
             TrackCardTranslationUiState.DownloadingModels -> TranslationLoadingStatus(

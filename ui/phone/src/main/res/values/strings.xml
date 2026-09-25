@@ -188,7 +188,7 @@
     <string name="track_card_lyrics_not_found">Lyrics not found</string>
     <string name="track_card_lyrics_failed">Lyrics lookup failed</string>
     <string name="track_card_translation_off">Translation off</string>
-    <string name="track_card_translation_on">Translation on</string>
+    <string name="track_card_translation_on">Translation enabled</string>
     <string name="track_card_translation_downloading_models">Downloading language models…</string>
     <string name="track_card_translation_translating">Translating…</string>
     <string name="track_card_translation_route">Translation %1$s → %2$s</string>

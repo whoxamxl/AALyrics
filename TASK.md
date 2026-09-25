@@ -93,7 +93,7 @@ Reserve one permanent fourth status row in the Lyrics Track Card for Translation
 Approved presentation states:
 
 - OFF -> `Translation off`;
-- enabled but no active canonical route yet -> `Translation on`;
+- enabled but no active canonical route yet -> `Translation enabled`;
 - required route models are checking/downloading/waiting for the system -> compact spinner + `Downloading language models…`;
 - route models are ready and Translation execution is still running -> compact spinner + `Translating…`;
 - an eligible atomic artifact is active -> `Translation EN → JA`-style short source/target labels;
@@ -102,7 +102,7 @@ Approved presentation states:
 
 Model acquisition remains automatic. Do not add a normal pre-download confirmation dialog. The user intervention path is failure recovery: the Track Card emits one semantic Retry action and the application/capability layer decides which failed model/route work must be retried. Canonical lyrics remain visible and usable throughout model preparation, Translation execution, and failure.
 
-The Track Card status row is presentation feedback only. It must not become a second Translation executor, model manager, or timing owner. Translation runtime colors stay distinct from the cyan provider/sync row: processing uses AccentBlue, Ready uses Success, inactive states use neutral text colors, failure uses Error, and Retry retains AccentCyan.
+The Track Card status row is presentation feedback only. It must not become a second Translation executor, model manager, or timing owner. Translation runtime colors stay distinct from the cyan provider/sync row: Enabled plus processing states use AccentBlue, Ready uses Success, inactive states use neutral text colors, failure uses Error, and Retry retains AccentCyan.
 
 ### LyricsViewport rendering
 

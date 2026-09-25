@@ -199,14 +199,14 @@ The card is informational except for the narrowly scoped Translation failure rec
 The Track Card reserves a permanent fourth text/status row for Translation so Translation state changes never alter the card/viewport boundary. Its approved states are:
 
 - `Translation off` while the feature is disabled;
-- `Translation on` while enabled but no current route is active yet;
+- `Translation enabled` while enabled but no current route is active yet;
 - compact spinner + `Downloading language models…` while required source/target route models are being prepared automatically;
 - compact spinner + `Translating…` after model readiness while Translation execution remains active;
 - `Translation EN → JA`-style short route labels while an eligible artifact is active;
 - `Translation not required` when the current source/target requires no Translation work;
 - `Translation failed` with a compact trailing Retry icon + `Retry` text action on failure.
 
-Status colors intentionally separate Translation feedback from the cyan provider/sync metadata row: OFF uses TextTertiary (`#66778E`); ON and Not required use TextSecondary (`#A9B7C9`); model download and Translating use AccentBlue (`#1B8EFF`); an active Ready route uses Success (`#62D6A7`); failure uses Error (`#FF6B7A`); and the Retry action retains the normal AccentCyan action color (`#49E6FB`). The Retry icon reuses `AALyricsIcons.Retry` with the same compact icon/text treatment used by existing retry actions.
+Status colors intentionally separate Translation feedback from the cyan provider/sync metadata row: OFF uses TextTertiary (`#66778E`); Enabled, model download, and Translating use AccentBlue (`#1B8EFF`); Not required uses TextSecondary (`#A9B7C9`); an active Ready route uses Success (`#62D6A7`); failure uses Error (`#FF6B7A`); and the Retry action retains the normal AccentCyan action color (`#49E6FB`). The Retry icon reuses `AALyricsIcons.Retry` with the same compact icon/text treatment used by existing retry actions.
 
 Automatic model acquisition remains the normal path; the Track Card makes that background work visible rather than interrupting it with a normal confirmation dialog. The Retry action is a semantic Phone callback only. `:ui:phone` does not decide whether retry means model preparation, route preparation, or Translation execution.
 
