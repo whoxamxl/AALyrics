@@ -13,6 +13,8 @@ import io.github.whoxamxl.aalyrics.core.model.TimedLyricLine
 import io.github.whoxamxl.aalyrics.core.model.TimedWord
 import io.github.whoxamxl.aalyrics.core.model.Track
 import io.github.whoxamxl.aalyrics.core.model.TrackReference
+import io.github.whoxamxl.aalyrics.translation.api.TranslationModelPhase
+import io.github.whoxamxl.aalyrics.translation.api.TranslationModelState
 import io.github.whoxamxl.aalyrics.translation.api.TranslationProviderId
 import io.github.whoxamxl.aalyrics.translation.api.TranslationSettings
 import io.github.whoxamxl.aalyrics.translation.core.LanguageProfile
@@ -24,6 +26,7 @@ import io.github.whoxamxl.aalyrics.translation.core.TranslationRequestIdentity
 import io.github.whoxamxl.aalyrics.translation.core.TranslationState
 import io.github.whoxamxl.aalyrics.ui.phone.lyrics.LyricsViewportInteractionMode
 import io.github.whoxamxl.aalyrics.ui.phone.lyrics.TrackCardLyricsStatus
+import io.github.whoxamxl.aalyrics.ui.phone.lyrics.TrackCardTranslationUiState
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
@@ -53,11 +56,28 @@ class PhoneLyricsMapperTest {
         )
 
         assertEquals(listOf("Translated first", null), projected.viewport.lines.map { it.translatedText })
-        assertEquals(baseline.copy(viewport = baseline.viewport.copy(
-            lines = projected.viewport.lines.map { it.copy(translatedText = null) },
-        )), projected.copy(viewport = projected.viewport.copy(
-            lines = projected.viewport.lines.map { it.copy(translatedText = null) },
-        )))
+        assertEquals(
+            baseline.copy(
+                trackCard = baseline.trackCard.copy(
+                    translation = projected.trackCard.translation,
+                ),
+                viewport = baseline.viewport.copy(
+                    lines = projected.viewport.lines.map { it.copy(translatedText = null) },
+                ),
+            ),
+            projected.copy(
+                viewport = projected.viewport.copy(
+                    lines = projected.viewport.lines.map { it.copy(translatedText = null) },
+                ),
+            ),
+        )
+        assertEquals(
+            TrackCardTranslationUiState.Ready(
+                sourceLanguageLabel = "JA",
+                targetLanguageLabel = "EN",
+            ),
+            projected.trackCard.translation,
+        )
         assertEquals(1, projected.viewport.currentLineIndex)
     }
 
@@ -135,6 +155,137 @@ class PhoneLyricsMapperTest {
             )
             assertEquals("Translated", result.viewport.lines.single().translatedText)
         }
+    }
+
+    @Test
+    fun `Track Card Translation state maps disabled enabled and target model preparation`() {
+        val playback = PlaybackSnapshot()
+        val off = mapPhoneLyricsState(
+            playback = playback,
+            lyricsState = LyricsState.Idle,
+            plainLyricsAutoScrollEnabled = true,
+            interactionMode = LyricsViewportInteractionMode.FOLLOW,
+            currentMonotonicTimeMs = 1_000L,
+        )
+        assertEquals(TrackCardTranslationUiState.Off, off.trackCard.translation)
+
+        val enabled = mapPhoneLyricsState(
+            playback = playback,
+            lyricsState = LyricsState.Idle,
+            plainLyricsAutoScrollEnabled = true,
+            interactionMode = LyricsViewportInteractionMode.FOLLOW,
+            currentMonotonicTimeMs = 1_000L,
+            translationSettings = enabledTranslation,
+        )
+        assertEquals(TrackCardTranslationUiState.On, enabled.trackCard.translation)
+
+        val downloading = mapPhoneLyricsState(
+            playback = playback,
+            lyricsState = LyricsState.Idle,
+            plainLyricsAutoScrollEnabled = true,
+            interactionMode = LyricsViewportInteractionMode.FOLLOW,
+            currentMonotonicTimeMs = 1_000L,
+            translationSettings = enabledTranslation,
+            translationModelStates = mapOf(
+                "en" to TranslationModelState("en", TranslationModelPhase.DOWNLOADING),
+            ),
+        )
+        assertEquals(
+            TrackCardTranslationUiState.DownloadingModels,
+            downloading.trackCard.translation,
+        )
+
+        val failed = mapPhoneLyricsState(
+            playback = playback,
+            lyricsState = LyricsState.Idle,
+            plainLyricsAutoScrollEnabled = true,
+            interactionMode = LyricsViewportInteractionMode.FOLLOW,
+            currentMonotonicTimeMs = 1_000L,
+            translationSettings = enabledTranslation,
+            translationModelStates = mapOf(
+                "en" to TranslationModelState("en", TranslationModelPhase.TIMED_OUT),
+            ),
+        )
+        assertEquals(TrackCardTranslationUiState.Failed, failed.trackCard.translation)
+    }
+
+    @Test
+    fun `Track Card Translation state distinguishes translating model download ready not required and failed`() {
+        val playback = PlaybackSnapshot(
+            track = track(),
+            source = PlaybackSource("com.spotify.music"),
+        )
+        val lyrics = ready(playback, listOf(TimedLyricLine("Original", 0L)))
+        val readyState = translated(lyrics, listOf("Translated" to true)) as TranslationState.Ready
+        val request = readyState.artifact.request
+
+        val translating = mapPhoneLyricsState(
+            playback = playback,
+            lyricsState = lyrics,
+            plainLyricsAutoScrollEnabled = true,
+            interactionMode = LyricsViewportInteractionMode.FOLLOW,
+            currentMonotonicTimeMs = 1_000L,
+            translationState = TranslationState.Translating(request),
+            translationSettings = enabledTranslation,
+        )
+        assertEquals(TrackCardTranslationUiState.Translating, translating.trackCard.translation)
+
+        val downloading = mapPhoneLyricsState(
+            playback = playback,
+            lyricsState = lyrics,
+            plainLyricsAutoScrollEnabled = true,
+            interactionMode = LyricsViewportInteractionMode.FOLLOW,
+            currentMonotonicTimeMs = 1_000L,
+            translationState = TranslationState.Translating(request),
+            translationSettings = enabledTranslation,
+            translationModelStates = mapOf(
+                "ja" to TranslationModelState("ja", TranslationModelPhase.DOWNLOADING),
+            ),
+        )
+        assertEquals(
+            TrackCardTranslationUiState.DownloadingModels,
+            downloading.trackCard.translation,
+        )
+
+        val ready = mapPhoneLyricsState(
+            playback = playback,
+            lyricsState = lyrics,
+            plainLyricsAutoScrollEnabled = true,
+            interactionMode = LyricsViewportInteractionMode.FOLLOW,
+            currentMonotonicTimeMs = 1_000L,
+            translationState = readyState,
+            translationSettings = enabledTranslation,
+        )
+        assertEquals(
+            TrackCardTranslationUiState.Ready("JA", "EN"),
+            ready.trackCard.translation,
+        )
+
+        val profile = readyState.artifact.profile
+        val notRequired = mapPhoneLyricsState(
+            playback = playback,
+            lyricsState = lyrics,
+            plainLyricsAutoScrollEnabled = true,
+            interactionMode = LyricsViewportInteractionMode.FOLLOW,
+            currentMonotonicTimeMs = 1_000L,
+            translationState = TranslationState.NotRequired(request, profile),
+            translationSettings = enabledTranslation,
+        )
+        assertEquals(
+            TrackCardTranslationUiState.NotRequired,
+            notRequired.trackCard.translation,
+        )
+
+        val failed = mapPhoneLyricsState(
+            playback = playback,
+            lyricsState = lyrics,
+            plainLyricsAutoScrollEnabled = true,
+            interactionMode = LyricsViewportInteractionMode.FOLLOW,
+            currentMonotonicTimeMs = 1_000L,
+            translationState = TranslationState.Failed(request),
+            translationSettings = enabledTranslation,
+        )
+        assertEquals(TrackCardTranslationUiState.Failed, failed.trackCard.translation)
     }
 
     @Test
@@ -346,7 +497,7 @@ class PhoneLyricsMapperTest {
                 targetLanguage = "en",
             ),
             providerId = TranslationProviderId("mlkit"),
-            profile = LanguageProfile(null, null, SecondaryActivation.NONE, emptyList()),
+            profile = LanguageProfile("ja", null, SecondaryActivation.NONE, emptyList()),
             lines = lines.mapIndexed { index, (text, isTranslated) ->
                 TranslationArtifactLine(index, text, "ja", isTranslated)
             },

@@ -167,6 +167,7 @@ internal fun PhoneRuntimeHost(
         lyricsState = lyricsState,
         translationState = translationState,
         translationSettings = translationSettings,
+        translationModelStates = translationModelStates,
         plainLyricsAutoScrollEnabled = plainLyricsAutoScrollEnabled,
         interactionMode = lyricsInteractionMode,
         currentMonotonicTimeMs = monotonicTimeMs,

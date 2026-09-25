@@ -5,14 +5,20 @@ import io.github.whoxamxl.aalyrics.core.model.LyricsDocument
 import io.github.whoxamxl.aalyrics.core.model.LyricsSyncType
 import io.github.whoxamxl.aalyrics.core.model.PlaybackSnapshot
 import io.github.whoxamxl.aalyrics.core.model.TimedLyricLine
+import io.github.whoxamxl.aalyrics.translation.api.TranslationLanguages
+import io.github.whoxamxl.aalyrics.translation.api.TranslationModelPhase
+import io.github.whoxamxl.aalyrics.translation.api.TranslationModelState
 import io.github.whoxamxl.aalyrics.translation.api.TranslationSettings
+import io.github.whoxamxl.aalyrics.translation.core.CanonicalLyricsIdentity
 import io.github.whoxamxl.aalyrics.translation.core.TranslationState
 import io.github.whoxamxl.aalyrics.ui.phone.lyrics.LyricsScreenUiState
 import io.github.whoxamxl.aalyrics.ui.phone.lyrics.LyricsViewportInteractionMode
 import io.github.whoxamxl.aalyrics.ui.phone.lyrics.LyricsViewportLineUiState
 import io.github.whoxamxl.aalyrics.ui.phone.lyrics.LyricsViewportUiState
 import io.github.whoxamxl.aalyrics.ui.phone.lyrics.TrackCardLyricsStatus
+import io.github.whoxamxl.aalyrics.ui.phone.lyrics.TrackCardTranslationUiState
 import io.github.whoxamxl.aalyrics.ui.phone.lyrics.TrackCardUiState
+import java.util.Locale
 import kotlin.math.roundToLong
 
 internal fun mapPhoneLyricsState(
@@ -23,6 +29,7 @@ internal fun mapPhoneLyricsState(
     currentMonotonicTimeMs: Long,
     translationState: TranslationState = TranslationState.Idle,
     translationSettings: TranslationSettings = TranslationSettings(enabled = false),
+    translationModelStates: Map<String, TranslationModelState> = emptyMap(),
 ): LyricsScreenUiState {
     val track = playback.track
     val matchingLyricsState = lyricsState
@@ -35,15 +42,27 @@ internal fun mapPhoneLyricsState(
         is LyricsState.Degraded -> matchingLyricsState.lyrics
         else -> null
     }
+    val currentCanonicalIdentity = matchingLyricsState
+        ?.canonicalLyricsOrNull()
+        ?.identity
+    val normalizedTargetLanguage =
+        TranslationLanguages.normalizeTargetLanguage(translationSettings.targetLanguage)
     val translatedLines = (translationState as? TranslationState.Ready)
         ?.artifact
         ?.takeIf { artifact ->
             translationSettings.enabled &&
-                artifact.request.targetLanguage == translationSettings.targetLanguage &&
-                artifact.request.canonicalLyrics == matchingLyricsState?.canonicalLyricsOrNull()?.identity &&
+                artifact.request.targetLanguage == normalizedTargetLanguage &&
+                artifact.request.canonicalLyrics == currentCanonicalIdentity &&
                 artifact.lines.size == document?.lines?.size
         }
         ?.lines
+    val trackCardTranslationState = mapTrackCardTranslationState(
+        settings = translationSettings,
+        state = translationState,
+        modelStates = translationModelStates,
+        currentCanonicalIdentity = currentCanonicalIdentity,
+        fallbackSourceLanguage = document?.languageTag,
+    )
     val positionMs = projectedPlaybackPosition(playback, currentMonotonicTimeMs)
     val sourceSyncType = document?.syncType ?: LyricsSyncType.PLAIN
     val displaySyncType = if (sourceSyncType == LyricsSyncType.WORD) {
@@ -69,6 +88,7 @@ internal fun mapPhoneLyricsState(
                 is LyricsState.Failed -> TrackCardLyricsStatus.FAILED
                 else -> TrackCardLyricsStatus.IDLE
             },
+            translation = trackCardTranslationState,
         ),
         viewport = LyricsViewportUiState(
             lines = document
@@ -98,6 +118,117 @@ internal fun mapPhoneLyricsState(
         ),
     )
 }
+
+private fun mapTrackCardTranslationState(
+    settings: TranslationSettings,
+    state: TranslationState,
+    modelStates: Map<String, TranslationModelState>,
+    currentCanonicalIdentity: CanonicalLyricsIdentity?,
+    fallbackSourceLanguage: String?,
+): TrackCardTranslationUiState {
+    if (!settings.enabled) return TrackCardTranslationUiState.Off
+
+    val targetLanguage = TranslationLanguages.normalizeTargetLanguage(settings.targetLanguage)
+    val targetModelPhase = modelStates[targetLanguage]?.phase
+
+    fun requestMatches(
+        requestCanonicalLyrics: CanonicalLyricsIdentity,
+        requestTargetLanguage: String,
+    ): Boolean =
+        requestCanonicalLyrics == currentCanonicalIdentity &&
+            requestTargetLanguage == targetLanguage
+
+    fun modelPreparationActive(): Boolean =
+        modelStates.values.any { model ->
+            model.phase == TranslationModelPhase.DOWNLOADING ||
+                model.phase == TranslationModelPhase.WAITING_FOR_SYSTEM
+        }
+
+    when (state) {
+        is TranslationState.Ready -> {
+            val artifact = state.artifact
+            if (
+                requestMatches(
+                    artifact.request.canonicalLyrics,
+                    artifact.request.targetLanguage,
+                )
+            ) {
+                val sourceLanguage = artifact.profile.primary
+                    ?: artifact.lines
+                        .firstOrNull { line ->
+                            line.translated && !line.sourceLanguage.isNullOrBlank()
+                        }
+                        ?.sourceLanguage
+                    ?: fallbackSourceLanguage
+                return TrackCardTranslationUiState.Ready(
+                    sourceLanguageLabel = shortLanguageLabel(sourceLanguage),
+                    targetLanguageLabel = shortLanguageLabel(artifact.request.targetLanguage),
+                )
+            }
+        }
+
+        is TranslationState.NotRequired -> {
+            if (
+                requestMatches(
+                    state.request.canonicalLyrics,
+                    state.request.targetLanguage,
+                )
+            ) {
+                return TrackCardTranslationUiState.NotRequired
+            }
+        }
+
+        is TranslationState.Translating -> {
+            if (
+                requestMatches(
+                    state.request.canonicalLyrics,
+                    state.request.targetLanguage,
+                )
+            ) {
+                return if (modelPreparationActive()) {
+                    TrackCardTranslationUiState.DownloadingModels
+                } else {
+                    TrackCardTranslationUiState.Translating
+                }
+            }
+        }
+
+        is TranslationState.Failed -> {
+            if (
+                requestMatches(
+                    state.request.canonicalLyrics,
+                    state.request.targetLanguage,
+                )
+            ) {
+                return if (modelPreparationActive()) {
+                    TrackCardTranslationUiState.DownloadingModels
+                } else {
+                    TrackCardTranslationUiState.Failed
+                }
+            }
+        }
+
+        TranslationState.Disabled,
+        TranslationState.Idle -> Unit
+    }
+
+    return when (targetModelPhase) {
+        TranslationModelPhase.DOWNLOADING,
+        TranslationModelPhase.WAITING_FOR_SYSTEM -> TrackCardTranslationUiState.DownloadingModels
+
+        TranslationModelPhase.FAILED,
+        TranslationModelPhase.TIMED_OUT -> TrackCardTranslationUiState.Failed
+
+        TranslationModelPhase.CHECKING,
+        TranslationModelPhase.READY,
+        null -> TrackCardTranslationUiState.On
+    }
+}
+
+private fun shortLanguageLabel(languageTag: String?): String =
+    TranslationLanguages.normalizeLanguageTag(languageTag)
+        ?.uppercase(Locale.US)
+        ?: "AUTO"
 
 internal fun projectedPlaybackPosition(
     playback: PlaybackSnapshot,
