@@ -107,6 +107,17 @@ When ownership changes, the runtime:
 
 Normal callback churn relies on the existing `PlaybackLyricsController` identity rules: position, status, rate, and duration changes alone do not start a new lyrics lookup, while a real track-identity change does.
 
+## Playback position clock
+
+`MediaControllerSnapshotAdapter` preserves two monotonic anchors for playback position:
+
+- `PlaybackState.lastPositionUpdateTime` becomes `PlaybackSnapshot.positionUpdatedAtMonotonicMs` when the source supplies a valid timestamp. This is authoritative.
+- AALyrics also records `SystemClock.elapsedRealtime()` as `PlaybackSnapshot.positionSampledAtMonotonicMs` at the moment the controller snapshot is sampled.
+
+The local sample timestamp is a fallback only for media sessions that publish a position without a usable `lastPositionUpdateTime`. It stays attached to the immutable snapshot as it crosses the application boundary, so opening/recreating the Phone UI later cannot reinterpret an old `positionMs` value as newly sampled.
+
+Phone presentation projects playing position from the source timestamp when present, otherwise from the stable local sample timestamp. The fallback clock is presentation-independent: LINE/WORD timing and PLAIN playback progress do not create separate anchors, and Karaoke enablement does not affect playback-time projection.
+
 ## Metadata stabilization
 
 The runtime retains the working fork's 600 ms delay for track-changing metadata because some media apps publish transient/intermediate metadata while changing tracks. The delay is owned by `SelectedMediaSessionRuntime` in `:platform:media`; playback status and position continue to update immediately against the last stable track identity.

@@ -33,7 +33,7 @@ source sync type == WORD
 
 LINE_SYNC and PLAIN must never synthesize Karaoke display.
 
-Karaoke enablement is presentation-only. For a given playback sample/time, toggling Karaoke ON/OFF must not change the Phone projected playback position, EffectiveLyricsPosition, active line, or underlying timing projection. A missing MediaSession source timestamp may use a Phone receipt-time projection anchor for WORD_SYNC, but that anchor is independent of Karaoke enablement and must remain stable across unrelated metadata-only snapshot updates.
+Karaoke enablement is presentation-only. For a given playback sample/time, toggling Karaoke ON/OFF must not change the Phone projected playback position, EffectiveLyricsPosition, active line, or underlying timing projection. A missing MediaSession source timestamp uses the AALyrics-side monotonic time captured when the platform snapshot is sampled. This fallback playback clock is shared by timed Phone presentation regardless of LINE/WORD sync type or Karaoke enablement, and Activity/Compose recreation must never create a new anchor for an old snapshot.
 
 ## Product state contract
 
@@ -145,7 +145,7 @@ Do not:
 - LINE_SYNC and PLAIN remain unchanged even when toggles are ON.
 - Current line selection still comes only from `:core:timing`.
 - Karaoke ON/OFF does not change the lyrics clock or projected playback position.
-- Missing source-timestamp fallback projection is WORD_SYNC-specific, toggle-independent, and does not reset for unrelated metadata-only updates.
+- Missing source-timestamp fallback projection uses the stable AALyrics snapshot sample time, is shared by LINE/WORD Phone timing, is Karaoke-toggle-independent, and does not reset when the Phone UI is recreated.
 - Phone uses continuous sweep, not Performance-mode pulse.
 - Karaoke boundary states do not flash back to normal all-primary current-line styling: BEFORE_FIRST stays pending, GAP preserves only the completed prefix, and AFTER_LAST stays completed.
 - fragmented timing tokens mapping to one visible word produce one continuous visible-word sweep, not repeated resets;
@@ -154,6 +154,14 @@ Do not:
 - Canonical line text and Translation remain intact.
 - Reset AALyrics restores both Karaoke settings to OFF.
 - Android Auto production code is unchanged.
+
+## Playback clock correction
+
+- `PlaybackSnapshot.positionSampledAtMonotonicMs` records the AALyrics-side monotonic time when `MediaControllerSnapshotAdapter` samples the platform snapshot.
+- `positionUpdatedAtMonotonicMs` from the source remains authoritative whenever available.
+- Phone playback projection falls back to `positionSampledAtMonotonicMs` only when the source timestamp is unavailable.
+- The fallback is no longer created by Compose and is no longer WORD-only; LINE and WORD presentation share the same playback clock, while PLAIN playback progress also benefits from the same projection.
+- This changes playback-clock anchoring only. `:core:timing` line/word/boundary semantics remain unchanged.
 
 ## Validation record
 
