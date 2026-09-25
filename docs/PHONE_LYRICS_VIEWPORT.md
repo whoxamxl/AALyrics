@@ -379,8 +379,14 @@ Rules:
 
 - preserve the canonical source line as the rendered text;
 - token-to-character mapping is supplied as presentation-ready state;
+- consecutive timing tokens mapped to the same visible range are presented as one display group and sweep that visible word only once;
 - the viewport does not inspect `TimedWord` or timing-engine types directly;
-- sweep progress comes from the shared timing projection;
-- if the active token cannot be mapped safely or progress is unavailable, fall back to normal current-line styling;
+- the viewport does not choose the active word or calculate word boundaries;
+- ordinary one-token groups consume shared semantic `wordProgress` directly;
+- multi-token display groups consume presentation-ready group progress produced by the mapper from the already-authoritative active token plus the canonical group timing interval;
+- if the active token cannot be mapped safely, the mapping is not credible, or progress has no defensible end, fall back to normal current-line styling;
+- do not copy the working fork's arbitrary final-group 650ms fallback into this slice;
 - translated text remains secondary and receives no independent word progress;
 - LINE_SYNC never receives synthetic Karaoke rendering.
+
+The mature working-fork `LyricWordLayout` and `PhoneKaraokeSweep` grouping behavior are implementation references to preserve/refactor. The Compose renderer should reuse their proven mapping/grouping behavior where compatible rather than inventing a new algorithm, while leaving timing selection in the shared Timing Semantic Engine.

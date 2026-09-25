@@ -32,12 +32,14 @@ The working fork contains:
 - `util/LyricWordLayout.kt`
 - `ui/KaraokeSweepSpan.kt`
 
-Migration classification:
+Migration classification for the active Phone slice:
 
-- active-word boundary semantics from `KaraokeTiming` — **PRESERVE / REFACTOR** into the shared Timing Semantic Engine;
-- lexical/display-range logic from `LyricWordLayout` — **PRESERVE / REFACTOR later** only if required by a concrete Karaoke renderer;
-- Android `KaraokeSweepSpan` rendering — **REWRITE / REFACTOR later** for the target surface;
-- arbitrary visual fallback durations — rendering policy only; do not move them into shared timing semantics.
+- active-word boundary semantics from `KaraokeTiming` — already **PRESERVED / REFACTORED** into the shared Timing Semantic Engine; do not migrate this timing owner again;
+- lexical/display-range logic from `LyricWordLayout` — **PRESERVE / REFACTOR now** into the smallest Phone presentation/display-mapping seam;
+- same-visible-range grouping from `PhoneKaraokeSweep` in `ui/KaraokeSweepSpan.kt` — **PRESERVE / REFACTOR now** as display-group policy downstream of the shared active-word decision;
+- `KaraokeSweepSpan` drawing behavior — preserve the useful continuous left-to-right sweep idea, but **REWRITE for Compose** rather than transplanting Android `ReplacementSpan`;
+- working-fork layout/grouping tests — **PRESERVE / ADAPT** wherever their behavior is still part of the approved AALyrics contract;
+- the working fork's arbitrary final-group `650ms` fallback — **DO NOT MIGRATE in this slice**. When no defensible display-group end exists, AALyrics falls back to normal current-line styling rather than fabricating progress.
 
 ## Ownership model
 
@@ -212,18 +214,47 @@ Examples of rendering-only decisions:
 
 Timed provider tokens and visible lexical units are not necessarily identical.
 
-The working fork's `LyricWordLayout` contains useful evidence for:
+The working fork's `LyricWordLayout` is the mature implementation reference for:
 
-- preserving source text;
+- preserving canonical source text;
+- reconstructing provider separators without inventing spaces;
 - aligning provider timing tokens to visible lexical ranges;
-- grouping character/syllable timing into readable display units;
-- conservative fallback when provider tokens do not align credibly.
+- case-insensitive and Unicode-normalized sequential alignment;
+- repeated-word/order-safe alignment;
+- grouping character/syllable fragments into readable display units;
+- Japanese lexical/display grouping;
+- conservative credibility checks and fallback when provider tokens do not align sufficiently.
 
-Those are **display mapping** semantics, not playback timing semantics.
+For the active Phone Karaoke slice, these behaviors should be **preserved/refactored rather than independently reinvented**. Relevant working-fork tests should be adapted before adding new behavior.
 
-Therefore they must not enter `:core:timing` during the Timing Semantic Engine slice.
+Those are **display mapping** semantics, not playback timing semantics. They must stay downstream of `:core:timing`, and canonical `TimedWord` timestamps must remain immutable.
 
-If/when Karaoke rendering is authorized, introduce the smallest framework-neutral display-mapping responsibility justified by the renderer. Do not mutate canonical `TimedWord` timestamps to make layout easier.
+### Same-visible-range token grouping
+
+One visible word may correspond to multiple consecutive timing tokens.
+
+Example:
+
+```text
+canonical text:  Provider timing works
+timing tokens:   Pro | vi | der | timing | works
+visible ranges:  └──── Provider ────┘
+```
+
+AALyrics must not restart a full visible-word sweep for `Pro`, then `vi`, then `der`.
+
+Instead:
+
+1. `LyricsTimingProjection.activeWordIndex` remains the authority for which timing token is semantically active;
+2. presentation mapping resolves that token to its visible character range;
+3. consecutive tokens that map to that same visible range form one **display group**;
+4. that visible range sweeps once from the first grouped token's start to the group's defensible end;
+5. the group end may use the final grouped token's explicit end, or the next token start when that provides the natural end;
+6. if the display group has no defensible end, do not invent one; render the normal current-line style.
+
+This display-group interval exists only to render one readable lexical unit smoothly. It must not select a different active token, alter `wordBoundary`, rewrite source timestamps, or become a second Timing Semantic Engine.
+
+For the common one-token/one-visible-word case, the display group is that token itself and the shared semantic `wordProgress` is the sweep progress directly.
 
 ## Rendering boundary
 
@@ -277,19 +308,17 @@ Karaoke timing:
 
 If translated text is displayed alongside Karaoke later, presentation must attach it to the canonical semantic line/segment identity without changing the shared timing result.
 
-## Current behaviour preservation
+## 11.4a baseline preserved by the Phone slice
 
-The Timing Semantic Engine slice must not change current user-visible Karaoke behaviour because Karaoke remains disabled/unwired.
+The merged Timing Semantic Engine established a behavior-preserving baseline before Karaoke presentation was authorized.
 
-During that slice:
+The active Phone slice must preserve the same non-Karaoke behavior whenever its feature gate or live mode is OFF:
 
-- current Phone LINE_SYNC presentation stays unchanged;
-- current Phone WORD_SYNC remains line-oriented;
-- no word sweep/highlight becomes visible;
-- current Karaoke setting/affordance remains disabled/unwired;
-- Android Auto Karaoke remains unchanged/unimplemented.
-
-Computing semantic WORD facts internally is not itself a user-visible feature.
+- Phone LINE_SYNC stays unchanged and never synthesizes Karaoke;
+- Phone WORD_SYNC remains the existing line-oriented presentation unless effective Phone Karaoke is active;
+- PLAIN stays unchanged;
+- Android Auto remains unchanged/unimplemented for Karaoke;
+- computing semantic WORD facts does not itself imply visible Karaoke.
 
 ## Deferred Karaoke decisions
 
@@ -374,13 +403,18 @@ The application mapper may consume `LyricsTimingProjection` and canonical `Timed
 Stable rules:
 
 - preserve canonical line text;
-- align provider timing tokens conservatively to ranges in that canonical text;
+- preserve/refactor the working fork's `LyricWordLayout` behavior instead of generating a new token-layout algorithm without evidence;
+- align provider timing tokens conservatively to ranges in canonical text;
+- group consecutive timing tokens that resolve to the same visible range so that readable words such as `Provider` sweep once rather than restarting for `Pro` / `vi` / `der`;
+- keep `LyricsTimingProjection.activeWordIndex` as the semantic active-token authority;
+- for a one-token display group, use shared `wordProgress` directly;
+- for a multi-token display group, derive only presentation-ready group sweep progress from the active semantic token plus the canonical grouped timing interval; this must not change active-word/boundary semantics;
 - do not rewrite `TimedWord` timestamps;
-- if token-to-text alignment is not credible, render the normal current line rather than invent a Karaoke range;
-- expose WORD timing facts only when effective Phone Karaoke is active;
+- if token-to-text alignment is not credible, or a required display-group end is not defensible, render the normal current line rather than invent a Karaoke range/progress;
+- expose Karaoke presentation facts only while effective Phone Karaoke is active;
 - when Karaoke is disabled, WORD source keeps the existing line-oriented Phone behaviour.
 
-Display mapping is presentation policy, not a second timing engine.
+Display mapping and display-group progress are presentation policy, not a second timing engine.
 
 ### 11.4c — Phone continuous sweep
 
@@ -394,7 +428,7 @@ For the current line only:
 - semantic GAP / BEFORE_FIRST / unavailable-progress states may fall back to normal current-line styling rather than fabricate timing;
 - no arbitrary synthetic LINE_SYNC progress is permitted.
 
-A continuous sweep may use a presentation-only gradient/clip implementation. It must consume `wordProgress`; it must not calculate current-word timing itself.
+A continuous sweep may use a presentation-only gradient/clip implementation. The renderer consumes presentation-ready range/progress and must never calculate the active word itself. For ordinary one-token groups that progress is the shared `wordProgress`; multi-token visible groups may receive mapper-derived display-group progress as defined above.
 
 ### 11.4d — Android Auto Karaoke — documented, deferred
 

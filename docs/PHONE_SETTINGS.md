@@ -14,7 +14,7 @@ PR #60 integrated the lower Settings information architecture into `main`: `APP`
 
 Settings should expose stable user configuration without turning the Phone UI into an owner of application state.
 
-The production Settings surface remains intentionally focused. Lyrics owns the user-facing playback-source eligibility toggle alongside Plain auto-scroll. Advanced contains the narrow unclassified-source override, one debug presentation preference, one explicitly unavailable experimental affordance, one Translation storage-management action, and one app-owned reset action. It does not become a general developer-settings surface. Changelog, Privacy Policy, Terms of Use, and License are read-only bundled-document surfaces and do not create networking ownership; License includes the bundled third-party license notices inline as its third section. `Help & Feedback` is a native routing hub for end-user help and feedback destinations. `Support AALyrics` remains a separate voluntary project-support surface; payment interaction remains entirely outside AALyrics.
+The production Settings surface remains intentionally focused. Lyrics owns the user-facing playback-source eligibility toggle alongside Plain auto-scroll. Advanced contains the narrow unclassified-source override, one debug presentation preference, the persisted experimental Karaoke feature gate, one Translation storage-management action, and one app-owned reset action. It does not become a general developer-settings surface. Changelog, Privacy Policy, Terms of Use, and License are read-only bundled-document surfaces and do not create networking ownership; License includes the bundled third-party license notices inline as its third section. `Help & Feedback` is a native routing hub for end-user help and feedback destinations. `Support AALyrics` remains a separate voluntary project-support surface; payment interaction remains entirely outside AALyrics.
 
 Settings subscreens use the shared `SettingsSubscreenHeader` rather than implementing their own header. The standard back affordance is the Material rounded chevron-left used by the current Advanced screen: 32dp icon inside a 48dp touch target, followed by the screen title. This intentionally mirrors the chevron-right affordance used to enter `Advanced`. Text-only `Back` actions and alternate arrow shapes are not used for normal Settings hierarchy navigation. Legal content remains at one Settings depth: License renders its required notice, AALyrics license terms, and third-party licenses inline on one scrollable screen.
 
@@ -80,7 +80,7 @@ Advanced
 ├─ Debug
 │  └─ Verbose details                  [switch]
 ├─ Experimental features
-│  └─ Karaoke mode             [OFF, unavailable]
+│  └─ Karaoke mode                   [switch]  ⓘ
 ├─ Storage
 │  └─ Clear translation models        ⓘ  Clear
 └─ Reset
@@ -92,7 +92,7 @@ AALyrics
 Version: vX.X.X
 © <current year> Yuta Miura (whoxamxl)
 ```
-Provider preferences, appearance/theme selection, log export, and other future taxonomy remain out of scope. The approved Advanced surface remains narrow: Playback source owns only the unclassified-app escape hatch, Verbose Details controls read-only diagnostic presentation, Karaoke mode remains visible but unavailable and unwired, Storage owns explicit Translation-model cleanup, and Reset restores only AALyrics-owned state.
+Provider preferences, appearance/theme selection, log export, and other future taxonomy remain out of scope. The approved Advanced surface remains narrow: Playback source owns only the unclassified-app escape hatch, Verbose Details controls read-only diagnostic presentation, Karaoke mode is the persisted experimental feature-availability gate, Storage owns explicit Translation-model cleanup, and Reset restores only AALyrics-owned state.
 
 ## Destination composition
 
@@ -1081,7 +1081,7 @@ Deterministic debug Previews should cover at least:
 - Lyrics source filtering with Ignore non-audio apps ON (default) and OFF;
 - Advanced screen with Verbose details OFF and ON;
 - Advanced Playback source with Allow unclassified apps OFF (default), ON, and primary-filter-disabled presentation;
-- disabled Karaoke mode row;
+- Karaoke experimental feature gate OFF and ON;
 - Advanced Storage and Reset rows;
 - Clear translation models confirmation;
 - Clear translation models failure/retry;
@@ -1090,7 +1090,7 @@ Deterministic debug Previews should cover at least:
 
 ## Runtime wiring boundary
 
-The production Settings slice now includes the Advanced presentation contract. PR #49 keeps Verbose Details persistence application-owned and leaves Karaoke mode intentionally disabled and unwired.
+The production Settings slice includes the Advanced presentation contract. PR #49 originally introduced Karaoke as a disabled placeholder; the active Phone Karaoke slice supersedes that placeholder by making the row an application-owned persisted experimental feature gate.
 
 PR #50 implements the Phone runtime-host application-composition boundary from `docs/PHONE_RUNTIME_HOST.md`, making Settings reachable on-device. It maps existing application/capability state into `SettingsScreenUiState` and exposes existing application-owned actions through callbacks, including:
 
@@ -1119,7 +1119,7 @@ The first Settings slice does not define or implement:
 - Translation Provider selection UI;
 - Android Auto runtime/projection settings;
 - Sync/calibration settings;
-- functional Karaoke mode or any Karaoke runtime wiring;
+- Android Auto Karaoke runtime wiring (Phone Karaoke is authorized separately by Phase 11.4b/11.4c);
 - embedded donation/payment WebViews, in-app payment handling, or undocumented Buy Me a Coffee prefill behavior;
 - additional developer/experimental controls beyond the approved Advanced contract, including playback-source overrides other than `Allow unclassified apps`.
 

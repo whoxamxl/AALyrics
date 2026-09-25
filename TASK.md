@@ -53,13 +53,32 @@ Reset AALyrics resets both to OFF.
 
 ## 11.4b — Presentation mapping
 
+Use the mature working-fork implementation as migration evidence rather than generating a new layout algorithm without need.
+
+Reference revision:
+
+- repository: `whoxamxl/auto-lyrics`;
+- commit: `8484bed2dbe8db5ca7b17dec5481b3c22714dc6f`;
+- preserve/refactor: `util/LyricWordLayout.kt`;
+- preserve/refactor display grouping: `PhoneKaraokeSweep` in `ui/KaraokeSweepSpan.kt`;
+- adapt relevant `LyricWordLayoutTest` and `PhoneKaraokeSweepTest` coverage;
+- do **not** migrate `KaraokeTiming.kt` because `:core:timing` is already the timing authority;
+- do **not** migrate the final 650ms fallback.
+
+Mapping requirements:
+
 - consume the already-computed `LyricsTimingProjection`;
 - preserve canonical line text;
 - map timed provider token text conservatively to character ranges in canonical text;
-- do not recalculate active word/current line timing;
+- preserve the working fork's proven sequential/case-insensitive/Unicode-normalized alignment and credibility fallback where compatible;
+- when consecutive timing tokens map to one visible lexical range, form one display group so the visible word sweeps once instead of restarting for every fragment;
+- `activeWordIndex` remains authoritative from `:core:timing`;
+- for one-token groups, use shared `wordProgress` directly;
+- for multi-token groups, presentation mapping may derive only the visible-group sweep progress from the active semantic token plus the canonical group timing interval;
+- do not recalculate current line, choose a different active word, or reinterpret `wordBoundary`;
 - do not mutate canonical timestamps;
-- expose word range/index/progress only while effective Karaoke is active;
-- if mapping fails, fall back to normal current-line presentation;
+- expose presentation-ready range/progress only while effective Karaoke is active;
+- if mapping is not credible or the display group has no defensible end, fall back to normal current-line presentation;
 - keep Translation text outside word sweep.
 
 ## 11.4c — Phone rendering
@@ -76,6 +95,8 @@ For the current WORD_SYNC line:
 - no Performance-mode pulse/fullscreen renderer is introduced.
 
 When there is no safely mappable active token or no defensible progress, render normal current-line styling rather than invent timing.
+
+The Compose renderer should preserve the useful continuous-sweep behavior from the working fork but must not transplant `ReplacementSpan` architecture. It receives presentation-ready range/progress and never selects the active word itself.
 
 A smoother presentation cadence may be used while the live Karaoke toggle is enabled; this is presentation cadence, not timing semantics.
 
@@ -98,7 +119,7 @@ Do not:
 
 ## Implementation checkpoints
 
-1. [ ] docs: align Phone Karaoke activation/mapping/rendering and defer Android Auto.
+1. [x] docs: align Phone Karaoke activation/mapping/rendering, working-fork reuse policy, and deferred Android Auto.
 2. [ ] settings: persist Experimental feature gate + live Karaoke mode; defaults/reset OFF.
 3. [ ] playback: expose Quick-controls Karaoke toggle only behind the feature gate.
 4. [ ] mapping: expose WORD presentation facts and conservative token ranges only when effective Karaoke is active.
@@ -116,6 +137,9 @@ Do not:
 - LINE_SYNC and PLAIN remain unchanged even when toggles are ON.
 - Current line selection still comes only from `:core:timing`.
 - Phone uses continuous sweep, not Performance-mode pulse.
+- fragmented timing tokens mapping to one visible word produce one continuous visible-word sweep, not repeated resets;
+- working-fork layout/grouping behavior is preserved/refactored where compatible rather than reimplemented without evidence;
+- the final arbitrary 650ms visual fallback is not migrated;
 - Canonical line text and Translation remain intact.
 - Reset AALyrics restores both Karaoke settings to OFF.
 - Android Auto production code is unchanged.
