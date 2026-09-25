@@ -126,5 +126,6 @@ class PhonePlaybackSurfaceMapperTest {
         playbackRate = 1.0f,
         source = PlaybackSource(id = "com.example.player"),
         positionUpdatedAtMonotonicMs = 1_000L,
+        positionSampledAtMonotonicMs = 1_250L,
     )
 }

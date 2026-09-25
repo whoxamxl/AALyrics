@@ -62,6 +62,7 @@ data class PlaybackSurfaceUiState(
     val durationMs: Long? = null,
     val playbackRate: Float = 1.0f,
     val positionUpdatedAtMonotonicMs: Long? = null,
+    val positionSampledAtMonotonicMs: Long? = null,
     val canPlay: Boolean = true,
     val canPause: Boolean = true,
     val canSkipPrevious: Boolean = true,
@@ -85,6 +86,9 @@ data class PlaybackSurfaceUiState(
         }
         require(positionUpdatedAtMonotonicMs == null || positionUpdatedAtMonotonicMs >= 0L) {
             "Playback position update time must be null or non-negative"
+        }
+        require(positionSampledAtMonotonicMs == null || positionSampledAtMonotonicMs >= 0L) {
+            "Playback position sample time must be null or non-negative"
         }
     }
 
