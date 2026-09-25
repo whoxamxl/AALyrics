@@ -73,4 +73,52 @@ class PlaybackSurfaceTransformTest {
             ),
         )
     }
+    @Test
+    fun `live playback projection uses receipt fallback when source timestamp is unavailable`() {
+        assertEquals(
+            6_000L,
+            projectedLivePlaybackPositionMs(
+                positionMs = 4_000L,
+                playbackRate = 1f,
+                isPlaying = true,
+                durationMs = 20_000L,
+                currentMonotonicTimeMs = 12_000L,
+                sourceUpdatedAtMonotonicMs = null,
+                fallbackUpdatedAtMonotonicMs = 10_000L,
+            ),
+        )
+    }
+
+    @Test
+    fun `live playback projection keeps source timestamp authoritative`() {
+        assertEquals(
+            6_000L,
+            projectedLivePlaybackPositionMs(
+                positionMs = 4_000L,
+                playbackRate = 1f,
+                isPlaying = true,
+                durationMs = 20_000L,
+                currentMonotonicTimeMs = 12_000L,
+                sourceUpdatedAtMonotonicMs = 10_000L,
+                fallbackUpdatedAtMonotonicMs = 5_000L,
+            ),
+        )
+    }
+
+    @Test
+    fun `paused live playback projection does not drift from receipt fallback`() {
+        assertEquals(
+            4_000L,
+            projectedLivePlaybackPositionMs(
+                positionMs = 4_000L,
+                playbackRate = 1f,
+                isPlaying = false,
+                durationMs = 20_000L,
+                currentMonotonicTimeMs = 12_000L,
+                sourceUpdatedAtMonotonicMs = null,
+                fallbackUpdatedAtMonotonicMs = 10_000L,
+            ),
+        )
+    }
+
 }

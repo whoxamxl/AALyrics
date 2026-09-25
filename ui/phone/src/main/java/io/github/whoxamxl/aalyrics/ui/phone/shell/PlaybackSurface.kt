@@ -287,30 +287,32 @@ private fun rememberLivePlaybackPositionMs(
     state: PlaybackSurfaceUiState,
 ): Long {
     var positionMs by remember { mutableLongStateOf(state.positionMs) }
+    val fallbackUpdatedAtMonotonicMs = remember(
+        state.playbackIdentityKey,
+        state.positionMs,
+        state.playbackRate,
+        state.isPlaying,
+        state.positionUpdatedAtMonotonicMs,
+    ) {
+        SystemClock.elapsedRealtime()
+    }
 
     LaunchedEffect(
+        state.playbackIdentityKey,
         state.positionMs,
         state.playbackRate,
         state.isPlaying,
         state.durationMs,
         state.positionUpdatedAtMonotonicMs,
-        state.title,
-        state.artist,
     ) {
-        val callbackAgeMs = if (
-            state.isPlaying &&
-            state.positionUpdatedAtMonotonicMs != null
-        ) {
-            (SystemClock.elapsedRealtime() - state.positionUpdatedAtMonotonicMs)
-                .coerceAtLeast(0L)
-        } else {
-            0L
-        }
-
-        val initialAdvanceMs = (callbackAgeMs * state.playbackRate).toLong()
-        positionMs = clampPlaybackPosition(
-            positionMs = state.positionMs + initialAdvanceMs,
+        positionMs = projectedLivePlaybackPositionMs(
+            positionMs = state.positionMs,
+            playbackRate = state.playbackRate,
+            isPlaying = state.isPlaying,
             durationMs = state.durationMs,
+            currentMonotonicTimeMs = SystemClock.elapsedRealtime(),
+            sourceUpdatedAtMonotonicMs = state.positionUpdatedAtMonotonicMs,
+            fallbackUpdatedAtMonotonicMs = fallbackUpdatedAtMonotonicMs,
         )
 
         if (!state.isPlaying || state.playbackRate <= 0f) return@LaunchedEffect
@@ -329,6 +331,29 @@ private fun rememberLivePlaybackPositionMs(
     }
 
     return positionMs
+}
+
+internal fun projectedLivePlaybackPositionMs(
+    positionMs: Long,
+    playbackRate: Float,
+    isPlaying: Boolean,
+    durationMs: Long?,
+    currentMonotonicTimeMs: Long,
+    sourceUpdatedAtMonotonicMs: Long?,
+    fallbackUpdatedAtMonotonicMs: Long?,
+): Long {
+    val updatedAtMonotonicMs = sourceUpdatedAtMonotonicMs
+        ?: fallbackUpdatedAtMonotonicMs
+    val callbackAgeMs = if (isPlaying && updatedAtMonotonicMs != null) {
+        (currentMonotonicTimeMs - updatedAtMonotonicMs).coerceAtLeast(0L)
+    } else {
+        0L
+    }
+    val initialAdvanceMs = (callbackAgeMs * playbackRate).toLong()
+    return clampPlaybackPosition(
+        positionMs = positionMs + initialAdvanceMs,
+        durationMs = durationMs,
+    )
 }
 
 private fun clampPlaybackPosition(
