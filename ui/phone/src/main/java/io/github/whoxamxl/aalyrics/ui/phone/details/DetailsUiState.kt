@@ -45,6 +45,7 @@ enum class DetailsTranslationRuntimeFailureUiReason {
 }
 
 enum class DetailsTranslationModelPhaseUiState {
+    UNSUPPORTED,
     NOT_REQUIRED,
     CHECKING,
     DOWNLOADING,
@@ -62,12 +63,18 @@ data class DetailsTranslationModelUiState(
 )
 
 @Immutable
+data class DetailsTranslationSourceModelsUiState(
+    val primary: DetailsTranslationModelUiState,
+    val secondary: DetailsTranslationModelUiState? = null,
+)
+
+@Immutable
 data class DetailsTranslationUiState(
     val sourceLanguageLabel: String? = null,
     val targetLanguageLabel: String,
     val runtimeState: DetailsTranslationRuntimeUiState? = null,
     val runtimeFailureReason: DetailsTranslationRuntimeFailureUiReason? = null,
-    val sourceModel: DetailsTranslationModelUiState? = null,
+    val sourceModel: DetailsTranslationSourceModelsUiState? = null,
     val targetModel: DetailsTranslationModelUiState? = null,
 )
 

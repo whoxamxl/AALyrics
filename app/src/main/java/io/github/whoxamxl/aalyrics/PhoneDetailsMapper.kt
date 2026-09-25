@@ -21,6 +21,7 @@ import io.github.whoxamxl.aalyrics.ui.phone.details.DetailsTrackUiState
 import io.github.whoxamxl.aalyrics.ui.phone.details.DetailsTranslationModelPhaseUiState
 import io.github.whoxamxl.aalyrics.ui.phone.details.DetailsTranslationModelUiState
 import io.github.whoxamxl.aalyrics.ui.phone.details.DetailsTranslationRuntimeFailureUiReason
+import io.github.whoxamxl.aalyrics.ui.phone.details.DetailsTranslationSourceModelsUiState
 import io.github.whoxamxl.aalyrics.ui.phone.details.DetailsTranslationRuntimeUiState
 import io.github.whoxamxl.aalyrics.ui.phone.details.DetailsTranslationUiState
 import io.github.whoxamxl.aalyrics.ui.phone.details.DetailsVerboseProgressUiState
@@ -179,13 +180,6 @@ private fun mapDetailsTranslationState(
         )
     }
 
-    val sourceModelLanguages = buildList {
-        primary?.let { add(it) }
-        activeSecondary?.let { add(it) }
-    }
-        .mapNotNull(TranslationLanguages::normalizeLanguageTag)
-        .distinct()
-
     return DetailsTranslationUiState(
         sourceLanguageLabel = sourceLanguageLabel,
         targetLanguageLabel = TranslationLanguages.displayName(targetLanguage, displayLocale),
@@ -198,16 +192,24 @@ private fun mapDetailsTranslationState(
             canonicalIdentity = canonicalIdentity,
             targetLanguage = targetLanguage,
         ),
-        sourceModel = sourceModelLanguages
-            .takeIf { it.isNotEmpty() }
-            ?.let { languages ->
-                aggregateModelState(
-                    languages = languages,
+        sourceModel = primary?.let { primaryLanguage ->
+            DetailsTranslationSourceModelsUiState(
+                primary = modelUiState(
+                    languageTag = primaryLanguage,
                     translationEnabled = settings.enabled,
                     modelStates = modelStates,
                     modelInventoryReconciled = modelInventoryReconciled,
-                )
-            },
+                ),
+                secondary = activeSecondary?.let { secondaryLanguage ->
+                    modelUiState(
+                        languageTag = secondaryLanguage,
+                        translationEnabled = settings.enabled,
+                        modelStates = modelStates,
+                        modelInventoryReconciled = modelInventoryReconciled,
+                    )
+                },
+            )
+        },
         targetModel = modelUiState(
             languageTag = targetLanguage,
             translationEnabled = settings.enabled,
@@ -297,43 +299,6 @@ private fun TranslationRequestIdentity.matches(
     canonicalLyrics == canonicalIdentity &&
         this.targetLanguage == targetLanguage
 
-private fun aggregateModelState(
-    languages: List<String>,
-    translationEnabled: Boolean,
-    modelStates: Map<String, TranslationModelState>,
-    modelInventoryReconciled: Boolean,
-): DetailsTranslationModelUiState {
-    val perLanguage = languages.map { language ->
-        language to modelUiState(
-            languageTag = language,
-            translationEnabled = translationEnabled,
-            modelStates = modelStates,
-            modelInventoryReconciled = modelInventoryReconciled,
-        )
-    }
-    val aggregatePhase = perLanguage
-        .map { it.second.phase }
-        .maxBy { phase -> modelPhasePriority(phase) }
-    val failureReason = perLanguage
-        .filter { (_, model) ->
-            model.phase == DetailsTranslationModelPhaseUiState.FAILED ||
-                model.phase == DetailsTranslationModelPhaseUiState.TIMED_OUT
-        }
-        .mapNotNull { (language, model) ->
-            model.failureReason?.let { reason ->
-                "${shortLanguageLabel(language)}: $reason"
-            }
-        }
-        .joinToString(separator = "\n")
-        .ifBlank { null }
-
-    return DetailsTranslationModelUiState(
-        languageLabel = languages.joinToString(separator = ", ", transform = ::shortLanguageLabel),
-        phase = aggregatePhase,
-        failureReason = failureReason,
-    )
-}
-
 private fun modelUiState(
     languageTag: String,
     translationEnabled: Boolean,
@@ -342,6 +307,12 @@ private fun modelUiState(
 ): DetailsTranslationModelUiState {
     val normalized = TranslationLanguages.normalizeLanguageTag(languageTag)
         ?: languageTag.lowercase(Locale.US)
+    if (!TranslationLanguages.isModelSupported(normalized)) {
+        return DetailsTranslationModelUiState(
+            languageLabel = shortLanguageLabel(normalized),
+            phase = DetailsTranslationModelPhaseUiState.UNSUPPORTED,
+        )
+    }
     if (normalized == "en") {
         return DetailsTranslationModelUiState(
             languageLabel = shortLanguageLabel(normalized),
@@ -382,18 +353,6 @@ private fun modelUiState(
         phase = phase,
         failureReason = failureReason,
     )
-}
-
-private fun modelPhasePriority(
-    phase: DetailsTranslationModelPhaseUiState,
-): Int = when (phase) {
-    DetailsTranslationModelPhaseUiState.READY -> 0
-    DetailsTranslationModelPhaseUiState.NOT_REQUIRED -> 1
-    DetailsTranslationModelPhaseUiState.CHECKING -> 2
-    DetailsTranslationModelPhaseUiState.DOWNLOADING -> 3
-    DetailsTranslationModelPhaseUiState.WAITING_FOR_SYSTEM -> 4
-    DetailsTranslationModelPhaseUiState.TIMED_OUT -> 5
-    DetailsTranslationModelPhaseUiState.FAILED -> 6
 }
 
 private fun shortLanguageLabel(languageTag: String): String =
