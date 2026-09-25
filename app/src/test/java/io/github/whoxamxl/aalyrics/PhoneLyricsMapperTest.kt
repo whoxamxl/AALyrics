@@ -675,6 +675,49 @@ class PhoneLyricsMapperTest {
     }
 
     @Test
+    fun `Phone Karaoke uses following interlude start for final open ended group`() {
+        val playback = PlaybackSnapshot(
+            track = track(),
+            status = PlaybackStatus.PAUSED,
+            positionMs = 2_000L,
+            source = PlaybackSource("com.spotify.music"),
+        )
+        val lyrics = ready(
+            playback = playback,
+            lines = listOf(
+                TimedLyricLine(
+                    text = "shine",
+                    startMs = 1_000L,
+                    words = listOf(TimedWord("shine", 1_000L)),
+                ),
+                TimedLyricLine(
+                    text = "♪",
+                    startMs = 3_000L,
+                ),
+                TimedLyricLine(
+                    text = "next",
+                    startMs = 5_000L,
+                    words = listOf(TimedWord("next", 5_000L, 5_500L)),
+                ),
+            ),
+        )
+
+        val state = mapPhoneLyricsState(
+            playback = playback,
+            lyricsState = lyrics,
+            plainLyricsAutoScrollEnabled = true,
+            interactionMode = LyricsViewportInteractionMode.FOLLOW,
+            currentMonotonicTimeMs = 10_000L,
+            karaokeFeatureEnabled = true,
+            karaokeModeEnabled = true,
+        )
+
+        assertEquals(0, state.viewport.currentLineIndex)
+        assertEquals(0 to 5, state.viewport.karaokeSweep?.let { it.start to it.end })
+        assertEquals(0.5f, state.viewport.karaokeSweep?.progress)
+    }
+
+    @Test
     fun `lyrics timing offset shifts line selection across canonical boundaries`() {
         val track = track()
         val lyricsLines = listOf(
