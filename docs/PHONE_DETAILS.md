@@ -79,6 +79,27 @@ Initial fields:
 
 Normal Details must not expose `providerId` or `sourceId` merely because they exist in the domain model.
 
+### Translation section
+
+When Translation metadata is available, Normal Details adds a dedicated `TRANSLATION` section below `LYRICS` rather than mixing profiler/runtime facts into canonical Lyrics metadata.
+
+Conceptually:
+
+```text
+TRANSLATION
+Source language          English (Spanish)
+Target language          Japanese
+```
+
+Rules:
+
+- `Source language` comes from the Translation language profile, not from `LyricsDocument.languageTag`;
+- show the Primary language as the main value;
+- when an active Secondary language exists, append it in parentheses, for example `English (Spanish)`;
+- omit the Secondary suffix when no Secondary language is present;
+- `Target language` is the current normalized Translation target rendered as a user-facing language name;
+- do not expose request IDs, provider IDs, model IDs, or other machine-facing Translation internals in Normal Details.
+
 WORD is a valid source sync type even while the Phone experience remains line-oriented by default. Displaying `Word synced` in Details does not enable Karaoke mode or change rendering behavior.
 
 ## Verbose Details
@@ -109,6 +130,67 @@ Suitable first fields include:
 - normalized track references such as `namespace:value`, when available.
 
 These values are useful for reproducing provider and identity issues but are not primary user-facing metadata.
+
+When Verbose Details is enabled, the existing `TRANSLATION` section gains only the compact runtime diagnostics needed to understand the current Translation state:
+
+```text
+TRANSLATION
+Source language          English (Spanish)
+Target language          Japanese
+Runtime state            Ready
+Source model (EN)        Ready
+Target model (JA)        Ready
+```
+
+The Translation runtime row uses the stable presentation states:
+
+- `Disabled`;
+- `Idle`;
+- `Translating`;
+- `Not required`;
+- `Ready`;
+- `Failed`.
+
+The source/target model rows use:
+
+- `Not required`;
+- `Checking`;
+- `Downloading`;
+- `Waiting for system`;
+- `Ready`;
+- `Failed`;
+- `Timed out`.
+
+Model-state semantics are availability-oriented:
+
+- a built-in model or an already-present downloaded model is `Ready`, even when Translation is currently OFF;
+- `Not required` is used only when Translation is OFF, the relevant model is not present, and AALyrics therefore has no current reason to prepare it;
+- when Translation is ON, a missing required model should move through the active preparation states rather than being labeled `Not required`.
+
+Do not expand Verbose Details into a dump of Translation request IDs, provider IDs, profiler internals, or per-model implementation data. The goal is to answer "what is Translation doing, and which model is blocking it?" in a few rows.
+
+### Failure reason tooltip standard
+
+Details uses one consistent rule for failure states: **a displayed failure state must expose its authoritative reason through the standard info-tooltip affordance**.
+
+This applies to Translation runtime/model rows and to future Details status/diagnostic rows added elsewhere.
+
+Examples:
+
+```text
+Runtime state            Failed ⓘ
+Source model (JA)        Failed ⓘ
+Target model (EN)        Ready
+```
+
+Rules:
+
+- `Failed` and `Timed out` values must show the shared semantic info icon when an authoritative failure reason exists;
+- the tooltip contains the concrete framework-neutral reason/detail supplied by the owning runtime;
+- do not inline long exception/error text into the Details row;
+- do not invent a reason in `:ui:phone`;
+- if a Details feature wants to expose a failure state but the owning runtime does not provide a reason, treat that as a missing diagnostic contract to resolve during implementation rather than silently adding an unexplained failure row;
+- future additions to Details must re-check this rule whenever they introduce a new failure-capable status.
 
 ### Diagnostic boundary
 
@@ -180,6 +262,15 @@ DetailsScreenUiState
 │  ├─ syncTypeLabel
 │  ├─ languageLabel
 │  └─ lineCount
+├─ translation
+│  ├─ sourceLanguageLabel
+│  ├─ targetLanguageLabel
+│  ├─ runtimeState (verbose only)
+│  ├─ runtimeFailureReason (verbose failure only)
+│  ├─ sourceModelState (verbose only)
+│  ├─ sourceModelFailureReason (verbose failure only)
+│  ├─ targetModelState (verbose only)
+│  └─ targetModelFailureReason (verbose failure only)
 ├─ verboseDetailsEnabled
 └─ diagnostics
    ├─ appPackageName

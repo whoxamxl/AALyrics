@@ -215,7 +215,13 @@ Use small, reviewable commits and keep each checkpoint independently coherent.
    - [x] wire the semantic Retry callback through `:app`;
    - [x] add focused mapper/runtime coverage.
 
-7. [ ] **Validation before PR readiness**
+7. [ ] **Details Translation diagnostics follow-up**
+   - [x] define Normal Details `TRANSLATION` section: Source language + Target language;
+   - [x] define compact Verbose runtime/model diagnostics and model-state semantics;
+   - [x] standardize Details failure-state reason tooltips;
+   - [ ] implement Details Translation presentation/runtime mapping and deterministic Previews.
+
+8. [ ] **Validation before PR readiness**
    - run the repository architecture checks;
    - run focused Translation/Phone unit tests;
    - run the normal JVM/unit test suite required by the repository;
