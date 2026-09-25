@@ -56,7 +56,7 @@ The capability foundation is conceptually:
              │              │              │
              │              └──────┐       │
              │                     │       v
-             │                     │   karaoke projection
+             │                     │   Timing Semantic Engine
              │                     │       │
              └─────────────────────┴───────┤
                                            v
@@ -83,7 +83,7 @@ canonical lyrics
 │
 ├─ derived translation
 ├─ derived effective lyrics position / calibration
-└─ derived karaoke projection
+└─ derived shared timing projection
 ```
 
 Derived capabilities must not silently mutate canonical provider truth in place.
@@ -192,7 +192,7 @@ canonical lyrics identity
         ├─ cache identity
         ├─ translation identity + configuration
         ├─ calibration scope/identity
-        └─ karaoke projection input identity
+        └─ timing projection input identity
 ```
 
 Exact identity types are intentionally not defined here.

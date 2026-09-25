@@ -17,7 +17,7 @@ Completed milestones:
 
 The live Android media-session runtime is implemented and merged in PR #29. Process-wide lyrics-demand gating is implemented and merged in PR #30; its boundary is specified in `docs/LYRICS_DEMAND_GATING.md`. Presentation remains in the dedicated `:ui` boundary: a shared Compose design system plus separate phone and automotive screen-composition modules.
 
-The lyrics-capability architecture is defined by `docs/LYRICS_PIPELINE_ARCHITECTURE.md` and its five focused capability documents for cache, translation, timing/calibration, karaoke projection, and presentation state. That foundation fixes ownership, dependency direction, lifecycle constraints, and canonical-versus-derived data rules. Translation has justified its concrete modules through implementation, and Phase 11.3a now explicitly authorizes one additional pure-core module, `:core:timing`, for the effective-lyrics-position foundation. Other future capability modules remain evidence-driven rather than pre-created.
+The lyrics-capability architecture is defined by `docs/LYRICS_PIPELINE_ARCHITECTURE.md` and its focused capability documents for cache, translation, timing/calibration, Karaoke consumption/rendering, and presentation state. That foundation fixes ownership, dependency direction, lifecycle constraints, and canonical-versus-derived data rules. Translation has justified its concrete modules through implementation, and `:core:timing` now owns both the effective lyrics clock and the shared framework-neutral LINE/WORD timing projection. Future capability modules remain evidence-driven rather than pre-created.
 
 ## Design goals
 
@@ -244,7 +244,7 @@ Translation now has one justified concrete dependency path:
 
 `:translation:api` and `:translation:core` remain pure Kotlin. UI modules must not depend on the concrete `:translation:mlkit` adapter. Translation remains downstream of canonical lyrics without moving execution into Lyrics Providers or `:core:lyrics`.
 
-Cache, Karaoke, and any additional Translation modules remain absent until implementation evidence justifies their placement and contracts. Phase 11.3a is the explicit evidence/authorization for introducing `:core:timing`; the module must remain pure and does not gain an application/UI consumer until the separately authorized Phase 11.3b integration.
+Cache, any dedicated Karaoke module, and any additional Translation modules remain absent until implementation evidence justifies their placement and contracts. `:core:timing` is implemented as a pure Kotlin/JVM capability, depends only on `:core:model`, and is consumed by `:app` for the current Phone line path. Karaoke enablement/rendering remains downstream presentation work rather than another timing owner.
 
 ## Runtime flow
 
@@ -304,12 +304,16 @@ canonical normalized lyrics
         └─ timing/calibration boundary
                     ↓
           effective lyrics position
+                    +
+          canonical timed lyrics
                     ↓
-             karaoke projection
+          Timing Semantic Engine
                     ↓
-       presentation-ready semantic facts
+          shared timing projection
              /                 \
         Phone state       Automotive state
+          │                    │
+          └─ Normal / future Karaoke presentation policy
 ```
 
 This is an ownership sketch, not a requirement that all capabilities execute linearly or synchronously.
@@ -392,7 +396,7 @@ The gate must not reach into provider jobs, change `PlaybackTrackIdentity`, or t
 
 ## Lyrics capability foundation
 
-Future cache, translation, timing/calibration, karaoke projection, and presentation-state work share one architectural foundation defined in `docs/LYRICS_PIPELINE_ARCHITECTURE.md`.
+Cache, translation, timing/calibration, Karaoke consumption/rendering, and presentation-state work share one architectural foundation defined in `docs/LYRICS_PIPELINE_ARCHITECTURE.md`.
 
 Capability-specific rules live in:
 
@@ -410,7 +414,7 @@ canonical lyrics
 ├─ cacheable canonical facts
 ├─ derived translation
 ├─ derived effective lyrics position / calibration
-└─ derived karaoke projection
+└─ derived shared timing projection
 ```
 
 Stable rules:
@@ -470,7 +474,7 @@ Provider-independent observable domain state for phone and automotive presentati
 - Provider-local cancellation should cancel underlying HTTP work where practical.
 - Translation failure must leave valid original lyrics usable.
 - Calibration changes must not silently rewrite canonical provider timestamps or refetch lyrics unless a later explicit policy requires it.
-- Karaoke semantic calculation must not be duplicated independently by Phone and automotive renderers.
+- Shared line/word timing semantics must not be duplicated independently by Normal, Karaoke, Phone, or automotive presentation.
 - Cache or optional derived-capability failure must not corrupt canonical lyrics lifecycle state.
 
 ## Architecture guardrails
@@ -481,7 +485,7 @@ As future capability modules become concrete, their implementation slices should
 
 ## Future extension points
 
-The architecture seam for cache, translation, timing/calibration, karaoke projection, and presentation state is defined. Translation is implemented through Phone presentation, and Phase 11.3a now authorizes the minimal `:core:timing` foundation. Remaining concrete work stays in independent slices and must follow `docs/LYRICS_PIPELINE_ARCHITECTURE.md` plus the relevant capability-specific document.
+The architecture seam for cache, translation, timing/calibration, Karaoke consumption/rendering, and presentation state is defined. Translation is implemented through Phone presentation, and `:core:timing` now implements the effective lyrics clock plus shared LINE/WORD timing projection used by the current Phone line path. Sync UX/persistence and Karaoke consumer/rendering remain separate later slices.
 
 Settings/persistence, release/signing, and other later features remain separate responsibilities. Their future existence must not be used as a reason to mix those concerns into `LyricsCoordinator`, `PlaybackLyricsController`, the media-session runtime, demand gate, provider selection, concrete provider adapters, capability services, or shared design-system components.
 

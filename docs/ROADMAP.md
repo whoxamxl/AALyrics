@@ -241,7 +241,7 @@ It intentionally leaves concrete modules, API signatures, storage engines, trans
 
 ## Next implementation slices
 
-The capability foundation does not by itself authorize implementation. Phase 11.3a was explicitly authorized and implemented on `feature/effective-timing-foundation`; unrelated capability slices remain inactive until separately authorized.
+The capability foundation does not by itself authorize implementation. Phases 11.3a, 11.3b, and 11.4a were explicitly authorized and implemented on `feature/effective-timing-foundation`; unrelated capability slices remain inactive until separately authorized.
 
 The expected dependency-friendly sequence is:
 
@@ -420,7 +420,7 @@ The future Car App Library implementation must remain a dedicated topic branch/P
 
 ## Later phases
 
-Remaining later work includes Timing/Sync integration, Karaoke projection/rendering, Android Auto Translation and the authorized Car App Library implementation described above, capability-specific settings/persistence not yet justified, release-process refinement beyond the established GitHub Release baseline, and continued regression comparison against the previous fork.
+Remaining later work includes Sync calibration UX/persistence, Karaoke consumer/rendering, Android Auto Translation and the authorized Car App Library implementation described above, capability-specific settings/persistence not yet justified, release-process refinement beyond the established GitHub Release baseline, and continued regression comparison against the previous fork.
 
 Do not use future feature needs as a reason to turn `LyricsCoordinator`, `PlaybackLyricsController`, the media-session runtime, demand gate, production selector, concrete providers, capability services, or the shared design system into god objects.
 

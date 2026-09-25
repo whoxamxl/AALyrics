@@ -81,7 +81,7 @@ See [docs/RELEASES.md](docs/RELEASES.md) for the authoritative versioning, signi
 app                    Android application / composition root
 core:model             Shared domain models
 core:lyrics            Lyrics state, orchestration, playback ownership, selector port
-core:timing            Pure effective lyrics position calculation
+core:timing            Effective lyrics clock + shared LINE/WORD timing semantics
 provider:api           Provider contracts
 provider:matching      Shared provider-neutral matching semantics
 provider:lrc           Shared LRC parsing

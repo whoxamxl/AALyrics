@@ -54,7 +54,7 @@ Shared presentation-ready facts may eventually include semantically common infor
 - current canonical lyrics availability/state;
 - optional translation availability/result;
 - effective lyrics position / calibration facts;
-- karaoke projection facts;
+- shared timing projection facts and, when implemented, Karaoke consumer facts;
 - provider/source attribution needed for display;
 - capability flags derived from domain state.
 
@@ -140,7 +140,8 @@ Conceptually:
 LyricsState
 Translation state/result
 Timing/calibration state / effective lyrics position
-Karaoke projection
+Shared timing projection
+Optional Karaoke consumer facts
 Track/playback facts
         ↓
 surface presentation mapping
