@@ -1,332 +1,348 @@
-# Phone Translation Integration
+# Timing Semantic Engine + Behaviour-Preserving Wiring
 
 ## Branch and baseline
 
-- Branch: `feature/translation-runtime`.
-- Base: `main` at `4083588a250092e47f1efeb01e06a099b72a3604`.
-- Classification: TRANSLATION / PHONE PRESENTATION / RUNTIME COMPOSITION.
-- Status: Phone Translation/Details plus the conservative Secondary/model-scope refinement are implemented and validated. GitHub Build #1187 validated implementation head `7f119e0` after the follow-up Codex fixes; architecture checks, debug APK build, and unit tests passed. Physical-device verification of the refined Secondary behavior and Translation Details completed without a blocking issue. PR #79 is ready for review/merge preparation; merge still requires explicit user authorization.
-- Authoritative references: `AGENTS.md`, `docs/TRANSLATION_ARCHITECTURE.md`, `docs/PHONE_LYRICS_VIEWPORT.md`, `docs/PHONE_RUNTIME_HOST.md`, `docs/PHONE_UI_SPEC.md`, `docs/PHONE_DETAILS.md`, `docs/PRESENTATION_STATE_ARCHITECTURE.md`, and the current production code/tests on this branch.
+- Branch: `feature/effective-timing-foundation`.
+- Base: `main` at `ae9ed3f27097388b32537ad4b40147679567efaf` (PR #79 merged).
+- Phase 11.3a — Effective Timing Foundation: implemented and validated.
+- Phase 11.3b — Existing timed-lyrics integration: implemented and validated.
+- Draft PR #80 was intentionally closed before review so the same branch can continue into the shared timing-semantic engine.
+- Active implementation and validation are complete on this branch; a new Draft PR is the stop point.
+- `docs/KARAOKE_ARCHITECTURE.md` is aligned with the shared-engine consumer model. The documentation gate before implementation is complete.
+
+Authoritative references for the active engine slice are:
+
+- `AGENTS.md`
+- this `TASK.md`
+- `docs/ARCHITECTURE.md`
+- `docs/LYRICS_PIPELINE_ARCHITECTURE.md`
+- `docs/TIMING_ARCHITECTURE.md`
+- `docs/ROADMAP.md`
+- `docs/KARAOKE_ARCHITECTURE.md` for downstream consumer/rendering boundaries
+- current branch code/tests
 
 ## Goal
 
-Connect the already-implemented atomic Translation execution result to the Phone Lyrics presentation without changing Translation algorithms, canonical lyrics ownership, playback timing, or provider selection.
+Implement one framework-neutral **Timing Semantic Engine** and wire it into the existing Phone production path without changing current UI behaviour.
 
-The intended production path is:
+Stable data flow:
 
 ```text
-LyricsState ---------------------------┐
-TranslationCoordinator.state ----------┤
-TranslationSettings --------------------┼─> Phone lyrics mapper
-PlaybackSnapshot -----------------------┤
-Phone viewport interaction/settings ----┘
-                                         ↓
-                                LyricsScreenUiState
-                                         ↓
-                                  LyricsViewport
-                                         ↓
-                         canonical text + optional
-                          translated secondary text
+projected playback position
+        +
+lyrics timing offset
+        ↓
+EffectiveLyricsPosition
+        +
+canonical timed lyrics
+        ↓
+Timing Semantic Engine
+        ↓
+LyricsTimingProjection
+├─ activeLineIndex
+├─ activeWordIndex
+├─ wordProgress
+└─ wordBoundary
+        ↓
+current Phone consumer
+        ↓
+activeLineIndex only
+        ↓
+existing UI behaviour unchanged
 ```
 
-This is a presentation-integration slice, not a Translation-engine rewrite.
+The engine is shared timing semantics. It must **not** accept Karaoke mode as an input and must not branch on Karaoke ON/OFF.
 
-## Established baseline
+Normal presentation and future Karaoke presentation consume the same semantic result. The current Phone consumer continues to use only `activeLineIndex`.
 
-The following already exists and is the baseline to preserve:
+## Current behaviour contract
 
-- `:translation:api`, `:translation:core`, and `:translation:mlkit` are implemented.
-- `TranslationExecutionRuntime` observes completed canonical `LyricsState` plus persisted Translation settings and updates `TranslationCoordinator`.
-- `AALyricsApplication.translationState` exposes the coordinator's atomic `StateFlow<TranslationState>`.
-- `TranslationCoordinator` already owns profiling, contextual block planning, provider execution, fallback, stale-request rejection, cancellation, and atomic publication.
-- `TranslationArtifact` contains exactly one line entry for each canonical lyric line and preserves canonical line index identity.
-- `TranslationArtifactLine.translated` distinguishes an actual translated line from a preserved canonical line.
-- Translation Settings, target model lifecycle, manual download/retry, model cleanup, and Reset semantics are already implemented.
-- Phone `PhoneRuntimeHost` already collects Translation state/settings/model lifecycle state.
-- `mapPhoneLyricsState` already projects eligible translated lines and the permanent Track Card Translation state.
-- `LyricsViewportLineUiState` already carries optional translated presentation and `LyricsViewport` renders canonical + translated text as one measured row.
-- Track Card automatic-model-download / translating / Ready route / Failed + Retry presentation is implemented.
-- `phoneDetailsState` combines playback + canonical lyrics + playback-source diagnostics with Translation settings/state/profile/model lifecycle facts and emits Phone-local Translation Details state. Production `DetailsScreen` rendering plus deterministic Translation Details Previews are implemented.
-- `TranslationState.Translating` now retains the current-request LanguageProfile after profiling completes, and `TranslationState.Failed` retains that profile when available plus a framework-neutral `TranslationFailureReason`. This diagnostic evidence remains owned by the existing Translation lifecycle and is stale-request guarded.
+The active slice must preserve all current production behaviour:
 
-## Scope
+- `projectedPlaybackPosition(...)` remains unchanged;
+- production `LyricsTimingOffset` remains `ZERO`;
+- playback progress continues to use the real projected playback position, not effective lyrics position;
+- LINE_SYNC current-line selection remains exactly equivalent to the current `currentTimedLineIndex(...)` behaviour;
+- WORD_SYNC remains line-oriented in the current Phone UI;
+- current Phone WORD presentation still exposes no active word/sweep/progress;
+- PLAIN lyrics behaviour is unchanged;
+- Translation presentation and diagnostics are unchanged;
+- Sync UI remains a non-functional placeholder;
+- no timing persistence is added;
+- Android Auto timing/presentation is unchanged;
+- canonical provider timestamps are never rewritten.
 
-Implement Phone Translation presentation from the existing application-owned `TranslationState`.
+A new engine may calculate additional WORD facts internally, but those facts must not become visible through the current UI in this slice.
 
-### Runtime composition
+## Engine ownership
 
-- Collect `application.translationState` lifecycle-aware in `PhoneRuntimeHost`.
-- Reuse the already-collected current `application.translationSettings` as part of presentation eligibility.
-- Pass the current Translation state and Translation settings into the Phone lyrics presentation mapper.
-- Do not make `:ui:phone` depend on Translation core, ML Kit, persistence, providers, or Android framework Translation objects.
-- Keep Translation execution application/capability-owned. The Phone host observes state; it does not start or own translator jobs.
+Extend the existing pure Kotlin/JVM `:core:timing` capability rather than create a Karaoke-mode-specific engine.
 
-### Translation presentation eligibility gate
+After this slice, `:core:timing` owns:
 
-A `TranslationState.Ready` artifact may be presented only when **all** of the following are true:
+1. signed `LyricsTimingOffset`;
+2. `EffectiveLyricsPosition`;
+3. the pure effective-position transform;
+4. deterministic line/word timing semantics over canonical lyrics.
 
-- current persisted Translation settings are enabled;
-- the artifact `request.targetLanguage` equals the current normalized `TranslationSettings.targetLanguage`;
-- the artifact `request.canonicalLyrics` exactly matches the canonical lyrics currently being mapped.
+For semantic projection, `:core:timing` is authorized to depend on `:core:model`.
 
-Reuse or extract the existing canonical-identity construction used by `TranslationExecutionRuntime`; do not create a second subtly different owner/fingerprint algorithm.
+It must remain independent of:
 
-A stale/mismatched artifact, an old-target artifact during target switching, or a Ready state observed during disable propagation fails closed to original-only presentation. Playback position or current-line changes do not change Translation identity. A target-language change may supersede/restart Translation without refetching Lyrics Providers.
+- Android/framework types;
+- `:app`;
+- Phone/automotive UI;
+- providers and provider selection;
+- Translation;
+- persistence;
+- MediaSession/runtime ownership;
+- coroutines/stateful ticking;
+- Karaoke mode/enablement;
+- rendering/layout primitives.
 
-### Phone line projection
+Update the architecture guard so `core/timing` permits only its newly justified production dependency on `core:model`.
 
-Extend the Phone-local lyric-row presentation model with optional translated text.
+## Projection contract
 
-For every canonical line:
+Use this concrete semantic shape unless implementation evidence requires a very small naming adjustment:
 
-- canonical/source text remains authoritative and always remains the primary text;
-- if the matching `TranslationArtifactLine` has `translated == true` and nonblank translated text, expose that text as the row's translated secondary text;
-- if `translated == false`, do not render the artifact text a second time;
-- `Disabled`, `Idle`, `Translating`, `NotRequired`, `Failed`, missing state, and identity mismatch all render valid original lyrics normally with no translated secondary text;
-- Translation failure must never map the Lyrics destination to loading/not-found/failed or otherwise hide usable canonical lyrics;
-- no partial Translation map is presented. Presentation consumes only the existing atomic `Ready` artifact.
+```kotlin
+data class LyricsTimingProjection(
+    val activeLineIndex: Int?,
+    val activeWordIndex: Int?,
+    val wordProgress: Float?,
+    val wordBoundary: WordTimingBoundary,
+)
 
-Do not add a Translation status/error banner inside `LyricsViewport`. Translation runtime feedback belongs to the Track Card's dedicated permanent status row defined below.
+enum class WordTimingBoundary {
+    UNAVAILABLE,
+    BEFORE_FIRST,
+    ACTIVE,
+    GAP,
+    AFTER_LAST,
+}
 
-### Track Card Translation status
+fun projectLyricsTiming(
+    document: LyricsDocument,
+    position: EffectiveLyricsPosition,
+): LyricsTimingProjection
+```
 
-Reserve one permanent fourth status row in the Lyrics Track Card for Translation state. The row exists in every Translation state so toggling Translation, downloading models, completing Translation, or failing/retrying does not move the Track Card boundary or LyricsViewport.
+Semantics:
 
-Approved presentation states:
+- `activeLineIndex` is an index into `LyricsDocument.lines`;
+- `activeWordIndex` is an index into the active `TimedLyricLine.words`;
+- `activeWordIndex == null` when no word is active;
+- `wordProgress` is `0f..1f` only when progress can be derived for the active word;
+- `wordProgress == null` when there is no active word or the active word has no defensible duration;
+- `wordBoundary` describes word-level timing state for the active timed line;
+- no field contains UI styling, animation cadence, text ranges, colors, alpha, scale, or Karaoke enablement.
 
-- OFF -> render no text, while retaining the full Translation status-row placeholder height;
-- enabled but no active canonical route yet -> `Translation enabled`;
-- required route models are actively downloading or waiting for the system -> compact spinner + `Downloading language models…`;
-- route models are ready and Translation execution is still running -> compact spinner + `Translating…`;
-- an eligible atomic artifact is active -> short source/target labels separated by the shared centered Translation-direction icon;
-- Translation determines no work is required -> `Translation not required`;
-- current Translation attempt fails -> `Translation failed` plus the shared Retry icon and compact trailing `Retry` text action.
+## LINE semantics
 
-Model acquisition remains automatic. Do not add a normal pre-download confirmation dialog. The user intervention path is failure recovery: the Track Card emits one semantic Retry action and the application/capability layer decides which failed model/route work must be retried. Canonical lyrics remain visible and usable throughout model preparation, Translation execution, and failure.
+LINE selection must preserve the existing production rule exactly:
 
-The Track Card status row is presentation feedback only. It must not become a second Translation executor, model manager, or timing owner. Translation runtime colors stay distinct from the cyan provider/sync row: Enabled uses TextSecondary, processing states use AccentBlue, Ready uses Success, inactive states use neutral text colors, failure uses Error, and Retry retains AccentCyan.
+```text
+active line = latest TimedLyricLine whose startMs <= effectiveLyricsPosition
+```
 
-### LyricsViewport rendering
+Rules:
 
-Render translated text as additive secondary content inside the same logical lyric row.
+- return the original document-line index, including mixed plain/timed documents;
+- before the first timed line, return `null`;
+- an exact line start activates that line;
+- after the final line start, the final timed line remains active;
+- line `endMs` does not terminate `activeLineIndex` in this slice because current production behaviour does not use it for current-line selection;
+- negative effective position is valid and yields no active line;
+- backward seek is naturally deterministic because projection is stateless.
 
-Stable visual/geometry contract:
+Before production wiring replaces the app-local current-line calculation, tests must prove parity with the existing behaviour.
 
-- preserve the existing canonical source typography, WORD/LINE/PLAIN behavior, current-line emphasis, and source word-progress behavior;
-- translated text is a chrome-free typographic annotation: no cards, backgrounds, badges/pills, language labels, icons, separators, or dividers;
-- translated text appears directly below the canonical line with an initial 4dp intra-row gap;
-- use an initial translated-text target of approximately 15sp Medium / compact supporting line height / TextSecondary-class emphasis at about 0.76 local opacity, while keeping canonical typography unchanged;
-- translated text never receives independent word highlighting, independent current-line logic, or separate current/past/future focus animation;
-- the canonical + translated pair is measured as one row;
-- for timed lyrics, the complete row receives the existing shared focus scale/alpha transform as one unit;
-- follow/browse scroll calculations use the measured height/center of that complete row;
-- the existing approximately 45% timed focus target, opening `♪` row, edge fades, return-to-playback behavior, and PLAIN auto-scroll contract remain intact;
-- Translation appearing atomically may change row heights, but must not introduce a second scroll/timing owner;
-- do not animate row height merely to reveal Translation; if an appearance transition is used, re-measure geometry immediately and limit animation to a short translated-text alpha fade (initial target about 150ms).
+## WORD semantics
 
-### Tests and Previews
+WORD semantics are derived only from the active timed line.
 
-Add focused coverage for at least:
+When the active line has no timed words:
 
-- matching `Ready` artifact projects translated text onto the correct canonical rows;
-- `translated == false` does not duplicate canonical text;
-- stale/mismatched canonical identity is ignored;
-- a Ready artifact for an old target language is ignored;
-- current Translation OFF suppresses translated presentation even if an older Ready state is still observed during propagation;
-- `Disabled`, `Translating`, `NotRequired`, and `Failed` remain original-only;
-- translation state does not change current-line index, sync type, provider label, or lyrics-status mapping;
-- Ready/Degraded canonical lyrics follow the same identity/presentation rules;
-- translated row rendering for LINE and PLAIN;
-- long/wrapped translated text;
-- mixed artifact containing translated and preserved lines;
-- narrow width and enlarged-font presentation where practical.
+```text
+activeWordIndex = null
+wordProgress    = null
+wordBoundary    = UNAVAILABLE
+```
 
-Existing non-Translation Phone lyrics mapper/viewport tests must continue to pass.
+For a line with words:
+
+1. choose the latest word whose `startMs <= effectiveLyricsPosition`;
+2. if none has started, use `BEFORE_FIRST`;
+3. an explicit `endMs` is exclusive: `position >= endMs` means that word is no longer active;
+4. if the latest started word has explicitly ended and a later word has not started, use `GAP`;
+5. if the final explicitly-ended word has ended, use `AFTER_LAST`;
+6. if a word has no explicit end, it remains the latest active word until a later word starts;
+7. an ended newer word must not reactivate an older open-ended word;
+8. backward seek must select the earlier semantic state directly; no retained state/history is allowed.
+
+These preserve/refactor the mature working-fork `KaraokeTiming` behaviour rather than its Android rendering architecture.
+
+## Word progress
+
+For an active word:
+
+- when `endMs > startMs`, derive progress from that explicit interval;
+- when `endMs == null` and the next word starts later, the next word's start may be used as the inferred progress end;
+- when no defensible end exists (for example the final open-ended word), keep the word active but return `wordProgress = null`;
+- do not introduce an arbitrary fallback duration into the shared semantic engine;
+- zero-duration explicit words must not produce division-by-zero or fabricated progress;
+- clamp only the returned progress fraction to `0f..1f`; do not mutate timestamps or effective position.
+
+Display-token grouping, lexical range mapping, sweep easing, and final-word visual fallback durations are rendering/consumer concerns and are outside this slice.
+
+## Production wiring
+
+After semantic tests are established:
+
+```text
+PhoneLyricsMapper
+    projectedPlaybackPosition
+            +
+    LyricsTimingOffset.ZERO
+            ↓
+    EffectiveLyricsPosition
+            +
+    canonical LyricsDocument
+            ↓
+    projectLyricsTiming(...)
+            ↓
+    projection.activeLineIndex
+            ↓
+    existing LyricsViewport current line
+```
+
+Requirements:
+
+- use `projection.activeLineIndex` for the existing current-line field;
+- keep `playbackProgress` on `projectedPlaybackPositionMs`;
+- do not expose `activeWordIndex`, `wordProgress`, or `wordBoundary` to the current Phone UI;
+- keep WORD source downgraded to current line-oriented Phone presentation;
+- remove the duplicate app-local production current-line algorithm once parity is proven, so timing semantics have one owner;
+- do not change `PhoneRuntimeHost` to provide a non-zero offset.
+
+## Working-fork evidence
+
+Working fork: `whoxamxl/auto-lyrics` `v1.13.0`.
+
+Preserve/refactor these semantic behaviours from `lyrics/KaraokeTiming.kt`:
+
+- latest-started word selection;
+- explicit end times leave gaps unhighlighted;
+- missing end falls back to latest-started word;
+- an ended newer word does not reactivate an older open-ended word;
+- backward seek deterministically selects earlier words.
+
+Do **not** migrate into this engine:
+
+- `KaraokeSweepSpan`;
+- display-range/layout mapping;
+- arbitrary final-group visual fallback duration;
+- Compose/Canvas/Span behaviour;
+- Karaoke enablement state.
 
 ## Scope guardrails
 
-Do **not** implement or redesign any of the following in this slice:
+Do not implement in this slice:
 
-- LanguageProfiler heuristics or thresholds;
-- contextual block planning, marker parsing, fallback, or artifact assembly;
-- ML Kit model lifecycle or Translation provider execution;
-- Musixmatch native Translation;
-- Translation Provider selection UI;
-- persistent Translation Cache;
-- lyrics-provider ranking, lookup, or retry behavior;
-- timing/calibration or Sync behavior;
-- Karaoke/WORD Translation semantics;
-- Android Auto Translation presentation;
-- new durable Translation settings;
-- actionable Translation recovery UI beyond the approved Track Card `Translation failed` + `Retry` row; Phone Details may expose the approved read-only Runtime/model failure diagnostics and reason tooltips but must not add retry/mutation controls.
+- Sync controls or SyncScreen behaviour;
+- timing persistence or calibration scope;
+- non-zero production timing offset;
+- provider-specific timing correction;
+- drift/rate correction;
+- audio/waveform analysis;
+- Karaoke mode toggle/enablement;
+- Karaoke consumer/presenter;
+- Karaoke sweep/rendering;
+- word highlighting in Phone UI;
+- Android Auto timing/Karaoke wiring;
+- text/token layout mapping;
+- Translation timing changes.
 
-If implementation evidence reveals a real defect in the existing Translation execution path, record it separately rather than silently expanding this presentation PR unless it directly blocks the stated acceptance criteria.
+## Reset AALyrics contract
 
-## Expected implementation touch points
+No persisted state is introduced.
 
-The likely production/test files are:
+Therefore:
 
-- `app/src/main/java/io/github/whoxamxl/aalyrics/PhoneRuntimeHost.kt`
-- `app/src/main/java/io/github/whoxamxl/aalyrics/PhoneLyricsMapper.kt`
-- `app/src/main/java/io/github/whoxamxl/aalyrics/TranslationExecutionRuntime.kt` only if extracting/reusing canonical identity mapping is the cleanest option
-- `ui/phone/src/main/java/io/github/whoxamxl/aalyrics/ui/phone/lyrics/LyricsUiState.kt`
-- `ui/phone/src/main/java/io/github/whoxamxl/aalyrics/ui/phone/lyrics/LyricsViewport.kt`
-- `app/src/test/java/io/github/whoxamxl/aalyrics/PhoneLyricsMapperTest.kt`
-- `ui/phone/src/debug/java/io/github/whoxamxl/aalyrics/ui/phone/preview/LyricsViewportPreviews.kt`
-- `ui/phone/src/debug/java/io/github/whoxamxl/aalyrics/ui/phone/preview/LyricsScreenPreviews.kt` where useful
-
-For the Details Translation slice, likely additional touch points are:
-
-- `translation/core/src/main/kotlin/io/github/whoxamxl/aalyrics/translation/core/TranslationModels.kt` and/or `TranslationCoordinator.kt` for the minimal diagnostic-evidence contract;
-- `app/src/main/java/io/github/whoxamxl/aalyrics/PhoneDetailsMapper.kt`;
-- `app/src/main/java/io/github/whoxamxl/aalyrics/AALyricsApplication.kt` for the application-owned Details state combine;
-- `ui/phone/src/main/java/io/github/whoxamxl/aalyrics/ui/phone/details/DetailsUiState.kt`;
-- `ui/phone/src/main/java/io/github/whoxamxl/aalyrics/ui/phone/details/DetailsScreen.kt`;
-- `app/src/test/java/io/github/whoxamxl/aalyrics/PhoneDetailsMapperTest.kt`;
-- `ui/phone/src/debug/java/io/github/whoxamxl/aalyrics/ui/phone/preview/DetailsScreenPreviews.kt` and shared Preview fixtures.
-
-Do not solve Details diagnostics by running a second LanguageProfiler, by retaining stale profile data across canonical identity changes, or by making `:ui:phone` depend on Translation core/model-manager types.
-
-This list is guidance, not permission to restructure unrelated code.
+- `Reset AALyrics` remains unchanged;
+- reset copy remains unchanged;
+- no timing preference is added.
 
 ## Implementation checkpoints
 
-Use small, reviewable commits and keep each checkpoint independently coherent.
+Implement in small coherent commits and push each completed checkpoint.
 
-1. [x] **Presentation contract and mapper**
-   - add optional translated text to the Phone-local lyric-row state;
-   - accept Translation state plus current Translation settings in `mapPhoneLyricsState`;
-   - enforce enabled + target-language + canonical-identity matching;
-   - project only `translated == true` artifact lines;
-   - add mapper tests;
-   - do not change Compose rendering yet.
+1. [x] **Pure semantic model + LINE projection**
+   - add `LyricsTimingProjection` / `WordTimingBoundary`;
+   - implement LINE selection in `:core:timing`;
+   - allow only `:core:model` as the new production dependency;
+   - add parity tests for existing current-line semantics.
 
-2. [x] **Runtime connection**
-   - lifecycle-collect `application.translationState` in `PhoneRuntimeHost`;
-   - feed it to the mapper;
-   - verify no Translation execution ownership moves into Phone UI.
+2. [x] **WORD selection + boundary semantics**
+   - add active-word selection;
+   - preserve explicit-end gaps, open-ended fallback, no older-word reactivation, and backward-seek semantics;
+   - cover exact start/end and negative/before cases.
 
-3. [x] **LyricsViewport rendering**
-   - render canonical + optional translation as one measured row;
-   - preserve all existing sync/focus/browse/PLAIN behavior;
-   - keep source typography/word progress unchanged;
-   - add focused viewport helper tests if geometry helpers change.
+3. [x] **Word progress**
+   - explicit-end progress;
+   - inferred-next-start progress;
+   - null progress when duration is not defensible;
+   - zero-duration safety.
 
-4. [x] **Preview coverage**
-   - add deterministic translated LINE/PLAIN and mixed translated/preserved fixtures;
-   - include long wrapping and narrow/enlarged-font cases where the current Preview structure supports them;
-   - verify the secondary hierarchy does not overpower canonical lyrics.
+4. [x] **Behaviour-preserving production wiring**
+   - route Phone current-line selection through `LyricsTimingProjection.activeLineIndex`;
+   - remove duplicate production current-line semantics;
+   - keep current WORD/LINE/PLAIN UI behaviour unchanged;
+   - keep playback progress unchanged.
 
-5. [x] **Regression and documentation alignment**
-   - re-check Phone lyrics mapper/viewport behavior with Translation OFF and unavailable;
-   - align implementation details back into the Translation/Phone docs only where implementation evidence required a change;
-   - verify no stale documentation still describes Phone Translation presentation as unimplemented after the code lands.
+5. [x] **Final validation**
+   - architecture guard;
+   - `:core:timing` tests;
+   - relevant app mapper tests;
+   - repository unit tests;
+   - debug APK build;
+   - branch-wide regression/scope audit;
+   - verify no user-visible timing/Karaoke/Sync change;
+   - update docs only when implementation evidence requires correction.
 
-6. [x] **Track Card Translation runtime feedback**
-   - [x] document the permanent fourth-row state contract;
-   - [x] prepare Phone-local presentation state/rendering and deterministic Previews;
-   - [x] map live Translation + model lifecycle state into the Track Card without moving execution ownership;
-   - [x] wire the semantic Retry callback through `:app`;
-   - [x] add focused mapper/runtime coverage.
+Do not open a PR during checkpoints.
 
-7. [x] **Details Translation diagnostics follow-up**
-   - [x] define Normal Details `TRANSLATION` section: Source language + Target language;
-   - [x] define Primary + ACTIVE Secondary display as `English (Spanish)` and canonical-identity gating;
-   - [x] define compact Verbose Runtime state + positional Primary/ACTIVE-Secondary Source model + Target model diagnostics;
-   - [x] define model availability semantics: built-in/downloaded = Ready; Not required only for Translation OFF + confirmed absent remote model;
-   - [x] standardize Details Failed/Timed out reason tooltips for this and future Details additions;
-   - [x] align Translation architecture/runtime-host ownership before implementation;
-   - [x] **Checkpoint 7a — diagnostic evidence contract:** preserve the current request LanguageProfile after profiling while Translating/Failed and preserve a framework-neutral runtime failure reason; do not expose raw engine exceptions to Phone UI;
-   - [x] **Checkpoint 7b — application Details mapping:** extend application-owned `phoneDetailsState` / `PhoneDetailsMapper` with Translation settings, current matching profile/runtime state, model lifecycle projection, and explicit startup model-inventory reconciliation;
-   - [x] **Checkpoint 7c — Phone-local state + rendering:** add the `TRANSLATION` section, compact Verbose rows, and shared `PhoneInfoTooltip` treatment for Failed/Timed out;
-   - [x] **Checkpoint 7d — deterministic Previews/tests:** cover Primary only, ACTIVE Secondary, no profile yet, all six runtime states, model lifecycle presentation, OFF+absent Not required, built-in/downloaded Ready while OFF, positional multi-source diagnostics, and authoritative failure-tooltip payloads;
-   - [x] **Checkpoint 7e — regression/alignment:** verified Details open/Verbose toggle remain presentation-only; fixed the Verbose live-progress effect key and preserved separate Source/Target model rows when the ISO is the same; no provider/profile/model download/retry trigger is introduced by Details.
-
-8. [x] **Secondary activation + Source model diagnostics refinement**
-   - [x] keep `secondaryCandidate` permissive and make only `SecondaryActivation.ACTIVE` conservative;
-   - [x] define a language-agnostic ACTIVE gate: >=3 meaningful lines, >=18 substantive characters, >=20% character share, >=0.75 average candidate-line confidence, plus a 2-line contiguous run or >=2 song regions;
-   - [x] add synthetic regressions for a two-line high-confidence false Secondary and a three-line low-confidence Secondary;
-   - [x] define the product-supported Translation model set as `EN / JA / FR / DE / ES / KO / ZH / IT / PT` while allowing Language ID to report other languages;
-   - [x] redefine Verbose Source model pairing as `Source model (EN (ES))  Ready (Ready)`; unsupported detected languages use `—`;
-   - [x] implement the new generic ACTIVE gate in `LanguageProfiler` with no language-specific false-positive branches;
-   - [x] enforce product-supported source-model routing/model preparation across core planning, ML Kit route/model guards, Track Card status, and Retry without adding per-language false-positive patches;
-   - [x] replace aggregate Source model presentation state with positional Primary/Secondary model states; production UI now renders `EN (ES)` / `Ready (Ready)`, unsupported detected models render `—`, and Previews/tests cover positional lifecycle/failure state;
-   - [x] rerun build/tests after production changes; Build #1185 validated the main refinement and Build #1187 validated the final follow-up Codex fixes on `7f119e0`.
-
-9. [x] **Validation before PR readiness**
-   - [x] repository architecture checks passed in Build #1187 on final implementation head `7f119e0`;
-   - [x] focused Translation/Phone coverage passed as part of the repository unit-test task in Build #1187;
-   - [x] normal JVM/unit test suite passed in Build #1187;
-   - [x] debug APK build passed in Build #1187;
-   - [x] complete refinement diff inspected for scope/regressions; no blocking current-scope defect found;
-   - [x] review policy satisfied: two normal Codex rounds were already completed earlier in this PR, and the later Secondary/model-scope refinement received targeted review rather than an impermissible third broad round;
-   - [x] physical-device verification completed for the refined Secondary behavior and Translation Details; no blocking issue observed.
-
-Current validation after the Secondary/model-scope refinement and follow-up review fixes:
-
-- [x] GitHub Build #1187 validated final implementation head `7f119e0` successfully.
-- [x] Build #1187 passed branch-name validation and commit-message validation.
-- [x] Build #1187 passed `scripts/verify-architecture.sh`.
-- [x] Build #1187 passed `:app:assembleDebug` and uploaded the debug APK artifacts.
-- [x] Build #1187 passed the repository unit-test task, including the conservative Secondary gate, supported-model routing, Track Card/Retry behavior, Details mapper, and positional Source model diagnostics.
-- [x] Earlier targeted review of the Secondary/model-scope refinement found no blocking production defect.
-- [x] User-triggered follow-up Codex review produced two valid P2s; both were fixed in `7f119e0` without requesting another Codex round:
-  - no-route/background target-model state no longer replaces the Track Card `Translation enabled` placeholder;
-  - Ready source labeling prefers an actually translated artifact source over Profile Primary.
-- [x] Both follow-up Codex review threads are resolved; unresolved review thread count is zero.
-- [x] Physical-device verification of the refined Secondary behavior and Translation Details completed without a blocking issue.
-- [x] No current-scope blocking P0/P1/P2 remains known.
-
-Historical baseline evidence retained from before the Details follow-up:
-
-- Phone Translation ON/OFF and an actual translated-song smoke test passed once required route models were available.
-- The Target language tooltip/model-requirement explanation was device-informed.
-- Automatic model acquisition + permanent Track Card feedback/retry was validated before the Details extension.
-
-These historical checks remain baseline evidence; the current Secondary/model-scope refinement has now also completed physical-device verification.
-
-Do not merge without explicit user authorization.
+After all implementation and final validation are complete, open a new **Draft PR** and stop according to `AGENTS.md`.
 
 ## Acceptance criteria
 
-The slice is complete when all of the following are true:
+The slice is complete when:
 
-- Translation OFF keeps canonical lyrics behavior unchanged; the permanent Track Card Translation row remains reserved but visually empty.
-- While Translation is pending or fails, canonical lyrics remain visible and usable; the Track Card alone exposes `Downloading language models…`, `Translating…`, or `Translation failed` + `Retry` without turning Lyrics into a failure state.
-- A matching atomic Ready artifact displays translated text only on lines actually marked translated.
-- Preserved/uncertain/target-language lines are not duplicated.
-- A stale Ready artifact from another canonical lyrics identity is never shown.
-- A Ready artifact for a superseded target language, or one observed after Translation has been turned OFF, is not shown.
-- Translation does not change canonical timing, current-line selection, sync type, provider attribution, lyrics status, provider lookup, or playback ownership.
-- Canonical and translated text form one scroll/focus geometry row.
-- Translation remains visually subordinate to canonical lyrics and uses the documented chrome-free annotation treatment rather than introducing a second subtitle UI.
-- Existing 45% focus, edge fading, Browse/Follow, opening `♪`, return control, and PLAIN auto-scroll behavior remain intact.
-- `:ui:phone` remains presentation-only and has no direct ML Kit/Translation runtime dependency.
-- Android Auto behavior is unchanged.
-- No persistent Translation cache is introduced.
-- Track Card Translation status transitions do not change Track Card height or shift the LyricsViewport.
-- Ready presentation uses concise source/target language labels with a real centered forward-arrow icon between them.
-- Normal Details presents Translation Source language from the matching LanguageProfile and current Target language without confusing provider `LyricsDocument.languageTag` with profiler truth.
-- ACTIVE Secondary is appended as `Primary (Secondary)`; incidental Secondary is not promoted into Normal Details. ACTIVE promotion uses only the documented generic evidence gate and does not accumulate language-specific false-positive patches.
-- Verbose Details adds only Runtime state, positional Source model, and Target model rows rather than dumping request/provider internals. Source model mirrors Primary/ACTIVE Secondary as `EN (ES)` with state `Ready (Ready)`; unsupported detected model languages render `—`.
-- Built-in and confirmed downloaded models display Ready even while Translation is OFF; Details-only Not required is limited to Translation OFF + confirmed absent remote model.
-- Details Failed/Timed out states expose authoritative reasons through the shared info-tooltip contract; raw engine exceptions do not enter `:ui:phone`.
-- Opening Details or enabling Verbose Details does not start profiling, Translation, provider lookup, model download, or retry; toggling Verbose while already on Details only starts/stops the presentation-local live progress ticker.
-- Tests, Previews, implementation, and documentation describe the same behavior.
-- CI/build/review requirements in `AGENTS.md` are satisfied before merge.
+- one shared semantic engine owns current LINE and WORD timing facts;
+- the engine consumes canonical lyrics + `EffectiveLyricsPosition`;
+- Karaoke mode is not an engine input;
+- LINE active-line output is regression-equivalent to current production behaviour;
+- WORD active/boundary behaviour matches the documented semantic contract;
+- word progress is deterministic and does not invent timing when duration is unknown;
+- Phone production uses the engine but still consumes only `activeLineIndex`;
+- current Phone LINE/WORD/PLAIN behaviour is unchanged;
+- playback progress is unchanged;
+- canonical timestamps remain immutable;
+- no persistence/Reset/Sync/Karaoke UI scope is added;
+- CI/build/tests are green.
 
-## Local Codex handoff
+## Documentation checkpoint before implementation
 
-A Local Codex session should begin by reading, in order:
+Documentation is aligned for implementation:
 
-1. `AGENTS.md`
-2. this `TASK.md`
-3. `docs/TRANSLATION_ARCHITECTURE.md`
-4. `docs/PHONE_LYRICS_VIEWPORT.md`
-5. `docs/PHONE_RUNTIME_HOST.md`
-6. `docs/PHONE_UI_SPEC.md`
-7. the current implementation/tests named under **Expected implementation touch points**
+- [x] Timing Semantic Engine contract;
+- [x] behaviour-preserving production wiring contract;
+- [x] Karaoke consumer/rendering ownership contract;
+- [x] Normal consumer uses line facts only;
+- [x] future Karaoke consumer may use additional word/progress/boundary facts;
+- [x] Karaoke enablement remains outside the semantic engine.
 
-Then implement the checkpoints in order. Treat the existing Translation coordinator/model lifecycle as a completed dependency. Do not redesign it merely because a different architecture is possible.
+The documentation gate was completed before implementation. The shared engine and behaviour-preserving Phone wiring are now implemented and validated on this branch.
 
-Stop and report rather than broadening scope if an actual implementation contradiction prevents the documented Phone integration contract.
+Validation: [Build run 36106771140](https://github.com/whoxamxl/AALyrics/actions/runs/36106771140) passed the architecture guard, debug APK build, and repository unit tests, including timing and Phone mapper coverage. No persisted state was added, so `Reset AALyrics` and its copy remain unchanged.

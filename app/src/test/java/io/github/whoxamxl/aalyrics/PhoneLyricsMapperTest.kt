@@ -9,10 +9,12 @@ import io.github.whoxamxl.aalyrics.core.model.LyricsSyncType
 import io.github.whoxamxl.aalyrics.core.model.PlaybackSnapshot
 import io.github.whoxamxl.aalyrics.core.model.PlaybackSource
 import io.github.whoxamxl.aalyrics.core.model.PlaybackStatus
+import io.github.whoxamxl.aalyrics.core.model.PlainLyricLine
 import io.github.whoxamxl.aalyrics.core.model.TimedLyricLine
 import io.github.whoxamxl.aalyrics.core.model.TimedWord
 import io.github.whoxamxl.aalyrics.core.model.Track
 import io.github.whoxamxl.aalyrics.core.model.TrackReference
+import io.github.whoxamxl.aalyrics.core.timing.LyricsTimingOffset
 import io.github.whoxamxl.aalyrics.translation.api.TranslationModelPhase
 import io.github.whoxamxl.aalyrics.translation.api.TranslationModelState
 import io.github.whoxamxl.aalyrics.translation.api.TranslationProviderId
@@ -590,6 +592,53 @@ class PhoneLyricsMapperTest {
     }
 
     @Test
+    fun `lyrics timing offset shifts line selection across canonical boundaries`() {
+        val track = track()
+        val lyricsLines = listOf(
+            TimedLyricLine("First", 0L),
+            TimedLyricLine("Second", 5_000L),
+            TimedLyricLine("Third", 10_000L),
+        )
+
+        val advancedPlayback = PlaybackSnapshot(
+            track = track,
+            positionMs = 4_500L,
+            source = PlaybackSource("com.spotify.music"),
+        )
+        val advanced = mapPhoneLyricsState(
+            playback = advancedPlayback,
+            lyricsState = ready(advancedPlayback, lyricsLines),
+            plainLyricsAutoScrollEnabled = true,
+            interactionMode = LyricsViewportInteractionMode.FOLLOW,
+            currentMonotonicTimeMs = 1_000L,
+            lyricsTimingOffset = LyricsTimingOffset(750L),
+        )
+        val neutral = mapPhoneLyricsState(
+            playback = advancedPlayback,
+            lyricsState = ready(advancedPlayback, lyricsLines),
+            plainLyricsAutoScrollEnabled = true,
+            interactionMode = LyricsViewportInteractionMode.FOLLOW,
+            currentMonotonicTimeMs = 1_000L,
+        )
+
+        val delayedPlayback = advancedPlayback.copy(positionMs = 5_500L)
+        val delayed = mapPhoneLyricsState(
+            playback = delayedPlayback,
+            lyricsState = ready(delayedPlayback, lyricsLines),
+            plainLyricsAutoScrollEnabled = true,
+            interactionMode = LyricsViewportInteractionMode.FOLLOW,
+            currentMonotonicTimeMs = 1_000L,
+            lyricsTimingOffset = LyricsTimingOffset(-750L),
+        )
+
+        assertEquals(1, advanced.viewport.currentLineIndex)
+        assertEquals(0, delayed.viewport.currentLineIndex)
+        assertEquals(0, neutral.viewport.currentLineIndex)
+        assertEquals(neutral.viewport.playbackProgress, advanced.viewport.playbackProgress)
+        assertEquals(0.275f, delayed.viewport.playbackProgress)
+    }
+
+    @Test
     fun `word source stays line-oriented while Karaoke is unavailable`() {
         val track = track()
         val playback = PlaybackSnapshot(
@@ -620,6 +669,38 @@ class PhoneLyricsMapperTest {
         assertEquals(LyricsSyncType.LINE, state.viewport.syncType)
         assertTrue(state.viewport.lines.single().words.isEmpty())
         assertNull(state.viewport.currentWordIndex)
+        assertEquals(0f, state.viewport.currentWordProgress)
+    }
+
+    @Test
+    fun `plain source remains untimed in Phone presentation`() {
+        val playback = PlaybackSnapshot(
+            track = track(),
+            positionMs = 5_000L,
+            source = PlaybackSource("com.spotify.music"),
+        )
+        val lyrics = LyricsState.Ready(
+            lookup = LyricsLookup(
+                id = LyricsLookupId(1L),
+                track = requireNotNull(playback.track),
+                playbackIdentity = requireNotNull(playback.trackIdentity),
+            ),
+            lyrics = LyricsDocument(lines = listOf(PlainLyricLine("Untimed"))),
+        )
+
+        val state = mapPhoneLyricsState(
+            playback = playback,
+            lyricsState = lyrics,
+            plainLyricsAutoScrollEnabled = true,
+            interactionMode = LyricsViewportInteractionMode.FOLLOW,
+            currentMonotonicTimeMs = 1_000L,
+        )
+
+        assertEquals(LyricsSyncType.PLAIN, state.viewport.syncType)
+        assertNull(state.viewport.currentLineIndex)
+        assertNull(state.viewport.currentWordIndex)
+        assertEquals(0f, state.viewport.currentWordProgress)
+        assertEquals(0.25f, state.viewport.playbackProgress)
     }
 
     @Test

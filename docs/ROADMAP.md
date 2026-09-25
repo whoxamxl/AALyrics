@@ -155,9 +155,9 @@ Presentation uses `:ui:designsystem` for shared tokens/components, `:ui:phone` f
 
 PR #49 implements the approved read-only Details destination plus the Settings-owned Advanced surface with a persisted presentation-only Verbose Details preference and an intentionally disabled/unwired Karaoke affordance. Sync remains the only primary Phone destination that is both a placeholder and interaction-model-deferred pending timing/calibration redesign.
 
-PR #50 implements the **Phone runtime host / device-test enablement** slice documented in `docs/PHONE_RUNTIME_HOST.md`. `MainActivity` preserves onboarding and now hosts `PhoneAppShell` for READY, with live application-owned Lyrics/Playback/Details/Settings wiring. Physical-device follow-up on the branch connected selected-session artwork with branded fallback, made Translation opt-in by default, separated human-readable playback-source labels from raw package diagnostics, standardized Phone tooltip/subscreen primitives, and moved License to an in-app Markdown surface backed by repository-root `NOTICE` + `LICENSE`. Changelog now follows the same bundled-document model using repository-root `CHANGELOG.md`; Sync remains a deliberate placeholder, Karaoke remains disabled/unwired, and Update remains unfinished/unavailable.
+PR #50 established the **Phone runtime host / device-test enablement** boundary documented in `docs/PHONE_RUNTIME_HOST.md`. Subsequent merged Phone work completed the Settings legal/help surfaces, playback-source eligibility and diagnostics, storage/reset controls, queue/artwork refinements, and the verified in-app update flow. `MainActivity` continues to preserve onboarding while hosting live application-owned Lyrics/Playback/Details/Settings state. Sync remains a deliberate non-functional placeholder and Karaoke remains disabled/unwired.
 
-`feature/settings-about-support` implements the next Settings slice on its topic branch: Version/Changelog/Source code stay under `APP`; `ABOUT & SUPPORT` adds the bundled in-app Privacy Policy, existing License, and a native `Support AALyrics` subscreen; Advanced remains a standalone card; and the branding footer remains last. Support hands off externally to the already-configured Buy Me a Coffee account; AALyrics does not embed checkout, process payment state, or unlock functionality. The slice remains outside `main` until PR validation and merge.
+The production Settings information architecture is now merged on `main`: Version/Changelog/Source code and automatic/manual update controls live under `APP`; Privacy Policy, Terms of Use, License/third-party licenses, Help & Feedback, and Support AALyrics live under `ABOUT & SUPPORT`; Advanced remains a separate application-owned settings surface. External browser/payment handoffs remain app-owned and do not move runtime capability ownership into `:ui:phone`.
 
 ### Phase 9 — Live MediaSession runtime ✅
 
@@ -241,7 +241,7 @@ It intentionally leaves concrete modules, API signatures, storage engines, trans
 
 ## Next implementation slices
 
-No capability implementation slice is active merely because the foundation exists. Select and explicitly authorize one responsibility before production implementation.
+The capability foundation does not by itself authorize implementation. Phases 11.3a, 11.3b, and 11.4a were explicitly authorized and implemented on `feature/effective-timing-foundation`; unrelated capability slices remain inactive until separately authorized.
 
 The expected dependency-friendly sequence is:
 
@@ -278,35 +278,86 @@ Musixmatch native Translation remains deferred until its endpoint/entitlement is
 
 The durable ownership contract remains `docs/TRANSLATION_ARCHITECTURE.md`.
 
-### Phase 11.2c — Phone Translation presentation/integration — active
+### Phase 11.2c — Phone Translation presentation/integration ✅
 
-Connect the already-implemented atomic Translation result to the Phone Lyrics surface without reopening Translation execution architecture.
+Merged in PR #79.
 
-This slice:
+Phone presentation now consumes the already-implemented atomic Translation result without reopening Translation execution architecture:
 
-- lifecycle-observes `AALyricsApplication.translationState` in the Phone runtime host;
-- projects only a `TranslationState.Ready` artifact when Translation is currently enabled, its request target matches the current normalized target setting, and its canonical lyrics identity matches exactly;
-- keeps canonical/source text primary and adds actual translated lines as secondary text within the same logical viewport row;
-- keeps pending/not-required/failed Translation original-only and never converts Translation failure into lyrics failure;
-- preserves canonical timing, sync/current-line ownership, provider attribution, Lyrics Provider selection, and the existing LyricsViewport Follow/Browse geometry;
-- does not duplicate artifact lines that were intentionally preserved rather than translated;
-- adds focused mapper, rendering, and Preview coverage.
+- `PhoneRuntimeHost` lifecycle-observes `AALyricsApplication.translationState`;
+- only an enabled, current-target, exact-canonical-identity `TranslationState.Ready` artifact is eligible for translated presentation;
+- canonical/source text remains primary, with actual translated lines rendered as secondary text inside the same logical viewport row;
+- pending/not-required/failed/stale Translation remains original-only and never becomes Lyrics failure;
+- Track Card runtime/model feedback and Retry stay presentation/application-owned rather than moving execution into `:ui:phone`;
+- read-only Translation Details diagnostics expose current profile/runtime/model evidence without starting new work;
+- canonical timing, current-line ownership, provider attribution, Lyrics Provider selection, and existing Follow/Browse geometry remain unchanged.
 
-Android Auto Translation presentation, Musixmatch native Translation, persistent Translation Cache, timing/calibration, and Karaoke Translation behavior remain outside this slice.
+Android Auto Translation presentation, Musixmatch native Translation, persistent Translation Cache, timing/calibration, and Karaoke Translation behavior remain deferred to separate slices.
 
-The active implementation contract is recorded in `TASK.md`, `docs/TRANSLATION_ARCHITECTURE.md`, `docs/PHONE_LYRICS_VIEWPORT.md`, and `docs/PHONE_RUNTIME_HOST.md`.
+The durable merged contract is recorded in `docs/TRANSLATION_ARCHITECTURE.md`, `docs/PHONE_LYRICS_VIEWPORT.md`, `docs/PHONE_RUNTIME_HOST.md`, and `docs/PHONE_DETAILS.md`.
 
-### Phase 11.3 — Timing / calibration
+### Phase 11.3a — Effective Timing Foundation — implemented on topic branch
 
-Introduce source-versus-effective timing and the smallest calibration transform justified by product behavior and working-fork regressions.
+Establish the framework-independent timing engine before any Sync UI is introduced.
 
-Must follow `docs/TIMING_ARCHITECTURE.md`. A first implementation may remain constant-offset only; calibration scope, persistence, precedence, and later drift correction must be explicit rather than hidden in UI state.
+Approved first-slice semantics:
 
-### Phase 11.4 — Karaoke projection
+- canonical LINE/WORD source timestamps remain immutable;
+- define a signed lyrics timing offset;
+- positive offset advances lyrics and negative offset delays lyrics;
+- derive `effectiveLyricsPosition = projectedPlaybackPosition + lyricsOffset`;
+- zero offset preserves current behavior;
+- add a pure Kotlin/JVM `:core:timing` capability plus deterministic tests and architecture guardrails;
+- do not integrate the new engine into Phone/Android Auto presentation yet;
+- do not add persistence, calibration controls, drift correction, or Karaoke semantics.
 
-Implement a framework-neutral semantic projection from timed lyrics + effective timing + playback position into line/word/progress facts.
+The working-fork `SyncCalibration.offsetForTap(target, raw) = target - raw` sign behavior was re-checked at `v1.13.0` and is compatible with this contract. The old tap workflow itself remains deferred.
 
-Must follow `docs/KARAOKE_ARCHITECTURE.md`. Phone Compose rendering and Android Auto host rendering stay downstream and may differ visually, but they must not duplicate karaoke timing semantics.
+The implementation contract and validation record are `TASK.md` plus `docs/TIMING_ARCHITECTURE.md`.
+
+### Phase 11.3b — Existing timed-lyrics integration — implemented on topic branch
+
+The existing Phone synchronized-line/current-line decision now consumes `EffectiveLyricsPosition` from `:core:timing` while the production offset remains zero by default.
+
+The integration deliberately keeps `projectedPlaybackPosition(...)` unchanged, keeps canonical source timestamps immutable, and keeps playback progress based on the real projected playback position. Focused regression coverage proves positive/negative timing offsets can cross canonical line boundaries without introducing Sync UI or persistence.
+
+This slice establishes the real timing-consumer boundary before any user calibration state exists.
+
+### Phase 11.4a — Shared Timing Semantic Engine — implemented on topic branch
+
+Build one framework-neutral projection from canonical timed lyrics + `EffectiveLyricsPosition` into shared timing facts:
+
+- active line;
+- active word when WORD timing exists;
+- deterministic word progress when duration is defensible;
+- explicit word boundary state for before/active/gap/after cases.
+
+The engine is presentation-mode agnostic. Karaoke ON/OFF is not an input.
+
+The current Phone production path consumes only `activeLineIndex` after semantic parity was proven. LINE_SYNC, WORD_SYNC normal presentation, PLAIN lyrics, playback progress, Translation, Sync UI, and Android Auto remain behaviourally unchanged.
+
+The existing timing topic branch continues for this work. Draft PR #80 was closed before review because it represented only the earlier 11.3a/11.3b checkpoint.
+
+### Phase 11.3c — Sync calibration UX — deferred
+
+UX deliberately follows the semantic engine.
+
+Only after shared timing semantics and behaviour-preserving wiring are proven, define:
+
+- adjustment controls and step sizes;
+- scope (session/global/track/provider/presentation-specific);
+- persistence;
+- reset semantics;
+- Phone/Android Auto compensation policy;
+- any later manual/automatic calibration workflow.
+
+Do not infer these choices from the legacy app or from the current placeholder.
+
+### Phase 11.4b — Karaoke consumer/rendering — deferred
+
+Karaoke presentation will consume the already-computed shared timing projection rather than own current-line/current-word/progress calculations.
+
+The Karaoke consumer/rendering contract is now documented in `docs/KARAOKE_ARCHITECTURE.md`: Karaoke enablement is presentation/application state, the shared Timing Semantic Engine is mode-agnostic, Normal presentation consumes line facts, and future Karaoke presentation may consume additional word/progress/boundary facts. Phone Compose and Android Auto may render differently, but neither may duplicate timing semantics.
 
 ### Phase 11.5 — Presentation state integration
 
@@ -329,7 +380,7 @@ The durable distribution policy is defined in `docs/RELEASES.md`:
 - release tags must point to commits contained in `main`;
 - one persistent release signing identity is required for update compatibility.
 
-The initial signed distribution `v0.1.0-alpha.1` has been published successfully; later tags continue to follow the same documented release policy.
+Signed prereleases have been published successfully through `v0.2.0-alpha.2`; later tags continue to follow the same documented release policy.
 
 ## Android Auto media presentation track
 
@@ -369,7 +420,7 @@ The future Car App Library implementation must remain a dedicated topic branch/P
 
 ## Later phases
 
-After the capability slices, later work includes finished Phone presentation, the authorized Car App Library Android Auto implementation described above, settings/persistence not already introduced by a capability, release-process refinement beyond the established GitHub Release baseline, and regression comparison against the previous fork.
+Remaining later work includes Sync calibration UX/persistence, Karaoke consumer/rendering, Android Auto Translation and the authorized Car App Library implementation described above, capability-specific settings/persistence not yet justified, release-process refinement beyond the established GitHub Release baseline, and continued regression comparison against the previous fork.
 
 Do not use future feature needs as a reason to turn `LyricsCoordinator`, `PlaybackLyricsController`, the media-session runtime, demand gate, production selector, concrete providers, capability services, or the shared design system into god objects.
 

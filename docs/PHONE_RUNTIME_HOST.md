@@ -2,11 +2,9 @@
 
 ## Status
 
-This document defines the approved application-composition slice that makes the production Phone UI reachable from a debug APK on a physical device.
+This document defines the production application-composition boundary that hosts the Phone UI and connects application-owned runtime state to presentation.
 
-The implementation branch is `feature/phone-shell-runtime-host`, based on `main` after PR #49.
-
-PR #50 implements this application-composition slice on `feature/phone-shell-runtime-host`.
+PR #50 established the original runtime-host slice. Subsequent merged work has extended the same boundary for Settings/help/legal surfaces, playback-source policy, the verified update runtime, and Phone Translation/diagnostics without moving those capability implementations into `:ui:phone`.
 
 The current production branch state now has:
 
@@ -22,11 +20,11 @@ The current production branch state now has:
 - in-app License navigation backed by build-synchronized repository `NOTICE` + `LICENSE`, rendered through the shared Phone Markdown wrapper;
 - adopted Phone-local popup and second-level Settings-header primitives;
 - an explicit non-functional Sync placeholder;
-- unsupported Update controls presented unavailable rather than wired to no-ops, while Changelog is supplied offline from the bundled repository `CHANGELOG.md`.
+- a complete application-owned verified update runtime (manual/automatic discovery, download/integrity, install permission, PackageInstaller, recovery, and post-update feedback), while Changelog remains supplied offline from the bundled repository `CHANGELOG.md`.
 
 The debug APK builds with the real Phone shell reachable after onboarding prerequisites are satisfied. Physical-device smoke testing has been exercised for the production Phone shell and, for the Translation follow-up, the refined Secondary/Details behavior; CI/build results and device observations remain separate validation evidence.
 
-The Settings extension implemented on `feature/settings-about-support` preserves this host boundary: `:app` supplies bundled `PRIVACY.md` text and owns the external Buy Me a Coffee browser/Custom-Tab launch, while `:ui:phone` remains presentation-only.
+The merged Settings legal/help implementation preserves this host boundary: `:app` supplies bundled legal/help document text and owns external browser/Custom-Tab launches, while `:ui:phone` remains presentation-only.
 
 ## Goal
 
@@ -183,7 +181,7 @@ This slice does not change media-session selection policy.
 
 `LyricsScreen` and the canonical Phone lyrics mapper are production Compose/runtime behavior. `PhoneRuntimeHost` now collects the already-running `TranslationCoordinator` output through `AALyricsApplication.translationState`, and `mapPhoneLyricsState` projects eligible translated lines without changing canonical lyrics ownership.
 
-The active `feature/translation-runtime` slice closes that gap with the minimal application-owned presentation composition:
+PR #79 closes the Phone Translation presentation gap with the following application-owned composition:
 
 ```text
 PlaybackSnapshot ----------------------┐
@@ -215,13 +213,13 @@ The mapper must preserve existing approved semantics:
 - Translation remains an additive derived capability;
 - provider DTOs, Translation engines, ML Kit, and provider-specific logic do not enter `:ui:phone`.
 
-The full Phone Translation handoff contract and acceptance criteria are in `TASK.md`, `docs/TRANSLATION_ARCHITECTURE.md`, and `docs/PHONE_LYRICS_VIEWPORT.md`.
+The durable Phone Translation handoff contract is in `docs/TRANSLATION_ARCHITECTURE.md`, `docs/PHONE_LYRICS_VIEWPORT.md`, and `docs/PHONE_DETAILS.md`; `TASK.md` is reserved for the currently active topic branch.
 
 The runtime now forwards selected-session artwork from `METADATA_KEY_ALBUM_ART`, `METADATA_KEY_ART`, or `MediaDescription.iconBitmap` through `:app` into the existing renderable artwork slots. Android Bitmap/MediaSession ownership does not enter `:ui:phone`. Missing artwork uses the shared AALyrics foreground mark derived from `branding/android/AALyrics_foreground_android.svg`.
 
 ## Sync destination
 
-Sync remains interaction-model-deferred.
+Sync remains a deliberate non-functional placeholder. The timing architecture now fixes the downstream clock semantics (`effectiveLyricsPosition = projectedPlaybackPosition + lyricsOffset`, positive = advance lyrics, negative = delay lyrics), but this runtime-host slice still does not own a user offset, persistence, or calibration controls.
 
 For device navigation testing, the runtime host may render a deliberate non-functional placeholder that clearly indicates Sync is not available yet.
 

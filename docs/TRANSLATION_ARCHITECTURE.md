@@ -44,7 +44,7 @@ Block text uses indexed `AALYRICS_LINE` markers. Results are accepted only when 
 
 ## Phone presentation integration
 
-The Phone presentation integration on `feature/translation-runtime` consumes the execution architecture above; it does not redesign it.
+The merged Phone presentation integration from PR #79 consumes the execution architecture above; it does not redesign it.
 
 Production presentation path:
 
@@ -558,7 +558,7 @@ It must not prematurely implement:
 - Phone/Android Auto Translation presentation;
 - persistent Translation Cache.
 
-Those exclusions defined Phase 11.2a only. Phase 11.2b subsequently implemented the execution responsibilities described in "Current execution implementation" while preserving the scaffold's settings and model-lifecycle ownership. The active Phase 11.2c now explicitly authorizes **Phone** Translation presentation integration under the downstream rules above; Android Auto Translation presentation remains deferred.
+Those exclusions defined Phase 11.2a only. Phase 11.2b subsequently implemented the execution responsibilities described in "Current execution implementation" while preserving the scaffold's settings and model-lifecycle ownership. Phase 11.2c then completed **Phone** Translation presentation integration in PR #79 under the downstream rules above; Android Auto Translation presentation remains deferred.
 
 ## Invariants
 

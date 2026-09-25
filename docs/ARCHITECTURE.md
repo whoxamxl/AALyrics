@@ -17,7 +17,7 @@ Completed milestones:
 
 The live Android media-session runtime is implemented and merged in PR #29. Process-wide lyrics-demand gating is implemented and merged in PR #30; its boundary is specified in `docs/LYRICS_DEMAND_GATING.md`. Presentation remains in the dedicated `:ui` boundary: a shared Compose design system plus separate phone and automotive screen-composition modules.
 
-The lyrics-capability architecture is defined by `docs/LYRICS_PIPELINE_ARCHITECTURE.md` and its five focused capability documents for cache, translation, timing/calibration, karaoke projection, and presentation state. That foundation fixes ownership, dependency direction, lifecycle constraints, and canonical-versus-derived data rules. The Translation background scaffold is the first capability slice to justify concrete Translation modules; later capability modules remain evidence-driven rather than pre-created.
+The lyrics-capability architecture is defined by `docs/LYRICS_PIPELINE_ARCHITECTURE.md` and its focused capability documents for cache, translation, timing/calibration, Karaoke consumption/rendering, and presentation state. That foundation fixes ownership, dependency direction, lifecycle constraints, and canonical-versus-derived data rules. Translation has justified its concrete modules through implementation, and `:core:timing` now owns both the effective lyrics clock and the shared framework-neutral LINE/WORD timing projection. Future capability modules remain evidence-driven rather than pre-created.
 
 ## Design goals
 
@@ -72,7 +72,7 @@ The demand-gating slice adds an application-lifecycle boundary in front of `Play
 
 The Translation background scaffold also lets `:app` compose persisted Translation settings with a process-level ML Kit target-model preparation runtime. That runtime does not observe canonical lyrics, execute lyric Translation, or publish foreground state.
 
-Future cache, Translation execution, timing, karaoke, and presentation-capability composition may be wired from `:app` or other appropriate composition roots, but the composition root must not become the owner of their feature logic.
+Translation execution and Phone presentation are now composed through their dedicated capability/application boundaries. Future cache, timing integration, karaoke, Android Auto Translation, and broader presentation-capability composition may be wired from `:app` or other appropriate composition roots, but the composition root must not become the owner of their feature logic.
 
 ### `:core:model`
 
@@ -87,6 +87,30 @@ Pure Kotlin provider contracts. Concrete providers normalize results into `Lyric
 Pure Kotlin application lyrics orchestration. It owns `LyricsState`, lookup identity/lifecycle, provider fan-out, stale-result protection, playback-to-lookup ownership, and the `CandidateSelector` port. It depends on provider contracts, never concrete providers or the production selector implementation.
 
 It must not become a general-purpose cache, translation, timing, karaoke, persistence, or presentation orchestrator merely because those capabilities consume lyrics.
+
+### `:core:timing`
+
+A dedicated pure Kotlin/JVM timing capability.
+
+Implemented foundation responsibilities:
+
+- represent signed `LyricsTimingOffset` semantics;
+- derive `EffectiveLyricsPosition` from projected playback position plus offset;
+- define zero offset as neutral behaviour.
+
+The implemented shared timing semantic engine also has these responsibilities:
+
+- consume canonical `:core:model` timed lyrics + `EffectiveLyricsPosition`;
+- project active line;
+- project active word for WORD timing;
+- derive word progress only when duration is defensible;
+- expose word boundary facts deterministically.
+
+The sign convention remains fixed: positive advances lyrics, negative delays lyrics.
+
+`:core:timing` is now authorized to depend on `:core:model` for this semantic projection and on no other production module. It remains framework-independent and stateless.
+
+It must not own MediaSession projection, canonical lyrics mutation, providers, Translation, persistence, Sync UI, Karaoke enablement, Phone/automotive presentation, rendering, layout, or animation cadence.
 
 ### `:provider:selection`
 
@@ -220,7 +244,7 @@ Translation now has one justified concrete dependency path:
 
 `:translation:api` and `:translation:core` remain pure Kotlin. UI modules must not depend on the concrete `:translation:mlkit` adapter. Translation remains downstream of canonical lyrics without moving execution into Lyrics Providers or `:core:lyrics`.
 
-Cache, timing, karaoke, and any additional Translation modules remain absent until implementation evidence justifies their placement and contracts.
+Cache, any dedicated Karaoke module, and any additional Translation modules remain absent until implementation evidence justifies their placement and contracts. `:core:timing` is implemented as a pure Kotlin/JVM capability, depends only on `:core:model`, and is consumed by `:app` for the current Phone line path. Karaoke enablement/rendering remains downstream presentation work rather than another timing owner.
 
 ## Runtime flow
 
@@ -279,13 +303,17 @@ canonical normalized lyrics
         ├─ translation boundary
         └─ timing/calibration boundary
                     ↓
-             effective timing
+          effective lyrics position
+                    +
+          canonical timed lyrics
                     ↓
-             karaoke projection
+          Timing Semantic Engine
                     ↓
-       presentation-ready semantic facts
+          shared timing projection
              /                 \
         Phone state       Automotive state
+          │                    │
+          └─ Normal / future Karaoke presentation policy
 ```
 
 This is an ownership sketch, not a requirement that all capabilities execute linearly or synchronously.
@@ -368,7 +396,7 @@ The gate must not reach into provider jobs, change `PlaybackTrackIdentity`, or t
 
 ## Lyrics capability foundation
 
-Future cache, translation, timing/calibration, karaoke projection, and presentation-state work share one architectural foundation defined in `docs/LYRICS_PIPELINE_ARCHITECTURE.md`.
+Cache, translation, timing/calibration, Karaoke consumption/rendering, and presentation-state work share one architectural foundation defined in `docs/LYRICS_PIPELINE_ARCHITECTURE.md`.
 
 Capability-specific rules live in:
 
@@ -385,22 +413,22 @@ canonical lyrics
 ├─ source text/timing
 ├─ cacheable canonical facts
 ├─ derived translation
-├─ derived effective timing/calibration
-└─ derived karaoke projection
+├─ derived effective lyrics position / calibration
+└─ derived shared timing projection
 ```
 
 Stable rules:
 
 - cache/storage infrastructure stays behind a replaceable data-access boundary;
 - translation is additive and must not overwrite valid original lyrics;
-- calibration transforms source timing into effective timing without destroying source timestamps;
-- karaoke semantics are framework-neutral and shared before surface-specific rendering;
+- calibration keeps source timing immutable and derives `effectiveLyricsPosition = projectedPlaybackPosition + lyricsOffset`; positive advances lyrics and negative delays lyrics;
+- line/word timing semantics are framework-neutral and shared in the timing capability before Normal or Karaoke presentation consumes them;
 - Phone and automotive consume common semantic facts but retain independent surface state;
 - asynchronous/persisted derived work must respect canonical lyrics identity and stale-result ownership;
 - optional capability failure must not erase valid lower-level lyrics state;
 - providers, MediaSession runtime, `LyricsCoordinator`, and UI must not absorb unrelated capability ownership.
 
-This foundation intentionally does not prescribe concrete future module names, API signatures, storage engines, translation engines, calibration algorithms, karaoke DTOs, ViewModels, or final UI-state shapes. Each implementation slice must introduce only the smallest contract justified by real inputs, outputs, lifecycle, and tests.
+This foundation generally avoids speculative concrete modules and APIs. Translation introduced concrete modules only when implementation justified them; timing now has enough evidence to extend the existing `:core:timing` module with shared semantic projection over `:core:model`. Cache storage, timing persistence/scope, Sync UX, drift algorithms, Karaoke consumer/rendering contracts, ViewModels, and final UI-state shapes remain deferred until their own evidence-bearing slices.
 
 ## Core responsibilities
 
@@ -446,7 +474,7 @@ Provider-independent observable domain state for phone and automotive presentati
 - Provider-local cancellation should cancel underlying HTTP work where practical.
 - Translation failure must leave valid original lyrics usable.
 - Calibration changes must not silently rewrite canonical provider timestamps or refetch lyrics unless a later explicit policy requires it.
-- Karaoke semantic calculation must not be duplicated independently by Phone and automotive renderers.
+- Shared line/word timing semantics must not be duplicated independently by Normal, Karaoke, Phone, or automotive presentation.
 - Cache or optional derived-capability failure must not corrupt canonical lyrics lifecycle state.
 
 ## Architecture guardrails
@@ -457,7 +485,7 @@ As future capability modules become concrete, their implementation slices should
 
 ## Future extension points
 
-The architecture seam for cache, translation, timing/calibration, karaoke projection, and presentation state is now defined. Concrete implementations remain future independent slices and must follow `docs/LYRICS_PIPELINE_ARCHITECTURE.md` plus the relevant capability-specific document.
+The architecture seam for cache, translation, timing/calibration, Karaoke consumption/rendering, and presentation state is defined. Translation is implemented through Phone presentation, and `:core:timing` now implements the effective lyrics clock plus shared LINE/WORD timing projection used by the current Phone line path. Sync UX/persistence and Karaoke consumer/rendering remain separate later slices.
 
 Settings/persistence, release/signing, and other later features remain separate responsibilities. Their future existence must not be used as a reason to mix those concerns into `LyricsCoordinator`, `PlaybackLyricsController`, the media-session runtime, demand gate, provider selection, concrete provider adapters, capability services, or shared design-system components.
 

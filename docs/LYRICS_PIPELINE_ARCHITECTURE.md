@@ -52,11 +52,11 @@ The capability foundation is conceptually:
           caching       translation   timing/calibration
              │              │              │
              │              │              v
-             │              │       effective timing
+             │              │   effective lyrics position
              │              │              │
              │              └──────┐       │
              │                     │       v
-             │                     │   karaoke projection
+             │                     │   Timing Semantic Engine
              │                     │       │
              └─────────────────────┴───────┤
                                            v
@@ -82,8 +82,8 @@ canonical lyrics
 ├─ normalized metadata/source facts
 │
 ├─ derived translation
-├─ derived effective timing/calibration
-└─ derived karaoke projection
+├─ derived effective lyrics position / calibration
+└─ derived shared timing projection
 ```
 
 Derived capabilities must not silently mutate canonical provider truth in place.
@@ -116,23 +116,27 @@ Lyrics Provider selection and Translation Provider selection are independent. Tr
 
 Translation failure is not lyrics lookup failure.
 
-The Translation background scaffold and execution/orchestration are implemented. Language profiling, contextual block planning, Translation Provider execution, artifact assembly, stale-result rejection, and atomic publication are therefore established dependencies. The active next Translation slice is Phone presentation integration: consume only an atomic Ready artifact that is eligible under the current enabled/target settings and exact canonical identity, while keeping Android Auto Translation as a separate later surface integration.
+The Translation background scaffold, execution/orchestration, and Phone presentation integration are implemented. Language profiling, contextual block planning, Translation Provider execution, artifact assembly, stale-result rejection, atomic publication, identity-gated translated lyric rows, Track Card runtime feedback, and read-only Phone diagnostics are established dependencies. Android Auto Translation remains a separate later surface integration.
 
 See `docs/TRANSLATION_ARCHITECTURE.md`.
 
 ### Timing and calibration
 
-Timing/calibration transforms canonical source timing into effective timing for playback-dependent behavior without overwriting source timestamps.
+Timing/calibration preserves canonical source timing and derives a lyrics-only virtual clock for playback-dependent behavior. The implemented foundation fixes `effectiveLyricsPosition = projectedPlaybackPosition + lyricsOffset`: positive advances lyrics, negative delays lyrics, and zero preserves current behavior.
 
-The exact calibration scope and transform remain deferred.
+The shared timing-semantic layer consumes canonical timed lyrics + effective lyrics position and deterministically projects active line/word/progress/boundary facts. These facts are independent of Karaoke enablement and are shared by Normal and future Karaoke presentation.
+
+Offset scope, persistence, Sync UI, provider/track/device-specific correction, and drift/rate correction remain deferred.
 
 See `docs/TIMING_ARCHITECTURE.md`.
 
-### Karaoke projection
+### Karaoke consumption
 
-Karaoke is a framework-neutral semantic projection over timed lyrics, effective timing, and playback position. It decides semantic playback facts such as active line/word/progress; it does not render Compose, spans, canvas primitives, or Android Auto templates.
+Karaoke does not own the shared active-line/active-word/progress calculation. Those facts come from the timing semantic engine.
 
-See `docs/KARAOKE_ARCHITECTURE.md`.
+Future Karaoke work consumes that projection and maps it into Karaoke-specific presentation/rendering while remaining independent of Compose/Canvas/Span/Android Auto implementation details at the shared semantic boundary.
+
+The downstream consumer/rendering ownership contract is defined in `docs/KARAOKE_ARCHITECTURE.md`: Karaoke enablement is not a Timing Semantic Engine input; Normal and Karaoke presentation consume the same projection with different subsets/presentation policy.
 
 ### Presentation state
 
@@ -188,7 +192,7 @@ canonical lyrics identity
         ├─ cache identity
         ├─ translation identity + configuration
         ├─ calibration scope/identity
-        └─ karaoke projection input identity
+        └─ timing projection input identity
 ```
 
 Exact identity types are intentionally not defined here.
@@ -230,19 +234,22 @@ Translation background scaffold              ✅
   ↓
 Translation execution / orchestration        ✅
   ↓
-Phone Translation presentation integration  ACTIVE
+Phone Translation presentation integration  ✅
   │
   ├──────────────> Timing / Calibration
   │                    ↓
-  │              Karaoke Projection
+  │              Timing Semantic Engine
   │                    ↓
+  │              Normal presentation
+  │                    └────> future Karaoke consumer/rendering
+  │
   └──────────────> broader Presentation State / Automotive integration
 
 Persistent cache
   -> separate later capability only when explicitly authorized
 ```
 
-Phone Translation presentation does not need to wait for timing/calibration or Karaoke because it preserves canonical line/timing ownership and adds only identity-aligned text to the existing row. Timing/calibration and Karaoke remain independent later capabilities, and Android Auto Translation remains a separate surface integration.
+Phone Translation presentation is complete and preserves canonical line/timing ownership by adding only identity-aligned text to the existing row. Effective timing, shared semantic projection, and current-line integration are implemented while preserving current presentation. Sync UX, Karaoke consumer/rendering, and Android Auto Translation remain separate later work.
 
 This sequencing reduces architectural churn while preserving Cache as an independent capability. It does not forbid non-persistent in-memory lifecycle state needed by Translation execution.
 
@@ -289,8 +296,8 @@ This umbrella intentionally does not decide:
 - whether each capability needs its own Gradle module;
 - cache placement, schema, storage engine, TTL, or invalidation policy;
 - concrete Translation Provider request/candidate signatures, contextual batching heuristics, LanguageProfiler thresholds, or persistent Translation cache implementation;
-- calibration scope, persistence, offset/drift algorithm, or editing workflow;
-- karaoke projection DTO shape, interpolation policy, update cadence, or visual rendering;
+- calibration scope, persistence, drift algorithm, or editing workflow;
+- Karaoke consumer/rendering DTOs, update cadence, visual styling, lexical layout, or sweep animation;
 - shared presentation-facts DTO, ViewModel structure, DI framework, Flow composition, or surface state fields;
 - final implementation order when product evidence justifies a different sequence.
 

@@ -1,129 +1,372 @@
-# Timing and Calibration Architecture Foundation
+# Timing and Calibration Architecture
+
+## Status
+
+Phase 11.3a (effective-position foundation), Phase 11.3b (existing current-line integration), and Phase 11.4a (shared Timing Semantic Engine) are implemented and validated on `feature/effective-timing-foundation`.
+
+The shared **Timing Semantic Engine** consumes canonical timed lyrics + `EffectiveLyricsPosition` and produces deterministic line/word/progress/boundary facts. The engine is mode-agnostic; Karaoke ON/OFF is not an input.
+
+The current Phone production consumer uses only the engine's active-line fact, preserving current UI behaviour. Sync controls, persistence, non-zero production calibration, Karaoke consumer/rendering, and Android Auto timing presentation remain outside this scope.
+
+The working fork contains `lyrics/KaraokeTiming.kt` and `util/SyncCalibration.kt`. They were re-checked at `v1.13.0` on 2026-09-25. `SyncCalibration.offsetForTap(targetTimeMs, rawPositionMs) = targetTimeMs - rawPositionMs` preserves the approved sign convention. `KaraokeTiming` provides mature active-word boundary evidence that is **PRESERVE / REFACTOR**; Android-specific sweep/layout behaviour remains outside the shared engine.
 
 ## Purpose
 
-Define the seam for future timing offset and calibration behavior without prematurely choosing a calibration algorithm, persistence scope, drift model, UI interaction, or synchronization-editing workflow.
+Create one timing boundary that every later synchronized presentation can trust.
 
-The working fork contains `lyrics/KaraokeTiming.kt` and `util/SyncCalibration.kt`. Migration intent remains **PRESERVE / REFACTOR** after a current-fork re-check, with timing math separated from Android/UI rendering.
+AALyrics must keep three ideas separate:
 
-## Stable ownership rules
+1. **canonical source timing** — provider/parser timestamps stored in normalized lyrics;
+2. **projected playback position** — AALyrics' best current estimate of the media position;
+3. **effective lyrics position** — the virtual position used only when comparing playback against lyric timestamps.
 
-Provider/source timing is canonical input. User/session calibration produces a derived effective timing view; it does not rewrite provider truth in place.
+The first implementation does not rewrite lyric timestamps. It adjusts the position used to read those timestamps.
+
+## Stable terminology
+
+### Canonical source timing
+
+LINE/WORD timestamps obtained from Lyrics Providers and normalized into AALyrics models.
+
+Canonical timing is provider truth for the resolved lyric document. Calibration must never overwrite it in place.
+
+### Projected playback position
+
+The current framework-neutral playback position after the existing MediaSession snapshot/monotonic projection logic.
+
+This remains the real playback clock used for ordinary playback facts. Timing calibration does not mutate the MediaSession, seek the player, or pretend that the actual media position changed.
+
+### Lyrics timing offset
+
+A signed duration used only to shift the lyric-reading clock.
+
+The sign convention is a product contract:
 
 ```text
-source lyrics timing
-        +
-calibration parameters
-        ↓
-effective timing
-        ↓
-karaoke / presentation projections
+positive offset  -> advance lyrics
+negative offset  -> delay lyrics
+zero offset      -> preserve current behavior
 ```
 
-Rules:
+Human interpretation:
 
-- provider adapters normalize source timestamps but do not apply user calibration;
-- source timestamps remain recoverable and comparable after calibration;
-- timing/calibration logic must be pure or framework-independent wherever possible;
-- Phone and Android Auto may expose calibration controls later, but they must not implement timing math independently;
-- calibration changes must not trigger provider refetch or cross-provider reselection unless a later explicitly documented product rule requires it;
-- playback position is an input to timing projection, not something calibration owns;
-- timing state must not leak Android media objects or UI-framework types into pure logic.
+```text
+lyrics are behind the music -> press/use +
+lyrics are ahead of the music -> press/use -
+```
 
-## Canonical versus effective timing
+Example at the same real media position:
 
-AALyrics must preserve two concepts:
+```text
+before:
+She'd take the world off | my shoulders if it was ever hard to move
 
-1. **source timing** — timestamps obtained from a provider/parser and normalized into AALyrics models;
-2. **effective timing** — source timing transformed by current calibration policy for playback/rendering decisions.
+positive offset:
+She'd take the world off my shoulders | if it was ever hard to move
 
-The architecture must prevent code from silently replacing canonical source timestamps with calibrated values.
+negative offset:
+She'd take the | world off my shoulders if it was ever hard to move
+```
 
-This distinction is important for:
+This convention must stay identical across future Phone Sync controls, diagnostics, Karaoke, and Android Auto.
 
-- recalibration;
-- provider comparison/debugging;
-- cache stability;
-- karaoke boundary calculations;
-- reset-to-source behavior;
-- future persistence/version migration.
+### Effective lyrics position
 
-## Calibration scope
+The derived, lyrics-only virtual clock:
 
-A future implementation must explicitly choose the scope of calibration values rather than letting scope emerge from UI state.
+```text
+effectiveLyricsPositionMs
+    = projectedPlaybackPositionMs + lyricsTimingOffsetMs
+```
 
-Possible scopes include:
+Example:
 
-- transient session-level adjustment;
-- track-specific adjustment;
-- source/provider-specific adjustment;
-- global playback/device adjustment;
-- combinations with explicit precedence.
+```text
+projected playback position = 31,200 ms
+lyrics timing offset        =   +800 ms
+effective lyrics position   = 32,000 ms
+```
 
-This foundation does not select one. Whatever scope is chosen must be represented outside surface-local UI state and must have deterministic precedence.
+The media is still at 31,200 ms. Only lyric timing comparisons behave as though they are at 32,000 ms.
 
-## Offset versus drift
+## Why position is shifted instead of source timestamps
 
-Constant offset and playback drift are separate problems.
+A constant offset could be expressed mathematically by rewriting every source timestamp with the opposite sign. AALyrics deliberately does not use that representation.
 
-A first implementation may support only a constant offset. Future drift/rate correction must not require replacing the architecture boundary.
+The canonical representation is:
+
+```text
+canonical lyric timestamps remain unchanged
+                    +
+projected playback position + lyrics offset
+                    ↓
+effective lyrics position
+                    ↓
+compare against canonical timestamps
+```
+
+Benefits:
+
+- provider/source timestamps remain inspectable and comparable;
+- reset-to-source means offset = 0 rather than reconstructing timestamps;
+- Translation stays attached to canonical line identity without inheriting another clock;
+- later Karaoke consumes one effective position rather than reapplying calibration;
+- Phone and Android Auto cannot accidentally implement opposite sign conventions;
+- future persistence can store calibration parameters rather than modified lyrics.
+
+## First foundation boundary
+
+The first implementation should introduce a small pure Kotlin/JVM timing capability. The intended home is a dedicated `:core:timing` module unless concrete implementation evidence shows a smaller existing pure-core placement is materially cleaner.
+
+The foundation needs only:
+
+- a signed lyrics-offset value/semantic contract;
+- a pure transform from projected playback position + offset to effective lyrics position;
+- zero offset as the neutral/default behavior;
+- framework-independent tests for the transform and sign convention.
+
+The foundation engine is intentionally stateless. It does not own SharedPreferences/DataStore, track lifecycle, UI state, or MediaSession objects.
 
 Conceptually:
 
 ```text
-source timestamp
-        ↓
-calibration transform
-        ↓
-effective timestamp
+projectedPlaybackPositionMs
+            +
+lyricsTimingOffsetMs
+            ↓
+pure timing transform
+            ↓
+effectiveLyricsPositionMs
 ```
 
-The transform may later become richer than `timestamp + offset`, but callers should consume effective timing through one timing/calibration boundary rather than duplicating formulas.
+The exact Kotlin type names may follow repository conventions, but the semantics above are fixed.
 
-## Relationship to karaoke
+## Timing semantic projection
 
-Timing owns timestamp transformation and calibration semantics. Karaoke owns semantic projection of timed lyrics at a playback position.
+The effective-position transform and timing semantics are separate layers inside the same timing capability:
 
 ```text
-canonical timed lyrics
-        ↓
-effective timing
-        ↓
-karaoke projection engine
-        ↓
-current line / word / progress facts
+canonical LINE/WORD timestamps
+            +
+EffectiveLyricsPosition
+            ↓
+Timing Semantic Engine
+            ↓
+active line / active word / word progress / word boundary
 ```
 
-Karaoke must not reach back into provider DTOs or duplicate calibration math.
+The semantic engine is not a Karaoke-mode engine. It returns the same facts regardless of how presentation later chooses to consume them.
 
-## Relationship to translation
+Phase 11.3b introduced effective position into the app-local current-line selector. Phase 11.4a replaces that duplicate selector with the shared projection after parity tests established identical line behaviour.
 
-Translation does not own or mutate timestamps. If translated text is later aligned to original lines or segments, it references the canonical/effective timing structure rather than creating an independent playback clock.
+Current Phone presentation continues to consume only the active-line result, so computing additional WORD facts must not by itself change UI behaviour.
 
-## Deferred decisions
+## Playback clock ownership
 
-Do not decide in this foundation slice:
+The existing playback projection remains upstream.
 
-- exact offset units/API types beyond normalized time semantics;
-- calibration persistence location;
-- global versus per-track precedence;
-- drift/rate-correction algorithm;
-- automatic calibration;
-- tap-to-sync workflow;
-- waveform/audio analysis;
-- calibration UI;
-- clamp behavior at negative/overflow timestamps;
-- editing or saving corrected lyrics back to source/cache;
-- interpolation rules for malformed or sparse timing.
+Timing calibration must not:
 
-## Future implementation gate
+- own MediaSession discovery;
+- alter or seek actual playback;
+- duplicate monotonic playback projection;
+- infer a new clock from UI animation frames;
+- change playback rate;
+- start provider work.
 
-Before implementing timing/calibration:
+Pause, resume, seek, playback-rate changes, and track changes first affect the existing projected playback position. Timing then applies only the current lyrics offset to that projected value.
 
-1. re-check working-fork `KaraokeTiming`, `SyncCalibration`, related tests, and active call sites;
-2. classify exact behaviors as PRESERVE / REFACTOR / DROP;
-3. define source-versus-effective timing types and calibration scope;
-4. specify boundary conditions at line/word starts and ends;
-5. add deterministic tests for zero offset, positive/negative offset, reset, track supersession, and any selected precedence rules;
-6. ensure calibration changes do not refetch providers by accident;
-7. implement on a dedicated topic branch and stop before merge for approval.
+## Source timing immutability
+
+Provider adapters may normalize provider-native timing units into AALyrics domain models, but they must not apply user/device calibration.
+
+Rules:
+
+- canonical LINE and WORD timestamps stay unchanged;
+- calibration changes do not refetch Lyrics Providers;
+- calibration changes do not rerun cross-provider candidate selection;
+- cacheable canonical lyrics must not silently contain calibrated timestamps;
+- Translation never owns or mutates timing.
+
+## Relationship to LINE_SYNC
+
+LINE active-line semantics are fixed by current production behaviour:
+
+```text
+active line = latest TimedLyricLine whose startMs <= effective lyrics position
+```
+
+Example:
+
+```text
+line A start = 10,000 ms
+line B start = 15,000 ms
+line C start = 20,000 ms
+
+effective lyrics position = 17,500 ms
+=> line B is active
+```
+
+The projection returns the original `LyricsDocument.lines` index. Before the first timed line (including a negative effective position), no line is active. Exact start timestamps activate the new line. Line `endMs` does not terminate the active-line fact in this slice because current production current-line semantics do not use it.
+
+The new engine must prove parity before replacing the existing app-local selector. Playback progress remains tied to the real projected playback position.
+
+## Relationship to WORD_SYNC
+
+WORD timing follows the same effective clock and is part of the shared timing semantic projection:
+
+```text
+canonical word timestamps
+        +
+EffectiveLyricsPosition
+        ↓
+shared Timing Semantic Engine
+        ↓
+active word / word progress / word boundary
+```
+
+Stable word-selection rules:
+
+- choose the latest word whose start has occurred;
+- explicit `endMs` is exclusive and may create an unhighlighted gap;
+- a newer explicitly-ended word does not reactivate an older open-ended word;
+- an open-ended word remains active until a later word starts;
+- backward seek is stateless and deterministically recomputes earlier facts.
+
+Word progress uses an explicit end when available. When an open-ended word has a later word with a later start, that next start may bound progress. If no defensible end exists, the word may remain active while progress is unavailable.
+
+The shared engine must not invent visual fallback durations, lexical display ranges, sweep easing, or Karaoke enablement. Those are downstream consumer/rendering concerns.
+
+Karaoke must consume this semantic output and must never add the timing offset again.
+
+## Relationship to Translation
+
+Translation remains additive text attached to canonical line identity.
+
+Translation:
+
+- does not change source timestamps;
+- does not calculate the lyrics offset;
+- does not maintain a separate translated playback clock;
+- follows the canonical row's timing when rendered.
+
+## Calibration scope and persistence
+
+The sign convention and effective-position equation are now fixed. The **scope** of a non-zero offset is deliberately not fixed by the foundation.
+
+Possible later scopes include:
+
+- transient/session offset;
+- global user offset;
+- Phone-specific presentation compensation;
+- Android Auto-specific presentation compensation;
+- track/provider-specific correction only if later evidence justifies it.
+
+Likewise, persistence is deferred. The foundation must not add a durable preference merely because a value type exists.
+
+When persistence is eventually authorized, the implementing PR must re-evaluate the `Reset AALyrics` contract.
+
+## Offset versus drift
+
+Constant offset and playback drift are different problems.
+
+Phase 11.3a implements only a constant offset transform.
+
+Future drift/rate correction, if evidence requires it, may enrich the timing policy behind the same effective-position boundary. It must not reinterpret the sign convention or require callers to duplicate timing formulas.
+
+## Negative and out-of-range effective positions
+
+The timing transform should remain a transparent signed calculation rather than silently mutating canonical timestamps or clamping to a lyric/track boundary.
+
+A negative effective lyrics position simply represents a point before the beginning of timed lyrics. Downstream line/word lookup decides that no timed unit is active yet.
+
+Track-duration clamping remains playback/projection policy, not calibration policy.
+
+Extreme arithmetic-overflow hardening may follow normal repository conventions; it must not introduce user-visible semantics that contradict the equation above.
+
+## Presentation and Sync UI boundary
+
+The current Phone `SyncScreen` remains a deliberate placeholder.
+
+The timing foundation does not authorize:
+
+- +/- buttons;
+- sliders;
+- offset text fields;
+- tap-to-sync;
+- auto-calibration;
+- persistence;
+- provider-specific correction;
+- Phone/Android Auto-specific offset settings.
+
+When Sync UI is later authorized, it must emit semantic offset changes to application/capability ownership. The UI must not implement the timing equation itself.
+
+## Diagnostics
+
+A later integration may expose presentation-ready timing diagnostics such as:
+
+```text
+Projected playback position
+Lyrics timing offset
+Effective lyrics position
+```
+
+Verbose Details must consume already-owned values and must not become the timing owner.
+
+## Deterministic tests
+
+The effective-position foundation already covers zero/positive/negative offset semantics.
+
+The shared semantic engine must additionally cover:
+
+- LINE parity with current production selection;
+- mixed plain/timed document indices;
+- before-first, exact-start, between-line, after-last, negative-position, and backward-seek LINE cases;
+- WORD before-first, exact-start, explicit-end, gap, after-last, open-ended, newer-word-ended, and backward-seek cases;
+- explicit-end word progress;
+- inferred-next-start word progress;
+- unavailable progress for an open-ended final word;
+- zero-duration safety;
+- Phone mapper regression proving current WORD/LINE/PLAIN presentation remains unchanged when the engine is wired.
+
+## Implementation sequence
+
+Current execution order is intentionally engine-first and UX-later:
+
+```text
+Phase 11.3a — Effective Timing Foundation                 ✅
+    pure offset model + effective lyrics position
+            ↓
+Phase 11.3b — Existing timed-lyrics integration          ✅
+    current Phone line path consumes effective position
+            ↓
+Phase 11.4a — Shared Timing Semantic Engine              implemented
+    LINE + WORD + progress + boundary semantics
+    + behaviour-preserving Phone wiring
+            ↓
+Phase 11.3c — Sync calibration UX                        deferred
+    controls + scope + persistence
+            ↓
+Phase 11.4b — Karaoke consumer/rendering                 deferred
+    consume shared semantic facts; do not recompute them
+```
+
+Phase numbering groups capabilities; implementation order follows dependency and regression safety.
+
+The active semantic-engine work continues on the existing timing topic branch. Its previous Draft PR was intentionally closed before review so implementation can continue without treating a partial checkpoint as final review scope.
+
+## Architecture guardrails
+
+The implementation must preserve these invariants:
+
+- source timestamps stay canonical and recoverable;
+- positive means advance lyrics, negative means delay lyrics;
+- the only foundation equation is `projectedPosition + offset`;
+- calibration math is not duplicated in Phone or automotive UI;
+- timing changes do not refetch providers or reselect lyrics;
+- the timing capability remains framework-independent;
+- `:core:timing` may depend on `:core:model` for semantic projection, but not Android/UI/provider/Translation/runtime infrastructure;
+- the shared semantic engine does not accept Karaoke enablement/mode as input;
+- current Phone presentation may consume only the active-line fact while preserving existing behaviour;
+- Sync UI and persistence remain out of scope until separately authorized;
+- future Karaoke consumers use shared semantic output and never reapply the offset or duplicate line/word timing semantics.

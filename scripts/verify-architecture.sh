@@ -55,6 +55,7 @@ network_api_refs='(android\.net\.http\.|okhttp3\.|retrofit2\.|io\.ktor\.|org\.ap
 
 pure_modules=(
   "core/model"
+  "core/timing"
   "provider/api"
   "provider/matching"
   "provider/lrc"
@@ -78,7 +79,7 @@ for module in "${pure_modules[@]}"; do
     "core/model"|"provider/matching")
       forbidden_dependencies="$production_dependencies"
       ;;
-    "provider/api"|"provider/lrc")
+    "core/timing"|"provider/api"|"provider/lrc")
       forbidden_dependencies=$(
         printf '%s\n' "$production_dependencies" \
           | grep -Ev "${dependency_prefix}${core_model_target}${dependency_suffix}" \

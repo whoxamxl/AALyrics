@@ -24,6 +24,28 @@ Compose UI                     host-rendered templates
 
 Phone and automotive state may differ in shape, granularity, update cadence, navigation, interaction, and rendering capability.
 
+## Timing projection consumption
+
+Shared timing semantics are produced before presentation mode is chosen.
+
+```text
+canonical timed lyrics + EffectiveLyricsPosition
+                ↓
+        Timing Semantic Engine
+                ↓
+        LyricsTimingProjection
+                │
+        ┌───────┴────────┐
+        ↓                ↓
+Normal presentation   Karaoke presentation
+```
+
+Karaoke ON/OFF is application/presentation state, not an input to the Timing Semantic Engine.
+
+For current Phone presentation, the Normal consumer uses only `activeLineIndex`. Even when WORD timing allows the engine to calculate `activeWordIndex`, `wordProgress`, and `wordBoundary`, those facts remain unused until a Karaoke consumer is separately implemented.
+
+Future Karaoke presentation may consume the additional shared facts, but Phone and automotive renderers must not recalculate timing semantics.
+
 ## Shared facts versus surface state
 
 Shared presentation-ready facts may eventually include semantically common information such as:
@@ -31,8 +53,8 @@ Shared presentation-ready facts may eventually include semantically common infor
 - current normalized track metadata;
 - current canonical lyrics availability/state;
 - optional translation availability/result;
-- effective timing/calibration facts;
-- karaoke projection facts;
+- effective lyrics position / calibration facts;
+- shared timing projection facts and, when implemented, Karaoke consumer facts;
 - provider/source attribution needed for display;
 - capability flags derived from domain state.
 
@@ -74,7 +96,7 @@ Forbidden ownership:
 - UI must not read cache storage directly;
 - UI must not own translation engine execution;
 - UI must not normalize MediaSession data;
-- UI must not implement calibration formulas;
+- UI must not implement calibration formulas or compute `projectedPlaybackPosition + lyricsOffset` itself;
 - UI must not duplicate karaoke current-line/current-word algorithms;
 - `:ui:phone` and `:ui:automotive` must not depend on each other.
 
@@ -117,8 +139,9 @@ Conceptually:
 ```text
 LyricsState
 Translation state/result
-Timing/calibration state
-Karaoke projection
+Timing/calibration state / effective lyrics position
+Shared timing projection
+Optional Karaoke consumer facts
 Track/playback facts
         ↓
 surface presentation mapping

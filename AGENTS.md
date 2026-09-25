@@ -7,9 +7,109 @@ These instructions apply to AI-assisted repository work, including implementatio
 - Work on a topic branch. Do not commit directly to `main`.
 - Keep commits small and single-purpose.
 - Use `TASK.md` to record the active plan/status for substantial planned work.
-- Open a pull request, run CI, and review the resulting diff before integration.
+- Commit and push coherent checkpoints as implementation progresses.
+- Do not open a pull request merely to expose in-progress work.
+- Open the pull request only after implementation and final validation are complete; open it as a **Draft pull request** by default.
+- After opening that Draft PR, stop. Do not automatically request Codex review, mark the PR ready, merge it, or begin the next implementation slice without explicit user authorization.
 - Always stop before merge. Merge only after explicit user authorization.
 - Prefer squash merge after approval unless a different strategy is explicitly requested.
+
+## Incremental implementation and PR timing
+
+For non-trivial implementation work, use the following workflow unless the user explicitly requests a different process.
+
+### 1. Work incrementally
+
+- Split implementation into small, coherent checkpoints.
+- Each checkpoint should represent one understandable responsibility or behavioral change.
+- Do not accumulate unrelated changes into one large commit.
+
+### 2. Commit each completed checkpoint
+
+- Commit after each checkpoint reaches a coherent state.
+- Use a focused commit message that describes only that checkpoint.
+- Prefer several small reviewable commits over one large implementation commit.
+- A checkpoint does not need the entire feature to be finished before it can be committed.
+
+### 3. Push progress without opening a PR
+
+- Push the topic branch as checkpoints are completed so the remote branch remains current and recoverable.
+- Pushing the branch does **not** imply that the work is ready for review.
+- Do **not** open a pull request during normal implementation progress.
+
+### 4. Keep the PR closed until implementation is complete
+
+- Finish all planned implementation checkpoints first.
+- Complete the task-specific acceptance criteria, focused tests, architecture checks, documentation alignment, Preview coverage, regression review, and build validation that are required for the slice.
+- Fix validation failures on the existing topic branch using additional focused commits and push them normally.
+- Do not create a temporary or progress PR merely to expose the branch or obtain a PR number.
+
+### 5. Perform final validation before PR creation
+
+Before opening the PR:
+
+- run the required final validation for the whole branch;
+- inspect the branch-wide diff and confirm that scope has not drifted;
+- confirm the branch is based on the intended baseline and reconcile it when necessary;
+- confirm documentation and `TASK.md` match the implemented behavior;
+- confirm no known acceptance criterion remains incomplete;
+- record any intentionally deferred follow-up work rather than silently expanding scope.
+
+### 6. Open a Draft PR only after final validation
+
+Once implementation and final validation are complete:
+
+- push the final branch state;
+- open a **Draft pull request**;
+- include the completed scope, implementation summary, validation evidence, and explicitly deferred follow-up work in the PR description.
+
+Opening the Draft PR is the default completion point for the implementation workflow.
+
+### 7. Stop after opening the Draft PR
+
+After the Draft PR is created:
+
+- **STOP**;
+- do not automatically request Codex review;
+- do not convert the PR to Ready for review;
+- do not merge;
+- do not begin the next implementation slice.
+
+Those actions require explicit user authorization.
+
+The standard flow is therefore:
+
+```text
+plan
+  ↓
+checkpoint
+  ↓
+implement
+  ↓
+checkpoint validation
+  ↓
+commit
+  ↓
+push
+  ↓
+next checkpoint
+  ↓
+...
+  ↓
+implementation complete
+  ↓
+final validation
+  ↓
+branch-wide diff / scope review
+  ↓
+push final state
+  ↓
+open Draft PR
+  ↓
+STOP
+```
+
+An early Draft PR is an exception and should be created only when the user explicitly asks for one.
 
 ## Provider migration authorization
 
