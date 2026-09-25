@@ -158,14 +158,18 @@ internal fun PhoneRuntimeHost(
     ) {
         SystemClock.elapsedRealtime()
     }
+    val karaokeHighFrequencyUpdatesEnabled =
+        karaokeFeatureEnabled &&
+            karaokeModeEnabled &&
+            selectedDestination == PhoneDestination.Lyrics &&
+            hasCurrentWordSyncedLyrics(playback, lyricsState)
 
     LaunchedEffect(
         playback.isPlaying,
         playback.trackIdentity,
         selectedDestination,
         verboseDetailsEnabled,
-        karaokeFeatureEnabled,
-        karaokeModeEnabled,
+        karaokeHighFrequencyUpdatesEnabled,
     ) {
         monotonicTimeMs = SystemClock.elapsedRealtime()
         while (
@@ -179,8 +183,7 @@ internal fun PhoneRuntimeHost(
                     )
                 )
         ) {
-            delay(if (karaokeFeatureEnabled && karaokeModeEnabled &&
-                selectedDestination == PhoneDestination.Lyrics) 33L else 250L)
+            delay(if (karaokeHighFrequencyUpdatesEnabled) 33L else 250L)
             monotonicTimeMs = SystemClock.elapsedRealtime()
         }
     }

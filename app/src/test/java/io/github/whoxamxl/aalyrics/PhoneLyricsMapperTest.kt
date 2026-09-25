@@ -784,6 +784,48 @@ class PhoneLyricsMapperTest {
     }
 
     @Test
+    fun `high frequency Karaoke cadence requires current WORD lyrics identity`() {
+        val playback = PlaybackSnapshot(
+            track = track(),
+            source = PlaybackSource("com.spotify.music"),
+        )
+        val word = ready(
+            playback = playback,
+            lines = listOf(
+                TimedLyricLine(
+                    text = "Hello",
+                    startMs = 0L,
+                    words = listOf(TimedWord("Hello", 0L, 500L)),
+                ),
+            ),
+        )
+        val line = ready(
+            playback = playback,
+            lines = listOf(TimedLyricLine("Hello", 0L)),
+        )
+        val stalePlayback = playback.copy(
+            track = requireNotNull(playback.track).copy(
+                references = setOf(TrackReference("spotify", "stale-track")),
+            ),
+        )
+        val staleWord = ready(
+            playback = stalePlayback,
+            lines = listOf(
+                TimedLyricLine(
+                    text = "Hello",
+                    startMs = 0L,
+                    words = listOf(TimedWord("Hello", 0L, 500L)),
+                ),
+            ),
+        )
+
+        assertTrue(hasCurrentWordSyncedLyrics(playback, word))
+        assertEquals(false, hasCurrentWordSyncedLyrics(playback, line))
+        assertEquals(false, hasCurrentWordSyncedLyrics(playback, staleWord))
+        assertEquals(false, hasCurrentWordSyncedLyrics(playback, LyricsState.Idle))
+    }
+
+    @Test
     fun `word source stays line-oriented while Karaoke is unavailable`() {
         val track = track()
         val playback = PlaybackSnapshot(
