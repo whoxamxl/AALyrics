@@ -673,6 +673,53 @@ class PhoneLyricsMapperTest {
     }
 
     @Test
+    fun `Karaoke requires both switches and WORD source while preserving canonical rows`() {
+        val playback = PlaybackSnapshot(
+            track = track(), positionMs = 150L,
+            source = PlaybackSource("com.spotify.music"),
+        )
+        val wordLine = TimedLyricLine("Hello world", 0L, words = listOf(
+            TimedWord("Hello", 0L, 300L), TimedWord("world", 300L, 700L),
+        ))
+        val wordLyrics = ready(playback, listOf(wordLine))
+        fun mapped(gate: Boolean, mode: Boolean, lyrics: LyricsState) = mapPhoneLyricsState(
+            playback = playback,
+            lyricsState = lyrics,
+            plainLyricsAutoScrollEnabled = true,
+            interactionMode = LyricsViewportInteractionMode.FOLLOW,
+            currentMonotonicTimeMs = 1_000L,
+            karaokeFeatureEnabled = gate,
+            karaokeModeEnabled = mode,
+        ).viewport
+
+        val baseline = mapped(false, false, wordLyrics)
+        assertEquals(baseline, mapped(true, false, wordLyrics))
+        assertEquals(baseline, mapped(false, true, wordLyrics))
+
+        val active = mapped(true, true, wordLyrics)
+        assertEquals(LyricsSyncType.LINE, active.syncType)
+        assertEquals(0, active.currentLineIndex)
+        assertEquals(0, active.currentWordIndex)
+        assertEquals(0.5f, active.currentWordProgress)
+        assertEquals(0 to 5, active.karaokeSweep?.let { it.start to it.end })
+        assertEquals(0.5f, active.karaokeSweep?.progress)
+        assertEquals("Hello world", active.lines.single().text)
+
+        assertNull(mapped(true, true, ready(playback, listOf(
+            TimedLyricLine("Line only", 0L),
+        ))).karaokeSweep)
+        val plainLyrics = LyricsState.Ready(
+            lookup = LyricsLookup(
+                id = LyricsLookupId(1L),
+                track = requireNotNull(playback.track),
+                playbackIdentity = requireNotNull(playback.trackIdentity),
+            ),
+            lyrics = LyricsDocument(listOf(PlainLyricLine("Plain only"))),
+        )
+        assertNull(mapped(true, true, plainLyrics).karaokeSweep)
+    }
+
+    @Test
     fun `plain source remains untimed in Phone presentation`() {
         val playback = PlaybackSnapshot(
             track = track(),

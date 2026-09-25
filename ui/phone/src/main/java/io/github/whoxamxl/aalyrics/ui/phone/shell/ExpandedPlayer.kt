@@ -509,17 +509,13 @@ private fun QuickControlsButton(
             onDismissRequest = { expanded = false },
             modifier = Modifier.width(208.dp),
         ) {
-            QuickControlTranslationRow(
-                enabled = translationEnabled,
-                onEnabledChanged = onTranslationEnabledChanged,
+            QuickControlsContent(
+                translationEnabled = translationEnabled,
+                onTranslationEnabledChanged = onTranslationEnabledChanged,
+                karaokeFeatureEnabled = karaokeFeatureEnabled,
+                karaokeModeEnabled = karaokeModeEnabled,
+                onKaraokeModeEnabledChanged = onKaraokeModeEnabledChanged,
             )
-            if (karaokeFeatureEnabled) {
-                QuickControlToggleRow(
-                    label = stringResource(R.string.playback_karaoke),
-                    enabled = karaokeModeEnabled,
-                    onEnabledChanged = onKaraokeModeEnabledChanged,
-                )
-            }
         }
     }
 }
@@ -536,6 +532,27 @@ internal fun QuickControlTranslationRow(
         onEnabledChanged = onEnabledChanged,
         modifier = modifier,
     )
+}
+
+@Composable
+internal fun QuickControlsContent(
+    translationEnabled: Boolean,
+    onTranslationEnabledChanged: (Boolean) -> Unit,
+    karaokeFeatureEnabled: Boolean,
+    karaokeModeEnabled: Boolean,
+    onKaraokeModeEnabledChanged: (Boolean) -> Unit,
+) {
+    QuickControlTranslationRow(
+        enabled = translationEnabled,
+        onEnabledChanged = onTranslationEnabledChanged,
+    )
+    if (karaokeFeatureEnabled) {
+        QuickControlToggleRow(
+            label = stringResource(R.string.playback_karaoke),
+            enabled = karaokeModeEnabled,
+            onEnabledChanged = onKaraokeModeEnabledChanged,
+        )
+    }
 }
 
 @Composable

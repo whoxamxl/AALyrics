@@ -24,6 +24,24 @@ private fun LyricsViewportWordPreview() {
     LyricsViewportPreview(PhonePreviewFixtures.viewportWord)
 }
 
+@Preview(name = "WORD · Karaoke off", group = "LyricsViewport", widthDp = 412, heightDp = 520)
+@Composable
+private fun LyricsViewportWordOffPreview() {
+    LyricsViewportPreview(PhonePreviewFixtures.viewportWord.copy(
+        currentWordIndex = null,
+        currentWordProgress = 0f,
+        karaokeSweep = null,
+    ))
+}
+
+@Preview(name = "WORD · Karaoke with Translation", group = "LyricsViewport", widthDp = 412, heightDp = 520)
+@Composable
+private fun LyricsViewportWordTranslatedPreview() {
+    val lines = PhonePreviewFixtures.viewportWord.lines.toMutableList()
+    lines[4] = lines[4].copy(translatedText = "A quiet echo follows close behind")
+    LyricsViewportPreview(PhonePreviewFixtures.viewportWord.copy(lines = lines))
+}
+
 @Preview(name = "LINE · middle", group = "LyricsViewport", widthDp = 412, heightDp = 520)
 @Composable
 private fun LyricsViewportLinePreview() {

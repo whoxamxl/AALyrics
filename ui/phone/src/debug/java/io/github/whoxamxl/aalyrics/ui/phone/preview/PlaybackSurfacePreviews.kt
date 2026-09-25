@@ -2,6 +2,7 @@ package io.github.whoxamxl.aalyrics.ui.phone.preview
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -18,7 +19,7 @@ import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsTheme
 import io.github.whoxamxl.aalyrics.ui.phone.shell.ExpandedPlayer
 import io.github.whoxamxl.aalyrics.ui.phone.shell.PlaybackBar
 import io.github.whoxamxl.aalyrics.ui.phone.shell.PlaybackQueueSheetContent
-import io.github.whoxamxl.aalyrics.ui.phone.shell.QuickControlTranslationRow
+import io.github.whoxamxl.aalyrics.ui.phone.shell.QuickControlsContent
 import io.github.whoxamxl.aalyrics.ui.phone.shell.PlaybackSurface
 import io.github.whoxamxl.aalyrics.ui.phone.state.PlaybackSurfaceUiState
 
@@ -212,6 +213,23 @@ private fun PlaybackQueueScrollablePreview() {
 )
 @Composable
 private fun PlaybackQuickControlsPreview() {
+    QuickControlsPreview(gateEnabled = false, karaokeEnabled = false)
+}
+
+@Preview(name = "Quick controls · Karaoke available", group = "PlaybackSurface", widthDp = 240, heightDp = 128, showBackground = true)
+@Composable
+private fun PlaybackQuickControlsKaraokeOffPreview() {
+    QuickControlsPreview(gateEnabled = true, karaokeEnabled = false)
+}
+
+@Preview(name = "Quick controls · Karaoke on", group = "PlaybackSurface", widthDp = 240, heightDp = 128, showBackground = true)
+@Composable
+private fun PlaybackQuickControlsKaraokeOnPreview() {
+    QuickControlsPreview(gateEnabled = true, karaokeEnabled = true)
+}
+
+@Composable
+private fun QuickControlsPreview(gateEnabled: Boolean, karaokeEnabled: Boolean) {
     AALyricsTheme {
         androidx.compose.material3.Surface(
             modifier = Modifier.padding(8.dp),
@@ -222,10 +240,15 @@ private fun PlaybackQuickControlsPreview() {
                 AALyricsColors.BorderSoft,
             ),
         ) {
-            QuickControlTranslationRow(
-                enabled = true,
-                onEnabledChanged = {},
-            )
+            Column {
+                QuickControlsContent(
+                    translationEnabled = true,
+                    onTranslationEnabledChanged = {},
+                    karaokeFeatureEnabled = gateEnabled,
+                    karaokeModeEnabled = karaokeEnabled,
+                    onKaraokeModeEnabledChanged = {},
+                )
+            }
         }
     }
 }
