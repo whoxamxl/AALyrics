@@ -61,6 +61,8 @@ class MlKitTranslationModelManager(
         },
     )
     override val states: StateFlow<Map<String, TranslationModelState>> = _states.asStateFlow()
+    private val _inventoryReconciled = MutableStateFlow(false)
+    override val inventoryReconciled: StateFlow<Boolean> = _inventoryReconciled.asStateFlow()
 
     init {
         applicationScope.launch {
@@ -114,6 +116,7 @@ class MlKitTranslationModelManager(
                     }
             }
         }
+        _inventoryReconciled.value = true
     }
 
     override suspend fun ensureAvailable(languageTag: String): Boolean {

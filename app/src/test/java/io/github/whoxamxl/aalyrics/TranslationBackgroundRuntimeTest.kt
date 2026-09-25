@@ -81,6 +81,7 @@ class TranslationBackgroundRuntimeTest {
         private val mutableStates =
             MutableStateFlow<Map<String, TranslationModelState>>(emptyMap())
         override val states: StateFlow<Map<String, TranslationModelState>> = mutableStates
+        override val inventoryReconciled: StateFlow<Boolean> = MutableStateFlow(true)
         val preparedLanguages = mutableListOf<String>()
 
         override suspend fun ensureAvailable(languageTag: String): Boolean {

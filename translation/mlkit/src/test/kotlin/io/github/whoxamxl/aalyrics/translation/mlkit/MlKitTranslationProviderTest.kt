@@ -72,6 +72,7 @@ class MlKitTranslationProviderTest {
         private val routeAvailable: Boolean,
     ) : TranslationModelManager {
         override val states: StateFlow<Map<String, TranslationModelState>> = MutableStateFlow(emptyMap())
+        override val inventoryReconciled: StateFlow<Boolean> = MutableStateFlow(true)
         val routes = mutableListOf<Pair<String, String>>()
 
         override suspend fun ensureAvailable(languageTag: String): Boolean = routeAvailable
