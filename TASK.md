@@ -257,12 +257,12 @@ Current-head validation after the Details follow-up:
 - [ ] Focused Translation / `PhoneLyricsMapperTest` / `PhoneDetailsMapperTest`.
 - [ ] Repository `test` task.
 - [ ] `:app:assembleDebug`.
-- [x] Branch-name + 58-commit message gate reproduced directly against current GitHub state; added-line architecture ownership scan found no new boundary leak (full script execution still pending).
+- [x] Branch-name + all current branch commit-message gates reproduced directly against GitHub state; added-line architecture ownership scan found no new boundary leak and no build dependency files changed (full script execution still pending).
 - [x] Bounded current-head diff review found and fixed route Retry overreach: Retry now targets only current-route failed/timed-out models, not unrelated historical failures.
 - [x] Codex round 1 P2 validated and fixed: Track Card model-download status is now restricted to current-route target/Profile languages, so unrelated model work cannot hide Failed/Retry or replace Translating.
 - [x] Track Card terminal-state precedence aligned: a matching `TranslationState.Failed` always renders `Translation failed + Retry`; active model preparation cannot mask the terminal failure.
 - [ ] Final branch diff after executable validation.
-- [ ] Bounded Codex review under `AGENTS.md`.
+- [x] Two normal Codex review rounds completed under `AGENTS.md`: round 1 P2 was fixed; round 2 reported no major issues on `226bd08`. Subsequent targeted compile-safety / terminal-state fixes were statically rechecked without starting a third broad review.
 - [ ] Physical-device smoke test for Translation Details, including Verbose OFF/ON and at least one failure/info-tooltip path where practical.
 
 Historical baseline evidence retained from before the Details follow-up:
