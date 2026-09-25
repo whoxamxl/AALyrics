@@ -208,9 +208,22 @@ Examples of rendering-only decisions:
 - easing;
 - alpha/scale;
 - animation cadence;
-- whether GAP visually freezes, clears, or transitions;
 - text layout/display-token grouping;
 - final open-ended word visual fallback.
+
+### Phone boundary presentation contract
+
+Phone Karaoke keeps boundary state separate from sweep animation state. A missing active sweep does **not** by itself mean that Karaoke presentation is unavailable.
+
+For a credibly mappable WORD line:
+
+- `BEFORE_FIRST` -> completed prefix length `0`; the whole current line remains pending/secondary and no sweep runs;
+- `ACTIVE` -> completed prefix is primary, the active display group sweeps left-to-right, and the future suffix remains pending/secondary;
+- `GAP` between different visible groups -> the completed visible prefix remains primary, the future suffix remains pending/secondary, and no sweep runs;
+- `GAP` between timing fragments that map to the same visible group -> freeze that group's partial sweep at the last completed fragment boundary rather than marking the whole visible word complete;
+- `AFTER_LAST` -> the entire current line is completed/primary and no sweep runs.
+
+Only an unrenderable/low-credibility token-to-text mapping falls back to normal current-line styling. These rules are Phone presentation policy and do not change `LyricsTimingProjection`, provider timestamps, or `:core:timing`.
 
 ## Text layout boundary
 

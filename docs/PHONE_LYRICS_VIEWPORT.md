@@ -174,6 +174,12 @@ WORD timing provides karaoke-level progress.
   - active word: AccentCyan/progress treatment,
   - upcoming words: secondary/dim treatment.
 - If timing data supports a stable continuous in-word sweep, it may be used without changing layout geometry.
+- Treat Karaoke line state and sweep animation as separate presentation facts. A valid Karaoke line may have no active sweep.
+- Before the first word starts, keep the complete current line pending/secondary rather than showing it all as completed.
+- During an explicit inter-word gap, preserve the completed primary prefix and pending secondary suffix. Do not flash the whole row back to normal all-primary current-line styling.
+- When a gap occurs inside one visible display group made from multiple timing fragments, keep the partial visible-group sweep frozen at the last completed fragment boundary.
+- After the final explicitly-ended word, keep the complete line primary/completed until the next line transition.
+- Fall back to normal current-line styling only when the token-to-canonical-text mapping is not safe enough to render Karaoke.
 - The viewport follows the timed line while Follow mode is active.
 
 ### LINE

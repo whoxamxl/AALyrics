@@ -79,7 +79,8 @@ Mapping requirements:
 - for multi-token groups, presentation mapping may derive only the visible-group sweep progress from the active semantic token plus the canonical group timing interval;
 - do not recalculate current line, choose a different active word, or reinterpret `wordBoundary`;
 - do not mutate canonical timestamps;
-- expose presentation-ready range/progress only while effective Karaoke is active;
+- expose a presentation-ready Karaoke line state while effective Karaoke is active; a nullable sweep is only the animation sub-state, not Karaoke eligibility itself;
+- preserve semantic boundary presentation without fabricating timing: BEFORE_FIRST is fully pending, GAP keeps the completed prefix while the future suffix stays pending, and AFTER_LAST is fully completed;
 - if mapping is not credible, fall back to normal current-line presentation;
 - if the final visible display group has no explicit end and no following token start, use the working fork's `650ms` duration as a Phone-only visual sweep fallback; do not expose that duration as semantic `wordProgress` or mutate source timestamps;
 - keep Translation text outside word sweep.
@@ -93,11 +94,15 @@ For the current WORD_SYNC line:
 - completed text before the active token is primary;
 - active token uses left-to-right continuous progress;
 - pending text after the active token is secondary;
+- BEFORE_FIRST renders the whole mappable line as pending/secondary with no sweep;
+- an inter-word GAP freezes the completed/pending split instead of falling back to an all-primary normal row;
+- a GAP inside one visible multi-token display group freezes that group's partial sweep at the last completed token boundary;
+- AFTER_LAST renders the whole mappable line completed/primary with no sweep;
 - current line focus/scale remains the existing viewport behaviour;
 - Translation row remains unchanged;
 - no Performance-mode pulse/fullscreen renderer is introduced.
 
-When there is no safely mappable active token, render normal current-line styling. For the final open-ended visible display group only, a missing semantic duration may use the documented 650ms Phone visual fallback.
+When the line/token mapping itself is not credible, render normal current-line styling. A valid BEFORE_FIRST, GAP, or AFTER_LAST boundary is still a Karaoke presentation state even though no active sweep is running. For the final open-ended visible display group only, a missing semantic duration may use the documented 650ms Phone visual fallback.
 
 The Compose renderer should preserve the useful continuous-sweep behavior from the working fork but must not transplant `ReplacementSpan` architecture. It receives presentation-ready range/progress and never selects the active word itself.
 
@@ -129,7 +134,7 @@ Do not:
 5. [x] rendering: implement current-line continuous sweep with normal-style fallback.
 6. [x] tests/previews: cover gate/mode/WORD matrix and current behaviour when disabled.
 7. [x] final validation: architecture, unit tests, debug APK, regression/scope audit, docs alignment.
-8. [ ] open a new Draft PR and stop.
+8. [x] open a new Draft PR and stop.
 
 ## Acceptance criteria
 
@@ -142,6 +147,7 @@ Do not:
 - Karaoke ON/OFF does not change the lyrics clock or projected playback position.
 - Missing source-timestamp fallback projection is WORD_SYNC-specific, toggle-independent, and does not reset for unrelated metadata-only updates.
 - Phone uses continuous sweep, not Performance-mode pulse.
+- Karaoke boundary states do not flash back to normal all-primary current-line styling: BEFORE_FIRST stays pending, GAP preserves only the completed prefix, and AFTER_LAST stays completed.
 - fragmented timing tokens mapping to one visible word produce one continuous visible-word sweep, not repeated resets;
 - working-fork layout/grouping behavior is preserved/refactored where compatible rather than reimplemented without evidence;
 - the working fork's 650ms final-group fallback is preserved only as Phone visual policy and never becomes shared timing truth;
