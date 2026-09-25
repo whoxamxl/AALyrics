@@ -26,9 +26,11 @@ fun AdvancedSettingsScreen(
     ignoreNonAudioApps: Boolean,
     allowUnclassifiedApps: Boolean,
     verboseDetailsEnabled: Boolean,
+    karaokeFeatureEnabled: Boolean,
     cleanupState: TranslationModelCleanupUiState,
     onAllowUnclassifiedAppsChanged: (Boolean) -> Unit,
     onVerboseDetailsChanged: (Boolean) -> Unit,
+    onKaraokeFeatureEnabledChanged: (Boolean) -> Unit,
     onClearTranslationModels: () -> Unit,
     onDismissTranslationModelCleanupFailure: () -> Unit,
     onResetAALyrics: () -> Unit,
@@ -91,12 +93,11 @@ fun AdvancedSettingsScreen(
         ) {
             SettingsSwitchRow(
                 title = stringResource(R.string.settings_karaoke_mode),
-                checked = false,
-                onCheckedChange = {},
-                enabled = false,
-                infoText = stringResource(R.string.settings_karaoke_unavailable),
+                checked = karaokeFeatureEnabled,
+                onCheckedChange = onKaraokeFeatureEnabledChanged,
+                infoText = stringResource(R.string.settings_karaoke_info),
                 infoContentDescription =
-                    stringResource(R.string.settings_karaoke_unavailable_description),
+                    stringResource(R.string.settings_karaoke_info_description),
             )
         }
 

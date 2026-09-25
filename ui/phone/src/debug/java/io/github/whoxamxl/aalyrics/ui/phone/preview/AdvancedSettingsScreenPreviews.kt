@@ -58,6 +58,12 @@ private fun AdvancedVerboseOnPreview() {
     AdvancedSettingsPreview(initialVerboseDetailsEnabled = true)
 }
 
+@Preview(name = "Karaoke feature enabled", group = "AdvancedSettings", widthDp = 412, heightDp = 760)
+@Composable
+private fun AdvancedKaraokeEnabledPreview() {
+    AdvancedSettingsPreview(initialVerboseDetailsEnabled = false, initialKaraokeFeatureEnabled = true)
+}
+
 @Preview(
     name = "Narrow · 320dp",
     group = "AdvancedSettings",
@@ -115,7 +121,7 @@ private fun AdvancedResetDialogPreview() {
     AALyricsTheme {
         SettingsConfirmationDialog(
             title = "Reset AALyrics?",
-            text = "AALyrics settings and onboarding state will be restored to their defaults. Downloaded translation models and system settings will not be changed.",
+            text = "AALyrics settings, including both Karaoke switches, and onboarding state will be restored to their defaults. Downloaded translation models and system settings will not be changed.",
             confirmLabel = "Reset",
             dismissLabel = "Cancel",
             confirmColor = AALyricsColors.Error,
@@ -130,6 +136,7 @@ private fun AdvancedSettingsPreview(
     initialVerboseDetailsEnabled: Boolean,
     initialIgnoreNonAudioApps: Boolean = true,
     initialAllowUnclassifiedApps: Boolean = false,
+    initialKaraokeFeatureEnabled: Boolean = false,
     cleanupState: TranslationModelCleanupUiState = TranslationModelCleanupUiState.IDLE,
 ) {
     AALyricsTheme {
@@ -138,6 +145,9 @@ private fun AdvancedSettingsPreview(
         }
         var allowUnclassifiedApps by remember(initialAllowUnclassifiedApps) {
             mutableStateOf(initialAllowUnclassifiedApps)
+        }
+        var karaokeFeatureEnabled by remember(initialKaraokeFeatureEnabled) {
+            mutableStateOf(initialKaraokeFeatureEnabled)
         }
 
         Box(
@@ -149,9 +159,11 @@ private fun AdvancedSettingsPreview(
                 ignoreNonAudioApps = initialIgnoreNonAudioApps,
                 allowUnclassifiedApps = allowUnclassifiedApps,
                 verboseDetailsEnabled = verboseDetailsEnabled,
+                karaokeFeatureEnabled = karaokeFeatureEnabled,
                 cleanupState = cleanupState,
                 onAllowUnclassifiedAppsChanged = { allowUnclassifiedApps = it },
                 onVerboseDetailsChanged = { verboseDetailsEnabled = it },
+                onKaraokeFeatureEnabledChanged = { karaokeFeatureEnabled = it },
                 onClearTranslationModels = {},
                 onDismissTranslationModelCleanupFailure = {},
                 onResetAALyrics = {},

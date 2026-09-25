@@ -56,6 +56,7 @@ data class SettingsScreenUiState(
     val allowUnclassifiedApps: Boolean = false,
     val automaticallyCheckForUpdates: Boolean = true,
     val verboseDetailsEnabled: Boolean = false,
+    val karaokeFeatureEnabled: Boolean = false,
     val translationEnabled: Boolean = false,
     val translationTarget: SettingsLanguageOptionUiState,
     val translationTargets: List<SettingsLanguageOptionUiState>,

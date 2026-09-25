@@ -34,6 +34,7 @@ fun SettingsScreen(
     onAllowUnclassifiedAppsChanged: (Boolean) -> Unit,
     onAutomaticallyCheckForUpdatesChanged: (Boolean) -> Unit = {},
     onVerboseDetailsChanged: (Boolean) -> Unit,
+    onKaraokeFeatureEnabledChanged: (Boolean) -> Unit = {},
     onTranslationEnabledChanged: (Boolean) -> Unit,
     onTranslationTargetSelected: (String) -> Unit,
     onTranslationModelDownloadRequested: (String) -> Unit,
@@ -69,8 +70,10 @@ fun SettingsScreen(
             ignoreNonAudioApps = state.ignoreNonAudioApps,
             allowUnclassifiedApps = state.allowUnclassifiedApps,
             verboseDetailsEnabled = state.verboseDetailsEnabled,
+            karaokeFeatureEnabled = state.karaokeFeatureEnabled,
             onAllowUnclassifiedAppsChanged = onAllowUnclassifiedAppsChanged,
             onVerboseDetailsChanged = onVerboseDetailsChanged,
+            onKaraokeFeatureEnabledChanged = onKaraokeFeatureEnabledChanged,
             cleanupState = state.translationModelCleanup,
             onClearTranslationModels = onClearTranslationModels,
             onDismissTranslationModelCleanupFailure =

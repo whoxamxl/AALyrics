@@ -5,6 +5,8 @@ import android.content.SharedPreferences
 import io.github.whoxamxl.aalyrics.PhonePresentationSettingsPersistence.Companion.ALLOW_UNCLASSIFIED_APPS_KEY
 import io.github.whoxamxl.aalyrics.PhonePresentationSettingsPersistence.Companion.AUTOMATICALLY_CHECK_FOR_UPDATES_KEY
 import io.github.whoxamxl.aalyrics.PhonePresentationSettingsPersistence.Companion.IGNORE_NON_AUDIO_APPS_KEY
+import io.github.whoxamxl.aalyrics.PhonePresentationSettingsPersistence.Companion.KARAOKE_FEATURE_ENABLED_KEY
+import io.github.whoxamxl.aalyrics.PhonePresentationSettingsPersistence.Companion.KARAOKE_MODE_ENABLED_KEY
 import io.github.whoxamxl.aalyrics.PhonePresentationSettingsPersistence.Companion.VERBOSE_DETAILS_ENABLED_KEY
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -59,6 +61,12 @@ internal class SharedPreferencesPhonePresentationSettingsStore(
     val automaticallyCheckForUpdates: StateFlow<Boolean> =
         mutableAutomaticallyCheckForUpdates.asStateFlow()
 
+    private val mutableKaraokeFeatureEnabled = MutableStateFlow(initialSettings.karaokeFeatureEnabled)
+    val karaokeFeatureEnabled: StateFlow<Boolean> = mutableKaraokeFeatureEnabled.asStateFlow()
+
+    private val mutableKaraokeModeEnabled = MutableStateFlow(initialSettings.karaokeModeEnabled)
+    val karaokeModeEnabled: StateFlow<Boolean> = mutableKaraokeModeEnabled.asStateFlow()
+
     private val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
         val settings = persistence.read()
         when (key) {
@@ -71,6 +79,10 @@ internal class SharedPreferencesPhonePresentationSettingsStore(
             AUTOMATICALLY_CHECK_FOR_UPDATES_KEY ->
                 mutableAutomaticallyCheckForUpdates.value =
                     settings.automaticallyCheckForUpdates
+            KARAOKE_FEATURE_ENABLED_KEY, KARAOKE_MODE_ENABLED_KEY -> {
+                mutableKaraokeFeatureEnabled.value = settings.karaokeFeatureEnabled
+                mutableKaraokeModeEnabled.value = settings.karaokeModeEnabled
+            }
         }
     }
 
@@ -98,6 +110,18 @@ internal class SharedPreferencesPhonePresentationSettingsStore(
         persistence.setAutomaticallyCheckForUpdates(enabled)
     }
 
+    fun setKaraokeFeatureEnabled(enabled: Boolean) {
+        mutableKaraokeFeatureEnabled.value = enabled
+        if (!enabled) mutableKaraokeModeEnabled.value = false
+        persistence.setKaraokeFeatureEnabled(enabled)
+    }
+
+    fun setKaraokeModeEnabled(enabled: Boolean) {
+        val effective = enabled && mutableKaraokeFeatureEnabled.value
+        mutableKaraokeModeEnabled.value = effective
+        persistence.setKaraokeModeEnabled(effective)
+    }
+
     fun resetToDefaults() {
         val defaults = PhonePresentationSettingsSnapshot()
         mutableVerboseDetailsEnabled.value = defaults.verboseDetailsEnabled
@@ -105,6 +129,8 @@ internal class SharedPreferencesPhonePresentationSettingsStore(
         mutableAllowUnclassifiedApps.value = defaults.allowUnclassifiedApps
         mutableAutomaticallyCheckForUpdates.value =
             defaults.automaticallyCheckForUpdates
+        mutableKaraokeFeatureEnabled.value = defaults.karaokeFeatureEnabled
+        mutableKaraokeModeEnabled.value = defaults.karaokeModeEnabled
         persistence.resetToDefaults()
     }
 

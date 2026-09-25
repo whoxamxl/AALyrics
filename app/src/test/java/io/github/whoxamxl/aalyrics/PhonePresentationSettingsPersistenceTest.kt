@@ -15,6 +15,8 @@ class PhonePresentationSettingsPersistenceTest {
                 ignoreNonAudioApps = true,
                 allowUnclassifiedApps = false,
                 automaticallyCheckForUpdates = true,
+                karaokeFeatureEnabled = false,
+                karaokeModeEnabled = false,
             ),
             persistence.read(),
         )
@@ -35,6 +37,23 @@ class PhonePresentationSettingsPersistenceTest {
     }
 
     @Test
+    fun `karaoke mode requires feature gate and clearing gate clears stored mode`() {
+        val stored = mutableMapOf<String, Boolean>()
+        val persistence = persistence(stored)
+
+        persistence.setKaraokeModeEnabled(true)
+        assertEquals(false, persistence.read().karaokeModeEnabled)
+
+        persistence.setKaraokeFeatureEnabled(true)
+        persistence.setKaraokeModeEnabled(true)
+        assertEquals(true, persistence.read().karaokeModeEnabled)
+
+        persistence.setKaraokeFeatureEnabled(false)
+        assertEquals(false, persistence.read().karaokeModeEnabled)
+        assertEquals(false, stored[PhonePresentationSettingsPersistence.KARAOKE_MODE_ENABLED_KEY])
+    }
+
+    @Test
     fun `reset restores strict playback source defaults and existing presentation default`() {
         val stored = mutableMapOf<String, Boolean>()
         val persistence = persistence(stored)
@@ -43,6 +62,8 @@ class PhonePresentationSettingsPersistenceTest {
         persistence.setIgnoreNonAudioApps(false)
         persistence.setAllowUnclassifiedApps(true)
         persistence.setAutomaticallyCheckForUpdates(false)
+        persistence.setKaraokeFeatureEnabled(true)
+        persistence.setKaraokeModeEnabled(true)
         persistence.resetToDefaults()
 
         assertEquals(
@@ -51,6 +72,8 @@ class PhonePresentationSettingsPersistenceTest {
                 ignoreNonAudioApps = true,
                 allowUnclassifiedApps = false,
                 automaticallyCheckForUpdates = true,
+                karaokeFeatureEnabled = false,
+                karaokeModeEnabled = false,
             ),
             persistence.read(),
         )

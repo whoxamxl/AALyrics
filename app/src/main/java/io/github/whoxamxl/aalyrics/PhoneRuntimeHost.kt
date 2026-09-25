@@ -95,6 +95,7 @@ internal fun PhoneRuntimeHost(
     val translationModelCleanupState by
         application.translationModelCleanupState.collectAsStateWithLifecycle()
     val verboseDetailsEnabled by application.verboseDetailsEnabled.collectAsStateWithLifecycle()
+    val karaokeFeatureEnabled by application.karaokeFeatureEnabled.collectAsStateWithLifecycle()
     val ignoreNonAudioApps by application.ignoreNonAudioApps.collectAsStateWithLifecycle()
     val allowUnclassifiedApps by application.allowUnclassifiedApps.collectAsStateWithLifecycle()
     val automaticallyCheckForUpdates by
@@ -198,6 +199,7 @@ internal fun PhoneRuntimeHost(
         translationSettings = translationSettings,
         translationModelStates = translationModelStates,
         verboseDetailsEnabled = verboseDetailsEnabled,
+        karaokeFeatureEnabled = karaokeFeatureEnabled,
         plainLyricsAutoScrollEnabled = plainLyricsAutoScrollEnabled,
         ignoreNonAudioApps = ignoreNonAudioApps,
         allowUnclassifiedApps = allowUnclassifiedApps,
@@ -310,6 +312,7 @@ internal fun PhoneRuntimeHost(
                 onAutomaticallyCheckForUpdatesChanged =
                     application::setAutomaticallyCheckForUpdates,
                 onVerboseDetailsChanged = application::setVerboseDetailsEnabled,
+                onKaraokeFeatureEnabledChanged = application::setKaraokeFeatureEnabled,
                 onTranslationEnabledChanged = application::setTranslationEnabled,
                 onTranslationTargetSelected = application::setTranslationTargetLanguage,
                 onTranslationModelDownloadRequested = application::requestTranslationModel,

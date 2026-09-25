@@ -901,28 +901,9 @@ The Composable must not own persistence. A future implementation should receive 
 
 ### Experimental features — Karaoke mode
 
-`Karaoke mode` is intentionally present only as a disabled future affordance in this stage.
+`Karaoke mode` is an application-owned persisted feature gate, default OFF. Turning it ON makes the Expanded Player Quick-controls Karaoke switch available. The live switch is separately persisted and defaults OFF. Turning the feature gate OFF clears the live switch. Karaoke presentation requires both switches ON and a WORD_SYNC source; neither switch changes provider selection or `preferredSyncType`.
 
-Required initial presentation:
-
-- label: `Karaoke mode`;
-- value: OFF;
-- control: disabled / non-interactive;
-- concise unavailable/experimental explanation where needed.
-
-This row has **no runtime wiring** in the current stage:
-
-- no persisted Karaoke setting;
-- no callback that changes application state;
-- no change to `preferredSyncType`;
-- no provider-selection effect;
-- no change to existing LINE-oriented Phone rendering;
-- no WORD-level highlighting activation;
-- no timing or Karaoke projection activation.
-
-The current runtime may already acquire WORD-capable lyrics through existing provider/selection behavior. The disabled row must not reinterpret or modify that behavior.
-
-Karaoke becomes functional only through a separately authorized implementation slice following `docs/KARAOKE_ARCHITECTURE.md`.
+The row's info explains its experimental status, where to enable the live switch, and that only word-synced lyrics are eligible. See `docs/KARAOKE_ARCHITECTURE.md` for the presentation contract.
 
 ### Storage — Clear translation models
 
@@ -954,6 +935,8 @@ After confirmation, reset restores:
 - Translation -> OFF;
 - Target language -> English;
 - Verbose details -> OFF;
+- Karaoke experimental feature gate -> OFF;
+- Karaoke live mode -> OFF;
 - Plain lyrics auto-scroll -> its Phone default;
 - Ignore non-audio apps -> ON;
 - Allow unclassified apps -> OFF;

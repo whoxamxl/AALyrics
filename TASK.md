@@ -121,7 +121,7 @@ Do not:
 ## Implementation checkpoints
 
 1. [x] docs: align Phone Karaoke activation/mapping/rendering, working-fork reuse policy, and deferred Android Auto.
-2. [ ] settings: persist Experimental feature gate + live Karaoke mode; defaults/reset OFF.
+2. [x] settings: persist Experimental feature gate + live Karaoke mode; defaults/reset OFF.
 3. [ ] playback: expose Quick-controls Karaoke toggle only behind the feature gate.
 4. [ ] mapping: expose WORD presentation facts and conservative token ranges only when effective Karaoke is active.
 5. [ ] rendering: implement current-line continuous sweep with normal-style fallback.
