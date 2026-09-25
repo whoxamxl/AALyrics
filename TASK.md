@@ -5,8 +5,8 @@
 - Branch: `feature/translation-runtime`.
 - Base: `main` at `4083588a250092e47f1efeb01e06a099b72a3604`.
 - Classification: TRANSLATION / PHONE PRESENTATION / RUNTIME COMPOSITION.
-- Status: Phone Translation works on-device once required route models are available. Device testing confirmed missing route models auto-download in the background; the active follow-up is a permanent Track Card Translation status row that makes model download, Translation execution, active route, and failure/retry visible without changing Track Card height between Translation states.
-- Authoritative references: `AGENTS.md`, `docs/TRANSLATION_ARCHITECTURE.md`, `docs/PHONE_LYRICS_VIEWPORT.md`, `docs/PHONE_RUNTIME_HOST.md`, `docs/PHONE_UI_SPEC.md`, `docs/PRESENTATION_STATE_ARCHITECTURE.md`, and the current production code/tests on this branch.
+- Status: Phone lyric Translation and the permanent Track Card Translation status/retry path are implemented. The next authorized slice is Translation metadata + compact Verbose diagnostics in Phone Details; documentation is aligned first and production code has not yet been changed for this Details slice.
+- Authoritative references: `AGENTS.md`, `docs/TRANSLATION_ARCHITECTURE.md`, `docs/PHONE_LYRICS_VIEWPORT.md`, `docs/PHONE_RUNTIME_HOST.md`, `docs/PHONE_UI_SPEC.md`, `docs/PHONE_DETAILS.md`, `docs/PRESENTATION_STATE_ARCHITECTURE.md`, and the current production code/tests on this branch.
 
 ## Goal
 
@@ -42,10 +42,12 @@ The following already exists and is the baseline to preserve:
 - `TranslationArtifact` contains exactly one line entry for each canonical lyric line and preserves canonical line index identity.
 - `TranslationArtifactLine.translated` distinguishes an actual translated line from a preserved canonical line.
 - Translation Settings, target model lifecycle, manual download/retry, model cleanup, and Reset semantics are already implemented.
-- Phone `PhoneRuntimeHost` currently does **not** collect `translationState`.
-- `mapPhoneLyricsState` currently maps canonical lyrics only.
-- `LyricsViewportLineUiState` currently has canonical `text` and optional karaoke `words`, but no translated presentation field.
-- `LyricsViewport` currently renders one canonical text block per lyric row.
+- Phone `PhoneRuntimeHost` already collects Translation state/settings/model lifecycle state.
+- `mapPhoneLyricsState` already projects eligible translated lines and the permanent Track Card Translation state.
+- `LyricsViewportLineUiState` already carries optional translated presentation and `LyricsViewport` renders canonical + translated text as one measured row.
+- Track Card automatic-model-download / translating / Ready route / Failed + Retry presentation is implemented.
+- Existing `phoneDetailsState` currently maps playback + canonical lyrics + playback-source diagnostics only; it does **not** yet include Translation Details.
+- Current `TranslationState.Translating` does not expose the completed LanguageProfile and current `TranslationState.Failed` does not retain an authoritative runtime failure reason. Those are the two diagnostic-evidence gaps to solve before Details can meet the approved contract without guessing.
 
 ## Scope
 
@@ -173,6 +175,18 @@ The likely production/test files are:
 - `ui/phone/src/debug/java/io/github/whoxamxl/aalyrics/ui/phone/preview/LyricsViewportPreviews.kt`
 - `ui/phone/src/debug/java/io/github/whoxamxl/aalyrics/ui/phone/preview/LyricsScreenPreviews.kt` where useful
 
+For the Details Translation slice, likely additional touch points are:
+
+- `translation/core/src/main/kotlin/io/github/whoxamxl/aalyrics/translation/core/TranslationModels.kt` and/or `TranslationCoordinator.kt` for the minimal diagnostic-evidence contract;
+- `app/src/main/java/io/github/whoxamxl/aalyrics/PhoneDetailsMapper.kt`;
+- `app/src/main/java/io/github/whoxamxl/aalyrics/AALyricsApplication.kt` for the application-owned Details state combine;
+- `ui/phone/src/main/java/io/github/whoxamxl/aalyrics/ui/phone/details/DetailsUiState.kt`;
+- `ui/phone/src/main/java/io/github/whoxamxl/aalyrics/ui/phone/details/DetailsScreen.kt`;
+- `app/src/test/java/io/github/whoxamxl/aalyrics/PhoneDetailsMapperTest.kt`;
+- `ui/phone/src/debug/java/io/github/whoxamxl/aalyrics/ui/phone/preview/DetailsScreenPreviews.kt` and shared Preview fixtures.
+
+Do not solve Details diagnostics by running a second LanguageProfiler, by retaining stale profile data across canonical identity changes, or by making `:ui:phone` depend on Translation core/model-manager types.
+
 This list is guidance, not permission to restructure unrelated code.
 
 ## Implementation checkpoints
@@ -217,9 +231,16 @@ Use small, reviewable commits and keep each checkpoint independently coherent.
 
 7. [ ] **Details Translation diagnostics follow-up**
    - [x] define Normal Details `TRANSLATION` section: Source language + Target language;
-   - [x] define compact Verbose runtime/model diagnostics and model-state semantics;
-   - [x] standardize Details failure-state reason tooltips;
-   - [ ] implement Details Translation presentation/runtime mapping and deterministic Previews.
+   - [x] define Primary + ACTIVE Secondary display as `English (Spanish)` and canonical-identity gating;
+   - [x] define compact Verbose Runtime state + aggregated Source model + Target model diagnostics;
+   - [x] define model availability semantics: built-in/downloaded = Ready; Not required only for Translation OFF + confirmed absent remote model;
+   - [x] standardize Details Failed/Timed out reason tooltips for this and future Details additions;
+   - [x] align Translation architecture/runtime-host ownership before implementation;
+   - [ ] **Checkpoint 7a — diagnostic evidence contract:** preserve the current request LanguageProfile after profiling while Translating/Failed and preserve a framework-neutral runtime failure reason; do not expose raw engine exceptions to Phone UI;
+   - [ ] **Checkpoint 7b — application Details mapping:** extend application-owned `phoneDetailsState` / `PhoneDetailsMapper` with Translation settings, current matching profile/runtime state, and model lifecycle projection;
+   - [ ] **Checkpoint 7c — Phone-local state + rendering:** add the `TRANSLATION` section, compact Verbose rows, and shared info-tooltip treatment for Failed/Timed out;
+   - [ ] **Checkpoint 7d — deterministic Previews/tests:** cover Primary only, ACTIVE Secondary, no profile yet, all six runtime states, all model states, OFF+absent Not required, built-in/downloaded Ready while OFF, multi-source aggregate, and failure tooltips;
+   - [ ] **Checkpoint 7e — regression/alignment:** verify Verbose toggle remains presentation-only and no provider/profile/model work is triggered merely by opening Details.
 
 8. [ ] **Validation before PR readiness**
    - run the repository architecture checks;
@@ -264,6 +285,12 @@ The slice is complete when all of the following are true:
 - No persistent Translation cache is introduced.
 - Track Card Translation status transitions do not change Track Card height or shift the LyricsViewport.
 - Ready presentation uses concise source/target language labels with a real centered forward-arrow icon between them.
+- Normal Details presents Translation Source language from the matching LanguageProfile and current Target language without confusing provider `LyricsDocument.languageTag` with profiler truth.
+- ACTIVE Secondary is appended as `Primary (Secondary)`; incidental Secondary is not promoted into Normal Details.
+- Verbose Details adds only Runtime state, aggregated Source model, and Target model rows rather than dumping request/provider internals.
+- Built-in and confirmed downloaded models display Ready even while Translation is OFF; Details-only Not required is limited to Translation OFF + confirmed absent remote model.
+- Details Failed/Timed out states expose authoritative reasons through the shared info-tooltip contract; raw engine exceptions do not enter `:ui:phone`.
+- Opening Details or enabling Verbose Details does not start profiling, Translation, provider lookup, model download, or retry.
 - Tests, Previews, implementation, and documentation describe the same behavior.
 - CI/build/review requirements in `AGENTS.md` are satisfied before merge.
 

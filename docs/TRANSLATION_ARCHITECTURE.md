@@ -461,6 +461,37 @@ Do not introduce speculative mixed-language rerouting, automatic correction, or 
 
 A later implementation may add non-invasive debug diagnostics for suspicious source/target/output combinations. Diagnostics must not silently alter runtime output until evidence justifies a correction policy.
 
+## Details diagnostic evidence
+
+Phone Details consumes Translation diagnostics as a read-only projection of existing Translation work. It must not run LanguageProfiler independently, open Translation sessions, prepare models, or retain stale per-track evidence merely to populate Details.
+
+The compact Details contract requires two pieces of execution evidence that the original atomic presentation state did not preserve in every phase:
+
+1. the current request's authoritative `LanguageProfile` once profiling has completed, including while the request is still Translating or later fails; and
+2. a framework-neutral failure diagnostic when `TranslationState.Failed` is published.
+
+The implementation may extend the existing Translation lifecycle state or add an adjacent core-owned diagnostic snapshot, but the ownership rules are fixed:
+
+- profiling remains performed exactly once by the existing Translation execution path;
+- Details reuses that profile; it does not re-profile lyrics;
+- profile evidence is keyed to the same canonical identity + target/request ownership as Translation execution and is cleared/superseded with that request;
+- `Ready` continues to obtain its profile from the atomic artifact and `NotRequired` from its existing profile;
+- a Translating state may expose the profile after profiling has completed without implying that a partial Translation artifact is displayable;
+- a Failed state may expose the current profile when failure happened after profiling;
+- failure diagnostics use a stable framework-neutral reason/category plus optional sanitized detail; raw ML Kit/Google exceptions must not cross into `:ui:phone`;
+- model-specific failure/timeout details continue to come from `TranslationModelState.error` through application-owned presentation mapping.
+
+The exact internal Kotlin shape is implementation-level, but it must support a Phone-local Details projection equivalent to:
+
+```text
+current request identity
+current LanguageProfile?      // null before/if profiling unavailable
+runtime failure reason?       // present for Failed
+model lifecycle states        // existing model-manager boundary
+```
+
+This diagnostic evidence is observational only. It must not change cancellation, provider fallback, atomic artifact publication, or retry behavior.
+
 ## Status and failure semantics
 
 Translation lifecycle must remain separate from lyrics lookup lifecycle.
@@ -476,7 +507,9 @@ FAILED
 TIMED_OUT
 ```
 
-The Translation execution lifecycle distinguishes disabled, idle, translating, not-required, ready, and failed.
+The Translation execution lifecycle distinguishes disabled, idle, translating, not-required, ready, and failed. Phone Details renders those as `Disabled`, `Idle`, `Translating`, `Not required`, `Ready`, and `Failed`; it does not invent extra runtime states.
+
+For model diagnostics, built-in capability and confirmed downloaded inventory are both `Ready`. Details-only `Not required` means Translation is OFF and the relevant remote model is confirmed absent, so no preparation is currently required. It must not be used as a synonym for built-in or "not used by this exact route."
 
 Stable rules:
 

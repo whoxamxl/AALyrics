@@ -197,9 +197,9 @@ Phone presentation preference state ---┘
                                      LyricsScreen
 ```
 
-The host lifecycle-collects the existing `translationState` and combines it for presentation with the already-observed current `translationSettings`. It does not start, retry, cancel, or otherwise own Translation execution.
+The host lifecycle-collects the existing `translationState`, `translationSettings`, and model lifecycle state for presentation. It does not start or cancel Translation execution merely to render state. Explicit Track Card Retry remains an application-owned action through the existing retry boundary.
 
-The Phone mapper owns presentation composition for the permanent Track Card Translation status row. It combines current Translation settings/state with the existing model-lifecycle presentation facts so the UI distinguishes active automatic model download from actual Translation execution. The UI receives only a Phone-local state such as OFF / ON / DOWNLOADING_MODELS / TRANSLATING / READY(route) / NOT_REQUIRED / FAILED; it does not inspect ML Kit or Translation core types directly.
+The Phone mapper owns presentation composition for the permanent Track Card Translation status row. It combines current Translation settings/state with the existing model-lifecycle presentation facts so the UI distinguishes active automatic model download from actual Translation execution. The UI receives only a Phone-local state such as OFF / ENABLED / DOWNLOADING_MODELS / TRANSLATING / READY(route) / NOT_REQUIRED / FAILED; it does not inspect ML Kit or Translation core types directly.
 
 The status row is always reserved, preventing Translation transitions from changing Track Card height or shifting the LyricsViewport. A Failed row emits a semantic Retry callback to `:app`. The application retries any latched failed/timed-out Translation models through the existing model-manager boundary, then republishes the current canonical lyrics/settings through `TranslationExecutionRuntime`; retry ownership remains application/capability-side.
 
@@ -238,9 +238,23 @@ A placeholder is presentation only and does not freeze the future Sync design.
 
 ## Details destination
 
-The host should render the production `DetailsScreen` from the existing application-owned `phoneDetailsState`.
+The host renders the production `DetailsScreen` from the application-owned `phoneDetailsState`. Translation Details extends that same state boundary rather than creating a second Details mapper inside the Composable or host.
 
-The existing canonical playback-identity/stale-state rules remain unchanged.
+The existing canonical playback-identity/stale-state rules remain unchanged. Translation source/profile diagnostics must use the same current canonical identity gate; target setting/model inventory remain application-level facts.
+
+Normal Translation Details uses:
+
+- current matching LanguageProfile Primary;
+- ACTIVE Secondary only, formatted as `Primary (Secondary)`;
+- current normalized target language.
+
+Verbose Details adds only:
+
+- Runtime state;
+- one aggregated Source model row keyed by Translation-relevant source ISO tags;
+- one Target model row.
+
+Application-owned mapping adapts Translation/core/model facts into Phone-local Details state. `:ui:phone` must not depend on `TranslationState`, `LanguageProfile`, `TranslationModelState`, ML Kit types, or raw exceptions.
 
 Verbose Details remains presentation-only:
 
@@ -249,12 +263,18 @@ Settings > Advanced > Verbose details
         ↓
 application-owned persisted preference
         ↓
+playback + lyrics + Translation diagnostics
+        ↓
 AALyricsApplication.phoneDetailsState
         ↓
 DetailsScreen
 ```
 
-The runtime-host slice must not add provider/network requests for diagnostics. Verbose Details may reuse the already-resolved playback-source app metadata to show the Android application category and min/target SDK levels alongside the raw playback package; this metadata must not influence MediaSession selection, compatibility gating, playback behavior, or feature availability.
+The application-owned `phoneDetailsState` should be extended to combine the already-existing Translation settings/state/diagnostic evidence and model lifecycle state. The host should continue consuming the resolved state rather than reconstructing Translation diagnostics ad hoc.
+
+The runtime-host slice must not add provider/network requests for diagnostics. Verbose Details may reuse already-owned playback-source and Translation/model facts. Enabling Verbose Details must not start profiling, Translation, model download, retry, or provider lookup.
+
+Failure-capable Details rows follow the `docs/PHONE_DETAILS.md` standard: `Failed` and `Timed out` carry a presentation-ready authoritative reason and use the shared semantic info-tooltip affordance. Missing runtime failure evidence must be fixed at the owning Translation contract rather than replaced by a guessed UI string.
 
 ## Settings destination
 
