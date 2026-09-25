@@ -78,7 +78,8 @@ internal fun mapPhoneLyricsState(
         playback = playback,
         currentMonotonicTimeMs = currentMonotonicTimeMs,
         fallbackUpdatedAtMonotonicMs =
-            playbackPositionFallbackUpdatedAtMonotonicMs,
+            playbackPositionFallbackUpdatedAtMonotonicMs
+                .takeIf { sourceSyncType == LyricsSyncType.WORD },
     )
     val lyricsPosition = effectiveLyricsPosition(
         projectedPlaybackPositionMs = projectedPlaybackPositionMs,

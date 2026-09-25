@@ -399,13 +399,14 @@ internal fun mapPhoneDetailsVerboseProgress(
     currentMonotonicTimeMs: Long,
     playbackPositionFallbackUpdatedAtMonotonicMs: Long? = null,
 ): DetailsVerboseProgressUiState {
+    val lyricsDocument = currentLyrics(playback, lyricsState).document
     val positionMs = projectedPlaybackPosition(
         playback = playback,
         currentMonotonicTimeMs = currentMonotonicTimeMs,
         fallbackUpdatedAtMonotonicMs =
-            playbackPositionFallbackUpdatedAtMonotonicMs,
+            playbackPositionFallbackUpdatedAtMonotonicMs
+                .takeIf { lyricsDocument?.syncType == LyricsSyncType.WORD },
     )
-    val lyricsDocument = currentLyrics(playback, lyricsState).document
     val lyricsPosition = effectiveLyricsPosition(positionMs, LyricsTimingOffset.ZERO)
 
     return DetailsVerboseProgressUiState(

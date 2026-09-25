@@ -775,7 +775,7 @@ class PhoneDetailsMapperTest {
     }
 
     @Test
-    fun `Verbose Details shares Phone receipt anchor when source timestamp is unavailable`() {
+    fun `Verbose Details shares WORD Phone receipt anchor when source timestamp is unavailable`() {
         val track = currentTrack()
         val playback = PlaybackSnapshot(
             track = track,
@@ -785,13 +785,38 @@ class PhoneDetailsMapperTest {
             source = PlaybackSource(id = "com.spotify.music"),
             positionUpdatedAtMonotonicMs = null,
         )
+        val identity = requireNotNull(playback.trackIdentity)
+        val lyrics = LyricsState.Ready(
+            lookup = LyricsLookup(
+                id = LyricsLookupId(12L),
+                track = track,
+                playbackIdentity = identity,
+            ),
+            lyrics = LyricsDocument(
+                lines = listOf(
+                    TimedLyricLine(
+                        text = "First word",
+                        startMs = 0L,
+                        words = listOf(
+                            io.github.whoxamxl.aalyrics.core.model.TimedWord("First", 0L, 1_000L),
+                            io.github.whoxamxl.aalyrics.core.model.TimedWord("word", 1_000L, 2_000L),
+                        ),
+                    ),
+                    TimedLyricLine(
+                        text = "Second word",
+                        startMs = 4_000L,
+                        words = listOf(
+                            io.github.whoxamxl.aalyrics.core.model.TimedWord("Second", 4_000L, 5_000L),
+                            io.github.whoxamxl.aalyrics.core.model.TimedWord("word", 5_000L, 6_000L),
+                        ),
+                    ),
+                ),
+            ),
+        )
 
         val progress = mapPhoneDetailsVerboseProgress(
             playback = playback,
-            lyricsState = readyLyrics(
-                track,
-                requireNotNull(playback.trackIdentity),
-            ),
+            lyricsState = lyrics,
             currentMonotonicTimeMs = 5_500L,
             playbackPositionFallbackUpdatedAtMonotonicMs = 2_000L,
         )
