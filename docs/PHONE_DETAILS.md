@@ -4,7 +4,7 @@
 
 This document defines the approved presentation contract for the Phone `Details` destination.
 
-PR #49 implemented the original production `DetailsScreen`, Phone-local presentation state, application-owned runtime mapping, deterministic Previews, and focused mapper tests. On `feature/translation-runtime`, the application-owned Translation Details state/mapping is now implemented; Compose rendering and deterministic Translation Details Previews remain the next checkpoint. Details remains read-only: it presents already-owned runtime facts and must not start Translation, download models, retry work, or trigger provider/network activity.
+PR #49 implemented the original production `DetailsScreen`, Phone-local presentation state, application-owned runtime mapping, deterministic Previews, and focused mapper tests. On `feature/translation-runtime`, Translation Details state/mapping and production Compose rendering are implemented; deterministic Translation Details Previews remain the next checkpoint. Details remains read-only: it presents already-owned runtime facts and must not start Translation, download models, retry work, or trigger provider/network activity.
 
 ## Product intent
 
@@ -198,7 +198,7 @@ Target model (EN)        Ready
 
 Rules:
 
-- `Failed` and `Timed out` values must show the shared semantic info icon and expose an authoritative reason; an unexplained visible failure state is not considered complete Details implementation;
+- `Failed` and `Timed out` values must show the shared semantic info icon and expose an authoritative reason; production Phone Details uses the shared `PhoneInfoTooltip` component (also used by Settings) so icon, popup surface, touch target, and dismissal behavior stay consistent; an unexplained visible failure state is not considered complete Details implementation;
 - the tooltip contains the concrete framework-neutral reason/detail supplied by the owning runtime; for an aggregated Source model row it also identifies the affected source ISO language(s);
 - do not inline long exception/error text into the Details row;
 - do not invent a reason in `:ui:phone`;
