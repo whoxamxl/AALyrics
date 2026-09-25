@@ -470,7 +470,7 @@ The compact Details contract requires two pieces of execution evidence that the 
 1. the current request's authoritative `LanguageProfile` once profiling has completed, including while the request is still Translating or later fails; and
 2. a framework-neutral failure diagnostic when `TranslationState.Failed` is published.
 
-The implementation may extend the existing Translation lifecycle state or add an adjacent core-owned diagnostic snapshot, but the ownership rules are fixed:
+The implementation extends the existing Translation lifecycle state rather than creating an adjacent parallel runtime. `TranslationState.Translating` carries an optional current-request `LanguageProfile` after profiling completes; `TranslationState.Failed` carries that profile when available plus a stable `TranslationFailureReason`. The ownership rules remain fixed:
 
 - profiling remains performed exactly once by the existing Translation execution path;
 - Details reuses that profile; it does not re-profile lyrics;
@@ -478,7 +478,7 @@ The implementation may extend the existing Translation lifecycle state or add an
 - `Ready` continues to obtain its profile from the atomic artifact and `NotRequired` from its existing profile;
 - a Translating state may expose the profile after profiling has completed without implying that a partial Translation artifact is displayable;
 - a Failed state may expose the current profile when failure happened after profiling;
-- failure diagnostics use a stable framework-neutral reason/category plus optional sanitized detail; raw ML Kit/Google exceptions must not cross into `:ui:phone`;
+- runtime failure diagnostics use `TranslationFailureReason`: `LANGUAGE_PROFILING_FAILED`, `TRANSLATION_PLANNING_FAILED`, `PROVIDER_EXECUTION_FAILED`, or `UNEXPECTED`; raw ML Kit/Google exceptions must not cross into `:ui:phone`;
 - model-specific failure/timeout details continue to come from `TranslationModelState.error` through application-owned presentation mapping.
 
 The exact internal Kotlin shape is implementation-level, but it must support a Phone-local Details projection equivalent to:
@@ -486,7 +486,7 @@ The exact internal Kotlin shape is implementation-level, but it must support a P
 ```text
 current request identity
 current LanguageProfile?      // null before/if profiling unavailable
-runtime failure reason?       // present for Failed
+TranslationFailureReason?     // present for Failed
 model lifecycle states        // existing model-manager boundary
 ```
 

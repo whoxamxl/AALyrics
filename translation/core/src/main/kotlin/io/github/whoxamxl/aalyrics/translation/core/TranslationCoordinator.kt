@@ -81,14 +81,20 @@ class TranslationCoordinator(
             val completion = try {
                 execute(request, canonical)
             } catch (cancellation: CancellationException) {
-                // Supersession/clear cancels this request's coroutine and must remain
-                // cancellation. A provider/ML Kit task may also report its own
-                // CancellationException while this request coroutine is still active;
-                // that is a Translation failure rather than request supersession.
+                // Supersession/clear remains cancellation. A task-level cancellation
+                // while this request coroutine is still active is a Translation failure.
                 currentCoroutineContext().ensureActive()
-                TranslationState.Failed(request)
+                TranslationState.Failed(
+                    request = request,
+                    profile = currentProfileFor(request),
+                    reason = TranslationFailureReason.UNEXPECTED,
+                )
             } catch (_: Exception) {
-                TranslationState.Failed(request)
+                TranslationState.Failed(
+                    request = request,
+                    profile = currentProfileFor(request),
+                    reason = TranslationFailureReason.UNEXPECTED,
+                )
             }
             _state.update { current ->
                 if (current is TranslationState.Translating && current.request == request) {
@@ -112,8 +118,32 @@ class TranslationCoordinator(
         request: TranslationRequestIdentity,
         canonical: CanonicalLyrics,
     ): TranslationState {
-        val profile = profiler.profile(canonical.document, request.targetLanguage)
-        val plan = planner.plan(canonical.document, profile, request.targetLanguage)
+        val profile = try {
+            profiler.profile(canonical.document, request.targetLanguage)
+        } catch (cancellation: CancellationException) {
+            currentCoroutineContext().ensureActive()
+            return TranslationState.Failed(
+                request = request,
+                reason = TranslationFailureReason.LANGUAGE_PROFILING_FAILED,
+            )
+        } catch (_: Exception) {
+            return TranslationState.Failed(
+                request = request,
+                reason = TranslationFailureReason.LANGUAGE_PROFILING_FAILED,
+            )
+        }
+
+        publishProfileIfCurrent(request, profile)
+
+        val plan = try {
+            planner.plan(canonical.document, profile, request.targetLanguage)
+        } catch (_: Exception) {
+            return TranslationState.Failed(
+                request = request,
+                profile = profile,
+                reason = TranslationFailureReason.TRANSLATION_PLANNING_FAILED,
+            )
+        }
         if (plan.blocks.isEmpty()) {
             return TranslationState.NotRequired(request, profile)
         }
@@ -128,14 +158,41 @@ class TranslationCoordinator(
                     provider = provider,
                 )
             } catch (cancellation: CancellationException) {
-                throw cancellation
+                currentCoroutineContext().ensureActive()
+                return TranslationState.Failed(
+                    request = request,
+                    profile = profile,
+                    reason = TranslationFailureReason.PROVIDER_EXECUTION_FAILED,
+                )
             } catch (_: Exception) {
                 null
             }
             if (artifact != null) return TranslationState.Ready(artifact)
         }
-        return TranslationState.Failed(request)
+        return TranslationState.Failed(
+            request = request,
+            profile = profile,
+            reason = TranslationFailureReason.PROVIDER_EXECUTION_FAILED,
+        )
     }
+
+    private fun publishProfileIfCurrent(
+        request: TranslationRequestIdentity,
+        profile: LanguageProfile,
+    ) {
+        _state.update { current ->
+            if (current is TranslationState.Translating && current.request == request) {
+                current.copy(profile = profile)
+            } else {
+                current
+            }
+        }
+    }
+
+    private fun currentProfileFor(request: TranslationRequestIdentity): LanguageProfile? =
+        (_state.value as? TranslationState.Translating)
+            ?.takeIf { it.request == request }
+            ?.profile
 
     private data class RequestKey(
         val canonicalLyrics: CanonicalLyricsIdentity,

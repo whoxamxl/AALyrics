@@ -172,12 +172,20 @@ data class TranslationArtifact(
     }
 }
 
+enum class TranslationFailureReason {
+    LANGUAGE_PROFILING_FAILED,
+    TRANSLATION_PLANNING_FAILED,
+    PROVIDER_EXECUTION_FAILED,
+    UNEXPECTED,
+}
+
 sealed interface TranslationState {
     data object Disabled : TranslationState
     data object Idle : TranslationState
 
     data class Translating(
         val request: TranslationRequestIdentity,
+        val profile: LanguageProfile? = null,
     ) : TranslationState
 
     data class NotRequired(
@@ -191,6 +199,8 @@ sealed interface TranslationState {
 
     data class Failed(
         val request: TranslationRequestIdentity,
+        val profile: LanguageProfile? = null,
+        val reason: TranslationFailureReason = TranslationFailureReason.UNEXPECTED,
     ) : TranslationState
 }
 

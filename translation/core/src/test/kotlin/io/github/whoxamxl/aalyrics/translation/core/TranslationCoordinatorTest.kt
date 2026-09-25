@@ -23,6 +23,7 @@ import kotlin.coroutines.suspendCoroutine
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
+import kotlin.test.assertNull
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
 
@@ -122,7 +123,8 @@ class TranslationCoordinatorTest {
         runCurrent()
 
         assertEquals(2, callCount)
-        assertIs<TranslationState.Translating>(coordinator.state.value)
+        val translating = assertIs<TranslationState.Translating>(coordinator.state.value)
+        assertEquals("en", translating.profile?.primary)
 
         finalBlockGate.complete(Unit)
         advanceUntilIdle()
@@ -142,7 +144,12 @@ class TranslationCoordinatorTest {
         coordinator.update(canonical(2), TranslationSettings(targetLanguage = "ja"))
         advanceUntilIdle()
 
-        assertIs<TranslationState.Failed>(coordinator.state.value)
+        val failed = assertIs<TranslationState.Failed>(coordinator.state.value)
+        assertEquals("en", failed.profile?.primary)
+        assertEquals(
+            TranslationFailureReason.PROVIDER_EXECUTION_FAILED,
+            failed.reason,
+        )
     }
 
     @Test
@@ -177,7 +184,12 @@ class TranslationCoordinatorTest {
         coordinator.update(canonical, TranslationSettings(targetLanguage = "ja"))
         advanceUntilIdle()
 
-        assertIs<TranslationState.Failed>(coordinator.state.value)
+        val failed = assertIs<TranslationState.Failed>(coordinator.state.value)
+        assertEquals("en", failed.profile?.primary)
+        assertEquals(
+            TranslationFailureReason.PROVIDER_EXECUTION_FAILED,
+            failed.reason,
+        )
         assertSame(originalDocument, canonical.document)
         assertEquals(listOf("Original line 0", "Original line 1"), canonical.document.lines.map { it.text })
     }
@@ -201,8 +213,45 @@ class TranslationCoordinatorTest {
         coordinator.update(canonical(2), TranslationSettings(targetLanguage = "ja"))
         advanceUntilIdle()
 
-        assertIs<TranslationState.Failed>(coordinator.state.value)
+        val failed = assertIs<TranslationState.Failed>(coordinator.state.value)
+        assertNull(failed.profile)
+        assertEquals(
+            TranslationFailureReason.LANGUAGE_PROFILING_FAILED,
+            failed.reason,
+        )
         assertTrue(!opened)
+    }
+
+    @Test
+    fun `obsolete profiled request cannot publish diagnostic evidence over replacement request`() = runTest {
+        val firstGate = CompletableDeferred<Unit>()
+        val provider = provider("mlkit") { route ->
+            session { input ->
+                if (route.targetLanguage == "ja") {
+                    firstGate.await()
+                }
+                alignedOutput(input, route.targetLanguage)
+            }
+        }
+        val coordinator = coordinator(provider)
+        val canonical = canonical(2)
+
+        coordinator.update(canonical, TranslationSettings(targetLanguage = "ja"))
+        runCurrent()
+        val first = assertIs<TranslationState.Translating>(coordinator.state.value)
+        assertEquals("en", first.profile?.primary)
+
+        coordinator.update(canonical, TranslationSettings(targetLanguage = "fr"))
+        advanceUntilIdle()
+
+        val ready = assertIs<TranslationState.Ready>(coordinator.state.value)
+        assertEquals("fr", ready.artifact.request.targetLanguage)
+
+        firstGate.complete(Unit)
+        advanceUntilIdle()
+
+        val stillReady = assertIs<TranslationState.Ready>(coordinator.state.value)
+        assertEquals("fr", stillReady.artifact.request.targetLanguage)
     }
 
     @Test
