@@ -650,11 +650,12 @@ The playback surface must not reset its live position merely because unrelated m
 
 For missing source timestamps:
 
-- receipt-time projection is allowed as a Phone presentation fallback;
+- the AALyrics-side monotonic timestamp captured when the MediaController snapshot is sampled is the Phone fallback anchor;
 - source timestamps remain authoritative whenever present;
-- timing anchors reset for actual timing-sample changes such as position, playback rate, play/pause state, playback identity, or source timestamp;
+- Activity/Compose recreation must not create a new anchor for an existing snapshot;
+- the collapsed/expanded playback surface and Phone lyrics projection consume the same stable snapshot anchor;
 - title/artist/late-duration metadata changes must not rewind the displayed playback position;
 - pause must stop projection;
 - seek reconciliation remains authoritative when a new position sample arrives.
 
-This keeps the player clock compatible with the WORD_SYNC Phone lyrics clock without making Karaoke enablement part of playback timing.
+This keeps the player clock aligned with LINE/WORD Phone lyrics timing and PLAIN playback progress without making Karaoke enablement part of playback timing.
