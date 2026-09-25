@@ -28,6 +28,49 @@ data class DetailsLyricsUiState(
     val lineCount: Int,
 )
 
+enum class DetailsTranslationRuntimeUiState {
+    DISABLED,
+    IDLE,
+    TRANSLATING,
+    NOT_REQUIRED,
+    READY,
+    FAILED,
+}
+
+enum class DetailsTranslationRuntimeFailureUiReason {
+    LANGUAGE_PROFILING_FAILED,
+    TRANSLATION_PLANNING_FAILED,
+    PROVIDER_EXECUTION_FAILED,
+    UNEXPECTED,
+}
+
+enum class DetailsTranslationModelPhaseUiState {
+    NOT_REQUIRED,
+    CHECKING,
+    DOWNLOADING,
+    WAITING_FOR_SYSTEM,
+    READY,
+    FAILED,
+    TIMED_OUT,
+}
+
+@Immutable
+data class DetailsTranslationModelUiState(
+    val languageLabel: String,
+    val phase: DetailsTranslationModelPhaseUiState,
+    val failureReason: String? = null,
+)
+
+@Immutable
+data class DetailsTranslationUiState(
+    val sourceLanguageLabel: String? = null,
+    val targetLanguageLabel: String,
+    val runtimeState: DetailsTranslationRuntimeUiState? = null,
+    val runtimeFailureReason: DetailsTranslationRuntimeFailureUiReason? = null,
+    val sourceModel: DetailsTranslationModelUiState? = null,
+    val targetModel: DetailsTranslationModelUiState? = null,
+)
+
 @Immutable
 data class DetailsVerboseProgressUiState(
     val playbackPositionLabel: String? = null,
@@ -50,6 +93,7 @@ data class DetailsScreenUiState(
     val track: DetailsTrackUiState? = null,
     val lyrics: DetailsLyricsUiState? = null,
     val lyricsStatus: DetailsLyricsUiStatus = DetailsLyricsUiStatus.UNAVAILABLE,
+    val translation: DetailsTranslationUiState? = null,
     val verboseProgress: DetailsVerboseProgressUiState? = null,
     val diagnostics: DetailsDiagnosticsUiState? = null,
 )
