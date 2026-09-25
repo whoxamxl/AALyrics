@@ -642,3 +642,19 @@ Contract:
 - disabling the Experimental gate clears the live Karaoke toggle.
 
 Quick controls owns only the user interaction. Application-owned persisted state remains outside `:ui:phone`.
+
+
+## Playback clock continuity
+
+The playback surface must not reset its live position merely because unrelated metadata changes while a source omits `lastPositionUpdateTime`.
+
+For missing source timestamps:
+
+- receipt-time projection is allowed as a Phone presentation fallback;
+- source timestamps remain authoritative whenever present;
+- timing anchors reset for actual timing-sample changes such as position, playback rate, play/pause state, playback identity, or source timestamp;
+- title/artist/late-duration metadata changes must not rewind the displayed playback position;
+- pause must stop projection;
+- seek reconciliation remains authoritative when a new position sample arrives.
+
+This keeps the player clock compatible with the WORD_SYNC Phone lyrics clock without making Karaoke enablement part of playback timing.
