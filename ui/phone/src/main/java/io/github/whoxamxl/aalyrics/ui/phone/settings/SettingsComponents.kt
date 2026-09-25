@@ -41,8 +41,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -57,7 +55,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.github.whoxamxl.aalyrics.ui.designsystem.icon.AALyricsIcons
-import io.github.whoxamxl.aalyrics.ui.phone.component.PhonePopupMenu
+import io.github.whoxamxl.aalyrics.ui.phone.component.PhoneInfoTooltip
 import io.github.whoxamxl.aalyrics.ui.phone.component.VersionChip
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsColors
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsRadius
@@ -716,34 +714,10 @@ internal fun SettingInfoTooltip(
     text: String,
     contentDescription: String,
 ) {
-    var expanded by remember { mutableStateOf(false) }
-
-    Box {
-        IconButton(
-            onClick = { expanded = true },
-            modifier = Modifier.size(AALyricsSpacing.Space48),
-        ) {
-            Icon(
-                imageVector = AALyricsIcons.Info,
-                contentDescription = contentDescription,
-                tint = AALyricsColors.TextSecondary,
-                modifier = Modifier.size(AALyricsSpacing.Space20),
-            )
-        }
-
-        PhonePopupMenu(
-            expanded = expanded,
-            onDismissRequest = { expanded = false },
-            modifier = Modifier.widthIn(max = 280.dp),
-        ) {
-            Text(
-                text = text,
-                style = AALyricsTypography.TrackArtist,
-                color = AALyricsColors.TextPrimary,
-                modifier = Modifier.padding(AALyricsSpacing.Space16),
-            )
-        }
-    }
+    PhoneInfoTooltip(
+        text = text,
+        contentDescription = contentDescription,
+    )
 }
 
 @Composable
