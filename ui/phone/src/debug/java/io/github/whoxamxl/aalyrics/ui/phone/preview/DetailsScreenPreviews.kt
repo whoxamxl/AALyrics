@@ -156,6 +156,17 @@ private fun DetailsTranslationDownloadedReadyWhileOffPreview() {
 }
 
 @Preview(
+    name = "Models · unsupported secondary",
+    group = "DetailsScreen · Translation models",
+    widthDp = 412,
+    heightDp = 920,
+)
+@Composable
+private fun DetailsTranslationUnsupportedSecondaryPreview() {
+    DetailsScreenPreview(PhonePreviewFixtures.detailsTranslationUnsupportedSecondary)
+}
+
+@Preview(
     name = "Models · Downloading + waiting",
     group = "DetailsScreen · Translation models",
     widthDp = 412,

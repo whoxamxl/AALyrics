@@ -9,6 +9,7 @@ import io.github.whoxamxl.aalyrics.ui.phone.details.DetailsTrackUiState
 import io.github.whoxamxl.aalyrics.ui.phone.details.DetailsTranslationModelPhaseUiState
 import io.github.whoxamxl.aalyrics.ui.phone.details.DetailsTranslationModelUiState
 import io.github.whoxamxl.aalyrics.ui.phone.details.DetailsTranslationRuntimeFailureUiReason
+import io.github.whoxamxl.aalyrics.ui.phone.details.DetailsTranslationSourceModelsUiState
 import io.github.whoxamxl.aalyrics.ui.phone.details.DetailsTranslationRuntimeUiState
 import io.github.whoxamxl.aalyrics.ui.phone.details.DetailsTranslationUiState
 import io.github.whoxamxl.aalyrics.ui.phone.details.DetailsVerboseProgressUiState
@@ -506,9 +507,15 @@ internal object PhonePreviewFixtures {
         sourceLanguageLabel = "English (Spanish)",
         targetLanguageLabel = "Japanese",
         runtimeState = DetailsTranslationRuntimeUiState.READY,
-        sourceModel = DetailsTranslationModelUiState(
-            languageLabel = "EN, ES",
-            phase = DetailsTranslationModelPhaseUiState.READY,
+        sourceModel = DetailsTranslationSourceModelsUiState(
+            primary = DetailsTranslationModelUiState(
+                languageLabel = "EN",
+                phase = DetailsTranslationModelPhaseUiState.READY,
+            ),
+            secondary = DetailsTranslationModelUiState(
+                languageLabel = "ES",
+                phase = DetailsTranslationModelPhaseUiState.READY,
+            ),
         ),
         targetModel = DetailsTranslationModelUiState(
             languageLabel = "JA",
@@ -609,9 +616,11 @@ internal object PhonePreviewFixtures {
             sourceLanguageLabel = "English",
             targetLanguageLabel = "Japanese",
             runtimeState = DetailsTranslationRuntimeUiState.TRANSLATING,
-            sourceModel = DetailsTranslationModelUiState(
-                languageLabel = "EN",
-                phase = DetailsTranslationModelPhaseUiState.READY,
+            sourceModel = DetailsTranslationSourceModelsUiState(
+                primary = DetailsTranslationModelUiState(
+                    languageLabel = "EN",
+                    phase = DetailsTranslationModelPhaseUiState.READY,
+                ),
             ),
             targetModel = DetailsTranslationModelUiState(
                 languageLabel = "JA",
@@ -624,9 +633,11 @@ internal object PhonePreviewFixtures {
             sourceLanguageLabel = "Japanese",
             targetLanguageLabel = "Japanese",
             runtimeState = DetailsTranslationRuntimeUiState.NOT_REQUIRED,
-            sourceModel = DetailsTranslationModelUiState(
-                languageLabel = "JA",
-                phase = DetailsTranslationModelPhaseUiState.READY,
+            sourceModel = DetailsTranslationSourceModelsUiState(
+                primary = DetailsTranslationModelUiState(
+                    languageLabel = "JA",
+                    phase = DetailsTranslationModelPhaseUiState.READY,
+                ),
             ),
             targetModel = DetailsTranslationModelUiState(
                 languageLabel = "JA",
@@ -645,10 +656,16 @@ internal object PhonePreviewFixtures {
             runtimeState = DetailsTranslationRuntimeUiState.FAILED,
             runtimeFailureReason =
                 DetailsTranslationRuntimeFailureUiReason.PROVIDER_EXECUTION_FAILED,
-            sourceModel = DetailsTranslationModelUiState(
-                languageLabel = "EN, ES",
-                phase = DetailsTranslationModelPhaseUiState.FAILED,
-                failureReason = "ES: Model download task failed",
+            sourceModel = DetailsTranslationSourceModelsUiState(
+                primary = DetailsTranslationModelUiState(
+                    languageLabel = "EN",
+                    phase = DetailsTranslationModelPhaseUiState.READY,
+                ),
+                secondary = DetailsTranslationModelUiState(
+                    languageLabel = "ES",
+                    phase = DetailsTranslationModelPhaseUiState.FAILED,
+                    failureReason = "Model download task failed",
+                ),
             ),
             targetModel = DetailsTranslationModelUiState(
                 languageLabel = "JA",
@@ -688,14 +705,38 @@ internal object PhonePreviewFixtures {
         ),
     )
 
+    val detailsTranslationUnsupportedSecondary = detailsTypical.copy(
+        translation = DetailsTranslationUiState(
+            sourceLanguageLabel = "English (Arabic)",
+            targetLanguageLabel = "Japanese",
+            runtimeState = DetailsTranslationRuntimeUiState.READY,
+            sourceModel = DetailsTranslationSourceModelsUiState(
+                primary = DetailsTranslationModelUiState(
+                    languageLabel = "EN",
+                    phase = DetailsTranslationModelPhaseUiState.READY,
+                ),
+                secondary = DetailsTranslationModelUiState(
+                    languageLabel = "AR",
+                    phase = DetailsTranslationModelPhaseUiState.UNSUPPORTED,
+                ),
+            ),
+            targetModel = DetailsTranslationModelUiState(
+                languageLabel = "JA",
+                phase = DetailsTranslationModelPhaseUiState.READY,
+            ),
+        ),
+    )
+
     val detailsTranslationModelsPreparing = detailsTypical.copy(
         translation = DetailsTranslationUiState(
             sourceLanguageLabel = "Spanish",
             targetLanguageLabel = "Japanese",
             runtimeState = DetailsTranslationRuntimeUiState.TRANSLATING,
-            sourceModel = DetailsTranslationModelUiState(
-                languageLabel = "ES",
-                phase = DetailsTranslationModelPhaseUiState.DOWNLOADING,
+            sourceModel = DetailsTranslationSourceModelsUiState(
+                primary = DetailsTranslationModelUiState(
+                    languageLabel = "ES",
+                    phase = DetailsTranslationModelPhaseUiState.DOWNLOADING,
+                ),
             ),
             targetModel = DetailsTranslationModelUiState(
                 languageLabel = "JA",
@@ -710,10 +751,12 @@ internal object PhonePreviewFixtures {
             runtimeState = DetailsTranslationRuntimeUiState.FAILED,
             runtimeFailureReason =
                 DetailsTranslationRuntimeFailureUiReason.PROVIDER_EXECUTION_FAILED,
-            sourceModel = DetailsTranslationModelUiState(
-                languageLabel = "ES",
-                phase = DetailsTranslationModelPhaseUiState.FAILED,
-                failureReason = "ES: Model download task failed",
+            sourceModel = DetailsTranslationSourceModelsUiState(
+                primary = DetailsTranslationModelUiState(
+                    languageLabel = "ES",
+                    phase = DetailsTranslationModelPhaseUiState.FAILED,
+                    failureReason = "Model download task failed",
+                ),
             ),
             targetModel = DetailsTranslationModelUiState(
                 languageLabel = "JA",

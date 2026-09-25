@@ -322,7 +322,7 @@ class PhoneDetailsMapperTest {
     }
 
     @Test
-    fun `Verbose Translation Details maps runtime failure and aggregate models`() {
+    fun `Verbose Translation Details keeps Primary and Secondary model states positional`() {
         val track = currentTrack()
         val playback = playback(track)
         val lyrics = readyLyrics(track, requireNotNull(playback.trackIdentity))
@@ -361,14 +361,19 @@ class PhoneDetailsMapperTest {
             DetailsTranslationRuntimeFailureUiReason.PROVIDER_EXECUTION_FAILED,
             state.translation?.runtimeFailureReason,
         )
-        assertEquals("EN, ES", state.translation?.sourceModel?.languageLabel)
+        assertEquals("EN", state.translation?.sourceModel?.primary?.languageLabel)
+        assertEquals(
+            DetailsTranslationModelPhaseUiState.READY,
+            state.translation?.sourceModel?.primary?.phase,
+        )
+        assertEquals("ES", state.translation?.sourceModel?.secondary?.languageLabel)
         assertEquals(
             DetailsTranslationModelPhaseUiState.FAILED,
-            state.translation?.sourceModel?.phase,
+            state.translation?.sourceModel?.secondary?.phase,
         )
         assertEquals(
-            "ES: Model download task failed",
-            state.translation?.sourceModel?.failureReason,
+            "Model download task failed",
+            state.translation?.sourceModel?.secondary?.failureReason,
         )
         assertEquals("JA", state.translation?.targetModel?.languageLabel)
         assertEquals(
@@ -455,7 +460,8 @@ class PhoneDetailsMapperTest {
             displayLocale = Locale.ENGLISH,
         )
         assertEquals("English", incidental.translation?.sourceLanguageLabel)
-        assertEquals("EN", incidental.translation?.sourceModel?.languageLabel)
+        assertEquals("EN", incidental.translation?.sourceModel?.primary?.languageLabel)
+        assertNull(incidental.translation?.sourceModel?.secondary)
 
         val preProfile = mapPhoneDetailsState(
             playback = playback,
@@ -534,11 +540,12 @@ class PhoneDetailsMapperTest {
             DetailsTranslationRuntimeUiState.NOT_REQUIRED,
             notRequired?.runtimeState,
         )
-        assertEquals("JA", notRequired?.sourceModel?.languageLabel)
+        assertEquals("JA", notRequired?.sourceModel?.primary?.languageLabel)
         assertEquals(
             DetailsTranslationModelPhaseUiState.READY,
-            notRequired?.sourceModel?.phase,
+            notRequired?.sourceModel?.primary?.phase,
         )
+        assertNull(notRequired?.sourceModel?.secondary)
         assertEquals("JA", notRequired?.targetModel?.languageLabel)
         assertEquals(
             DetailsTranslationModelPhaseUiState.READY,
@@ -671,7 +678,7 @@ class PhoneDetailsMapperTest {
     }
 
     @Test
-    fun verboseTranslationDetailsAggregatesSourceModelsByActionability() {
+    fun verboseTranslationDetailsKeepsSourceModelStatesPositional() {
         val track = currentTrack()
         val playback = playback(track)
         val lyrics = readyLyrics(track, requireNotNull(playback.trackIdentity))
@@ -703,15 +710,68 @@ class PhoneDetailsMapperTest {
             displayLocale = Locale.ENGLISH,
         )
 
-        assertEquals("EN, ES", state.translation?.sourceModel?.languageLabel)
+        assertEquals("EN", state.translation?.sourceModel?.primary?.languageLabel)
+        assertEquals(
+            DetailsTranslationModelPhaseUiState.READY,
+            state.translation?.sourceModel?.primary?.phase,
+        )
+        assertEquals("ES", state.translation?.sourceModel?.secondary?.languageLabel)
         assertEquals(
             DetailsTranslationModelPhaseUiState.WAITING_FOR_SYSTEM,
-            state.translation?.sourceModel?.phase,
+            state.translation?.sourceModel?.secondary?.phase,
         )
         assertEquals(
             DetailsTranslationModelPhaseUiState.READY,
             state.translation?.targetModel?.phase,
         )
+    }
+
+    @Test
+    fun unsupportedActiveSecondaryUsesUnsupportedSourceModelPresentation() {
+        val track = currentTrack()
+        val playback = playback(track)
+        val lyrics = readyLyrics(track, requireNotNull(playback.trackIdentity))
+        val request = translationRequest(lyrics, targetLanguage = "ja")
+        val state = mapPhoneDetailsState(
+            playback = playback,
+            lyricsState = lyrics,
+            verboseDetailsEnabled = true,
+            translationSettings = TranslationSettings(enabled = true, targetLanguage = "ja"),
+            translationState = TranslationState.Translating(
+                request = request,
+                profile = profile(
+                    primary = "en",
+                    secondary = "ar",
+                    secondaryActivation = SecondaryActivation.ACTIVE,
+                ),
+            ),
+            translationModelStates = mapOf(
+                "ar" to TranslationModelState(
+                    languageTag = "ar",
+                    phase = TranslationModelPhase.DOWNLOADING,
+                    error = "Stale unsupported model state must be ignored",
+                ),
+                "ja" to TranslationModelState(
+                    languageTag = "ja",
+                    phase = TranslationModelPhase.READY,
+                ),
+            ),
+            translationModelInventoryReconciled = true,
+            displayLocale = Locale.ENGLISH,
+        )
+
+        assertEquals("English (Arabic)", state.translation?.sourceLanguageLabel)
+        assertEquals("EN", state.translation?.sourceModel?.primary?.languageLabel)
+        assertEquals(
+            DetailsTranslationModelPhaseUiState.READY,
+            state.translation?.sourceModel?.primary?.phase,
+        )
+        assertEquals("AR", state.translation?.sourceModel?.secondary?.languageLabel)
+        assertEquals(
+            DetailsTranslationModelPhaseUiState.UNSUPPORTED,
+            state.translation?.sourceModel?.secondary?.phase,
+        )
+        assertNull(state.translation?.sourceModel?.secondary?.failureReason)
     }
 
     @Test
