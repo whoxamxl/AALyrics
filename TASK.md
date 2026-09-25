@@ -5,7 +5,7 @@
 - Branch: `feature/effective-timing-foundation`.
 - Base: `main` at `ae9ed3f27097388b32537ad4b40147679567efaf` (PR #79 merged).
 - Classification: TIMING / ARCHITECTURE / PURE CORE FOUNDATION.
-- Status: Phase 11.3a is complete. Phase 11.3b was separately authorized on the same branch; implementation is complete and final re-validation is pending.
+- Status: Phases 11.3a and 11.3b are implemented and validated on this branch; the existing Draft PR remains the stop point.
 - Authoritative references: `AGENTS.md`, `docs/ARCHITECTURE.md`, `docs/LYRICS_PIPELINE_ARCHITECTURE.md`, `docs/TIMING_ARCHITECTURE.md`, `docs/KARAOKE_ARCHITECTURE.md`, `docs/PRESENTATION_STATE_ARCHITECTURE.md`, `docs/MIGRATION_INVENTORY.md`, and current `main` code/tests.
 
 ## Goal
@@ -302,7 +302,7 @@ Implement in small coherent commits.
    - keep playback progress on the real projected playback position;
    - add positive/negative boundary-crossing regression coverage.
 
-5. [ ] **11.3b final re-validation**
+5. [x] **11.3b final re-validation**
    - run architecture checks;
    - run unit tests;
    - build the debug APK/repository build path;
@@ -310,7 +310,7 @@ Implement in small coherent commits.
    - confirm no Sync UI, persistence, Reset, Android Auto, or Karaoke behavior was added;
    - update the existing Draft PR evidence, then stop.
 
-Phase 11.3a validation previously passed in Build runs 36098879658 and 36099140235. Phase 11.3b adds no persisted state, so `Reset AALyrics` still needs no change.
+Phase 11.3a validation previously passed in Build runs 36098879658 and 36099140235. Phase 11.3b validation passed in [Build run 36100805321](https://github.com/whoxamxl/AALyrics/actions/runs/36100805321): branch/commit checks, architecture guard, debug APK build, and repository unit tests all succeeded. Phase 11.3b adds no persisted state, so `Reset AALyrics` still needs no change.
 
 ## Documentation alignment checkpoints
 
