@@ -184,7 +184,7 @@ Do not bulk-port the old application. Each provider or subsystem remains a separ
 - Translation background scaffold: merged in PR #41 as Phase 11.2a.
 - Translation execution/orchestration: merged in PR #43 as Phase 11.2b.
 - Phone Translation presentation/diagnostics: merged in PR #79 as Phase 11.2c; Android Auto Translation and persistent Translation Cache remain deferred.
-- Effective Timing Foundation: Phase 11.3a is implemented and validated on `feature/effective-timing-foundation`; Phone timing integration, Sync UX, persistence, and Karaoke projection remain deferred.
+- Timing capability: Phase 11.3a effective-position foundation, Phase 11.3b Phone line integration, and Phase 11.4a shared LINE/WORD semantic engine are implemented and validated on `feature/effective-timing-foundation`; Sync UX, persistence, and Karaoke consumer/rendering remain deferred.
 
 
 ### Translation scaffold implementation re-check

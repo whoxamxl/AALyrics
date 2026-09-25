@@ -18,7 +18,7 @@ Timing Semantic Engine
 LyricsTimingProjection
 ```
 
-Current Phone presentation will continue consuming only `activeLineIndex`, so the semantic engine can run in production without changing current UI behaviour.
+Current Phone presentation consumes only `activeLineIndex`, so the semantic engine runs in production without changing current UI behaviour.
 
 Future Karaoke work begins **after** that projection and consumes additional semantic facts. Karaoke enablement is not an input to the Timing Semantic Engine.
 

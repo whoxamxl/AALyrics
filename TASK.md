@@ -7,7 +7,7 @@
 - Phase 11.3a — Effective Timing Foundation: implemented and validated.
 - Phase 11.3b — Existing timed-lyrics integration: implemented and validated.
 - Draft PR #80 was intentionally closed before review so the same branch can continue into the shared timing-semantic engine.
-- Active implementation is in progress on this branch.
+- Active implementation and validation are complete on this branch; a new Draft PR is the stop point.
 - `docs/KARAOKE_ARCHITECTURE.md` is aligned with the shared-engine consumer model. The documentation gate before implementation is complete.
 
 Authoritative references for the active engine slice are:
@@ -301,7 +301,7 @@ Implement in small coherent commits and push each completed checkpoint.
    - keep current WORD/LINE/PLAIN UI behaviour unchanged;
    - keep playback progress unchanged.
 
-5. [ ] **Final validation**
+5. [x] **Final validation**
    - architecture guard;
    - `:core:timing` tests;
    - relevant app mapper tests;
@@ -343,6 +343,6 @@ Documentation is aligned for implementation:
 - [x] future Karaoke consumer may use additional word/progress/boundary facts;
 - [x] Karaoke enablement remains outside the semantic engine.
 
-The branch is now ready to hand to Codex for implementation and validation using these documents as references.
+The documentation gate was completed before implementation. The shared engine and behaviour-preserving Phone wiring are now implemented and validated on this branch.
 
-Do not begin implementation in this documentation checkpoint.
+Validation: [Build run 36106771140](https://github.com/whoxamxl/AALyrics/actions/runs/36106771140) passed the architecture guard, debug APK build, and repository unit tests, including timing and Phone mapper coverage. No persisted state was added, so `Reset AALyrics` and its copy remain unchanged.

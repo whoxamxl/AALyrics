@@ -124,7 +124,7 @@ See `docs/TRANSLATION_ARCHITECTURE.md`.
 
 Timing/calibration preserves canonical source timing and derives a lyrics-only virtual clock for playback-dependent behavior. The implemented foundation fixes `effectiveLyricsPosition = projectedPlaybackPosition + lyricsOffset`: positive advances lyrics, negative delays lyrics, and zero preserves current behavior.
 
-The next shared timing-semantic layer consumes canonical timed lyrics + effective lyrics position and deterministically projects active line/word/progress/boundary facts. These facts are independent of Karaoke enablement and are shared by Normal and future Karaoke presentation.
+The shared timing-semantic layer consumes canonical timed lyrics + effective lyrics position and deterministically projects active line/word/progress/boundary facts. These facts are independent of Karaoke enablement and are shared by Normal and future Karaoke presentation.
 
 Offset scope, persistence, Sync UI, provider/track/device-specific correction, and drift/rate correction remain deferred.
 
@@ -249,7 +249,7 @@ Persistent cache
   -> separate later capability only when explicitly authorized
 ```
 
-Phone Translation presentation is complete and preserves canonical line/timing ownership by adding only identity-aligned text to the existing row. Effective timing and current-line integration are implemented; the next timing slice adds the shared semantic engine while preserving current presentation. Sync UX, Karaoke consumer/rendering, and Android Auto Translation remain separate later work.
+Phone Translation presentation is complete and preserves canonical line/timing ownership by adding only identity-aligned text to the existing row. Effective timing, shared semantic projection, and current-line integration are implemented while preserving current presentation. Sync UX, Karaoke consumer/rendering, and Android Auto Translation remain separate later work.
 
 This sequencing reduces architectural churn while preserving Cache as an independent capability. It does not forbid non-persistent in-memory lifecycle state needed by Translation execution.
 

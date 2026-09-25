@@ -2,7 +2,7 @@
 
 AALyrics is a new Android project for synchronized lyrics on phone and Android Auto.
 
-> **Status:** the production Phone shell, all four Lyrics Providers, live Android media-session runtime, demand gating, Settings/Details, verified in-app update flow, and Phone Translation presentation/diagnostics are established. The pure effective-timing foundation is implemented; Sync timing/calibration remains a deliberate non-functional placeholder. Karaoke, Android Auto Translation, and richer Car App Library presentation remain later work.
+> **Status:** the production Phone shell, all four Lyrics Providers, live Android media-session runtime, demand gating, Settings/Details, verified in-app update flow, and Phone Translation presentation/diagnostics are established. The shared timing engine and behaviour-preserving Phone line integration are implemented; Sync timing/calibration remains a deliberate non-functional placeholder. Karaoke rendering, Android Auto Translation, and richer Car App Library presentation remain later work.
 
 ## Project direction
 
@@ -32,7 +32,7 @@ Current production capabilities include:
 - manual and automatic GitHub Release discovery, verified APK download, SHA-256 checking, package/signing preflight, install-source permission handling, PackageInstaller handoff, recovery, and post-update feedback;
 - signed GitHub prerelease distribution, currently through `v0.2.0-alpha.2`.
 
-The framework-independent effective-timing boundary is established for future Sync/calibration. The next separately authorized slice will route existing timed-lyrics presentation through it before adding user calibration controls. Karaoke/WORD projection remains downstream of that timing foundation.
+The framework-independent timing engine derives line and word timing facts from canonical lyrics and effective lyrics position. Phone presentation currently consumes only the active line, preserving its existing behaviour. Sync controls and Karaoke rendering remain separately authorized future work.
 
 ## Distribution and Android Auto sideloading
 

@@ -2,11 +2,11 @@
 
 ## Status
 
-Phase 11.3a (effective-position foundation) and Phase 11.3b (existing current-line integration) are implemented and validated on `feature/effective-timing-foundation`.
+Phase 11.3a (effective-position foundation), Phase 11.3b (existing current-line integration), and Phase 11.4a (shared Timing Semantic Engine) are implemented and validated on `feature/effective-timing-foundation`.
 
-The next authorized timing-engine scope is the shared **Timing Semantic Engine**: canonical timed lyrics + `EffectiveLyricsPosition` produce deterministic line/word/progress/boundary facts. The engine is mode-agnostic; Karaoke ON/OFF is not an input.
+The shared **Timing Semantic Engine** consumes canonical timed lyrics + `EffectiveLyricsPosition` and produces deterministic line/word/progress/boundary facts. The engine is mode-agnostic; Karaoke ON/OFF is not an input.
 
-The current Phone production consumer will be wired to the engine but will continue consuming only the active-line fact, preserving current UI behaviour. Sync controls, persistence, non-zero production calibration, Karaoke consumer/rendering, and Android Auto timing presentation remain outside this scope.
+The current Phone production consumer uses only the engine's active-line fact, preserving current UI behaviour. Sync controls, persistence, non-zero production calibration, Karaoke consumer/rendering, and Android Auto timing presentation remain outside this scope.
 
 The working fork contains `lyrics/KaraokeTiming.kt` and `util/SyncCalibration.kt`. They were re-checked at `v1.13.0` on 2026-09-25. `SyncCalibration.offsetForTap(targetTimeMs, rawPositionMs) = targetTimeMs - rawPositionMs` preserves the approved sign convention. `KaraokeTiming` provides mature active-word boundary evidence that is **PRESERVE / REFACTOR**; Android-specific sweep/layout behaviour remains outside the shared engine.
 
@@ -157,7 +157,7 @@ active line / active word / word progress / word boundary
 
 The semantic engine is not a Karaoke-mode engine. It returns the same facts regardless of how presentation later chooses to consume them.
 
-Phase 11.3b currently feeds effective position into the legacy app-local current-line selector. The next engine slice replaces that duplicate production selector with the shared projection only after parity tests prove identical line behaviour.
+Phase 11.3b introduced effective position into the app-local current-line selector. Phase 11.4a replaces that duplicate selector with the shared projection after parity tests established identical line behaviour.
 
 Current Phone presentation continues to consume only the active-line result, so computing additional WORD facts must not by itself change UI behaviour.
 
@@ -340,7 +340,7 @@ Phase 11.3a — Effective Timing Foundation                 ✅
 Phase 11.3b — Existing timed-lyrics integration          ✅
     current Phone line path consumes effective position
             ↓
-Phase 11.4a — Shared Timing Semantic Engine              active next
+Phase 11.4a — Shared Timing Semantic Engine              implemented
     LINE + WORD + progress + boundary semantics
     + behaviour-preserving Phone wiring
             ↓

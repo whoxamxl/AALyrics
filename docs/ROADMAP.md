@@ -323,7 +323,7 @@ The integration deliberately keeps `projectedPlaybackPosition(...)` unchanged, k
 
 This slice establishes the real timing-consumer boundary before any user calibration state exists.
 
-### Phase 11.4a — Shared Timing Semantic Engine — active documentation scope
+### Phase 11.4a — Shared Timing Semantic Engine — implemented on topic branch
 
 Build one framework-neutral projection from canonical timed lyrics + `EffectiveLyricsPosition` into shared timing facts:
 
@@ -334,7 +334,7 @@ Build one framework-neutral projection from canonical timed lyrics + `EffectiveL
 
 The engine is presentation-mode agnostic. Karaoke ON/OFF is not an input.
 
-After semantic parity is proven, wire the current Phone production path to the engine while continuing to consume only `activeLineIndex`. LINE_SYNC, WORD_SYNC normal presentation, PLAIN lyrics, playback progress, Translation, Sync UI, and Android Auto must remain behaviourally unchanged.
+The current Phone production path consumes only `activeLineIndex` after semantic parity was proven. LINE_SYNC, WORD_SYNC normal presentation, PLAIN lyrics, playback progress, Translation, Sync UI, and Android Auto remain behaviourally unchanged.
 
 The existing timing topic branch continues for this work. Draft PR #80 was closed before review because it represented only the earlier 11.3a/11.3b checkpoint.
 

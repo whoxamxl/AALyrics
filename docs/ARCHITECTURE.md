@@ -98,7 +98,7 @@ Implemented foundation responsibilities:
 - derive `EffectiveLyricsPosition` from projected playback position plus offset;
 - define zero offset as neutral behaviour.
 
-The next authorized responsibility is the shared timing semantic engine:
+The implemented shared timing semantic engine also has these responsibilities:
 
 - consume canonical `:core:model` timed lyrics + `EffectiveLyricsPosition`;
 - project active line;
