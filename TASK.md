@@ -102,7 +102,7 @@ Approved presentation states:
 
 Model acquisition remains automatic. Do not add a normal pre-download confirmation dialog. The user intervention path is failure recovery: the Track Card emits one semantic Retry action and the application/capability layer decides which failed model/route work must be retried. Canonical lyrics remain visible and usable throughout model preparation, Translation execution, and failure.
 
-The Track Card status row is presentation feedback only. It must not become a second Translation executor, model manager, or timing owner. Translation runtime colors stay distinct from the cyan provider/sync row: Enabled plus processing states use AccentBlue, Ready uses Success, inactive states use neutral text colors, failure uses Error, and Retry retains AccentCyan.
+The Track Card status row is presentation feedback only. It must not become a second Translation executor, model manager, or timing owner. Translation runtime colors stay distinct from the cyan provider/sync row: Enabled uses TextSecondary, processing states use AccentBlue, Ready uses Success, inactive states use neutral text colors, failure uses Error, and Retry retains AccentCyan.
 
 ### LyricsViewport rendering
 

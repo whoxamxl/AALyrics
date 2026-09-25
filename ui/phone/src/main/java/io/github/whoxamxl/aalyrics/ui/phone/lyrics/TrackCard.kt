@@ -185,7 +185,7 @@ private fun TranslationStatusRow(
 
             TrackCardTranslationUiState.On -> TranslationStatusText(
                 text = stringResource(R.string.track_card_translation_on),
-                color = AALyricsColors.AccentBlue,
+                color = AALyricsColors.TextSecondary,
             )
 
             TrackCardTranslationUiState.DownloadingModels -> TranslationLoadingStatus(
@@ -267,7 +267,7 @@ private fun TranslationReadyStatus(
             imageVector = AALyricsIcons.TranslationDirection,
             contentDescription = null,
             tint = AALyricsColors.Success,
-            modifier = Modifier.size(14.dp),
+            modifier = Modifier.size(12.dp),
         )
         Spacer(Modifier.width(AALyricsSpacing.Space4))
         TranslationStatusText(
