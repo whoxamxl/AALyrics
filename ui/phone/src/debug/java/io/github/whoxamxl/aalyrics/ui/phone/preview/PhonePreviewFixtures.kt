@@ -6,6 +6,11 @@ import io.github.whoxamxl.aalyrics.ui.phone.details.DetailsLyricsUiState
 import io.github.whoxamxl.aalyrics.ui.phone.details.DetailsLyricsUiStatus
 import io.github.whoxamxl.aalyrics.ui.phone.details.DetailsScreenUiState
 import io.github.whoxamxl.aalyrics.ui.phone.details.DetailsTrackUiState
+import io.github.whoxamxl.aalyrics.ui.phone.details.DetailsTranslationModelPhaseUiState
+import io.github.whoxamxl.aalyrics.ui.phone.details.DetailsTranslationModelUiState
+import io.github.whoxamxl.aalyrics.ui.phone.details.DetailsTranslationRuntimeFailureUiReason
+import io.github.whoxamxl.aalyrics.ui.phone.details.DetailsTranslationRuntimeUiState
+import io.github.whoxamxl.aalyrics.ui.phone.details.DetailsTranslationUiState
 import io.github.whoxamxl.aalyrics.ui.phone.details.DetailsVerboseProgressUiState
 import io.github.whoxamxl.aalyrics.ui.phone.lyrics.LyricsScreenUiState
 import io.github.whoxamxl.aalyrics.ui.phone.lyrics.LyricsViewportInteractionMode
@@ -493,6 +498,24 @@ internal object PhonePreviewFixtures {
         playbackSurface = playingSurface,
     )
 
+    private val detailsTranslationNormal = DetailsTranslationUiState(
+        sourceLanguageLabel = "English",
+        targetLanguageLabel = "Japanese",
+    )
+    private val detailsTranslationVerboseReady = DetailsTranslationUiState(
+        sourceLanguageLabel = "English (Spanish)",
+        targetLanguageLabel = "Japanese",
+        runtimeState = DetailsTranslationRuntimeUiState.READY,
+        sourceModel = DetailsTranslationModelUiState(
+            languageLabel = "EN, ES",
+            phase = DetailsTranslationModelPhaseUiState.READY,
+        ),
+        targetModel = DetailsTranslationModelUiState(
+            languageLabel = "JA",
+            phase = DetailsTranslationModelPhaseUiState.READY,
+        ),
+    )
+
     val detailsTypical = DetailsScreenUiState(
         track = DetailsTrackUiState(
             title = "Midnight Signals",
@@ -508,6 +531,7 @@ internal object PhonePreviewFixtures {
             lineCount = 64,
         ),
         lyricsStatus = DetailsLyricsUiStatus.READY,
+        translation = detailsTranslationNormal,
     )
     val detailsPartial = DetailsScreenUiState(
         track = DetailsTrackUiState(
@@ -520,8 +544,10 @@ internal object PhonePreviewFixtures {
     val detailsLoading = detailsTypical.copy(
         lyrics = null,
         lyricsStatus = DetailsLyricsUiStatus.LOADING,
+        translation = null,
     )
     val detailsVerbose = detailsTypical.copy(
+        translation = detailsTranslationVerboseReady,
         verboseProgress = DetailsVerboseProgressUiState(
             playbackPositionLabel = "1:32",
             currentLineNumber = 28,
@@ -544,6 +570,131 @@ internal object PhonePreviewFixtures {
             appPackageName = "com.example.player",
             appCategory = "Undefined",
             trackReferences = listOf("spotify:demo-reference"),
+        ),
+    )
+
+    val detailsTranslationActiveSecondary = detailsTypical.copy(
+        translation = detailsTranslationNormal.copy(
+            sourceLanguageLabel = "English (Spanish)",
+        ),
+    )
+    val detailsTranslationNoSourceProfile = detailsTypical.copy(
+        translation = DetailsTranslationUiState(
+            targetLanguageLabel = "Japanese",
+        ),
+    )
+
+    val detailsTranslationRuntimeDisabled = detailsTypical.copy(
+        translation = DetailsTranslationUiState(
+            targetLanguageLabel = "Japanese",
+            runtimeState = DetailsTranslationRuntimeUiState.DISABLED,
+            targetModel = DetailsTranslationModelUiState(
+                languageLabel = "JA",
+                phase = DetailsTranslationModelPhaseUiState.NOT_REQUIRED,
+            ),
+        ),
+    )
+    val detailsTranslationRuntimeIdle = detailsTypical.copy(
+        translation = DetailsTranslationUiState(
+            targetLanguageLabel = "Japanese",
+            runtimeState = DetailsTranslationRuntimeUiState.IDLE,
+            targetModel = DetailsTranslationModelUiState(
+                languageLabel = "JA",
+                phase = DetailsTranslationModelPhaseUiState.READY,
+            ),
+        ),
+    )
+    val detailsTranslationRuntimeTranslating = detailsTypical.copy(
+        translation = DetailsTranslationUiState(
+            sourceLanguageLabel = "English",
+            targetLanguageLabel = "Japanese",
+            runtimeState = DetailsTranslationRuntimeUiState.TRANSLATING,
+            sourceModel = DetailsTranslationModelUiState(
+                languageLabel = "EN",
+                phase = DetailsTranslationModelPhaseUiState.READY,
+            ),
+            targetModel = DetailsTranslationModelUiState(
+                languageLabel = "JA",
+                phase = DetailsTranslationModelPhaseUiState.READY,
+            ),
+        ),
+    )
+    val detailsTranslationRuntimeNotRequired = detailsTypical.copy(
+        translation = DetailsTranslationUiState(
+            sourceLanguageLabel = "Japanese",
+            targetLanguageLabel = "Japanese",
+            runtimeState = DetailsTranslationRuntimeUiState.NOT_REQUIRED,
+            targetModel = DetailsTranslationModelUiState(
+                languageLabel = "JA",
+                phase = DetailsTranslationModelPhaseUiState.READY,
+            ),
+        ),
+    )
+    val detailsTranslationRuntimeReady = detailsVerbose.copy(
+        diagnostics = null,
+        verboseProgress = null,
+    )
+    val detailsTranslationRuntimeFailed = detailsTypical.copy(
+        translation = DetailsTranslationUiState(
+            sourceLanguageLabel = "English (Spanish)",
+            targetLanguageLabel = "Japanese",
+            runtimeState = DetailsTranslationRuntimeUiState.FAILED,
+            runtimeFailureReason =
+                DetailsTranslationRuntimeFailureUiReason.PROVIDER_EXECUTION_FAILED,
+            sourceModel = DetailsTranslationModelUiState(
+                languageLabel = "EN, ES",
+                phase = DetailsTranslationModelPhaseUiState.FAILED,
+                failureReason = "ES: Model download task failed",
+            ),
+            targetModel = DetailsTranslationModelUiState(
+                languageLabel = "JA",
+                phase = DetailsTranslationModelPhaseUiState.READY,
+            ),
+        ),
+    )
+
+    val detailsTranslationModelsChecking = detailsTypical.copy(
+        translation = DetailsTranslationUiState(
+            targetLanguageLabel = "Japanese",
+            runtimeState = DetailsTranslationRuntimeUiState.IDLE,
+            targetModel = DetailsTranslationModelUiState(
+                languageLabel = "JA",
+                phase = DetailsTranslationModelPhaseUiState.CHECKING,
+            ),
+        ),
+    )
+    val detailsTranslationModelsPreparing = detailsTypical.copy(
+        translation = DetailsTranslationUiState(
+            sourceLanguageLabel = "Spanish",
+            targetLanguageLabel = "Japanese",
+            runtimeState = DetailsTranslationRuntimeUiState.TRANSLATING,
+            sourceModel = DetailsTranslationModelUiState(
+                languageLabel = "ES",
+                phase = DetailsTranslationModelPhaseUiState.DOWNLOADING,
+            ),
+            targetModel = DetailsTranslationModelUiState(
+                languageLabel = "JA",
+                phase = DetailsTranslationModelPhaseUiState.WAITING_FOR_SYSTEM,
+            ),
+        ),
+    )
+    val detailsTranslationModelsFailed = detailsTypical.copy(
+        translation = DetailsTranslationUiState(
+            sourceLanguageLabel = "Spanish",
+            targetLanguageLabel = "Japanese",
+            runtimeState = DetailsTranslationRuntimeUiState.FAILED,
+            runtimeFailureReason =
+                DetailsTranslationRuntimeFailureUiReason.PROVIDER_EXECUTION_FAILED,
+            sourceModel = DetailsTranslationModelUiState(
+                languageLabel = "ES",
+                phase = DetailsTranslationModelPhaseUiState.FAILED,
+                failureReason = "ES: Model download task failed",
+            ),
+            targetModel = DetailsTranslationModelUiState(
+                languageLabel = "JA",
+                phase = DetailsTranslationModelPhaseUiState.TIMED_OUT,
+                failureReason = "Model still unavailable after 5 min of active download time",
+            ),
         ),
     )
     val detailsShell = PhoneShellUiState(
