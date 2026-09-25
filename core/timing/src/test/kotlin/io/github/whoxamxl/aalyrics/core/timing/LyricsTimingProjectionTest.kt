@@ -105,7 +105,9 @@ class LyricsTimingProjectionTest {
             assertEquals(0, projection.activeLineIndex)
             assertEquals(expected.first, projection.activeWordIndex, "position=$positionMs")
             assertEquals(expected.second, projection.wordBoundary, "position=$positionMs")
-            assertNull(projection.wordProgress)
+            if (expected.second != WordTimingBoundary.ACTIVE) {
+                assertNull(projection.wordProgress)
+            }
         }
     }
 
@@ -163,5 +165,68 @@ class LyricsTimingProjectionTest {
         assertEquals(1, projection.activeLineIndex)
         assertNull(projection.activeWordIndex)
         assertEquals(WordTimingBoundary.UNAVAILABLE, projection.wordBoundary)
+    }
+
+    @Test
+    fun progressUsesExplicitWordEnd() {
+        val document = LyricsDocument(
+            lines = listOf(
+                TimedLyricLine(
+                    text = "Explicit",
+                    startMs = 0L,
+                    words = listOf(TimedWord("Explicit", startMs = 1_000L, endMs = 1_400L)),
+                ),
+            ),
+        )
+
+        assertEquals(0f, projectLyricsTiming(document, EffectiveLyricsPosition(1_000L)).wordProgress)
+        assertEquals(0.5f, projectLyricsTiming(document, EffectiveLyricsPosition(1_200L)).wordProgress)
+        val atEnd = projectLyricsTiming(document, EffectiveLyricsPosition(1_400L))
+        assertNull(atEnd.wordProgress)
+        assertEquals(WordTimingBoundary.AFTER_LAST, atEnd.wordBoundary)
+    }
+
+    @Test
+    fun progressUsesLaterNextStartForOpenEndedWord() {
+        val document = LyricsDocument(
+            lines = listOf(
+                TimedLyricLine(
+                    text = "Inferred end",
+                    startMs = 0L,
+                    words = listOf(
+                        TimedWord("Inferred", startMs = 1_000L),
+                        TimedWord("end", startMs = 2_000L),
+                    ),
+                ),
+            ),
+        )
+
+        assertEquals(0f, projectLyricsTiming(document, EffectiveLyricsPosition(1_000L)).wordProgress)
+        assertEquals(0.5f, projectLyricsTiming(document, EffectiveLyricsPosition(1_500L)).wordProgress)
+        val finalWord = projectLyricsTiming(document, EffectiveLyricsPosition(2_000L))
+        assertEquals(1, finalWord.activeWordIndex)
+        assertEquals(WordTimingBoundary.ACTIVE, finalWord.wordBoundary)
+        assertNull(finalWord.wordProgress)
+    }
+
+    @Test
+    fun zeroDurationWordNeverFabricatesProgress() {
+        val document = LyricsDocument(
+            lines = listOf(
+                TimedLyricLine(
+                    text = "Instant then later",
+                    startMs = 0L,
+                    words = listOf(
+                        TimedWord("Instant", startMs = 1_000L, endMs = 1_000L),
+                        TimedWord("later", startMs = 2_000L),
+                    ),
+                ),
+            ),
+        )
+
+        val instant = projectLyricsTiming(document, EffectiveLyricsPosition(1_000L))
+        assertNull(instant.activeWordIndex)
+        assertNull(instant.wordProgress)
+        assertEquals(WordTimingBoundary.GAP, instant.wordBoundary)
     }
 }

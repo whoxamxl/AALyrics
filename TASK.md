@@ -289,7 +289,7 @@ Implement in small coherent commits and push each completed checkpoint.
    - preserve explicit-end gaps, open-ended fallback, no older-word reactivation, and backward-seek semantics;
    - cover exact start/end and negative/before cases.
 
-3. [ ] **Word progress**
+3. [x] **Word progress**
    - explicit-end progress;
    - inferred-next-start progress;
    - null progress when duration is not defensible;

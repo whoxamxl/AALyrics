@@ -64,11 +64,23 @@ fun projectLyricsTiming(
             },
         )
     }
+    val progressEndMs = latestStartedWord.endMs
+        ?: words.getOrNull(latestStartedWordIndex + 1)
+            ?.startMs
+            ?.takeIf { it > latestStartedWord.startMs }
+    val wordProgress = progressEndMs
+        ?.takeIf { it > latestStartedWord.startMs }
+        ?.let { endMs ->
+            ((position.milliseconds - latestStartedWord.startMs).toDouble() /
+                (endMs - latestStartedWord.startMs).toDouble())
+                .coerceIn(0.0, 1.0)
+                .toFloat()
+        }
 
     return LyricsTimingProjection(
         activeLineIndex = activeLineIndex,
         activeWordIndex = latestStartedWordIndex,
-        wordProgress = null,
+        wordProgress = wordProgress,
         wordBoundary = WordTimingBoundary.ACTIVE,
     )
 }
