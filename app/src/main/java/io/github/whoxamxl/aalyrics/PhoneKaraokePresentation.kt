@@ -12,6 +12,7 @@ internal fun mapPhoneKaraokeSweep(
     effectivePositionMs: Long,
 ): KaraokeSweepUiState? {
     if (timing.wordBoundary != WordTimingBoundary.ACTIVE) return null
+    if (!LyricWordLayout.hasRenderableWordGranularity(line)) return null
     val activeIndex = timing.activeWordIndex ?: return null
     val ranges = LyricWordLayout.displayRangesForLine(line) ?: return null
     val activeRange = ranges.getOrNull(activeIndex) ?: return null

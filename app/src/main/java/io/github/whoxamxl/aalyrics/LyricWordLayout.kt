@@ -17,6 +17,30 @@ internal object LyricWordLayout {
         displayRangesForLine(line)?.getOrNull(activeTokenIndex)
 
     /**
+     * Rejects provider payloads that expose one timing token for an entire
+     * multi-unit lyric line. Such payloads carry line timing, not useful
+     * word-level granularity, even if the provider labels them as rich/word sync.
+     *
+     * This is intentionally language-independent: token/content equality and the
+     * same lexical ranges already used for presentation decide whether a single
+     * token represents one readable unit or an entire line.
+     */
+    internal fun hasRenderableWordGranularity(line: TimedLyricLine): Boolean {
+        if (line.words.isEmpty()) return false
+        if (line.words.size > 1) return true
+
+        val ranges = lexicalRanges(line.text)
+        if (ranges.isEmpty()) return false
+        if (ranges.size == 1) return true
+
+        val sourceCanonical = canonicalContent(line.text)
+        val tokenCanonical = canonicalContent(line.words.single().text)
+        return sourceCanonical.isEmpty() ||
+            tokenCanonical.isEmpty() ||
+            sourceCanonical != tokenCanonical
+    }
+
+    /**
      * Returns readable ranges for every timing token only when the timing payload
      * has enough evidence that it belongs to [TimedLyricLine.text]. This prevents a
      * small number of incidental substring matches from enabling a visual sweep.

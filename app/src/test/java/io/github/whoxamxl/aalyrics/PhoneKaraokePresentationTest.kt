@@ -83,6 +83,44 @@ class PhoneKaraokePresentationTest {
     }
 
     @Test
+    fun `line wide Japanese pseudo token does not enable Karaoke sweep`() {
+        val text = "あなたと二人で踊ろうよ"
+        val line = TimedLyricLine(
+            text = text,
+            startMs = 1_000L,
+            words = listOf(TimedWord(text, 1_000L)),
+        )
+
+        assertEquals(false, LyricWordLayout.hasRenderableWordGranularity(line))
+        assertNull(sweep(line, 1_325L))
+    }
+
+    @Test
+    fun `line wide English pseudo token does not enable Karaoke sweep`() {
+        val text = "Hello world again"
+        val line = TimedLyricLine(
+            text = text,
+            startMs = 1_000L,
+            words = listOf(TimedWord(text, 1_000L)),
+        )
+
+        assertEquals(false, LyricWordLayout.hasRenderableWordGranularity(line))
+        assertNull(sweep(line, 1_325L))
+    }
+
+    @Test
+    fun `genuine single visible word keeps final visual fallback`() {
+        val line = TimedLyricLine(
+            text = "忘れない",
+            startMs = 1_000L,
+            words = listOf(TimedWord("忘れない", 1_000L)),
+        )
+
+        assertEquals(true, LyricWordLayout.hasRenderableWordGranularity(line))
+        assertEquals(0.5f, sweep(line, 1_325L)?.progress)
+    }
+
+    @Test
     fun `only final open ended group receives Phone visual fallback`() {
         val line = TimedLyricLine("final", 1_000L, words = listOf(TimedWord("final", 1_000L)))
         assertEquals(0.5f, sweep(line, 1_325L)?.progress)
