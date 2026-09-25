@@ -33,6 +33,8 @@ source sync type == WORD
 
 LINE_SYNC and PLAIN must never synthesize Karaoke display.
 
+Karaoke enablement is presentation-only. For a given playback sample/time, toggling Karaoke ON/OFF must not change the Phone projected playback position, EffectiveLyricsPosition, active line, or underlying timing projection. A missing MediaSession source timestamp may use a Phone receipt-time projection anchor for WORD_SYNC, but that anchor is independent of Karaoke enablement and must remain stable across unrelated metadata-only snapshot updates.
+
 ## Product state contract
 
 Persist two application-owned booleans:
@@ -137,6 +139,8 @@ Do not:
 - Karaoke renders only for WORD_SYNC when both toggles are ON.
 - LINE_SYNC and PLAIN remain unchanged even when toggles are ON.
 - Current line selection still comes only from `:core:timing`.
+- Karaoke ON/OFF does not change the lyrics clock or projected playback position.
+- Missing source-timestamp fallback projection is WORD_SYNC-specific, toggle-independent, and does not reset for unrelated metadata-only updates.
 - Phone uses continuous sweep, not Performance-mode pulse.
 - fragmented timing tokens mapping to one visible word produce one continuous visible-word sweep, not repeated resets;
 - working-fork layout/grouping behavior is preserved/refactored where compatible rather than reimplemented without evidence;

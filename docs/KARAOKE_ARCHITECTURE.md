@@ -429,3 +429,27 @@ Future Android Auto work must:
 - not copy Phone Compose rendering machinery;
 - not duplicate line/word timing semantics;
 - define its own host-appropriate emphasis strategy in a dedicated implementation slice.
+
+
+## Phone clock invariants
+
+Karaoke is not allowed to select a different clock.
+
+For the same playback timing sample and monotonic instant:
+
+- Karaoke OFF and Karaoke ON must produce the same projected playback position;
+- they must produce the same `EffectiveLyricsPosition`;
+- they must produce the same shared `LyricsTimingProjection`;
+- enabling Karaoke only decides whether the already-computed WORD presentation facts are rendered.
+
+Some Android MediaSession sources omit `lastPositionUpdateTime`. For Phone WORD_SYNC presentation, AALyrics may anchor the received `positionMs` to the monotonic time at which that timing sample was received so continuous progress can be projected between coarse callbacks.
+
+That fallback anchor:
+
+- applies to WORD_SYNC independently of the Karaoke live toggle;
+- is ignored when the source supplies a valid monotonic position timestamp;
+- resets for an actual timing-sample change such as position, playback rate, playback status, track identity, or source timestamp;
+- must not reset merely because unrelated track metadata such as duration is updated;
+- may change presentation update cadence when Karaoke is active, but cadence must never change clock semantics.
+
+Verbose Details for WORD_SYNC must consume the same Phone fallback clock so diagnostics cannot disagree with the Lyrics surface.

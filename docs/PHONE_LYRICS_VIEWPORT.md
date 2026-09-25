@@ -392,3 +392,10 @@ Rules:
 - LINE_SYNC never receives synthetic Karaoke rendering.
 
 The mature working-fork `LyricWordLayout` and `PhoneKaraokeSweep` grouping behavior are implementation references to preserve/refactor. The Compose renderer should reuse their proven mapping/grouping behavior where compatible rather than inventing a new algorithm, while leaving timing selection in the shared Timing Semantic Engine.
+
+
+### Karaoke clock stability
+
+Karaoke ON/OFF changes only word-level rendering. It must not shift the current line or playback position.
+
+When a WORD_SYNC MediaSession omits its source position timestamp, the Phone layer may continuously project from a receipt-time anchor. The same anchor is used whether Karaoke is OFF or ON. Entering/leaving the Lyrics destination, changing Karaoke update cadence, or toggling the feature must not reset the timing sample or move the lyrics clock. Metadata-only playback updates must not re-anchor the clock.
