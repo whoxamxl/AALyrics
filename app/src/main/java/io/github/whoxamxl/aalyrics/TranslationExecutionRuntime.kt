@@ -69,11 +69,13 @@ internal fun translationRetryModelLanguages(
     ) {
         profile.primary
             ?.let(TranslationLanguages::normalizeLanguageTag)
+            ?.takeIf(TranslationLanguages::isModelSupported)
             ?.let(languages::add)
 
         profile.secondaryCandidate
             ?.takeIf { profile.secondaryActivation == SecondaryActivation.ACTIVE }
             ?.let(TranslationLanguages::normalizeLanguageTag)
+            ?.takeIf(TranslationLanguages::isModelSupported)
             ?.let(languages::add)
     }
 

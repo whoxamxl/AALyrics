@@ -320,6 +320,31 @@ class PhoneLyricsMapperTest {
             unrelatedDownloadWhileTranslating.trackCard.translation,
         )
 
+        val unsupportedSecondaryDownload = mapPhoneLyricsState(
+            playback = playback,
+            lyricsState = lyrics,
+            plainLyricsAutoScrollEnabled = true,
+            interactionMode = LyricsViewportInteractionMode.FOLLOW,
+            currentMonotonicTimeMs = 1_000L,
+            translationState = TranslationState.Translating(
+                request = request,
+                profile = LanguageProfile(
+                    primary = "ja",
+                    secondaryCandidate = "ar",
+                    secondaryActivation = SecondaryActivation.ACTIVE,
+                    lines = emptyList(),
+                ),
+            ),
+            translationSettings = enabledTranslation,
+            translationModelStates = mapOf(
+                "ar" to TranslationModelState("ar", TranslationModelPhase.DOWNLOADING),
+            ),
+        )
+        assertEquals(
+            TrackCardTranslationUiState.Translating,
+            unsupportedSecondaryDownload.trackCard.translation,
+        )
+
         val unrelatedDownloadWhileFailed = mapPhoneLyricsState(
             playback = playback,
             lyricsState = lyrics,

@@ -249,7 +249,7 @@ Use small, reviewable commits and keep each checkpoint independently coherent.
    - [x] define the product-supported Translation model set as `EN / JA / FR / DE / ES / KO / ZH / IT / PT` while allowing Language ID to report other languages;
    - [x] redefine Verbose Source model pairing as `Source model (EN (ES))  Ready (Ready)`; unsupported detected languages use `—`;
    - [x] implement the new generic ACTIVE gate in `LanguageProfiler` with no language-specific false-positive branches;
-   - [ ] enforce product-supported source-model routing/model preparation without adding per-language false-positive patches;
+   - [x] enforce product-supported source-model routing/model preparation across core planning, ML Kit route/model guards, Track Card status, and Retry without adding per-language false-positive patches;
    - [ ] replace aggregate Source model presentation state with positional Primary/Secondary model states and align Previews/tests;
    - [ ] rerun build/tests/review after production changes.
 

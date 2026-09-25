@@ -145,6 +145,7 @@ private fun mapTrackCardTranslationState(
             add(targetLanguage)
             profile?.primary
                 ?.let(TranslationLanguages::normalizeLanguageTag)
+                ?.takeIf(TranslationLanguages::isModelSupported)
                 ?.let { languageTag -> add(languageTag) }
 
             val secondaryCandidate = profile
@@ -154,6 +155,7 @@ private fun mapTrackCardTranslationState(
                 ?.secondaryCandidate
             secondaryCandidate
                 ?.let(TranslationLanguages::normalizeLanguageTag)
+                ?.takeIf(TranslationLanguages::isModelSupported)
                 ?.let { languageTag -> add(languageTag) }
         }
 

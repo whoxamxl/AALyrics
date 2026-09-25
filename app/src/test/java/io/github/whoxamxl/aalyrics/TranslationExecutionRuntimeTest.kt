@@ -71,6 +71,37 @@ class TranslationExecutionRuntimeTest {
     }
 
     @Test
+    fun `retry model selection ignores unsupported active Secondary`() {
+        val canonical = CanonicalLyrics.create(
+            ownerId = "unsupported-secondary-retry",
+            document = LyricsDocument(listOf(PlainLyricLine("Line"))),
+        )
+        val state = TranslationState.Failed(
+            request = TranslationRequestIdentity(
+                id = TranslationRequestId(9L),
+                canonicalLyrics = canonical.identity,
+                targetLanguage = "ja",
+            ),
+            profile = LanguageProfile(
+                primary = "en",
+                secondaryCandidate = "ar",
+                secondaryActivation = SecondaryActivation.ACTIVE,
+                lines = emptyList(),
+            ),
+            reason = TranslationFailureReason.PROVIDER_EXECUTION_FAILED,
+        )
+
+        assertEquals(
+            setOf("ja"),
+            translationRetryModelLanguages(
+                state = state,
+                settings = TranslationSettings(enabled = true, targetLanguage = "ja"),
+                currentCanonicalIdentity = canonical.identity,
+            ),
+        )
+    }
+
+    @Test
     fun `retry model selection ignores stale route profile and built in English`() {
         val canonical = CanonicalLyrics.create(
             ownerId = "stale-retry-route",
