@@ -722,7 +722,7 @@ class PhoneLyricsMapperTest {
     }
 
     @Test
-    fun `Phone receipt anchor does not alter LINE source when Karaoke switches are on`() {
+    fun `Karaoke toggle does not change Phone playback projection when source timestamp is unavailable`() {
         val playback = PlaybackSnapshot(
             track = track(),
             status = PlaybackStatus.PLAYING,
@@ -731,25 +731,33 @@ class PhoneLyricsMapperTest {
             source = PlaybackSource("com.spotify.music"),
             positionUpdatedAtMonotonicMs = null,
         )
-        val state = mapPhoneLyricsState(
+        val lyrics = ready(
             playback = playback,
-            lyricsState = ready(
-                playback = playback,
-                lines = listOf(
-                    TimedLyricLine("First", 0L),
-                    TimedLyricLine("Second", 5_000L),
-                ),
+            lines = listOf(
+                TimedLyricLine("First", 0L),
+                TimedLyricLine("Second", 5_000L),
             ),
+        )
+
+        fun mapped(mode: Boolean) = mapPhoneLyricsState(
+            playback = playback,
+            lyricsState = lyrics,
             plainLyricsAutoScrollEnabled = true,
             interactionMode = LyricsViewportInteractionMode.FOLLOW,
             currentMonotonicTimeMs = 12_000L,
             playbackPositionFallbackUpdatedAtMonotonicMs = 10_000L,
             karaokeFeatureEnabled = true,
-            karaokeModeEnabled = true,
-        )
+            karaokeModeEnabled = mode,
+        ).viewport
 
-        assertEquals(0, state.viewport.currentLineIndex)
-        assertNull(state.viewport.karaokeSweep)
+        val off = mapped(false)
+        val on = mapped(true)
+
+        assertEquals(1, off.currentLineIndex)
+        assertEquals(off.currentLineIndex, on.currentLineIndex)
+        assertEquals(off.playbackProgress, on.playbackProgress)
+        assertNull(off.karaokeSweep)
+        assertNull(on.karaokeSweep)
     }
 
     @Test
