@@ -470,3 +470,18 @@ The guard is language-independent:
 - a genuine single lexical unit may still use the Phone-only 650ms final visual fallback.
 
 This presentation guard does not mutate provider data, `LyricsDocument.syncType`, canonical timestamps, or `LyricsTimingProjection`.
+
+
+### Provider token granularity
+
+Provider timing-token boundaries and readable lexical-word boundaries are independent.
+
+A single provider token may:
+
+- be a fragment inside one visible word;
+- match one visible word;
+- span multiple visible words or a phrase.
+
+`LyricWordLayout` must therefore map an aligned token spanning multiple lexical ranges to the complete canonical range from its first overlap through its last overlap. Mapping such a token only to the first lexical range causes the skipped remainder to become completed abruptly when the next token starts.
+
+This rule is language-independent and preserves sequential source alignment for repeated text.

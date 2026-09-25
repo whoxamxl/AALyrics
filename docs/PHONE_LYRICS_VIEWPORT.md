@@ -413,3 +413,10 @@ For such a line:
 - keep the underlying document/timing semantics unchanged.
 
 This check is language-independent. Japanese lexical grouping remains a display heuristic only and must not decide whether timing is semantically word-level.
+
+
+### Multi-word provider chunks
+
+Karaoke rendering must not assume that a provider timing token is a lexical word. When one aligned token spans multiple readable lexical ranges, sweep the complete visible span covered by those ranges. Do not map only the first overlapped word.
+
+This avoids abrupt completed-color jumps for chunked timing payloads such as `Just a boy, ` followed by `just a boy,`, while retaining same-range grouping for sub-word fragments.

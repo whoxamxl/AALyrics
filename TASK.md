@@ -170,3 +170,12 @@ For Phone Karaoke rendering:
 - a genuine single readable word remains eligible for the final 650ms visual fallback;
 - multi-token syllable/fragment grouping such as `Pro / vi / der -> Provider` remains eligible;
 - the canonical `LyricsDocument.syncType` is not rewritten by this Phone-only rendering guard.
+
+
+### Multi-lexical timing tokens
+
+Do not assume one provider timing token equals one lexical word.
+
+If a timing token overlaps multiple readable lexical ranges in the canonical line, its Phone display range is the union from the first overlapping lexical range through the last overlapping lexical range. This preserves the complete visible chunk and prevents skipped text from becoming completed instantly when the next timing token starts.
+
+Repeated chunks must remain aligned sequentially to canonical source order. Existing same-visible-range grouping for fragments such as `Pro / vi / der -> Provider` remains unchanged.
