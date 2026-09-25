@@ -15,6 +15,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsColors
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsTheme
 import io.github.whoxamxl.aalyrics.ui.phone.lyrics.LyricsViewport
+import io.github.whoxamxl.aalyrics.ui.phone.lyrics.KaraokeLineUiState
 import io.github.whoxamxl.aalyrics.ui.phone.lyrics.LyricsViewportUiState
 import kotlinx.coroutines.delay
 
@@ -22,6 +23,30 @@ import kotlinx.coroutines.delay
 @Composable
 private fun LyricsViewportWordPreview() {
     LyricsViewportPreview(PhonePreviewFixtures.viewportWord)
+}
+
+@Preview(name = "WORD · before first word", group = "LyricsViewport", widthDp = 412, heightDp = 520)
+@Composable
+private fun LyricsViewportWordBeforeFirstPreview() {
+    LyricsViewportPreview(
+        PhonePreviewFixtures.viewportWord.copy(
+            currentWordIndex = null,
+            currentWordProgress = 0f,
+            karaokeLine = KaraokeLineUiState(completedEnd = 0),
+        ),
+    )
+}
+
+@Preview(name = "WORD · inter-word gap", group = "LyricsViewport", widthDp = 412, heightDp = 520)
+@Composable
+private fun LyricsViewportWordGapPreview() {
+    LyricsViewportPreview(
+        PhonePreviewFixtures.viewportWord.copy(
+            currentWordIndex = null,
+            currentWordProgress = 0f,
+            karaokeLine = KaraokeLineUiState(completedEnd = 12),
+        ),
+    )
 }
 
 @Preview(name = "WORD · Karaoke off", group = "LyricsViewport", widthDp = 412, heightDp = 520)
