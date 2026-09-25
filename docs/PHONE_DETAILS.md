@@ -4,7 +4,7 @@
 
 This document defines the approved presentation contract for the Phone `Details` destination.
 
-PR #49 implemented the original production `DetailsScreen`, Phone-local presentation state, application-owned runtime mapping, deterministic Previews, and focused mapper tests. The active `feature/translation-runtime` follow-up extends that existing read-only surface with Translation metadata and compact Translation diagnostics. Details remains read-only: it presents already-owned runtime facts and must not start Translation, download models, retry work, or trigger provider/network activity.
+PR #49 implemented the original production `DetailsScreen`, Phone-local presentation state, application-owned runtime mapping, deterministic Previews, and focused mapper tests. On `feature/translation-runtime`, the application-owned Translation Details state/mapping is now implemented; Compose rendering and deterministic Translation Details Previews remain the next checkpoint. Details remains read-only: it presents already-owned runtime facts and must not start Translation, download models, retry work, or trigger provider/network activity.
 
 ## Product intent
 

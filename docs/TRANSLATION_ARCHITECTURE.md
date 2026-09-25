@@ -395,7 +395,7 @@ The background scaffold implements ML Kit model lifecycle:
 - thermal waiting;
 - timeout based on active rather than thermally blocked download time.
 
-The concrete ML Kit manager's in-memory lifecycle map is process-local, while ML Kit language packs can survive a normal app process restart or an Android Studio update install. On manager startup, supported non-English targets therefore begin in CHECKING state while `RemoteModelManager.getDownloadedModels(...)` restores which packs are actually present. Downloaded packs become READY; absent packs fall back to NOT_DOWNLOADED presentation. A missing process-local state entry must not by itself be treated as evidence that a previously downloaded ML Kit pack was removed.
+The concrete ML Kit manager's in-memory lifecycle map is process-local, while ML Kit language packs can survive a normal app process restart or an Android Studio update install. On manager startup, supported non-English targets therefore begin in CHECKING state while `RemoteModelManager.getDownloadedModels(...)` restores which packs are actually present. Downloaded packs become READY; absent packs fall back to NOT_DOWNLOADED presentation. A missing process-local state entry must not by itself be treated as evidence that a previously downloaded ML Kit pack was removed. `TranslationModelManager.inventoryReconciled` becomes true only after the startup persisted-model inventory pass succeeds; Details uses that fact before interpreting a missing remote-model entry as confirmed absence.
 
 The execution slice adds actual text/block translation and LanguageProfiler integration while reusing this model lifecycle unchanged.
 

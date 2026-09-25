@@ -270,7 +270,7 @@ AALyricsApplication.phoneDetailsState
 DetailsScreen
 ```
 
-The application-owned `phoneDetailsState` should be extended to combine the already-existing Translation settings/state/diagnostic evidence and model lifecycle state. The host should continue consuming the resolved state rather than reconstructing Translation diagnostics ad hoc.
+The application-owned `phoneDetailsState` now combines the existing Translation settings/state/diagnostic evidence, model lifecycle state, and startup model-inventory reconciliation fact. `PhoneDetailsMapper` canonical-identity gates per-track profile/runtime evidence and emits Phone-local Translation Details state. The host continues consuming that resolved state rather than reconstructing Translation diagnostics ad hoc.
 
 The runtime-host slice must not add provider/network requests for diagnostics. Verbose Details may reuse already-owned playback-source and Translation/model facts. Enabling Verbose Details must not start profiling, Translation, model download, retry, or provider lookup.
 

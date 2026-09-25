@@ -46,7 +46,7 @@ The following already exists and is the baseline to preserve:
 - `mapPhoneLyricsState` already projects eligible translated lines and the permanent Track Card Translation state.
 - `LyricsViewportLineUiState` already carries optional translated presentation and `LyricsViewport` renders canonical + translated text as one measured row.
 - Track Card automatic-model-download / translating / Ready route / Failed + Retry presentation is implemented.
-- Existing `phoneDetailsState` currently maps playback + canonical lyrics + playback-source diagnostics only; it does **not** yet include Translation Details.
+- `phoneDetailsState` now combines playback + canonical lyrics + playback-source diagnostics with Translation settings/state/profile/model lifecycle facts and emits Phone-local Translation Details state. Compose rendering is intentionally still pending.
 - `TranslationState.Translating` now retains the current-request LanguageProfile after profiling completes, and `TranslationState.Failed` retains that profile when available plus a framework-neutral `TranslationFailureReason`. This diagnostic evidence remains owned by the existing Translation lifecycle and is stale-request guarded.
 
 ## Scope
@@ -237,7 +237,7 @@ Use small, reviewable commits and keep each checkpoint independently coherent.
    - [x] standardize Details Failed/Timed out reason tooltips for this and future Details additions;
    - [x] align Translation architecture/runtime-host ownership before implementation;
    - [x] **Checkpoint 7a — diagnostic evidence contract:** preserve the current request LanguageProfile after profiling while Translating/Failed and preserve a framework-neutral runtime failure reason; do not expose raw engine exceptions to Phone UI;
-   - [ ] **Checkpoint 7b — application Details mapping:** extend application-owned `phoneDetailsState` / `PhoneDetailsMapper` with Translation settings, current matching profile/runtime state, and model lifecycle projection;
+   - [x] **Checkpoint 7b — application Details mapping:** extend application-owned `phoneDetailsState` / `PhoneDetailsMapper` with Translation settings, current matching profile/runtime state, model lifecycle projection, and explicit startup model-inventory reconciliation;
    - [ ] **Checkpoint 7c — Phone-local state + rendering:** add the `TRANSLATION` section, compact Verbose rows, and shared info-tooltip treatment for Failed/Timed out;
    - [ ] **Checkpoint 7d — deterministic Previews/tests:** cover Primary only, ACTIVE Secondary, no profile yet, all six runtime states, all model states, OFF+absent Not required, built-in/downloaded Ready while OFF, multi-source aggregate, and failure tooltips;
    - [ ] **Checkpoint 7e — regression/alignment:** verify Verbose toggle remains presentation-only and no provider/profile/model work is triggered merely by opening Details.
