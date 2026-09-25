@@ -13,11 +13,13 @@ class PlaybackClockReconcilerTest {
 
     @Test
     fun `old but internally stable source timestamp remains authoritative`() {
-        val first = snapshot(positionMs = 40_000L, sourceTimestampMs = 10_000L, sampleTimestampMs = 20_000L)
-        val second = snapshot(positionMs = 40_000L, sourceTimestampMs = 10_000L, sampleTimestampMs = 21_000L)
+        reconciler.reconcile(
+            snapshot(positionMs = 40_000L, sourceTimestampMs = 10_000L, sampleTimestampMs = 20_000L),
+        )
 
-        reconciler.reconcile(first)
-        val reconciled = reconciler.reconcile(second)
+        val reconciled = reconciler.reconcile(
+            snapshot(positionMs = 40_000L, sourceTimestampMs = 10_000L, sampleTimestampMs = 21_000L),
+        )
 
         assertEquals(10_000L, reconciled.positionUpdatedAtMonotonicMs)
     }
@@ -37,7 +39,54 @@ class PlaybackClockReconcilerTest {
     }
 
     @Test
-    fun `rejected source timestamp stays rejected until source publishes a new timestamp`() {
+    fun `same source timestamp with pause to play transition is rejected`() {
+        reconciler.reconcile(
+            snapshot(
+                status = PlaybackStatus.PAUSED,
+                positionMs = 40_000L,
+                sourceTimestampMs = 10_000L,
+                sampleTimestampMs = 20_000L,
+            ),
+        )
+
+        val reconciled = reconciler.reconcile(
+            snapshot(
+                status = PlaybackStatus.PLAYING,
+                positionMs = 40_000L,
+                sourceTimestampMs = 10_000L,
+                sampleTimestampMs = 21_000L,
+            ),
+        )
+
+        assertNull(reconciled.positionUpdatedAtMonotonicMs)
+        assertEquals(21_000L, reconciled.positionSampledAtMonotonicMs)
+    }
+
+    @Test
+    fun `same source timestamp with playback rate change is rejected`() {
+        reconciler.reconcile(
+            snapshot(
+                playbackRate = 1.0f,
+                positionMs = 40_000L,
+                sourceTimestampMs = 10_000L,
+                sampleTimestampMs = 20_000L,
+            ),
+        )
+
+        val reconciled = reconciler.reconcile(
+            snapshot(
+                playbackRate = 1.25f,
+                positionMs = 40_000L,
+                sourceTimestampMs = 10_000L,
+                sampleTimestampMs = 21_000L,
+            ),
+        )
+
+        assertNull(reconciled.positionUpdatedAtMonotonicMs)
+    }
+
+    @Test
+    fun `null source timestamp does not clear quarantine for rejected timestamp`() {
         reconciler.reconcile(
             snapshot(positionMs = 40_000L, sourceTimestampMs = 10_000L, sampleTimestampMs = 20_000L),
         )
@@ -45,14 +94,30 @@ class PlaybackClockReconcilerTest {
             snapshot(positionMs = 41_000L, sourceTimestampMs = 10_000L, sampleTimestampMs = 21_000L),
         )
 
-        val repeated = reconciler.reconcile(
-            snapshot(positionMs = 41_000L, sourceTimestampMs = 10_000L, sampleTimestampMs = 21_500L),
+        val missingTimestamp = reconciler.reconcile(
+            snapshot(positionMs = 41_500L, sourceTimestampMs = null, sampleTimestampMs = 21_500L),
         )
+        val repeatedRejectedTimestamp = reconciler.reconcile(
+            snapshot(positionMs = 42_000L, sourceTimestampMs = 10_000L, sampleTimestampMs = 22_000L),
+        )
+
+        assertNull(missingTimestamp.positionUpdatedAtMonotonicMs)
+        assertNull(repeatedRejectedTimestamp.positionUpdatedAtMonotonicMs)
+    }
+
+    @Test
+    fun `new valid source timestamp clears quarantine`() {
+        reconciler.reconcile(
+            snapshot(positionMs = 40_000L, sourceTimestampMs = 10_000L, sampleTimestampMs = 20_000L),
+        )
+        reconciler.reconcile(
+            snapshot(positionMs = 41_000L, sourceTimestampMs = 10_000L, sampleTimestampMs = 21_000L),
+        )
+
         val recovered = reconciler.reconcile(
             snapshot(positionMs = 42_000L, sourceTimestampMs = 22_000L, sampleTimestampMs = 22_100L),
         )
 
-        assertNull(repeated.positionUpdatedAtMonotonicMs)
         assertEquals(22_000L, recovered.positionUpdatedAtMonotonicMs)
     }
 
@@ -60,6 +125,19 @@ class PlaybackClockReconcilerTest {
     fun `source timestamp after local sample time is rejected`() {
         val reconciled = reconciler.reconcile(
             snapshot(positionMs = 40_000L, sourceTimestampMs = 20_500L, sampleTimestampMs = 20_000L),
+        )
+
+        assertNull(reconciled.positionUpdatedAtMonotonicMs)
+    }
+
+    @Test
+    fun `source timestamp moving backwards on same track is rejected`() {
+        reconciler.reconcile(
+            snapshot(positionMs = 40_000L, sourceTimestampMs = 20_000L, sampleTimestampMs = 20_100L),
+        )
+
+        val reconciled = reconciler.reconcile(
+            snapshot(positionMs = 40_500L, sourceTimestampMs = 19_000L, sampleTimestampMs = 21_000L),
         )
 
         assertNull(reconciled.positionUpdatedAtMonotonicMs)
@@ -85,13 +163,16 @@ class PlaybackClockReconcilerTest {
 
     private fun snapshot(
         title: String = "Track",
+        status: PlaybackStatus = PlaybackStatus.PLAYING,
+        playbackRate: Float = 1.0f,
         positionMs: Long,
         sourceTimestampMs: Long?,
         sampleTimestampMs: Long,
     ) = PlaybackSnapshot(
         track = Track(title = title, artists = listOf("Artist")),
-        status = PlaybackStatus.PLAYING,
+        status = status,
         positionMs = positionMs,
+        playbackRate = playbackRate,
         source = PlaybackSource(id = "com.example.player", mediaId = title.lowercase()),
         positionUpdatedAtMonotonicMs = sourceTimestampMs,
         positionSampledAtMonotonicMs = sampleTimestampMs,

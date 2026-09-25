@@ -15,12 +15,12 @@ internal class PlaybackClockReconciler {
     )
 
     private var identity: ClockIdentity? = null
-    private var previousRaw: PlaybackSnapshot? = null
+    private var previousSourceSnapshot: PlaybackSnapshot? = null
     private var rejectedSourceTimestampMs: Long? = null
 
     fun reset() {
         identity = null
-        previousRaw = null
+        previousSourceSnapshot = null
         rejectedSourceTimestampMs = null
     }
 
@@ -31,18 +31,14 @@ internal class PlaybackClockReconciler {
         )
         if (identity != currentIdentity) {
             identity = currentIdentity
-            previousRaw = null
+            previousSourceSnapshot = null
             rejectedSourceTimestampMs = null
         }
 
-        val previous = previousRaw
-        previousRaw = raw
-
-        val sourceTimestamp = raw.positionUpdatedAtMonotonicMs ?: run {
-            rejectedSourceTimestampMs = null
-            return raw
-        }
+        val sourceTimestamp = raw.positionUpdatedAtMonotonicMs
+            ?: return raw
         val sampleTimestamp = raw.positionSampledAtMonotonicMs
+        val previous = previousSourceSnapshot
 
         if (rejectedSourceTimestampMs != null &&
             rejectedSourceTimestampMs != sourceTimestamp
@@ -50,15 +46,29 @@ internal class PlaybackClockReconciler {
             rejectedSourceTimestampMs = null
         }
 
+        val previousSourceTimestamp = previous?.positionUpdatedAtMonotonicMs
         val timestampIsInFuture =
             sampleTimestamp != null && sourceTimestamp > sampleTimestamp
-        val sameTimestampMoved =
-            previous?.positionUpdatedAtMonotonicMs == sourceTimestamp &&
-                previous.positionMs != raw.positionMs
+        val timestampWentBackwards =
+            previousSourceTimestamp != null && sourceTimestamp < previousSourceTimestamp
+        val sameTimestampTimingFactsChanged =
+            previousSourceTimestamp == sourceTimestamp &&
+                previous != null &&
+                (
+                    previous.positionMs != raw.positionMs ||
+                        previous.status != raw.status ||
+                        previous.playbackRate != raw.playbackRate
+                    )
 
-        if (timestampIsInFuture || sameTimestampMoved) {
+        if (
+            timestampIsInFuture ||
+            timestampWentBackwards ||
+            sameTimestampTimingFactsChanged
+        ) {
             rejectedSourceTimestampMs = sourceTimestamp
         }
+
+        previousSourceSnapshot = raw
 
         return if (rejectedSourceTimestampMs == sourceTimestamp) {
             raw.copy(positionUpdatedAtMonotonicMs = null)
