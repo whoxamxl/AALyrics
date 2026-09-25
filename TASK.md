@@ -295,7 +295,7 @@ Implement in small coherent commits and push each completed checkpoint.
    - null progress when duration is not defensible;
    - zero-duration safety.
 
-4. [ ] **Behaviour-preserving production wiring**
+4. [x] **Behaviour-preserving production wiring**
    - route Phone current-line selection through `LyricsTimingProjection.activeLineIndex`;
    - remove duplicate production current-line semantics;
    - keep current WORD/LINE/PLAIN UI behaviour unchanged;

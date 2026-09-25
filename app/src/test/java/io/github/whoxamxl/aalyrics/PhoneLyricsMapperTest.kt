@@ -9,6 +9,7 @@ import io.github.whoxamxl.aalyrics.core.model.LyricsSyncType
 import io.github.whoxamxl.aalyrics.core.model.PlaybackSnapshot
 import io.github.whoxamxl.aalyrics.core.model.PlaybackSource
 import io.github.whoxamxl.aalyrics.core.model.PlaybackStatus
+import io.github.whoxamxl.aalyrics.core.model.PlainLyricLine
 import io.github.whoxamxl.aalyrics.core.model.TimedLyricLine
 import io.github.whoxamxl.aalyrics.core.model.TimedWord
 import io.github.whoxamxl.aalyrics.core.model.Track
@@ -612,6 +613,13 @@ class PhoneLyricsMapperTest {
             currentMonotonicTimeMs = 1_000L,
             lyricsTimingOffset = LyricsTimingOffset(750L),
         )
+        val neutral = mapPhoneLyricsState(
+            playback = advancedPlayback,
+            lyricsState = ready(advancedPlayback, lyricsLines),
+            plainLyricsAutoScrollEnabled = true,
+            interactionMode = LyricsViewportInteractionMode.FOLLOW,
+            currentMonotonicTimeMs = 1_000L,
+        )
 
         val delayedPlayback = advancedPlayback.copy(positionMs = 5_500L)
         val delayed = mapPhoneLyricsState(
@@ -625,6 +633,9 @@ class PhoneLyricsMapperTest {
 
         assertEquals(1, advanced.viewport.currentLineIndex)
         assertEquals(0, delayed.viewport.currentLineIndex)
+        assertEquals(0, neutral.viewport.currentLineIndex)
+        assertEquals(neutral.viewport.playbackProgress, advanced.viewport.playbackProgress)
+        assertEquals(0.275f, delayed.viewport.playbackProgress)
     }
 
     @Test
@@ -658,6 +669,38 @@ class PhoneLyricsMapperTest {
         assertEquals(LyricsSyncType.LINE, state.viewport.syncType)
         assertTrue(state.viewport.lines.single().words.isEmpty())
         assertNull(state.viewport.currentWordIndex)
+        assertEquals(0f, state.viewport.currentWordProgress)
+    }
+
+    @Test
+    fun `plain source remains untimed in Phone presentation`() {
+        val playback = PlaybackSnapshot(
+            track = track(),
+            positionMs = 5_000L,
+            source = PlaybackSource("com.spotify.music"),
+        )
+        val lyrics = LyricsState.Ready(
+            lookup = LyricsLookup(
+                id = LyricsLookupId(1L),
+                track = requireNotNull(playback.track),
+                playbackIdentity = requireNotNull(playback.trackIdentity),
+            ),
+            lyrics = LyricsDocument(lines = listOf(PlainLyricLine("Untimed"))),
+        )
+
+        val state = mapPhoneLyricsState(
+            playback = playback,
+            lyricsState = lyrics,
+            plainLyricsAutoScrollEnabled = true,
+            interactionMode = LyricsViewportInteractionMode.FOLLOW,
+            currentMonotonicTimeMs = 1_000L,
+        )
+
+        assertEquals(LyricsSyncType.PLAIN, state.viewport.syncType)
+        assertNull(state.viewport.currentLineIndex)
+        assertNull(state.viewport.currentWordIndex)
+        assertEquals(0f, state.viewport.currentWordProgress)
+        assertEquals(0.25f, state.viewport.playbackProgress)
     }
 
     @Test

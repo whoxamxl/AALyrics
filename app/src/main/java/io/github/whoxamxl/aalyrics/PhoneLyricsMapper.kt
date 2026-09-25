@@ -1,12 +1,11 @@
 package io.github.whoxamxl.aalyrics
 
 import io.github.whoxamxl.aalyrics.core.lyrics.LyricsState
-import io.github.whoxamxl.aalyrics.core.model.LyricsDocument
 import io.github.whoxamxl.aalyrics.core.model.LyricsSyncType
 import io.github.whoxamxl.aalyrics.core.model.PlaybackSnapshot
-import io.github.whoxamxl.aalyrics.core.model.TimedLyricLine
 import io.github.whoxamxl.aalyrics.core.timing.LyricsTimingOffset
 import io.github.whoxamxl.aalyrics.core.timing.effectiveLyricsPosition
+import io.github.whoxamxl.aalyrics.core.timing.projectLyricsTiming
 import io.github.whoxamxl.aalyrics.translation.api.TranslationLanguages
 import io.github.whoxamxl.aalyrics.translation.api.TranslationModelPhase
 import io.github.whoxamxl.aalyrics.translation.api.TranslationModelState
@@ -69,10 +68,11 @@ internal fun mapPhoneLyricsState(
         fallbackSourceLanguage = document?.languageTag,
     )
     val projectedPlaybackPositionMs = projectedPlaybackPosition(playback, currentMonotonicTimeMs)
-    val effectiveLyricsPositionMs = effectiveLyricsPosition(
+    val lyricsPosition = effectiveLyricsPosition(
         projectedPlaybackPositionMs = projectedPlaybackPositionMs,
         offset = lyricsTimingOffset,
-    ).milliseconds
+    )
+    val timingProjection = document?.let { projectLyricsTiming(it, lyricsPosition) }
     val sourceSyncType = document?.syncType ?: LyricsSyncType.PLAIN
     val displaySyncType = if (sourceSyncType == LyricsSyncType.WORD) {
         LyricsSyncType.LINE
@@ -113,7 +113,7 @@ internal fun mapPhoneLyricsState(
                     )
                 },
             syncType = displaySyncType,
-            currentLineIndex = document?.currentTimedLineIndex(effectiveLyricsPositionMs),
+            currentLineIndex = timingProjection?.activeLineIndex,
             playbackProgress = track
                 ?.durationMs
                 ?.takeIf { it > 0L }
@@ -266,14 +266,6 @@ internal fun projectedPlaybackPosition(
         ?.let { projected.coerceIn(0L, it) }
         ?: projected.coerceAtLeast(0L)
 }
-
-internal fun LyricsDocument.currentTimedLineIndex(positionMs: Long): Int? =
-    lines.indices
-        .filter { index ->
-            val line = lines[index]
-            line is TimedLyricLine && line.startMs <= positionMs
-        }
-        .lastOrNull()
 
 private fun LyricsSyncType.label(): String = when (this) {
     LyricsSyncType.PLAIN -> "Plain"
