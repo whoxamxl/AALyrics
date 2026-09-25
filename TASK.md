@@ -8,7 +8,7 @@
 - Phase 11.3b — Existing timed-lyrics integration: implemented and validated.
 - Draft PR #80 was intentionally closed before review so the same branch can continue into the shared timing-semantic engine.
 - Active implementation has **not** started yet.
-- Before implementation begins, `docs/KARAOKE_ARCHITECTURE.md` still needs the separately planned consumer/rendering ownership alignment. Until that checkpoint is complete, it is background reference rather than the active implementation contract.
+- `docs/KARAOKE_ARCHITECTURE.md` is aligned with the shared-engine consumer model. The documentation gate before implementation is complete.
 
 Authoritative references for the active engine slice are:
 
@@ -18,6 +18,7 @@ Authoritative references for the active engine slice are:
 - `docs/LYRICS_PIPELINE_ARCHITECTURE.md`
 - `docs/TIMING_ARCHITECTURE.md`
 - `docs/ROADMAP.md`
+- `docs/KARAOKE_ARCHITECTURE.md` for downstream consumer/rendering boundaries
 - current branch code/tests
 
 ## Goal
@@ -333,10 +334,15 @@ The slice is complete when:
 
 ## Documentation checkpoint before implementation
 
-This task and the timing/pipeline/roadmap architecture are aligned for the shared semantic engine.
+Documentation is aligned for implementation:
 
-One documentation checkpoint remains intentionally separate before implementation starts:
+- [x] Timing Semantic Engine contract;
+- [x] behaviour-preserving production wiring contract;
+- [x] Karaoke consumer/rendering ownership contract;
+- [x] Normal consumer uses line facts only;
+- [x] future Karaoke consumer may use additional word/progress/boundary facts;
+- [x] Karaoke enablement remains outside the semantic engine.
 
-- [ ] align `docs/KARAOKE_ARCHITECTURE.md` with the decided consumer model: shared engine is mode-agnostic; Normal consumes line facts; future Karaoke consumes additional word/progress/boundary facts.
+The branch is now ready to hand to Codex for implementation and validation using these documents as references.
 
-Stop here until that documentation checkpoint is explicitly authorized.
+Do not begin implementation in this documentation checkpoint.

@@ -136,7 +136,7 @@ Karaoke does not own the shared active-line/active-word/progress calculation. Th
 
 Future Karaoke work consumes that projection and maps it into Karaoke-specific presentation/rendering while remaining independent of Compose/Canvas/Span/Android Auto implementation details at the shared semantic boundary.
 
-The detailed consumer/rendering ownership contract remains a separate documentation checkpoint in `docs/KARAOKE_ARCHITECTURE.md` before Karaoke implementation.
+The downstream consumer/rendering ownership contract is defined in `docs/KARAOKE_ARCHITECTURE.md`: Karaoke enablement is not a Timing Semantic Engine input; Normal and Karaoke presentation consume the same projection with different subsets/presentation policy.
 
 ### Presentation state
 

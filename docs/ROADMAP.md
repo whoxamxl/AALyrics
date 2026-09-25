@@ -357,7 +357,7 @@ Do not infer these choices from the legacy app or from the current placeholder.
 
 Karaoke presentation will consume the already-computed shared timing projection rather than own current-line/current-word/progress calculations.
 
-The detailed Karaoke consumer/rendering contract is a separate documentation checkpoint before implementation. Phone Compose and Android Auto may render differently, but neither may duplicate timing semantics.
+The Karaoke consumer/rendering contract is now documented in `docs/KARAOKE_ARCHITECTURE.md`: Karaoke enablement is presentation/application state, the shared Timing Semantic Engine is mode-agnostic, Normal presentation consumes line facts, and future Karaoke presentation may consume additional word/progress/boundary facts. Phone Compose and Android Auto may render differently, but neither may duplicate timing semantics.
 
 ### Phase 11.5 — Presentation state integration
 

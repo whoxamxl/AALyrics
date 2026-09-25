@@ -24,6 +24,28 @@ Compose UI                     host-rendered templates
 
 Phone and automotive state may differ in shape, granularity, update cadence, navigation, interaction, and rendering capability.
 
+## Timing projection consumption
+
+Shared timing semantics are produced before presentation mode is chosen.
+
+```text
+canonical timed lyrics + EffectiveLyricsPosition
+                ↓
+        Timing Semantic Engine
+                ↓
+        LyricsTimingProjection
+                │
+        ┌───────┴────────┐
+        ↓                ↓
+Normal presentation   Karaoke presentation
+```
+
+Karaoke ON/OFF is application/presentation state, not an input to the Timing Semantic Engine.
+
+For current Phone presentation, the Normal consumer uses only `activeLineIndex`. Even when WORD timing allows the engine to calculate `activeWordIndex`, `wordProgress`, and `wordBoundary`, those facts remain unused until a Karaoke consumer is separately implemented.
+
+Future Karaoke presentation may consume the additional shared facts, but Phone and automotive renderers must not recalculate timing semantics.
+
 ## Shared facts versus surface state
 
 Shared presentation-ready facts may eventually include semantically common information such as:
