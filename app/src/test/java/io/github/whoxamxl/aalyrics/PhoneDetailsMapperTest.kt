@@ -13,7 +13,21 @@ import io.github.whoxamxl.aalyrics.core.model.PlaybackTrackIdentity
 import io.github.whoxamxl.aalyrics.core.model.TimedLyricLine
 import io.github.whoxamxl.aalyrics.core.model.Track
 import io.github.whoxamxl.aalyrics.core.model.TrackReference
+import io.github.whoxamxl.aalyrics.translation.api.TranslationModelPhase
+import io.github.whoxamxl.aalyrics.translation.api.TranslationModelState
+import io.github.whoxamxl.aalyrics.translation.api.TranslationSettings
+import io.github.whoxamxl.aalyrics.translation.core.LanguageProfile
+import io.github.whoxamxl.aalyrics.translation.core.ProfiledLineRole
+import io.github.whoxamxl.aalyrics.translation.core.ProfiledLyricLine
+import io.github.whoxamxl.aalyrics.translation.core.SecondaryActivation
+import io.github.whoxamxl.aalyrics.translation.core.TranslationFailureReason
+import io.github.whoxamxl.aalyrics.translation.core.TranslationRequestId
+import io.github.whoxamxl.aalyrics.translation.core.TranslationRequestIdentity
+import io.github.whoxamxl.aalyrics.translation.core.TranslationState
 import io.github.whoxamxl.aalyrics.ui.phone.details.DetailsLyricsUiStatus
+import io.github.whoxamxl.aalyrics.ui.phone.details.DetailsTranslationModelPhaseUiState
+import io.github.whoxamxl.aalyrics.ui.phone.details.DetailsTranslationRuntimeFailureUiReason
+import io.github.whoxamxl.aalyrics.ui.phone.details.DetailsTranslationRuntimeUiState
 import java.util.Locale
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -251,6 +265,166 @@ class PhoneDetailsMapperTest {
     }
 
     @Test
+    fun `Translation Details maps matching Primary and active Secondary`() {
+        val track = currentTrack()
+        val playback = playback(track)
+        val lyrics = readyLyrics(track, requireNotNull(playback.trackIdentity))
+        val request = translationRequest(lyrics, targetLanguage = "ja")
+        val state = mapPhoneDetailsState(
+            playback = playback,
+            lyricsState = lyrics,
+            verboseDetailsEnabled = false,
+            translationSettings = TranslationSettings(enabled = true, targetLanguage = "ja"),
+            translationState = TranslationState.Translating(
+                request = request,
+                profile = profile(
+                    primary = "en",
+                    secondary = "es",
+                    secondaryActivation = SecondaryActivation.ACTIVE,
+                ),
+            ),
+            displayLocale = Locale.ENGLISH,
+        )
+
+        assertEquals("English (Spanish)", state.translation?.sourceLanguageLabel)
+        assertEquals("Japanese", state.translation?.targetLanguageLabel)
+        assertNull(state.translation?.runtimeState)
+        assertNull(state.translation?.sourceModel)
+        assertNull(state.translation?.targetModel)
+    }
+
+    @Test
+    fun `stale Translation profile is rejected while current target remains visible`() {
+        val track = currentTrack()
+        val playback = playback(track)
+        val lyrics = readyLyrics(track, requireNotNull(playback.trackIdentity))
+        val staleRequest = translationRequest(
+            lyrics.copy(lookup = lyrics.lookup.copy(id = LyricsLookupId(99L))),
+            targetLanguage = "ja",
+        )
+        val state = mapPhoneDetailsState(
+            playback = playback,
+            lyricsState = lyrics,
+            verboseDetailsEnabled = false,
+            translationSettings = TranslationSettings(enabled = true, targetLanguage = "ja"),
+            translationState = TranslationState.Translating(
+                request = staleRequest,
+                profile = profile(primary = "es"),
+            ),
+            displayLocale = Locale.ENGLISH,
+        )
+
+        assertNull(state.translation?.sourceLanguageLabel)
+        assertEquals("Japanese", state.translation?.targetLanguageLabel)
+    }
+
+    @Test
+    fun `Verbose Translation Details maps runtime failure and aggregate models`() {
+        val track = currentTrack()
+        val playback = playback(track)
+        val lyrics = readyLyrics(track, requireNotNull(playback.trackIdentity))
+        val request = translationRequest(lyrics, targetLanguage = "ja")
+        val state = mapPhoneDetailsState(
+            playback = playback,
+            lyricsState = lyrics,
+            verboseDetailsEnabled = true,
+            translationSettings = TranslationSettings(enabled = true, targetLanguage = "ja"),
+            translationState = TranslationState.Failed(
+                request = request,
+                profile = profile(
+                    primary = "en",
+                    secondary = "es",
+                    secondaryActivation = SecondaryActivation.ACTIVE,
+                ),
+                reason = TranslationFailureReason.PROVIDER_EXECUTION_FAILED,
+            ),
+            translationModelStates = mapOf(
+                "es" to TranslationModelState(
+                    languageTag = "es",
+                    phase = TranslationModelPhase.FAILED,
+                    error = "Model download task failed",
+                ),
+                "ja" to TranslationModelState(
+                    languageTag = "ja",
+                    phase = TranslationModelPhase.READY,
+                ),
+            ),
+            translationModelInventoryReconciled = true,
+            displayLocale = Locale.ENGLISH,
+        )
+
+        assertEquals(DetailsTranslationRuntimeUiState.FAILED, state.translation?.runtimeState)
+        assertEquals(
+            DetailsTranslationRuntimeFailureUiReason.PROVIDER_EXECUTION_FAILED,
+            state.translation?.runtimeFailureReason,
+        )
+        assertEquals("EN, ES", state.translation?.sourceModel?.languageLabel)
+        assertEquals(
+            DetailsTranslationModelPhaseUiState.FAILED,
+            state.translation?.sourceModel?.phase,
+        )
+        assertEquals(
+            "ES: Model download task failed",
+            state.translation?.sourceModel?.failureReason,
+        )
+        assertEquals("JA", state.translation?.targetModel?.languageLabel)
+        assertEquals(
+            DetailsTranslationModelPhaseUiState.READY,
+            state.translation?.targetModel?.phase,
+        )
+    }
+
+    @Test
+    fun `Verbose Translation Details distinguishes Ready Not required and startup Checking`() {
+        val track = currentTrack()
+        val playback = playback(track)
+        val lyrics = readyLyrics(track, requireNotNull(playback.trackIdentity))
+
+        val english = mapPhoneDetailsState(
+            playback = playback,
+            lyricsState = lyrics,
+            verboseDetailsEnabled = true,
+            translationSettings = TranslationSettings(enabled = false, targetLanguage = "en"),
+            translationState = TranslationState.Disabled,
+            translationModelInventoryReconciled = true,
+            displayLocale = Locale.ENGLISH,
+        )
+        assertEquals(DetailsTranslationRuntimeUiState.DISABLED, english.translation?.runtimeState)
+        assertEquals(
+            DetailsTranslationModelPhaseUiState.READY,
+            english.translation?.targetModel?.phase,
+        )
+
+        val japanese = mapPhoneDetailsState(
+            playback = playback,
+            lyricsState = lyrics,
+            verboseDetailsEnabled = true,
+            translationSettings = TranslationSettings(enabled = false, targetLanguage = "ja"),
+            translationState = TranslationState.Disabled,
+            translationModelInventoryReconciled = true,
+            displayLocale = Locale.ENGLISH,
+        )
+        assertEquals(
+            DetailsTranslationModelPhaseUiState.NOT_REQUIRED,
+            japanese.translation?.targetModel?.phase,
+        )
+
+        val reconciling = mapPhoneDetailsState(
+            playback = playback,
+            lyricsState = lyrics,
+            verboseDetailsEnabled = true,
+            translationSettings = TranslationSettings(enabled = false, targetLanguage = "ja"),
+            translationState = TranslationState.Disabled,
+            translationModelInventoryReconciled = false,
+            displayLocale = Locale.ENGLISH,
+        )
+        assertEquals(
+            DetailsTranslationModelPhaseUiState.CHECKING,
+            reconciling.translation?.targetModel?.phase,
+        )
+    }
+
+    @Test
     fun `Verbose Details progress projects playback time and current synced line`() {
         val track = currentTrack()
         val playback = PlaybackSnapshot(
@@ -274,6 +448,44 @@ class PhoneDetailsMapperTest {
         assertEquals("1:35", progress.playbackPositionLabel)
         assertEquals(2, progress.currentLineNumber)
     }
+
+    private fun translationRequest(
+        lyrics: LyricsState.Ready,
+        targetLanguage: String,
+    ) = TranslationRequestIdentity(
+        id = TranslationRequestId(1L),
+        canonicalLyrics = requireNotNull(lyrics.canonicalLyricsOrNull()).identity,
+        targetLanguage = targetLanguage,
+    )
+
+    private fun profile(
+        primary: String?,
+        secondary: String? = null,
+        secondaryActivation: SecondaryActivation =
+            if (secondary == null) SecondaryActivation.NONE else SecondaryActivation.INCIDENTAL,
+    ) = LanguageProfile(
+        primary = primary,
+        secondaryCandidate = secondary,
+        secondaryActivation = secondaryActivation,
+        lines = listOf(
+            ProfiledLyricLine(
+                index = 0,
+                languageTag = primary,
+                confidence = 0.99f,
+                role = ProfiledLineRole.PRIMARY,
+            ),
+            ProfiledLyricLine(
+                index = 1,
+                languageTag = secondary ?: primary,
+                confidence = 0.95f,
+                role = if (secondary == null) {
+                    ProfiledLineRole.PRIMARY
+                } else {
+                    ProfiledLineRole.SECONDARY
+                },
+            ),
+        ),
+    )
 
     private fun playbackSourceAppInfo(
         packageName: String = "com.spotify.music",
