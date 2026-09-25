@@ -29,7 +29,13 @@ class MlKitTranslationProvider internal constructor(
     override suspend fun openSession(route: TranslationRoute): TranslationSession? {
         val source = TranslationLanguages.normalizeLanguageTag(route.sourceLanguage) ?: return null
         val target = TranslationLanguages.normalizeLanguageTag(route.targetLanguage) ?: return null
-        if (source == target) return null
+        if (
+            source == target ||
+            !TranslationLanguages.isModelSupported(source) ||
+            !TranslationLanguages.isModelSupported(target)
+        ) {
+            return null
+        }
 
         val sourceMlLanguage = TranslateLanguage.fromLanguageTag(source) ?: return null
         val targetMlLanguage = TranslateLanguage.fromLanguageTag(target) ?: return null
