@@ -399,3 +399,17 @@ The mature working-fork `LyricWordLayout` and `PhoneKaraokeSweep` grouping behav
 Karaoke ON/OFF changes only word-level rendering. It must not shift the current line or playback position.
 
 When a WORD_SYNC MediaSession omits its source position timestamp, the Phone layer may continuously project from a receipt-time anchor. The same anchor is used whether Karaoke is OFF or ON. Entering/leaving the Lyrics destination, changing Karaoke update cadence, or toggling the feature must not reset the timing sample or move the lyrics clock. Metadata-only playback updates must not re-anchor the clock.
+
+
+### Line-wide timing tokens
+
+A WORD_SYNC document may still contain a line whose only timing token represents the entire line. If that canonical line contains multiple readable lexical units, the token is not considered renderable word granularity.
+
+For such a line:
+
+- do not sweep only the first lexical range;
+- do not apply the 650ms final-group fallback;
+- render the normal current-line style;
+- keep the underlying document/timing semantics unchanged.
+
+This check is language-independent. Japanese lexical grouping remains a display heuristic only and must not decide whether timing is semantically word-level.

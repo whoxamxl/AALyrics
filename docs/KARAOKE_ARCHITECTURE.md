@@ -453,3 +453,20 @@ That fallback anchor:
 - may change presentation update cadence when Karaoke is active, but cadence must never change clock semantics.
 
 Verbose Details for WORD_SYNC must consume the same Phone fallback clock so diagnostics cannot disagree with the Lyrics surface.
+
+
+## Line-wide pseudo-token policy
+
+A provider may advertise WORD/RichSync while a particular line contains only one timing token spanning the entire canonical line. That is insufficient granularity for a word sweep when the line contains multiple readable lexical units.
+
+Phone presentation must therefore reject a single line-wide pseudo-token before display-range grouping and before the 650ms final-group fallback.
+
+The guard is language-independent:
+
+- compare canonical token content with canonical line content;
+- use the same lexical segmentation already used by `LyricWordLayout`;
+- if one token covers the whole canonical line and the line has multiple readable lexical units, render normal current-line styling;
+- do not create Japanese-specific or provider-specific timing exceptions;
+- a genuine single lexical unit may still use the Phone-only 650ms final visual fallback.
+
+This presentation guard does not mutate provider data, `LyricsDocument.syncType`, canonical timestamps, or `LyricsTimingProjection`.

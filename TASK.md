@@ -156,3 +156,17 @@ Do not:
 - `:app:compileDebugKotlin` and `:ui:phone:compileDebugKotlin` passed locally. The local Windows Gradle test worker could not establish its loopback connection; the Linux CI run executed the tests successfully.
 - Branch merge base with `origin/main` is the documented `fa17dcbd364718aa1ab475b93b29c8d39581c331`. The complete diff against that baseline contains Phone settings, Quick controls, mapping, viewport rendering, tests/Previews, and task/documentation alignment. Android Auto production, provider, Translation execution, `:core:timing`, Sync UX/persistence, and Performance Karaoke code are unchanged.
 - Reset AALyrics explicitly restores both new persisted Karaoke switches to OFF. Phase 11.4d Android Auto Karaoke remains documentation-only and deferred.
+
+
+### Line-wide pseudo-token guard
+
+Provider WORD/RichSync capability does not guarantee useful word granularity on every line.
+
+For Phone Karaoke rendering:
+
+- a single timing token that canonically covers an entire lyric line with multiple readable lexical units is treated as line-level timing, not as a renderable Karaoke word;
+- such a line falls back to normal current-line styling and must not receive the 650ms final-group visual fallback;
+- the rule is language-independent and must not special-case Japanese text;
+- a genuine single readable word remains eligible for the final 650ms visual fallback;
+- multi-token syllable/fragment grouping such as `Pro / vi / der -> Provider` remains eligible;
+- the canonical `LyricsDocument.syncType` is not rewritten by this Phone-only rendering guard.
