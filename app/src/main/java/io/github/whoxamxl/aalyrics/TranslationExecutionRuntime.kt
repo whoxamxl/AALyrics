@@ -60,10 +60,11 @@ internal fun translationRetryModelLanguages(
     val languages = linkedSetOf(targetLanguage)
 
     val failed = state as? TranslationState.Failed
+    val request = failed?.request
     val profile = failed?.profile
     if (
-        failed?.request?.targetLanguage == targetLanguage &&
-        failed.request.canonicalLyrics == currentCanonicalIdentity &&
+        request?.targetLanguage == targetLanguage &&
+        request.canonicalLyrics == currentCanonicalIdentity &&
         profile != null
     ) {
         profile.primary
