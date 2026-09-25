@@ -199,6 +199,10 @@ Phone presentation preference state ---┘
 
 The host lifecycle-collects the existing `translationState` and combines it for presentation with the already-observed current `translationSettings`. It does not start, retry, cancel, or otherwise own Translation execution.
 
+The Phone mapper also owns presentation composition for the permanent Track Card Translation status row. It combines current Translation settings/state with the existing model-lifecycle presentation facts so the UI can distinguish automatic model acquisition from actual Translation execution. The UI receives only a Phone-local state such as OFF / ON / DOWNLOADING_MODELS / TRANSLATING / READY(route) / NOT_REQUIRED / FAILED; it does not inspect ML Kit or Translation core types directly.
+
+The status row is always reserved, preventing Translation transitions from changing Track Card height or shifting the LyricsViewport. A Failed row emits a semantic Retry callback to `:app`; retry ownership remains application/capability-side.
+
 The mapper must preserve existing approved semantics:
 
 - canonical lyrics ownership stays in `:core:lyrics`;

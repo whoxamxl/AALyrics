@@ -5,7 +5,7 @@
 - Branch: `feature/translation-runtime`.
 - Base: `main` at `4083588a250092e47f1efeb01e06a099b72a3604`.
 - Classification: TRANSLATION / PHONE PRESENTATION / RUNTIME COMPOSITION.
-- Status: Phone Translation presentation works on-device once the required route models are available. Target-language model-requirement tooltip is implemented; missing-route-model prompting remains pending before merge.
+- Status: Phone Translation works on-device once required route models are available. Device testing confirmed missing route models auto-download in the background; the active follow-up is a permanent Track Card Translation status row that makes model download, Translation execution, active route, and failure/retry visible without changing Track Card height between Translation states.
 - Authoritative references: `AGENTS.md`, `docs/TRANSLATION_ARCHITECTURE.md`, `docs/PHONE_LYRICS_VIEWPORT.md`, `docs/PHONE_RUNTIME_HOST.md`, `docs/PHONE_UI_SPEC.md`, `docs/PRESENTATION_STATE_ARCHITECTURE.md`, and the current production code/tests on this branch.
 
 ## Goal
@@ -84,7 +84,25 @@ For every canonical line:
 - Translation failure must never map the Lyrics destination to loading/not-found/failed or otherwise hide usable canonical lyrics;
 - no partial Translation map is presented. Presentation consumes only the existing atomic `Ready` artifact.
 
-Do not add a Translation status/error banner to the Lyrics destination in this slice.
+Do not add a Translation status/error banner inside `LyricsViewport`. Translation runtime feedback belongs to the Track Card's dedicated permanent status row defined below.
+
+### Track Card Translation status
+
+Reserve one permanent fourth status row in the Lyrics Track Card for Translation state. The row exists in every Translation state so toggling Translation, downloading models, completing Translation, or failing/retrying does not move the Track Card boundary or LyricsViewport.
+
+Approved presentation states:
+
+- OFF -> `Translation off`;
+- enabled but no active canonical route yet -> `Translation on`;
+- required route models are checking/downloading/waiting for the system -> compact spinner + `Downloading language models…`;
+- route models are ready and Translation execution is still running -> compact spinner + `Translating…`;
+- an eligible atomic artifact is active -> `Translation EN → JA`-style short source/target labels;
+- Translation determines no work is required -> `Translation not required`;
+- current Translation attempt fails -> `Translation failed` plus a compact trailing `Retry` text action.
+
+Model acquisition remains automatic. Do not add a normal pre-download confirmation dialog. The user intervention path is failure recovery: the Track Card emits one semantic Retry action and the application/capability layer decides which failed model/route work must be retried. Canonical lyrics remain visible and usable throughout model preparation, Translation execution, and failure.
+
+The Track Card status row is presentation feedback only. It must not become a second Translation executor, model manager, or timing owner.
 
 ### LyricsViewport rendering
 
@@ -138,7 +156,7 @@ Do **not** implement or redesign any of the following in this slice:
 - Karaoke/WORD Translation semantics;
 - Android Auto Translation presentation;
 - new durable Translation settings;
-- new Translation error UI.
+- Translation error UI beyond the approved Track Card `Translation failed` + `Retry` recovery row.
 
 If implementation evidence reveals a real defect in the existing Translation execution path, record it separately rather than silently expanding this presentation PR unless it directly blocks the stated acceptance criteria.
 
@@ -190,7 +208,14 @@ Use small, reviewable commits and keep each checkpoint independently coherent.
    - align implementation details back into the Translation/Phone docs only where implementation evidence required a change;
    - verify no stale documentation still describes Phone Translation presentation as unimplemented after the code lands.
 
-6. [ ] **Validation before PR readiness**
+6. [ ] **Track Card Translation runtime feedback**
+   - [x] document the permanent fourth-row state contract;
+   - [x] prepare Phone-local presentation state/rendering and deterministic Previews;
+   - [ ] map live Translation + model lifecycle state into the Track Card without moving execution ownership;
+   - [ ] wire the semantic Retry callback through `:app`;
+   - [ ] add focused mapper/runtime coverage.
+
+7. [ ] **Validation before PR readiness**
    - run the repository architecture checks;
    - run focused Translation/Phone unit tests;
    - run the normal JVM/unit test suite required by the repository;
@@ -209,7 +234,8 @@ Local validation on the implementation head:
 - [x] One bounded local Codex review found no actionable correctness issue.
 - [x] Physical-device Translation ON/OFF and actual translated-song smoke test confirmed translated rows appear once the required source/target route models are available.
 - [x] Device finding documented and Target language info tooltip added: both source and target language models are required for a route; English is built in.
-- [ ] Missing-route-model prompt/dialog remains to be designed and implemented as the next checkpoint.
+- [x] Missing-model UX decision revised after device testing: keep automatic model acquisition; use the permanent Track Card status row instead of a normal pre-download dialog.
+- [ ] Live Track Card model-download / translating / route / failed-retry mapping remains to be implemented after the Doc + Preview checkpoint.
 
 Do not merge without explicit user authorization.
 
@@ -217,8 +243,8 @@ Do not merge without explicit user authorization.
 
 The slice is complete when all of the following are true:
 
-- Translation OFF behaves visually and functionally like the current baseline.
-- While Translation is pending or fails, canonical lyrics remain visible and usable without a Translation-specific Lyrics failure state.
+- Translation OFF keeps canonical lyrics behavior unchanged and the permanent Track Card Translation row reads `Translation off`.
+- While Translation is pending or fails, canonical lyrics remain visible and usable; the Track Card alone exposes `Downloading language models…`, `Translating…`, or `Translation failed` + `Retry` without turning Lyrics into a failure state.
 - A matching atomic Ready artifact displays translated text only on lines actually marked translated.
 - Preserved/uncertain/target-language lines are not duplicated.
 - A stale Ready artifact from another canonical lyrics identity is never shown.
@@ -230,6 +256,8 @@ The slice is complete when all of the following are true:
 - `:ui:phone` remains presentation-only and has no direct ML Kit/Translation runtime dependency.
 - Android Auto behavior is unchanged.
 - No persistent Translation cache is introduced.
+- Track Card Translation status transitions do not change Track Card height or shift the LyricsViewport.
+- Ready presentation uses concise source → target language labels such as `Translation EN → JA`.
 - Tests, Previews, implementation, and documentation describe the same behavior.
 - CI/build/review requirements in `AGENTS.md` are satisfied before merge.
 

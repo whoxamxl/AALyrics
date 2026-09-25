@@ -181,6 +181,7 @@ Intended content:
 - title
 - artist
 - compact lyrics/provider/sync metadata
+- permanent Translation status / recovery row
 
 Conceptually:
 
@@ -189,10 +190,23 @@ Conceptually:
 │ [Artwork]  Track title       │
 │            Artist            │
 │            Provider • Sync   │
+│            Translation off   │
 └──────────────────────────────┘
 ```
 
-The card is informational. Playback transport actions stay in the persistent Playback Bar so information and actions have separate, predictable locations.
+The card is informational except for the narrowly scoped Translation failure recovery action. Playback transport actions stay in the persistent Playback Bar. When Translation fails, only the permanent Translation status row exposes a compact trailing `Retry` text action.
+
+The Track Card reserves a permanent fourth text/status row for Translation so Translation state changes never alter the card/viewport boundary. Its approved states are:
+
+- `Translation off` while the feature is disabled;
+- `Translation on` while enabled but no current route is active yet;
+- compact spinner + `Downloading language models…` while required source/target route models are being prepared automatically;
+- compact spinner + `Translating…` after model readiness while Translation execution remains active;
+- `Translation EN → JA`-style short route labels while an eligible artifact is active;
+- `Translation not required` when the current source/target requires no Translation work;
+- `Translation failed` with a compact trailing `Retry` text action on failure.
+
+Automatic model acquisition remains the normal path; the Track Card makes that background work visible rather than interrupting it with a normal confirmation dialog. The Retry action is a semantic Phone callback only. `:ui:phone` does not decide whether retry means model preparation, route preparation, or Translation execution.
 
 The production Track Card keeps album artwork caller-owned in a compact 64dp slot. The READY runtime host forwards artwork from the selected Android MediaSession without moving Android media objects into `:ui:phone`. When artwork is unavailable, the shared AALyrics foreground mark derived from `branding/android/AALyrics_foreground_android.svg` is shown over the existing artwork background instead of leaving the slot visually empty.
 

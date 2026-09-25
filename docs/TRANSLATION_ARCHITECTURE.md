@@ -59,10 +59,12 @@ The Phone integration closes only that downstream gap:
 
 - `PhoneRuntimeHost` observes the existing application-owned `TranslationState`;
 - the app-owned Phone lyrics mapper combines canonical lyrics with Translation presentation facts;
-- `:ui:phone` receives only optional presentation-ready translated text per canonical lyric row;
+- `:ui:phone` receives optional presentation-ready translated text per canonical lyric row plus a Phone-local Track Card Translation status;
 - `:ui:phone` does not import Translation core, ML Kit, persistence, or provider execution types.
 
 A `TranslationState.Ready` artifact is eligible for display only when current Translation settings are enabled, its `request.targetLanguage` equals the current normalized target language, and its `request.canonicalLyrics` exactly matches the canonical lyrics currently being projected. The Phone mapping reuses the canonical-identity construction from `TranslationExecutionRuntime` rather than reimplementing owner/fingerprint semantics independently. Disabled state, target mismatch, or canonical-identity mismatch fails closed to original-only presentation. This extra downstream gate prevents brief propagation windows from surfacing an old-target Ready artifact while settings changes are reaching the coordinator.
+
+Track Card runtime feedback is a downstream presentation concern. The app-owned Phone mapper combines Translation state/settings with model lifecycle state and emits a permanent Track Card status row. Required route-model acquisition stays automatic: model checking/downloading/waiting is presented as `Downloading language models…`, subsequent execution as `Translating…`, Ready as a concise source → target route, and failure as `Translation failed` with one semantic Retry callback. This does not move model management or retry policy into `:ui:phone`.
 
 Artifact projection rules:
 
