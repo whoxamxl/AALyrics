@@ -228,7 +228,7 @@ The row shows the selected display name and opens a compact picker. Its info aff
 
 Approved tooltip copy:
 
-> Translation requires language models for both the source and target languages. English is built in and does not need a download. AALyrics detects the source language from the current lyrics.
+> Translation requires language models for the source and target languages. When Translation is enabled, AALyrics automatically downloads any required models. The source language is detected from the current lyrics.
 
 This distinction is important: readiness of the selected target alone does not guarantee that a translation route is ready. For example, Japanese → English still requires the Japanese source-language model even though English itself is built in.
 

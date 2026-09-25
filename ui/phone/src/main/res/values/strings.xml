@@ -31,7 +31,7 @@
     <string name="settings_section_translation">TRANSLATION</string>
     <string name="settings_translation_enabled">Translation</string>
     <string name="settings_translation_target">Target language</string>
-    <string name="settings_translation_target_info">Translation requires language models for both the source and target languages. English is built in and does not need a download. AALyrics detects the source language from the current lyrics.</string>
+    <string name="settings_translation_target_info">Translation requires language models for the source and target languages. When Translation is enabled, AALyrics automatically downloads any required models. The source language is detected from the current lyrics.</string>
     <string name="settings_translation_target_info_description">About Translation language models</string>
     <string name="settings_translation_model_download">Download translation model</string>
     <string name="settings_translation_model_checking">Checking translation model</string>
