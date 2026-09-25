@@ -12,6 +12,41 @@ import kotlin.test.assertNull
 /** Adapted from the working fork's LyricWordLayout and PhoneKaraokeSweep cases. */
 class PhoneKaraokePresentationTest {
     @Test
+    fun `multi lexical timing chunks sweep their complete visible span`() {
+        val line = TimedLyricLine(
+            text = "Just a boy, just a boy,",
+            startMs = 1_000L,
+            words = listOf(
+                TimedWord("Just a boy, ", 1_000L, 2_000L),
+                TimedWord("just a boy,", 2_000L, 3_000L),
+            ),
+        )
+
+        val first = sweep(line, 1_500L)
+        val second = sweep(line, 2_500L)
+
+        assertEquals(0 to 10, first?.let { it.start to it.end })
+        assertEquals(0.5f, first?.progress)
+        assertEquals(12 to 22, second?.let { it.start to it.end })
+        assertEquals(0.5f, second?.progress)
+    }
+
+    @Test
+    fun `repeated multi lexical chunks stay aligned to source order`() {
+        val line = TimedLyricLine(
+            text = "just a boy, just a boy",
+            startMs = 1_000L,
+            words = listOf(
+                TimedWord("just a boy, ", 1_000L, 2_000L),
+                TimedWord("just a boy", 2_000L, 3_000L),
+            ),
+        )
+
+        assertEquals(0 to 10, sweep(line, 1_500L)?.let { it.start to it.end })
+        assertEquals(12 to 22, sweep(line, 2_500L)?.let { it.start to it.end })
+    }
+
+    @Test
     fun `English fragments sweep one lexical word without restarting`() {
         val line = TimedLyricLine("Provider timing works", 0L, words = listOf(
             TimedWord("Pro", 0L, 100L),

@@ -71,9 +71,19 @@ internal object LyricWordLayout {
             return fallbackDisplayRange(line, activeTokenIndex, ranges, tokenSpans)
         }
 
-        ranges.firstOrNull { range ->
+        val overlappingRanges = ranges.filter { range ->
             token.start < range.end && token.end > range.start
-        }?.let { return it }
+        }
+        if (overlappingRanges.isNotEmpty()) {
+            // Provider timing tokens are not guaranteed to be lexical words.
+            // PetitLyrics karaoke data, for example, may expose a timed chunk
+            // spanning several readable words. Preserve that complete visible
+            // span instead of collapsing the token to its first overlapping word.
+            return DisplayRange(
+                start = overlappingRanges.first().start,
+                end = overlappingRanges.last().end,
+            )
+        }
 
         // Whitespace and punctuation can themselves be timed by some providers.
         // Keep the visible word stable through those tiny bridge tokens by mapping
