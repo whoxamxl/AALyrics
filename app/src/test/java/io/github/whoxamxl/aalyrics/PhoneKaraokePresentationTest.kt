@@ -144,6 +144,22 @@ class PhoneKaraokePresentationTest {
     }
 
     @Test
+    fun `gap inside one visible display group freezes partial sweep`() {
+        val line = TimedLyricLine("Provider works", 0L, words = listOf(
+            TimedWord("Pro", 0L, 100L),
+            TimedWord("vi", 150L, 250L),
+            TimedWord("der", 250L, 400L),
+            TimedWord("works", 500L, 900L),
+        ))
+
+        val state = lineState(line, 125L)
+
+        assertEquals(0, state?.completedEnd)
+        assertEquals(0 to 8, state?.sweep?.let { it.start to it.end })
+        assertEquals(0.25f, state?.sweep?.progress)
+    }
+
+    @Test
     fun `after last word keeps the complete Karaoke line finished`() {
         val line = TimedLyricLine("hello world", 0L, words = listOf(
             TimedWord("hello", 0L, 300L),

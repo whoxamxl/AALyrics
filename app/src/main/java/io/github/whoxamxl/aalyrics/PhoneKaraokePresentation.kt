@@ -29,7 +29,13 @@ internal fun mapPhoneKaraokeLine(
             )
             if (groupEndMs <= group.startMs) return null
             if (effectivePositionMs >= groupEndMs) {
-                KaraokeLineUiState(completedEnd = group.range.end)
+                KaraokeLineUiState(
+                    completedEnd = if (group.lastIndex == line.words.lastIndex) {
+                        line.text.length
+                    } else {
+                        group.range.end
+                    },
+                )
             } else {
                 val semanticProgress = timing.wordProgress
                 val progress = if (group.firstIndex == group.lastIndex && semanticProgress != null) {
