@@ -658,6 +658,6 @@ For missing source timestamps:
 - pause must stop projection;
 - seek reconciliation remains authoritative when a new position sample arrives.
 
-A source timestamp is not considered invalid only because it is old. If MediaSession publishes a changed raw position with the exact same source timestamp, or a timestamp later than the local sample time, the source clock is rejected and the stable sample clock is used until a new source timestamp arrives. A newly selected playing session is re-sampled once after 250ms so this contradiction can be detected even when AALyrics attaches in the middle of a track.
+A source timestamp is not considered invalid only because it is old. The source clock is rejected when the same timestamp is paired with changed position/status/rate, when the timestamp moves backwards on the same track, or when it is later than the local sample time. A null timestamp does not clear an existing quarantine; recovery requires a new valid non-null timestamp or a track/session identity change. A newly selected playing session is re-sampled once after 250ms so these contradictions can be detected even when AALyrics attaches in the middle of a track.
 
 This keeps the player clock aligned with LINE/WORD Phone lyrics timing and PLAIN playback progress without making Karaoke enablement part of playback timing.

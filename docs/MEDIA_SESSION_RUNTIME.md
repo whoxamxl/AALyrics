@@ -118,10 +118,11 @@ The local sample timestamp is a fallback only for media sessions that publish a 
 
 A source timestamp is not rejected merely because it is old. Old anchors are normal Android playback-state semantics. `PlaybackClockReconciler` rejects a source timestamp only when the published clock values contradict each other:
 
-- the same source timestamp is observed again with a different raw `positionMs`;
+- the same source timestamp is observed again while raw `positionMs`, playback status, or playback rate changes;
+- the source timestamp moves backwards on the same track;
 - the source timestamp is later than the AALyrics local sample time.
 
-Once a specific source timestamp is rejected, snapshots carrying that same timestamp continue to use the local sample clock until the source publishes a new timestamp.
+Once a specific source timestamp is rejected, snapshots carrying that same timestamp continue to use the local sample clock. A temporary snapshot with no source timestamp does not clear the quarantine. Recovery requires a new valid non-null source timestamp or a track/session identity change.
 
 A newly selected playing session that exposes both timestamps receives one 250ms validation re-sample. This catches the mid-track attach case where a player returns a current-looking raw position while retaining an older `lastPositionUpdateTime`. A valid Android anchor remains stationary at the raw position during that re-sample and is preserved.
 
@@ -131,7 +132,7 @@ Phone presentation projects playing position from the source timestamp when vali
 
 The runtime retains the working fork's 600 ms delay for track-changing metadata because some media apps publish transient/intermediate metadata while changing tracks. The delay is owned by `SelectedMediaSessionRuntime` in `:platform:media`; playback status and position continue to update immediately against the last stable track identity.
 
-Deterministic regressions verify the delay, replacement of older pending metadata, and callback ordering where playback-state notification arrives before metadata notification. The stabilization remains outside `PlaybackLyricsController` and does not redefine core lookup identity semantics.
+Deterministic regressions verify the delay, replacement of older pending metadata, and callback ordering where playback-state notification arrives before metadata notification. The stabilization remains outside `PlaybackLyricsController` and does not redefine core lookup identity semantics. Clock hardening also covers the overlap between the 250ms initial clock validation and the 600ms metadata-stabilization task so a rejected source timestamp remains rejected while track identity is still being stabilized.
 
 Artwork, current-line timing, transport controls, cache, translation, and legacy `MediaTracker` state are intentionally not part of this stabilization logic.
 
