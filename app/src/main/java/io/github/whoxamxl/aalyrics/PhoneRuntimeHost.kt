@@ -273,6 +273,7 @@ internal fun PhoneRuntimeHost(
                     AlbumArtwork(image = playbackArtworkImage)
                 },
                 onViewportInteractionModeChange = { lyricsInteractionMode = it },
+                onTranslationRetry = application::retryTranslation,
             )
 
             PhoneDestination.Sync -> SyncScreen(

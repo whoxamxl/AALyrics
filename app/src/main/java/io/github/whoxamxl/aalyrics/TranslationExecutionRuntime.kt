@@ -29,6 +29,14 @@ internal class TranslationExecutionRuntime(
         }
     }
 
+    fun retry() {
+        lifecycle.clear()
+        lifecycle.update(
+            canonical = lyricsState.value.canonicalLyricsOrNull(),
+            settings = settingsStore.settings.value,
+        )
+    }
+
     fun stop() {
         job?.cancel()
         job = null

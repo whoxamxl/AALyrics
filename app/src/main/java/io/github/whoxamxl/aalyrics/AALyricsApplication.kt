@@ -289,6 +289,23 @@ class AALyricsApplication : Application() {
         }
     }
 
+    internal fun retryTranslation() {
+        applicationScope.launch {
+            translationModelManager.states.value.values
+                .filter { model ->
+                    model.phase == TranslationModelPhase.FAILED ||
+                        model.phase == TranslationModelPhase.TIMED_OUT
+                }
+                .map { it.languageTag }
+                .distinct()
+                .forEach { languageTag ->
+                    translationModelManager.retry(languageTag)
+                }
+
+            translationExecutionRuntime.retry()
+        }
+    }
+
     fun setVerboseDetailsEnabled(enabled: Boolean) {
         phonePresentationSettingsStore.setVerboseDetailsEnabled(enabled)
     }

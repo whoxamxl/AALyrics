@@ -62,6 +62,31 @@ class TranslationExecutionRuntimeTest {
     }
 
     @Test
+    fun `retry republishes current canonical lyrics and settings after clearing lifecycle`() = runTest {
+        val document = LyricsDocument(listOf(PlainLyricLine("Synthetic lyric line")))
+        val lyricsState = MutableStateFlow<LyricsState>(LyricsState.Ready(lookup(1), document))
+        val settings = FakeSettingsStore().apply {
+            setEnabled(true)
+            setTargetLanguage("ja")
+        }
+        val lifecycle = RecordingLifecycle()
+        val runtime = TranslationExecutionRuntime(
+            lyricsState = lyricsState,
+            settingsStore = settings,
+            lifecycle = lifecycle,
+            applicationScope = this,
+        )
+
+        runtime.retry()
+
+        assertEquals(1, lifecycle.clearCalls)
+        val (canonical, retrySettings) = lifecycle.updates.single()
+        assertSame(document, canonical?.document)
+        assertEquals(true, retrySettings.enabled)
+        assertEquals("ja", retrySettings.targetLanguage)
+    }
+
+    @Test
     fun `disabling Translation retains canonical input for lifecycle cancellation`() = runTest {
         val document = LyricsDocument(listOf(PlainLyricLine("Synthetic lyric line")))
         val lyricsState = MutableStateFlow<LyricsState>(LyricsState.Ready(lookup(1), document))

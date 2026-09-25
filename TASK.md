@@ -94,7 +94,7 @@ Approved presentation states:
 
 - OFF -> render no text, while retaining the full Translation status-row placeholder height;
 - enabled but no active canonical route yet -> `Translation enabled`;
-- required route models are checking/downloading/waiting for the system -> compact spinner + `Downloading language models…`;
+- required route models are actively downloading or waiting for the system -> compact spinner + `Downloading language models…`;
 - route models are ready and Translation execution is still running -> compact spinner + `Translating…`;
 - an eligible atomic artifact is active -> short source/target labels separated by the shared centered Translation-direction icon;
 - Translation determines no work is required -> `Translation not required`;
@@ -208,12 +208,12 @@ Use small, reviewable commits and keep each checkpoint independently coherent.
    - align implementation details back into the Translation/Phone docs only where implementation evidence required a change;
    - verify no stale documentation still describes Phone Translation presentation as unimplemented after the code lands.
 
-6. [ ] **Track Card Translation runtime feedback**
+6. [x] **Track Card Translation runtime feedback**
    - [x] document the permanent fourth-row state contract;
    - [x] prepare Phone-local presentation state/rendering and deterministic Previews;
-   - [ ] map live Translation + model lifecycle state into the Track Card without moving execution ownership;
-   - [ ] wire the semantic Retry callback through `:app`;
-   - [ ] add focused mapper/runtime coverage.
+   - [x] map live Translation + model lifecycle state into the Track Card without moving execution ownership;
+   - [x] wire the semantic Retry callback through `:app`;
+   - [x] add focused mapper/runtime coverage.
 
 7. [ ] **Validation before PR readiness**
    - run the repository architecture checks;
@@ -235,7 +235,7 @@ Local validation on the implementation head:
 - [x] Physical-device Translation ON/OFF and actual translated-song smoke test confirmed translated rows appear once the required source/target route models are available.
 - [x] Device finding documented and Target language info tooltip added: both source and target language models are required for a route; English is built in.
 - [x] Missing-model UX decision revised after device testing: keep automatic model acquisition; use the permanent Track Card status row instead of a normal pre-download dialog.
-- [ ] Live Track Card model-download / translating / route / failed-retry mapping remains to be implemented after the Doc + Preview checkpoint.
+- [x] Live Track Card model-download / translating / route / failed-retry mapping is implemented; physical-device validation remains before merge.
 
 Do not merge without explicit user authorization.
 
