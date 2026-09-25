@@ -148,8 +148,10 @@ private fun mapTrackCardTranslationState(
                 ?.let { languageTag -> add(languageTag) }
 
             val secondaryCandidate = profile
+                ?.takeIf { currentProfile ->
+                    currentProfile.secondaryActivation == SecondaryActivation.ACTIVE
+                }
                 ?.secondaryCandidate
-                ?.takeIf { profile.secondaryActivation == SecondaryActivation.ACTIVE }
             secondaryCandidate
                 ?.let(TranslationLanguages::normalizeLanguageTag)
                 ?.let { languageTag -> add(languageTag) }
