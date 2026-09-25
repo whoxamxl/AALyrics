@@ -10,6 +10,8 @@ import io.github.whoxamxl.aalyrics.translation.api.TranslationModelPhase
 import io.github.whoxamxl.aalyrics.translation.api.TranslationModelState
 import io.github.whoxamxl.aalyrics.translation.api.TranslationSettings
 import io.github.whoxamxl.aalyrics.translation.core.CanonicalLyricsIdentity
+import io.github.whoxamxl.aalyrics.translation.core.LanguageProfile
+import io.github.whoxamxl.aalyrics.translation.core.SecondaryActivation
 import io.github.whoxamxl.aalyrics.translation.core.TranslationState
 import io.github.whoxamxl.aalyrics.ui.phone.lyrics.LyricsScreenUiState
 import io.github.whoxamxl.aalyrics.ui.phone.lyrics.LyricsViewportInteractionMode
@@ -138,11 +140,27 @@ private fun mapTrackCardTranslationState(
         requestCanonicalLyrics == currentCanonicalIdentity &&
             requestTargetLanguage == targetLanguage
 
-    fun modelPreparationActive(): Boolean =
-        modelStates.values.any { model ->
-            model.phase == TranslationModelPhase.DOWNLOADING ||
-                model.phase == TranslationModelPhase.WAITING_FOR_SYSTEM
+    fun modelPreparationActive(profile: LanguageProfile?): Boolean {
+        val routeLanguages = buildSet {
+            add(targetLanguage)
+            profile?.primary
+                ?.let(TranslationLanguages::normalizeLanguageTag)
+                ?.let(::add)
+            profile
+                ?.secondaryCandidate
+                ?.takeIf { profile.secondaryActivation == SecondaryActivation.ACTIVE }
+                ?.let(TranslationLanguages::normalizeLanguageTag)
+                ?.let(::add)
         }
+
+        return routeLanguages.any { languageTag ->
+            when (modelStates[languageTag]?.phase) {
+                TranslationModelPhase.DOWNLOADING,
+                TranslationModelPhase.WAITING_FOR_SYSTEM -> true
+                else -> false
+            }
+        }
+    }
 
     when (state) {
         is TranslationState.Ready -> {
@@ -185,7 +203,7 @@ private fun mapTrackCardTranslationState(
                     state.request.targetLanguage,
                 )
             ) {
-                return if (modelPreparationActive()) {
+                return if (modelPreparationActive(state.profile)) {
                     TrackCardTranslationUiState.DownloadingModels
                 } else {
                     TrackCardTranslationUiState.Translating
@@ -200,7 +218,7 @@ private fun mapTrackCardTranslationState(
                     state.request.targetLanguage,
                 )
             ) {
-                return if (modelPreparationActive()) {
+                return if (modelPreparationActive(state.profile)) {
                     TrackCardTranslationUiState.DownloadingModels
                 } else {
                     TrackCardTranslationUiState.Failed

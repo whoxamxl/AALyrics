@@ -236,7 +236,15 @@ class PhoneLyricsMapperTest {
             plainLyricsAutoScrollEnabled = true,
             interactionMode = LyricsViewportInteractionMode.FOLLOW,
             currentMonotonicTimeMs = 1_000L,
-            translationState = TranslationState.Translating(request),
+            translationState = TranslationState.Translating(
+                request = request,
+                profile = LanguageProfile(
+                    primary = "ja",
+                    secondaryCandidate = null,
+                    secondaryActivation = SecondaryActivation.NONE,
+                    lines = emptyList(),
+                ),
+            ),
             translationSettings = enabledTranslation,
             translationModelStates = mapOf(
                 "ja" to TranslationModelState("ja", TranslationModelPhase.DOWNLOADING),
@@ -286,6 +294,56 @@ class PhoneLyricsMapperTest {
             translationSettings = enabledTranslation,
         )
         assertEquals(TrackCardTranslationUiState.Failed, failed.trackCard.translation)
+
+        val unrelatedDownloadWhileTranslating = mapPhoneLyricsState(
+            playback = playback,
+            lyricsState = lyrics,
+            plainLyricsAutoScrollEnabled = true,
+            interactionMode = LyricsViewportInteractionMode.FOLLOW,
+            currentMonotonicTimeMs = 1_000L,
+            translationState = TranslationState.Translating(
+                request = request,
+                profile = LanguageProfile(
+                    primary = "ja",
+                    secondaryCandidate = null,
+                    secondaryActivation = SecondaryActivation.NONE,
+                    lines = emptyList(),
+                ),
+            ),
+            translationSettings = enabledTranslation,
+            translationModelStates = mapOf(
+                "es" to TranslationModelState("es", TranslationModelPhase.DOWNLOADING),
+            ),
+        )
+        assertEquals(
+            TrackCardTranslationUiState.Translating,
+            unrelatedDownloadWhileTranslating.trackCard.translation,
+        )
+
+        val unrelatedDownloadWhileFailed = mapPhoneLyricsState(
+            playback = playback,
+            lyricsState = lyrics,
+            plainLyricsAutoScrollEnabled = true,
+            interactionMode = LyricsViewportInteractionMode.FOLLOW,
+            currentMonotonicTimeMs = 1_000L,
+            translationState = TranslationState.Failed(
+                request = request,
+                profile = LanguageProfile(
+                    primary = "ja",
+                    secondaryCandidate = null,
+                    secondaryActivation = SecondaryActivation.NONE,
+                    lines = emptyList(),
+                ),
+            ),
+            translationSettings = enabledTranslation,
+            translationModelStates = mapOf(
+                "es" to TranslationModelState("es", TranslationModelPhase.WAITING_FOR_SYSTEM),
+            ),
+        )
+        assertEquals(
+            TrackCardTranslationUiState.Failed,
+            unrelatedDownloadWhileFailed.trackCard.translation,
+        )
     }
 
     @Test

@@ -259,6 +259,7 @@ Current-head validation after the Details follow-up:
 - [ ] `:app:assembleDebug`.
 - [x] Branch-name + 58-commit message gate reproduced directly against current GitHub state; added-line architecture ownership scan found no new boundary leak (full script execution still pending).
 - [x] Bounded current-head diff review found and fixed route Retry overreach: Retry now targets only current-route failed/timed-out models, not unrelated historical failures.
+- [x] Codex round 1 P2 validated and fixed: Track Card model-download status is now restricted to current-route target/Profile languages, so unrelated model work cannot hide Failed/Retry or replace Translating.
 - [ ] Final branch diff after executable validation.
 - [ ] Bounded Codex review under `AGENTS.md`.
 - [ ] Physical-device smoke test for Translation Details, including Verbose OFF/ON and at least one failure/info-tooltip path where practical.
