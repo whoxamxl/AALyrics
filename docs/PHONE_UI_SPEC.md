@@ -95,7 +95,7 @@ Candidate scores, raw provider payloads, log export, and deeper resolver diagnos
 
 Owns user-facing application configuration while persistence and capability policy remain outside `:ui:phone`.
 
-The production Settings contract is defined in `docs/PHONE_SETTINGS.md`. The `feature/settings-about-support` implementation reorganizes its lower information architecture without changing capability ownership:
+The production Settings contract is defined in `docs/PHONE_SETTINGS.md`. The merged Settings implementation uses the following information architecture without changing capability ownership:
 
 - Plain lyrics auto-scroll;
 - Ignore non-audio apps (default ON);

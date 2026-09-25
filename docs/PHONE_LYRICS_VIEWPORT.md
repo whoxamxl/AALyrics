@@ -2,11 +2,11 @@
 
 ## Status
 
-This document defines the implemented interaction and visual contract for the Phone `LyricsViewport` and the active additive Translation-row extension.
+This document defines the implemented interaction and visual contract for the Phone `LyricsViewport`, including the merged additive Translation-row extension.
 
 The viewport is the primary reading surface of the Lyrics destination. It must remain responsive to available height, width, text wrapping, and system font scale rather than targeting a fixed visible-line count.
 
-The established scrolling/focus behavior is production baseline. The active `feature/translation-runtime` slice may add translated secondary text inside that existing row geometry, but must not create a second timing or scrolling model.
+The established scrolling/focus behavior is production baseline. PR #79 adds translated secondary text inside that existing row geometry without creating a second timing or scrolling model.
 
 ## Product intent
 
@@ -345,7 +345,7 @@ The viewport accepts presentation-ready state and emits UI actions. It does not 
 - Settings persistence,
 - Android Auto presentation.
 
-Runtime state mapping supplies playback position, duration, canonical lyrics timing, settings, and—on the active Translation integration slice—identity-validated optional translated text into the Phone presentation model. The viewport must not import or interpret `TranslationState`, `TranslationArtifact`, ML Kit, or Translation Provider types directly.
+Runtime state mapping supplies playback position, duration, canonical lyrics timing, settings, and identity-validated optional translated text into the Phone presentation model. The viewport must not import or interpret `TranslationState`, `TranslationArtifact`, ML Kit, or Translation Provider types directly.
 
 ## Deferred tuning
 

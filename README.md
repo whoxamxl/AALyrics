@@ -2,7 +2,7 @@
 
 AALyrics is a new Android project for synchronized lyrics on phone and Android Auto.
 
-> **Status:** the core lyrics engine, all four providers, production selection, application composition, UI foundation, and live Android media-session runtime are established. Process-wide lyrics-demand gating is the current background/runtime slice; finished end-user presentation remains later work.
+> **Status:** the production Phone shell, all four Lyrics Providers, live Android media-session runtime, demand gating, Settings/Details, verified in-app update flow, and Phone Translation presentation/diagnostics are established. Sync timing/calibration remains a deliberate non-functional placeholder and is the next lyrics-capability foundation; Karaoke, Android Auto Translation, and richer Car App Library presentation remain later work.
 
 ## Project direction
 
@@ -20,23 +20,19 @@ The codebase is greenfield in structure, while proven behavior from `whoxamxl/au
 
 ## Current implementation status
 
-Completed foundation includes:
+Current production capabilities include:
 
-- provider-independent track/playback/lyrics models,
-- explicit lyrics state lifecycle and stale-result protection,
-- concurrent provider orchestration with failure isolation,
-- playback identity and playback-to-lyrics ownership,
-- production cross-provider candidate selection,
-- shared metadata/version matching and LRC parsing,
-- LRCLIB provider migration (PR #19),
-- PetitLyrics provider migration (PR #20),
-- Musixmatch provider migration (PR #21),
-- SyncLRC provider migration (PR #24),
-- manual production application composition (PR #25),
-- shared/phone/automotive UI foundation (PRs #27 and #28),
-- live Android MediaSession runtime (PR #29).
+- provider-independent track/playback/lyrics models, race-safe lyrics lifecycle, and stale-result protection;
+- concurrent provider orchestration and production cross-provider candidate selection;
+- LRCLIB, PetitLyrics, Musixmatch, and SyncLRC provider adapters;
+- live Android MediaSession observation plus process/projection lyrics-demand gating;
+- the production Phone Compose shell with Lyrics, Playback Surface, Details, Settings, and the explicit Sync placeholder;
+- playback-source eligibility, queue/artwork handling, legal/help surfaces, storage/reset controls, and Android Auto compatibility onboarding;
+- Translation background/model lifecycle, execution/orchestration, Phone translated lyric rows, Track Card runtime feedback, and read-only Translation diagnostics;
+- manual and automatic GitHub Release discovery, verified APK download, SHA-256 checking, package/signing preflight, install-source permission handling, PackageInstaller handoff, recovery, and post-update feedback;
+- signed GitHub prerelease distribution, currently through `v0.2.0-alpha.2`.
 
-PR #30 implements the next runtime slice and is ready for explicit merge approval: MediaSession observation stays alive, while provider lookup runs only when phone-process foreground or Android Auto projection demand is active. Demand deactivation cancels in-flight lyrics work while retaining an already resolved usable result in process memory; reactivation resumes immediately from the latest already-observed playback snapshot and does not refetch when the playback identity is unchanged. Finished phone/Android Auto presentation, cache, translation, timing controls, persistence, and karaoke rendering remain separate later work.
+The next capability work intentionally starts below UI: establish one framework-independent effective-timing boundary for future Sync/calibration, then route existing timed-lyrics presentation through it before adding user calibration controls. Karaoke/WORD projection remains downstream of that timing foundation.
 
 ## Distribution and Android Auto sideloading
 

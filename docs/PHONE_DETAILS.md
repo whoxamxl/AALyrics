@@ -4,7 +4,7 @@
 
 This document defines the approved presentation contract for the Phone `Details` destination.
 
-PR #49 implemented the original production `DetailsScreen`, Phone-local presentation state, application-owned runtime mapping, deterministic Previews, and focused mapper tests. On `feature/translation-runtime`, Translation Details state/mapping, production Compose rendering, deterministic Translation Details Previews, focused mapper coverage, and regression/alignment are implemented. The next phase is current-head repository validation. Details remains read-only: it presents already-owned runtime facts and must not start Translation, download models, retry work, or trigger provider/network activity. The refined Secondary/model-scope behavior has also completed physical-device verification without a blocking Details issue.
+PR #49 implemented the original production `DetailsScreen`, Phone-local presentation state, application-owned runtime mapping, deterministic Previews, and focused mapper tests. PR #79 merged Translation Details state/mapping, production Compose rendering, deterministic Translation Details Previews, focused mapper coverage, conservative Secondary activation/model-scope refinements, and completed device validation. Details remains read-only: it presents already-owned runtime facts and must not start Translation, download models, retry work, or trigger provider/network activity.
 
 ## Product intent
 
