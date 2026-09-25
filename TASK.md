@@ -273,6 +273,7 @@ Current validation after the Secondary/model-scope refinement:
 - [x] PR added-line architecture scan found no new pure-core Android/network import, UI provider ownership leak, UI concrete ML Kit dependency, or Android media framework leak; no `build.gradle.kts` changed.
 - [x] Targeted review of the 12 commits from `7aaf94e7` to `65e8ed5` found no remaining blocking production defect.
 - [x] PR review thread count is clean: the earlier Codex P2 remains resolved; two normal Codex rounds have already completed per `AGENTS.md`.
+- [x] User-triggered follow-up Codex review on `627f276` produced two valid current-scope P2s; both were fixed without requesting another Codex round: target-only background model state no longer replaces the no-route `Translation enabled` placeholder, and Ready source labeling now prefers an actually translated artifact source over Profile Primary.
 - [ ] Physical-device smoke test remains for the refined Secondary behavior and Translation Details.
 
 Historical baseline evidence retained from before the Details follow-up:

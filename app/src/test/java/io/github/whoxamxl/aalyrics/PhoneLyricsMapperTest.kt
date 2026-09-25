@@ -191,7 +191,7 @@ class PhoneLyricsMapperTest {
             ),
         )
         assertEquals(
-            TrackCardTranslationUiState.DownloadingModels,
+            TrackCardTranslationUiState.Enabled,
             downloading.trackCard.translation,
         )
 
@@ -206,7 +206,69 @@ class PhoneLyricsMapperTest {
                 "en" to TranslationModelState("en", TranslationModelPhase.TIMED_OUT),
             ),
         )
-        assertEquals(TrackCardTranslationUiState.Failed, failed.trackCard.translation)
+        assertEquals(TrackCardTranslationUiState.Enabled, failed.trackCard.translation)
+    }
+
+    @Test
+    fun `Ready Track Card source prefers an actually translated Secondary route`() {
+        val playback = PlaybackSnapshot(
+            track = track(),
+            source = PlaybackSource("com.spotify.music"),
+        )
+        val lyrics = ready(
+            playback = playback,
+            lines = listOf(
+                TimedLyricLine("English primary", 0L),
+                TimedLyricLine("Spanish secondary", 5_000L),
+            ),
+        )
+        val canonical = requireNotNull(lyrics.canonicalLyricsOrNull())
+        val artifact = TranslationArtifact(
+            request = TranslationRequestIdentity(
+                id = TranslationRequestId(42L),
+                canonicalLyrics = canonical.identity,
+                targetLanguage = "en",
+            ),
+            providerId = TranslationProviderId("mlkit"),
+            profile = LanguageProfile(
+                primary = "en",
+                secondaryCandidate = "es",
+                secondaryActivation = SecondaryActivation.ACTIVE,
+                lines = emptyList(),
+            ),
+            lines = listOf(
+                TranslationArtifactLine(
+                    canonicalLineIndex = 0,
+                    text = "English primary",
+                    sourceLanguage = "en",
+                    translated = false,
+                ),
+                TranslationArtifactLine(
+                    canonicalLineIndex = 1,
+                    text = "Spanish translated",
+                    sourceLanguage = "es",
+                    translated = true,
+                ),
+            ),
+        )
+
+        val state = mapPhoneLyricsState(
+            playback = playback,
+            lyricsState = lyrics,
+            plainLyricsAutoScrollEnabled = true,
+            interactionMode = LyricsViewportInteractionMode.FOLLOW,
+            currentMonotonicTimeMs = 1_000L,
+            translationState = TranslationState.Ready(artifact),
+            translationSettings = TranslationSettings(
+                enabled = true,
+                targetLanguage = "en",
+            ),
+        )
+
+        assertEquals(
+            TrackCardTranslationUiState.Ready("ES", "EN"),
+            state.trackCard.translation,
+        )
     }
 
     @Test

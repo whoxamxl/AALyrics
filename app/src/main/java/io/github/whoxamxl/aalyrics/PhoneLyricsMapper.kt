@@ -131,7 +131,6 @@ private fun mapTrackCardTranslationState(
     if (!settings.enabled) return TrackCardTranslationUiState.Off
 
     val targetLanguage = TranslationLanguages.normalizeTargetLanguage(settings.targetLanguage)
-    val targetModelPhase = modelStates[targetLanguage]?.phase
 
     fun requestMatches(
         requestCanonicalLyrics: CanonicalLyricsIdentity,
@@ -177,12 +176,12 @@ private fun mapTrackCardTranslationState(
                     artifact.request.targetLanguage,
                 )
             ) {
-                val sourceLanguage = artifact.profile.primary
-                    ?: artifact.lines
-                        .firstOrNull { line ->
-                            line.translated && !line.sourceLanguage.isNullOrBlank()
-                        }
-                        ?.sourceLanguage
+                val sourceLanguage = artifact.lines
+                    .firstOrNull { line ->
+                        line.translated && !line.sourceLanguage.isNullOrBlank()
+                    }
+                    ?.sourceLanguage
+                    ?: artifact.profile.primary
                     ?: fallbackSourceLanguage
                 return TrackCardTranslationUiState.Ready(
                     sourceLanguageLabel = shortLanguageLabel(sourceLanguage),
@@ -232,17 +231,7 @@ private fun mapTrackCardTranslationState(
         TranslationState.Idle -> Unit
     }
 
-    return when (targetModelPhase) {
-        TranslationModelPhase.DOWNLOADING,
-        TranslationModelPhase.WAITING_FOR_SYSTEM -> TrackCardTranslationUiState.DownloadingModels
-
-        TranslationModelPhase.FAILED,
-        TranslationModelPhase.TIMED_OUT -> TrackCardTranslationUiState.Failed
-
-        TranslationModelPhase.CHECKING,
-        TranslationModelPhase.READY,
-        null -> TrackCardTranslationUiState.Enabled
-    }
+    return TrackCardTranslationUiState.Enabled
 }
 
 private fun shortLanguageLabel(languageTag: String?): String =
