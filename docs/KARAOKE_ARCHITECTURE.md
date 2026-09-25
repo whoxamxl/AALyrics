@@ -39,7 +39,7 @@ Migration classification for the active Phone slice:
 - same-visible-range grouping from `PhoneKaraokeSweep` in `ui/KaraokeSweepSpan.kt` — **PRESERVE / REFACTOR now** as display-group policy downstream of the shared active-word decision;
 - `KaraokeSweepSpan` drawing behavior — preserve the useful continuous left-to-right sweep idea, but **REWRITE for Compose** rather than transplanting Android `ReplacementSpan`;
 - working-fork layout/grouping tests — **PRESERVE / ADAPT** wherever their behavior is still part of the approved AALyrics contract;
-- the working fork's arbitrary final-group `650ms` fallback — **DO NOT MIGRATE in this slice**. When no defensible display-group end exists, AALyrics falls back to normal current-line styling rather than fabricating progress.
+- the working fork's final-group `650ms` fallback — **PRESERVE only as Phone presentation policy**. It is a visual duration for an otherwise open-ended final display group; it must never be inserted into `:core:timing`, canonical timestamps, or semantic `wordProgress`.
 
 ## Ownership model
 
@@ -250,7 +250,8 @@ Instead:
 3. consecutive tokens that map to that same visible range form one **display group**;
 4. that visible range sweeps once from the first grouped token's start to the group's defensible end;
 5. the group end may use the final grouped token's explicit end, or the next token start when that provides the natural end;
-6. if the display group has no defensible end, do not invent one; render the normal current-line style.
+6. if a non-final group has no defensible end, use normal current-line styling rather than invent timing;
+7. if the final visible display group has neither an explicit end nor a following token start, Phone may use the working fork's `650ms` visual fallback measured from that display group's start. This fallback exists only for rendering and does not alter semantic timing.
 
 This display-group interval exists only to render one readable lexical unit smoothly. It must not select a different active token, alter `wordBoundary`, rewrite source timestamps, or become a second Timing Semantic Engine.
 
@@ -320,37 +321,19 @@ The active Phone slice must preserve the same non-Karaoke behavior whenever its 
 - Android Auto remains unchanged/unimplemented for Karaoke;
 - computing semantic WORD facts does not itself imply visible Karaoke.
 
-## Deferred Karaoke decisions
+## Remaining deferred decisions
 
-Until the Karaoke consumer/rendering slice is explicitly authorized, defer:
+The active Phone slice fixes feature gating, WORD-only presentation mapping, continuous sweep, working-fork display grouping, and the Phone-only 650ms final-group visual fallback.
 
-- Karaoke enablement persistence and settings behaviour;
-- exact consumer/presenter type names;
-- whether a dedicated Karaoke Gradle module is warranted;
-- Phone visual styling;
-- completed/pending color policy;
-- sweep animation/easing;
-- update cadence;
-- lexical display-range implementation;
-- final open-ended word visual fallback duration;
+Still deferred:
+
+- a dedicated Karaoke Gradle module unless implementation evidence actually justifies one;
 - LINE-only synthetic intra-line progress;
-- Android Auto emphasis/update strategy;
-- manual browse/follow interaction while Karaoke is active;
-- translated Karaoke presentation.
+- Android Auto Karaoke rendering/update strategy;
+- any translated-word Karaoke timing;
+- broader fullscreen/Performance-mode Karaoke presentation.
 
-## Future Karaoke implementation gate
-
-Before implementing Karaoke consumer/rendering:
-
-1. require the shared Timing Semantic Engine to be implemented and regression-validated;
-2. consume `LyricsTimingProjection`; do not create a second timing algorithm;
-3. re-check working-fork layout/rendering evidence at the then-current revision;
-4. define the smallest consumer/presentation contract required by Phone and/or automotive;
-5. keep Karaoke enablement outside the timing engine;
-6. preserve genuine WORD timing separately from any synthesized visual policy;
-7. test rendering/consumer behaviour separately from timing-engine tests;
-8. keep Phone and automotive presentation independent;
-9. stop before merge according to `AGENTS.md`.
+The active implementation must continue to consume `LyricsTimingProjection`, keep enablement outside the timing engine, test presentation separately from timing semantics, keep Phone and automotive presentation independent, and stop before merge according to `AGENTS.md`.
 
 
 ## Approved Phone Karaoke policy
@@ -410,7 +393,9 @@ Stable rules:
 - for a one-token display group, use shared `wordProgress` directly;
 - for a multi-token display group, derive only presentation-ready group sweep progress from the active semantic token plus the canonical grouped timing interval; this must not change active-word/boundary semantics;
 - do not rewrite `TimedWord` timestamps;
-- if token-to-text alignment is not credible, or a required display-group end is not defensible, render the normal current line rather than invent a Karaoke range/progress;
+- if token-to-text alignment is not credible, render the normal current line rather than invent a Karaoke range;
+- if an ordinary/non-final display group has no defensible end, fall back to normal styling;
+- for the final open-ended display group only, preserve the working fork's 650ms Phone visual fallback without converting it into shared semantic progress;
 - expose Karaoke presentation facts only while effective Phone Karaoke is active;
 - when Karaoke is disabled, WORD source keeps the existing line-oriented Phone behaviour.
 

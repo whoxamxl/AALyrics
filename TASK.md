@@ -63,7 +63,7 @@ Reference revision:
 - preserve/refactor display grouping: `PhoneKaraokeSweep` in `ui/KaraokeSweepSpan.kt`;
 - adapt relevant `LyricWordLayoutTest` and `PhoneKaraokeSweepTest` coverage;
 - do **not** migrate `KaraokeTiming.kt` because `:core:timing` is already the timing authority;
-- do **not** migrate the final 650ms fallback.
+- preserve the working fork's final-group `650ms` fallback **only as Phone presentation policy**; it must not enter `:core:timing` or canonical timing data.
 
 Mapping requirements:
 
@@ -78,7 +78,8 @@ Mapping requirements:
 - do not recalculate current line, choose a different active word, or reinterpret `wordBoundary`;
 - do not mutate canonical timestamps;
 - expose presentation-ready range/progress only while effective Karaoke is active;
-- if mapping is not credible or the display group has no defensible end, fall back to normal current-line presentation;
+- if mapping is not credible, fall back to normal current-line presentation;
+- if the final visible display group has no explicit end and no following token start, use the working fork's `650ms` duration as a Phone-only visual sweep fallback; do not expose that duration as semantic `wordProgress` or mutate source timestamps;
 - keep Translation text outside word sweep.
 
 ## 11.4c — Phone rendering
@@ -94,7 +95,7 @@ For the current WORD_SYNC line:
 - Translation row remains unchanged;
 - no Performance-mode pulse/fullscreen renderer is introduced.
 
-When there is no safely mappable active token or no defensible progress, render normal current-line styling rather than invent timing.
+When there is no safely mappable active token, render normal current-line styling. For the final open-ended visible display group only, a missing semantic duration may use the documented 650ms Phone visual fallback.
 
 The Compose renderer should preserve the useful continuous-sweep behavior from the working fork but must not transplant `ReplacementSpan` architecture. It receives presentation-ready range/progress and never selects the active word itself.
 
@@ -139,7 +140,7 @@ Do not:
 - Phone uses continuous sweep, not Performance-mode pulse.
 - fragmented timing tokens mapping to one visible word produce one continuous visible-word sweep, not repeated resets;
 - working-fork layout/grouping behavior is preserved/refactored where compatible rather than reimplemented without evidence;
-- the final arbitrary 650ms visual fallback is not migrated;
+- the working fork's 650ms final-group fallback is preserved only as Phone visual policy and never becomes shared timing truth;
 - Canonical line text and Translation remain intact.
 - Reset AALyrics restores both Karaoke settings to OFF.
 - Android Auto production code is unchanged.

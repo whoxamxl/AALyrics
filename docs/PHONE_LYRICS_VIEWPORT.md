@@ -384,8 +384,10 @@ Rules:
 - the viewport does not choose the active word or calculate word boundaries;
 - ordinary one-token groups consume shared semantic `wordProgress` directly;
 - multi-token display groups consume presentation-ready group progress produced by the mapper from the already-authoritative active token plus the canonical group timing interval;
-- if the active token cannot be mapped safely, the mapping is not credible, or progress has no defensible end, fall back to normal current-line styling;
-- do not copy the working fork's arbitrary final-group 650ms fallback into this slice;
+- if the active token cannot be mapped safely or the mapping is not credible, fall back to normal current-line styling;
+- ordinary one-token/multi-token groups require a defensible semantic/group end;
+- the final open-ended display group may use the working fork's 650ms **Phone-only visual fallback** so the last readable word can complete one sweep;
+- that 650ms fallback never modifies `:core:timing`, canonical timestamps, or semantic `wordProgress`;
 - translated text remains secondary and receives no independent word progress;
 - LINE_SYNC never receives synthetic Karaoke rendering.
 
