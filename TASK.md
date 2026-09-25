@@ -5,7 +5,7 @@
 - Branch: `feature/translation-runtime`.
 - Base: `main` at `4083588a250092e47f1efeb01e06a099b72a3604`.
 - Classification: TRANSLATION / PHONE PRESENTATION / RUNTIME COMPOSITION.
-- Status: Phone Translation/Details plus the conservative Secondary/model-scope refinement are implemented. GitHub Build #1185 validated implementation head `65e8ed5` with branch/commit gates, architecture checks, debug APK build, and unit tests all passing. Targeted refinement diff review found no remaining blocking production defect; physical-device verification remains.
+- Status: Phone Translation/Details plus the conservative Secondary/model-scope refinement are implemented and validated. GitHub Build #1187 validated implementation head `7f119e0` after the follow-up Codex fixes; architecture checks, debug APK build, and unit tests passed. Physical-device verification of the refined Secondary behavior and Translation Details completed without a blocking issue. PR #79 is ready for review/merge preparation; merge still requires explicit user authorization.
 - Authoritative references: `AGENTS.md`, `docs/TRANSLATION_ARCHITECTURE.md`, `docs/PHONE_LYRICS_VIEWPORT.md`, `docs/PHONE_RUNTIME_HOST.md`, `docs/PHONE_UI_SPEC.md`, `docs/PHONE_DETAILS.md`, `docs/PRESENTATION_STATE_ARCHITECTURE.md`, and the current production code/tests on this branch.
 
 ## Goal
@@ -232,7 +232,7 @@ Use small, reviewable commits and keep each checkpoint independently coherent.
 7. [x] **Details Translation diagnostics follow-up**
    - [x] define Normal Details `TRANSLATION` section: Source language + Target language;
    - [x] define Primary + ACTIVE Secondary display as `English (Spanish)` and canonical-identity gating;
-   - [x] define compact Verbose Runtime state + aggregated Source model + Target model diagnostics;
+   - [x] define compact Verbose Runtime state + positional Primary/ACTIVE-Secondary Source model + Target model diagnostics;
    - [x] define model availability semantics: built-in/downloaded = Ready; Not required only for Translation OFF + confirmed absent remote model;
    - [x] standardize Details Failed/Timed out reason tooltips for this and future Details additions;
    - [x] align Translation architecture/runtime-host ownership before implementation;
@@ -251,30 +251,31 @@ Use small, reviewable commits and keep each checkpoint independently coherent.
    - [x] implement the new generic ACTIVE gate in `LanguageProfiler` with no language-specific false-positive branches;
    - [x] enforce product-supported source-model routing/model preparation across core planning, ML Kit route/model guards, Track Card status, and Retry without adding per-language false-positive patches;
    - [x] replace aggregate Source model presentation state with positional Primary/Secondary model states; production UI now renders `EN (ES)` / `Ready (Ready)`, unsupported detected models render `—`, and Previews/tests cover positional lifecycle/failure state;
-   - [x] rerun build/tests after production changes via Build #1185 and complete a targeted `7aaf94e7 -> 65e8ed5` refinement review; no third broad Codex round was started because the PR already reached the two-normal-round limit in `AGENTS.md`.
+   - [x] rerun build/tests after production changes; Build #1185 validated the main refinement and Build #1187 validated the final follow-up Codex fixes on `7f119e0`.
 
-9. [ ] **Validation before PR readiness**
-   - [x] repository architecture checks passed in Build #1185;
-   - [x] focused Translation/Phone coverage passed as part of the repository unit-test task in Build #1185;
-   - [x] normal JVM/unit test suite passed in Build #1185;
-   - [x] debug APK build passed in Build #1185;
+9. [x] **Validation before PR readiness**
+   - [x] repository architecture checks passed in Build #1187 on final implementation head `7f119e0`;
+   - [x] focused Translation/Phone coverage passed as part of the repository unit-test task in Build #1187;
+   - [x] normal JVM/unit test suite passed in Build #1187;
+   - [x] debug APK build passed in Build #1187;
    - [x] complete refinement diff inspected for scope/regressions; no blocking current-scope defect found;
    - [x] review policy satisfied: two normal Codex rounds were already completed earlier in this PR, and the later Secondary/model-scope refinement received targeted review rather than an impermissible third broad round;
-   - [ ] perform a physical-device smoke test for the refined Secondary behavior and Translation Details before merge.
+   - [x] physical-device verification completed for the refined Secondary behavior and Translation Details; no blocking issue observed.
 
-Current validation after the Secondary/model-scope refinement:
+Current validation after the Secondary/model-scope refinement and follow-up review fixes:
 
-- [x] GitHub Build #1185 validated implementation head `65e8ed5` successfully.
-- [x] Build #1185 passed branch-name validation and commit-message validation.
-- [x] Build #1185 passed `scripts/verify-architecture.sh`.
-- [x] Build #1185 passed `:app:assembleDebug` and uploaded the debug APK artifacts.
-- [x] Build #1185 passed the repository unit-test task, including the new LanguageProfiler, routing/model-scope, Track Card/Retry, Details mapper, and positional Source model coverage.
-- [x] Independent current-branch gate reproduction found 78 branch commits and 0 invalid commit subjects.
-- [x] PR added-line architecture scan found no new pure-core Android/network import, UI provider ownership leak, UI concrete ML Kit dependency, or Android media framework leak; no `build.gradle.kts` changed.
-- [x] Targeted review of the 12 commits from `7aaf94e7` to `65e8ed5` found no remaining blocking production defect.
-- [x] PR review thread count is clean: the earlier Codex P2 remains resolved; two normal Codex rounds have already completed per `AGENTS.md`.
-- [x] User-triggered follow-up Codex review on `627f276` produced two valid current-scope P2s; both were fixed without requesting another Codex round: target-only background model state no longer replaces the no-route `Translation enabled` placeholder, and Ready source labeling now prefers an actually translated artifact source over Profile Primary.
-- [ ] Physical-device smoke test remains for the refined Secondary behavior and Translation Details.
+- [x] GitHub Build #1187 validated final implementation head `7f119e0` successfully.
+- [x] Build #1187 passed branch-name validation and commit-message validation.
+- [x] Build #1187 passed `scripts/verify-architecture.sh`.
+- [x] Build #1187 passed `:app:assembleDebug` and uploaded the debug APK artifacts.
+- [x] Build #1187 passed the repository unit-test task, including the conservative Secondary gate, supported-model routing, Track Card/Retry behavior, Details mapper, and positional Source model diagnostics.
+- [x] Earlier targeted review of the Secondary/model-scope refinement found no blocking production defect.
+- [x] User-triggered follow-up Codex review produced two valid P2s; both were fixed in `7f119e0` without requesting another Codex round:
+  - no-route/background target-model state no longer replaces the Track Card `Translation enabled` placeholder;
+  - Ready source labeling prefers an actually translated artifact source over Profile Primary.
+- [x] Both follow-up Codex review threads are resolved; unresolved review thread count is zero.
+- [x] Physical-device verification of the refined Secondary behavior and Translation Details completed without a blocking issue.
+- [x] No current-scope blocking P0/P1/P2 remains known.
 
 Historical baseline evidence retained from before the Details follow-up:
 
@@ -282,7 +283,7 @@ Historical baseline evidence retained from before the Details follow-up:
 - The Target language tooltip/model-requirement explanation was device-informed.
 - Automatic model acquisition + permanent Track Card feedback/retry was validated before the Details extension.
 
-These historical checks remain useful baseline evidence but do not replace the current device check for the Secondary/model-scope refinement.
+These historical checks remain baseline evidence; the current Secondary/model-scope refinement has now also completed physical-device verification.
 
 Do not merge without explicit user authorization.
 

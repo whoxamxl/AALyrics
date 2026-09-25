@@ -24,7 +24,7 @@ The current production branch state now has:
 - an explicit non-functional Sync placeholder;
 - unsupported Update controls presented unavailable rather than wired to no-ops, while Changelog is supplied offline from the bundled repository `CHANGELOG.md`.
 
-The debug APK now builds with the real Phone shell reachable after onboarding prerequisites are satisfied. Physical-device smoke testing remains the final empirical validation step; CI alone does not claim that device interaction has been observed.
+The debug APK builds with the real Phone shell reachable after onboarding prerequisites are satisfied. Physical-device smoke testing has been exercised for the production Phone shell and, for the Translation follow-up, the refined Secondary/Details behavior; CI/build results and device observations remain separate validation evidence.
 
 The Settings extension implemented on `feature/settings-about-support` preserves this host boundary: `:app` supplies bundled `PRIVACY.md` text and owns the external Buy Me a Coffee browser/Custom-Tab launch, while `:ui:phone` remains presentation-only.
 
@@ -251,7 +251,7 @@ Normal Translation Details uses:
 Verbose Details adds only:
 
 - Runtime state;
-- one aggregated Source model row keyed by Translation-relevant source ISO tags;
+- one positional Source model row that preserves Primary plus optional ACTIVE Secondary ISO/state pairing;
 - one Target model row.
 
 Application-owned mapping adapts Translation/core/model facts into Phone-local Details state. `:ui:phone` must not depend on `TranslationState`, `LanguageProfile`, `TranslationModelState`, ML Kit types, or raw exceptions.
@@ -341,7 +341,7 @@ Before merge:
 - the final diff receives bounded Codex review;
 - no current-scope blocking P0/P1/P2 remains.
 
-A physical-device smoke test is strongly useful once the APK is produced, but merge authorization remains a separate user decision.
+A physical-device smoke test remains useful evidence in addition to CI/build checks. The current Translation follow-up has completed that device verification; merge authorization remains a separate explicit user decision.
 
 ## Explicitly deferred
 

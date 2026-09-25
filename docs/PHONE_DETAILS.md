@@ -4,7 +4,7 @@
 
 This document defines the approved presentation contract for the Phone `Details` destination.
 
-PR #49 implemented the original production `DetailsScreen`, Phone-local presentation state, application-owned runtime mapping, deterministic Previews, and focused mapper tests. On `feature/translation-runtime`, Translation Details state/mapping, production Compose rendering, deterministic Translation Details Previews, focused mapper coverage, and regression/alignment are implemented. The next phase is current-head repository validation. Details remains read-only: it presents already-owned runtime facts and must not start Translation, download models, retry work, or trigger provider/network activity.
+PR #49 implemented the original production `DetailsScreen`, Phone-local presentation state, application-owned runtime mapping, deterministic Previews, and focused mapper tests. On `feature/translation-runtime`, Translation Details state/mapping, production Compose rendering, deterministic Translation Details Previews, focused mapper coverage, and regression/alignment are implemented. The next phase is current-head repository validation. Details remains read-only: it presents already-owned runtime facts and must not start Translation, download models, retry work, or trigger provider/network activity. The refined Secondary/model-scope behavior has also completed physical-device verification without a blocking Details issue.
 
 ## Product intent
 
@@ -358,7 +358,7 @@ PR #49 plus the Translation Details follow-up provide deterministic Preview/test
 - source/target model states covering Ready, Not required, Checking, Downloading, Waiting for system, Failed, and Timed out;
 - built-in English and already-downloaded remote models shown as Ready while Translation is OFF;
 - Failed and Timed out rows with the shared info-tooltip affordance, with focused mapper tests preserving the authoritative reason payload and forbidding invented fallback reasons;
-- aggregated multi-source model presentation such as `Source model (EN, ES)`;
+- positional multi-source model presentation such as `Source model (EN (ES))` with independently paired values such as `Ready (Ready)` or `Ready (—)`;
 - Verbose Details ON with playback package/category/SDK levels, provider/source IDs, and track references;
 - Verbose Details ON with missing optional diagnostic values;
 - narrow width;
