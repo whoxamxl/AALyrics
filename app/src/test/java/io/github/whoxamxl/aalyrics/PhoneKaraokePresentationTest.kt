@@ -156,6 +156,54 @@ class PhoneKaraokePresentationTest {
     }
 
     @Test
+    fun `final open ended group uses next timed line before visual fallback`() {
+        val line = TimedLyricLine(
+            text = "shine",
+            startMs = 1_000L,
+            words = listOf(TimedWord("shine", 1_000L)),
+        )
+
+        assertEquals(0.5f, sweep(line, 2_000L, nextTimedLineStartMs = 3_000L)?.progress)
+        assertEquals(0.95f, sweep(line, 2_900L, nextTimedLineStartMs = 3_000L)?.progress)
+        assertNull(sweep(line, 3_000L, nextTimedLineStartMs = 3_000L))
+    }
+
+    @Test
+    fun `explicit line end takes precedence over next timed line`() {
+        val line = TimedLyricLine(
+            text = "shine",
+            startMs = 1_000L,
+            endMs = 2_000L,
+            words = listOf(TimedWord("shine", 1_000L)),
+        )
+
+        assertEquals(0.5f, sweep(line, 1_500L, nextTimedLineStartMs = 3_000L)?.progress)
+        assertNull(sweep(line, 2_000L, nextTimedLineStartMs = 3_000L))
+    }
+
+    @Test
+    fun `interlude marker start can terminate previous open ended visual group`() {
+        val line = TimedLyricLine(
+            text = "last lyric",
+            startMs = 1_000L,
+            words = listOf(
+                TimedWord("last", 1_000L, 1_500L),
+                TimedWord("lyric", 1_500L),
+            ),
+        )
+
+        val nearInterlude = sweep(
+            line = line,
+            positionMs = 3_500L,
+            nextTimedLineStartMs = 4_000L,
+        )
+
+        assertEquals(5 to 10, nearInterlude?.let { it.start to it.end })
+        assertEquals(0.8f, nearInterlude?.progress)
+        assertNull(sweep(line, 4_000L, nextTimedLineStartMs = 4_000L))
+    }
+
+    @Test
     fun `only final open ended group receives Phone visual fallback`() {
         val line = TimedLyricLine("final", 1_000L, words = listOf(TimedWord("final", 1_000L)))
         assertEquals(0.5f, sweep(line, 1_325L)?.progress)
@@ -163,9 +211,17 @@ class PhoneKaraokePresentationTest {
         assertNull(sweep(line, 3_000L))
     }
 
-    private fun sweep(line: TimedLyricLine, positionMs: Long) = mapPhoneKaraokeSweep(
-        line,
-        projectLyricsTiming(LyricsDocument(listOf(line)), EffectiveLyricsPosition(positionMs)),
-        positionMs,
+    private fun sweep(
+        line: TimedLyricLine,
+        positionMs: Long,
+        nextTimedLineStartMs: Long? = null,
+    ) = mapPhoneKaraokeSweep(
+        line = line,
+        timing = projectLyricsTiming(
+            LyricsDocument(listOf(line)),
+            EffectiveLyricsPosition(positionMs),
+        ),
+        effectivePositionMs = positionMs,
+        nextTimedLineStartMs = nextTimedLineStartMs,
     )
 }

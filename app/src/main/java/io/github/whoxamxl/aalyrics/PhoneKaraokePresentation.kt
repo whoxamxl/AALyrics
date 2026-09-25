@@ -10,6 +10,7 @@ internal fun mapPhoneKaraokeSweep(
     line: TimedLyricLine,
     timing: LyricsTimingProjection,
     effectivePositionMs: Long,
+    nextTimedLineStartMs: Long? = null,
 ): KaraokeSweepUiState? {
     if (timing.wordBoundary != WordTimingBoundary.ACTIVE) return null
     if (!LyricWordLayout.hasRenderableWordGranularity(line)) return null
@@ -24,6 +25,8 @@ internal fun mapPhoneKaraokeSweep(
     val groupStartMs = line.words[first].startMs
     val groupEndMs = line.words[last].endMs
         ?: line.words.getOrNull(last + 1)?.startMs
+        ?: line.endMs
+        ?: nextTimedLineStartMs
         ?: (groupStartMs + FINAL_GROUP_VISUAL_DURATION_MS)
     if (groupEndMs <= groupStartMs || effectivePositionMs >= groupEndMs) return null
 
