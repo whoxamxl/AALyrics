@@ -4,7 +4,7 @@
 
 This document defines the approved presentation contract for the Phone `Details` destination.
 
-PR #49 implemented the original production `DetailsScreen`, Phone-local presentation state, application-owned runtime mapping, deterministic Previews, and focused mapper tests. On `feature/translation-runtime`, Translation Details state/mapping, production Compose rendering, deterministic Translation Details Previews, and focused mapper coverage are implemented. The remaining implementation checkpoint is regression/alignment before final repository validation. Details remains read-only: it presents already-owned runtime facts and must not start Translation, download models, retry work, or trigger provider/network activity.
+PR #49 implemented the original production `DetailsScreen`, Phone-local presentation state, application-owned runtime mapping, deterministic Previews, and focused mapper tests. On `feature/translation-runtime`, Translation Details state/mapping, production Compose rendering, deterministic Translation Details Previews, focused mapper coverage, and regression/alignment are implemented. The next phase is current-head repository validation. Details remains read-only: it presents already-owned runtime facts and must not start Translation, download models, retry work, or trigger provider/network activity.
 
 ## Product intent
 
@@ -170,7 +170,7 @@ Model-state semantics are availability-oriented, not "currently needed" semantic
 - when Translation is ON, a missing required model must not be presented as `Not required`; it should resolve through the active preparation lifecycle (`Checking`, `Downloading`, or `Waiting for system`) or a terminal failure state;
 - a process-local missing model-state entry is not proof that a model is absent until startup inventory reconciliation has established that fact.
 
-The source-model row is one compact aggregate row rather than one row per source language. The label lists the Translation-relevant source ISO tags: Primary plus ACTIVE Secondary when present, for example `Source model (EN, ES)`. Its value summarizes the source-side model requirements:
+The source-model row is one compact aggregate row rather than one row per source language. The label lists the Translation-relevant source ISO tags: Primary plus ACTIVE Secondary when present, for example `Source model (EN, ES)`. Do not suppress the Source model row merely because the Primary ISO equals the Target ISO; Verbose Details keeps Source model and Target model as two distinct diagnostic rows. Its value summarizes the source-side model requirements:
 
 - `Ready` only when every required source-side model is available; built-in source languages count as Ready;
 - an active preparation phase is shown when any required source-side model is still preparing;
@@ -295,7 +295,7 @@ DetailsScreenUiState
    └─ trackReferences
 ```
 
-PR #49 established the concrete `DetailsScreenUiState` shape and application-owned `phoneDetailsState` mapping. The Phone runtime host defined in `docs/PHONE_RUNTIME_HOST.md` should consume that existing state rather than remapping provider/media facts in the Activity. Do not pass provider DTOs, `MediaController`, `PlaybackState`, framework queue objects, or Android intents into the screen.
+PR #49 established the concrete `DetailsScreenUiState` shape and application-owned `phoneDetailsState` mapping. The Phone runtime host consumes that state directly and only adds the existing live Verbose progress projection; it does not remap provider/media/Translation facts in the Activity. Do not pass provider DTOs, `MediaController`, `PlaybackState`, framework queue objects, Android intents, or Translation runtime types into the screen.
 
 ## Empty and partial state
 

@@ -272,7 +272,7 @@ DetailsScreen
 
 The application-owned `phoneDetailsState` now combines the existing Translation settings/state/diagnostic evidence, model lifecycle state, and startup model-inventory reconciliation fact. `PhoneDetailsMapper` canonical-identity gates per-track profile/runtime evidence and emits Phone-local Translation Details state. The host continues consuming that resolved state rather than reconstructing Translation diagnostics ad hoc.
 
-The runtime-host slice must not add provider/network requests for diagnostics. Verbose Details may reuse already-owned playback-source and Translation/model facts. Enabling Verbose Details must not start profiling, Translation, model download, retry, or provider lookup.
+The runtime-host slice must not add provider/network requests for diagnostics. Verbose Details may reuse already-owned playback-source and Translation/model facts. Enabling Verbose Details must not start profiling, Translation, model download, retry, or provider lookup. Opening the Details destination itself also has no such side effects. The only destination-dependent work is presentation-local live progress ticking while playback is active; `verboseDetailsEnabled` is part of that effect's key so toggling Verbose while already on Details starts/stops the ticker immediately.
 
 Failure-capable Details rows follow the `docs/PHONE_DETAILS.md` standard: `Failed` and `Timed out` carry a presentation-ready authoritative reason and use the shared semantic info-tooltip affordance. Missing runtime failure evidence must be fixed at the owning Translation contract rather than replaced by a guessed UI string.
 

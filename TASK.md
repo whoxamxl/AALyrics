@@ -5,7 +5,7 @@
 - Branch: `feature/translation-runtime`.
 - Base: `main` at `4083588a250092e47f1efeb01e06a099b72a3604`.
 - Classification: TRANSLATION / PHONE PRESENTATION / RUNTIME COMPOSITION.
-- Status: Phone lyric Translation, Track Card Translation feedback/retry, and Phone Details Translation metadata/diagnostics are implemented through Checkpoint 7d. The next checkpoint is 7e regression/alignment; current-head Build/CI/Codex validation has not yet been rerun after the Details follow-up.
+- Status: Phone lyric Translation, Track Card Translation feedback/retry, and Phone Details Translation metadata/diagnostics are implemented through Checkpoint 7e. Static regression/alignment is complete; current-head Build/CI/Codex validation remains next.
 - Authoritative references: `AGENTS.md`, `docs/TRANSLATION_ARCHITECTURE.md`, `docs/PHONE_LYRICS_VIEWPORT.md`, `docs/PHONE_RUNTIME_HOST.md`, `docs/PHONE_UI_SPEC.md`, `docs/PHONE_DETAILS.md`, `docs/PRESENTATION_STATE_ARCHITECTURE.md`, and the current production code/tests on this branch.
 
 ## Goal
@@ -158,7 +158,7 @@ Do **not** implement or redesign any of the following in this slice:
 - Karaoke/WORD Translation semantics;
 - Android Auto Translation presentation;
 - new durable Translation settings;
-- Translation error UI beyond the approved Track Card `Translation failed` + `Retry` recovery row.
+- actionable Translation recovery UI beyond the approved Track Card `Translation failed` + `Retry` row; Phone Details may expose the approved read-only Runtime/model failure diagnostics and reason tooltips but must not add retry/mutation controls.
 
 If implementation evidence reveals a real defect in the existing Translation execution path, record it separately rather than silently expanding this presentation PR unless it directly blocks the stated acceptance criteria.
 
@@ -229,7 +229,7 @@ Use small, reviewable commits and keep each checkpoint independently coherent.
    - [x] wire the semantic Retry callback through `:app`;
    - [x] add focused mapper/runtime coverage.
 
-7. [ ] **Details Translation diagnostics follow-up**
+7. [x] **Details Translation diagnostics follow-up**
    - [x] define Normal Details `TRANSLATION` section: Source language + Target language;
    - [x] define Primary + ACTIVE Secondary display as `English (Spanish)` and canonical-identity gating;
    - [x] define compact Verbose Runtime state + aggregated Source model + Target model diagnostics;
@@ -240,7 +240,7 @@ Use small, reviewable commits and keep each checkpoint independently coherent.
    - [x] **Checkpoint 7b — application Details mapping:** extend application-owned `phoneDetailsState` / `PhoneDetailsMapper` with Translation settings, current matching profile/runtime state, model lifecycle projection, and explicit startup model-inventory reconciliation;
    - [x] **Checkpoint 7c — Phone-local state + rendering:** add the `TRANSLATION` section, compact Verbose rows, and shared `PhoneInfoTooltip` treatment for Failed/Timed out;
    - [x] **Checkpoint 7d — deterministic Previews/tests:** cover Primary only, ACTIVE Secondary, no profile yet, all six runtime states, all seven model presentation states, OFF+absent Not required, built-in/downloaded Ready while OFF, multi-source aggregate, and authoritative failure-tooltip payloads;
-   - [ ] **Checkpoint 7e — regression/alignment:** verify Verbose toggle remains presentation-only and no provider/profile/model work is triggered merely by opening Details.
+   - [x] **Checkpoint 7e — regression/alignment:** verified Details open/Verbose toggle remain presentation-only; fixed the Verbose live-progress effect key and preserved separate Source/Target model rows when the ISO is the same; no provider/profile/model download/retry trigger is introduced by Details.
 
 8. [ ] **Validation before PR readiness**
    - run the repository architecture checks;
@@ -295,7 +295,7 @@ The slice is complete when all of the following are true:
 - Verbose Details adds only Runtime state, aggregated Source model, and Target model rows rather than dumping request/provider internals.
 - Built-in and confirmed downloaded models display Ready even while Translation is OFF; Details-only Not required is limited to Translation OFF + confirmed absent remote model.
 - Details Failed/Timed out states expose authoritative reasons through the shared info-tooltip contract; raw engine exceptions do not enter `:ui:phone`.
-- Opening Details or enabling Verbose Details does not start profiling, Translation, provider lookup, model download, or retry.
+- Opening Details or enabling Verbose Details does not start profiling, Translation, provider lookup, model download, or retry; toggling Verbose while already on Details only starts/stops the presentation-local live progress ticker.
 - Tests, Previews, implementation, and documentation describe the same behavior.
 - CI/build/review requirements in `AGENTS.md` are satisfied before merge.
 
