@@ -28,11 +28,47 @@ fun projectLyricsTiming(
         val line = document.lines[index]
         line is TimedLyricLine && line.startMs <= position.milliseconds
     }
+    val activeLine = activeLineIndex?.let { document.lines[it] as TimedLyricLine }
+    val words = activeLine?.words.orEmpty()
+    if (words.isEmpty()) {
+        return LyricsTimingProjection(
+            activeLineIndex = activeLineIndex,
+            activeWordIndex = null,
+            wordProgress = null,
+            wordBoundary = WordTimingBoundary.UNAVAILABLE,
+        )
+    }
+
+    val latestStartedWordIndex = words.indices.lastOrNull { index ->
+        words[index].startMs <= position.milliseconds
+    }
+    if (latestStartedWordIndex == null) {
+        return LyricsTimingProjection(
+            activeLineIndex = activeLineIndex,
+            activeWordIndex = null,
+            wordProgress = null,
+            wordBoundary = WordTimingBoundary.BEFORE_FIRST,
+        )
+    }
+
+    val latestStartedWord = words[latestStartedWordIndex]
+    if (latestStartedWord.endMs?.let { position.milliseconds >= it } == true) {
+        return LyricsTimingProjection(
+            activeLineIndex = activeLineIndex,
+            activeWordIndex = null,
+            wordProgress = null,
+            wordBoundary = if (latestStartedWordIndex == words.lastIndex) {
+                WordTimingBoundary.AFTER_LAST
+            } else {
+                WordTimingBoundary.GAP
+            },
+        )
+    }
 
     return LyricsTimingProjection(
         activeLineIndex = activeLineIndex,
-        activeWordIndex = null,
+        activeWordIndex = latestStartedWordIndex,
         wordProgress = null,
-        wordBoundary = WordTimingBoundary.UNAVAILABLE,
+        wordBoundary = WordTimingBoundary.ACTIVE,
     )
 }

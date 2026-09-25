@@ -284,7 +284,7 @@ Implement in small coherent commits and push each completed checkpoint.
    - allow only `:core:model` as the new production dependency;
    - add parity tests for existing current-line semantics.
 
-2. [ ] **WORD selection + boundary semantics**
+2. [x] **WORD selection + boundary semantics**
    - add active-word selection;
    - preserve explicit-end gaps, open-ended fallback, no older-word reactivation, and backward-seek semantics;
    - cover exact start/end and negative/before cases.
