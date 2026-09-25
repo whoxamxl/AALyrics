@@ -224,6 +224,7 @@
     <string name="details_translation_runtime_not_required">Not required</string>
     <string name="details_translation_runtime_ready">Ready</string>
     <string name="details_translation_runtime_failed">Failed</string>
+    <string name="details_translation_model_unsupported">—</string>
     <string name="details_translation_model_not_required">Not required</string>
     <string name="details_translation_model_checking">Checking</string>
     <string name="details_translation_model_downloading">Downloading</string>

@@ -196,20 +196,22 @@ fun DetailsScreen(
                     )
                 }
 
-                translation.sourceModel?.let { sourceModel ->
+                translation.sourceModel?.let { sourceModels ->
                     DetailsDivider()
-                    val failureReason = sourceModel.failureReason
-                        ?.takeIf {
-                            sourceModel.phase == DetailsTranslationModelPhaseUiState.FAILED ||
-                                sourceModel.phase ==
-                                DetailsTranslationModelPhaseUiState.TIMED_OUT
-                        }
+                    val languageLabel = sourceModels.secondary?.let { secondary ->
+                        "${sourceModels.primary.languageLabel} (${secondary.languageLabel})"
+                    } ?: sourceModels.primary.languageLabel
+                    val value = sourceModels.secondary?.let { secondary ->
+                        "${translationModelPhaseLabel(sourceModels.primary.phase)} " +
+                            "(${translationModelPhaseLabel(secondary.phase)})"
+                    } ?: translationModelPhaseLabel(sourceModels.primary.phase)
+                    val failureReason = sourceModelFailureReason(sourceModels)
                     DetailsValueRow(
                         label = stringResource(
                             R.string.details_translation_source_model,
-                            sourceModel.languageLabel,
+                            languageLabel,
                         ),
-                        value = translationModelPhaseLabel(sourceModel.phase),
+                        value = value,
                         infoText = failureReason,
                         infoContentDescription = failureReason?.let {
                             stringResource(
@@ -485,6 +487,8 @@ private fun translationRuntimeFailureReasonLabel(
 private fun translationModelPhaseLabel(
     phase: DetailsTranslationModelPhaseUiState,
 ): String = when (phase) {
+    DetailsTranslationModelPhaseUiState.UNSUPPORTED ->
+        stringResource(R.string.details_translation_model_unsupported)
     DetailsTranslationModelPhaseUiState.NOT_REQUIRED ->
         stringResource(R.string.details_translation_model_not_required)
     DetailsTranslationModelPhaseUiState.CHECKING ->
@@ -500,6 +504,26 @@ private fun translationModelPhaseLabel(
     DetailsTranslationModelPhaseUiState.TIMED_OUT ->
         stringResource(R.string.details_translation_model_timed_out)
 }
+
+private fun sourceModelFailureReason(
+    sourceModels: DetailsTranslationSourceModelsUiState,
+): String? = buildList {
+    listOfNotNull(
+        sourceModels.primary,
+        sourceModels.secondary,
+    ).forEach { model ->
+        if (
+            model.phase == DetailsTranslationModelPhaseUiState.FAILED ||
+            model.phase == DetailsTranslationModelPhaseUiState.TIMED_OUT
+        ) {
+            model.failureReason?.let { reason ->
+                add("${model.languageLabel}: $reason")
+            }
+        }
+    }
+}
+    .joinToString(separator = "\n")
+    .ifBlank { null }
 
 @Composable
 private fun detailsVerboseLabel(
