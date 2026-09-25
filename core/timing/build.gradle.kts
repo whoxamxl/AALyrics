@@ -7,6 +7,7 @@ kotlin {
 }
 
 dependencies {
+    api(project(":core:model"))
     testImplementation(kotlin("test"))
 }
 

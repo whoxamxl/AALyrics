@@ -7,7 +7,7 @@
 - Phase 11.3a — Effective Timing Foundation: implemented and validated.
 - Phase 11.3b — Existing timed-lyrics integration: implemented and validated.
 - Draft PR #80 was intentionally closed before review so the same branch can continue into the shared timing-semantic engine.
-- Active implementation has **not** started yet.
+- Active implementation is in progress on this branch.
 - `docs/KARAOKE_ARCHITECTURE.md` is aligned with the shared-engine consumer model. The documentation gate before implementation is complete.
 
 Authoritative references for the active engine slice are:
@@ -278,7 +278,7 @@ Therefore:
 
 Implement in small coherent commits and push each completed checkpoint.
 
-1. [ ] **Pure semantic model + LINE projection**
+1. [x] **Pure semantic model + LINE projection**
    - add `LyricsTimingProjection` / `WordTimingBoundary`;
    - implement LINE selection in `:core:timing`;
    - allow only `:core:model` as the new production dependency;

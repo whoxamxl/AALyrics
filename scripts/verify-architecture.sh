@@ -76,10 +76,10 @@ for module in "${pure_modules[@]}"; do
 
   production_dependencies="$(production_dependency_expressions "$build_file")"
   case "$module" in
-    "core/model"|"core/timing"|"provider/matching")
+    "core/model"|"provider/matching")
       forbidden_dependencies="$production_dependencies"
       ;;
-    "provider/api"|"provider/lrc")
+    "core/timing"|"provider/api"|"provider/lrc")
       forbidden_dependencies=$(
         printf '%s\n' "$production_dependencies" \
           | grep -Ev "${dependency_prefix}${core_model_target}${dependency_suffix}" \
