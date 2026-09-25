@@ -178,6 +178,8 @@ internal fun PhoneRuntimeHost(
         plainLyricsAutoScrollEnabled = plainLyricsAutoScrollEnabled,
         interactionMode = lyricsInteractionMode,
         currentMonotonicTimeMs = monotonicTimeMs,
+        karaokeFeatureEnabled = karaokeFeatureEnabled,
+        karaokeModeEnabled = karaokeModeEnabled,
     )
     val playbackArtworkImage = remember(playbackArtwork) {
         playbackArtwork?.asImageBitmap()

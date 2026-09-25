@@ -3,6 +3,7 @@ package io.github.whoxamxl.aalyrics
 import io.github.whoxamxl.aalyrics.core.lyrics.LyricsState
 import io.github.whoxamxl.aalyrics.core.model.LyricsSyncType
 import io.github.whoxamxl.aalyrics.core.model.PlaybackSnapshot
+import io.github.whoxamxl.aalyrics.core.model.TimedLyricLine
 import io.github.whoxamxl.aalyrics.core.timing.LyricsTimingOffset
 import io.github.whoxamxl.aalyrics.core.timing.effectiveLyricsPosition
 import io.github.whoxamxl.aalyrics.core.timing.projectLyricsTiming
@@ -34,6 +35,8 @@ internal fun mapPhoneLyricsState(
     translationSettings: TranslationSettings = TranslationSettings(enabled = false),
     translationModelStates: Map<String, TranslationModelState> = emptyMap(),
     lyricsTimingOffset: LyricsTimingOffset = LyricsTimingOffset.ZERO,
+    karaokeFeatureEnabled: Boolean = false,
+    karaokeModeEnabled: Boolean = false,
 ): LyricsScreenUiState {
     val track = playback.track
     val matchingLyricsState = lyricsState
@@ -79,6 +82,15 @@ internal fun mapPhoneLyricsState(
     } else {
         sourceSyncType
     }
+    val karaokeActive = karaokeFeatureEnabled && karaokeModeEnabled &&
+        sourceSyncType == LyricsSyncType.WORD
+    val karaokeSweep = if (karaokeActive) {
+        val activeLine = timingProjection?.activeLineIndex
+            ?.let { document?.lines?.getOrNull(it) as? TimedLyricLine }
+        activeLine?.let { line ->
+            mapPhoneKaraokeSweep(line, timingProjection, lyricsPosition.milliseconds)
+        }
+    } else null
 
     return LyricsScreenUiState(
         trackCard = TrackCardUiState(
@@ -114,6 +126,9 @@ internal fun mapPhoneLyricsState(
                 },
             syncType = displaySyncType,
             currentLineIndex = timingProjection?.activeLineIndex,
+            currentWordIndex = if (karaokeActive) timingProjection?.activeWordIndex else null,
+            currentWordProgress = if (karaokeActive) timingProjection?.wordProgress ?: 0f else 0f,
+            karaokeSweep = karaokeSweep,
             playbackProgress = track
                 ?.durationMs
                 ?.takeIf { it > 0L }

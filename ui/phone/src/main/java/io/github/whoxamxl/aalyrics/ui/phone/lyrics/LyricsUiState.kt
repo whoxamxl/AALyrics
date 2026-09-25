@@ -57,6 +57,14 @@ data class LyricsViewportLineUiState(
     val translatedText: String? = null,
 )
 
+/** Character range in the canonical current line and its Phone visual sweep progress. */
+@Immutable
+data class KaraokeSweepUiState(
+    val start: Int,
+    val end: Int,
+    val progress: Float,
+)
+
 /**
  * Presentation contract consumed by [LyricsViewport].
  *
@@ -70,6 +78,7 @@ data class LyricsViewportUiState(
     val currentLineIndex: Int? = null,
     val currentWordIndex: Int? = null,
     val currentWordProgress: Float = 0f,
+    val karaokeSweep: KaraokeSweepUiState? = null,
     val playbackProgress: Float? = null,
     val plainAutoScrollEnabled: Boolean = true,
     val interactionMode: LyricsViewportInteractionMode = LyricsViewportInteractionMode.FOLLOW,
