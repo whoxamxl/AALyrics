@@ -151,6 +151,8 @@ internal fun PhoneRuntimeHost(
         playback.trackIdentity,
         selectedDestination,
         verboseDetailsEnabled,
+        karaokeFeatureEnabled,
+        karaokeModeEnabled,
     ) {
         monotonicTimeMs = SystemClock.elapsedRealtime()
         while (
@@ -164,7 +166,8 @@ internal fun PhoneRuntimeHost(
                     )
                 )
         ) {
-            delay(250L)
+            delay(if (karaokeFeatureEnabled && karaokeModeEnabled &&
+                selectedDestination == PhoneDestination.Lyrics) 33L else 250L)
             monotonicTimeMs = SystemClock.elapsedRealtime()
         }
     }
