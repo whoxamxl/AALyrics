@@ -2,7 +2,7 @@
 
 AALyrics is a new Android project for synchronized lyrics on phone and Android Auto.
 
-> **Status:** the production Phone shell, all four Lyrics Providers, live Android media-session runtime, demand gating, Settings/Details, verified in-app update flow, and Phone Translation presentation/diagnostics are established. Sync timing/calibration remains a deliberate non-functional placeholder and is the next lyrics-capability foundation; Karaoke, Android Auto Translation, and richer Car App Library presentation remain later work.
+> **Status:** the production Phone shell, all four Lyrics Providers, live Android media-session runtime, demand gating, Settings/Details, verified in-app update flow, and Phone Translation presentation/diagnostics are established. The pure effective-timing foundation is implemented; Sync timing/calibration remains a deliberate non-functional placeholder. Karaoke, Android Auto Translation, and richer Car App Library presentation remain later work.
 
 ## Project direction
 
@@ -32,7 +32,7 @@ Current production capabilities include:
 - manual and automatic GitHub Release discovery, verified APK download, SHA-256 checking, package/signing preflight, install-source permission handling, PackageInstaller handoff, recovery, and post-update feedback;
 - signed GitHub prerelease distribution, currently through `v0.2.0-alpha.2`.
 
-The next capability work intentionally starts below UI: establish one framework-independent effective-timing boundary for future Sync/calibration, then route existing timed-lyrics presentation through it before adding user calibration controls. Karaoke/WORD projection remains downstream of that timing foundation.
+The framework-independent effective-timing boundary is established for future Sync/calibration. The next separately authorized slice will route existing timed-lyrics presentation through it before adding user calibration controls. Karaoke/WORD projection remains downstream of that timing foundation.
 
 ## Distribution and Android Auto sideloading
 
@@ -81,6 +81,7 @@ See [docs/RELEASES.md](docs/RELEASES.md) for the authoritative versioning, signi
 app                    Android application / composition root
 core:model             Shared domain models
 core:lyrics            Lyrics state, orchestration, playback ownership, selector port
+core:timing            Pure effective lyrics position calculation
 provider:api           Provider contracts
 provider:matching      Shared provider-neutral matching semantics
 provider:lrc           Shared LRC parsing

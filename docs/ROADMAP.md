@@ -241,7 +241,7 @@ It intentionally leaves concrete modules, API signatures, storage engines, trans
 
 ## Next implementation slices
 
-The capability foundation does not by itself authorize implementation. Phase 11.3a below is now the explicitly authorized active responsibility on `feature/effective-timing-foundation`; unrelated capability slices remain inactive until separately authorized.
+The capability foundation does not by itself authorize implementation. Phase 11.3a was explicitly authorized and implemented on `feature/effective-timing-foundation`; unrelated capability slices remain inactive until separately authorized.
 
 The expected dependency-friendly sequence is:
 
@@ -296,7 +296,7 @@ Android Auto Translation presentation, Musixmatch native Translation, persistent
 
 The durable merged contract is recorded in `docs/TRANSLATION_ARCHITECTURE.md`, `docs/PHONE_LYRICS_VIEWPORT.md`, `docs/PHONE_RUNTIME_HOST.md`, and `docs/PHONE_DETAILS.md`.
 
-### Phase 11.3a — Effective Timing Foundation — active
+### Phase 11.3a — Effective Timing Foundation — implemented on topic branch
 
 Establish the framework-independent timing engine before any Sync UI is introduced.
 
@@ -313,7 +313,7 @@ Approved first-slice semantics:
 
 The working-fork `SyncCalibration.offsetForTap(target, raw) = target - raw` sign behavior was re-checked at `v1.13.0` and is compatible with this contract. The old tap workflow itself remains deferred.
 
-The active implementation contract is `TASK.md` plus `docs/TIMING_ARCHITECTURE.md`.
+The implementation contract and validation record are `TASK.md` plus `docs/TIMING_ARCHITECTURE.md`.
 
 ### Phase 11.3b — Existing timed-lyrics integration — deferred
 

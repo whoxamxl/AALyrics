@@ -5,7 +5,7 @@
 - Branch: `feature/effective-timing-foundation`.
 - Base: `main` at `ae9ed3f27097388b32537ad4b40147679567efaf` (PR #79 merged).
 - Classification: TIMING / ARCHITECTURE / PURE CORE FOUNDATION.
-- Status: documentation is fully aligned for Phase 11.3a; production implementation has **not** started on this branch yet.
+- Status: Phase 11.3a implementation and validation are complete on this branch; the Draft PR is the stop point.
 - Authoritative references: `AGENTS.md`, `docs/ARCHITECTURE.md`, `docs/LYRICS_PIPELINE_ARCHITECTURE.md`, `docs/TIMING_ARCHITECTURE.md`, `docs/KARAOKE_ARCHITECTURE.md`, `docs/PRESENTATION_STATE_ARCHITECTURE.md`, `docs/MIGRATION_INVENTORY.md`, and current `main` code/tests.
 
 ## Goal
@@ -279,25 +279,27 @@ Not expected:
 
 Implement in small coherent commits.
 
-1. [ ] **Pure timing module + transform**
+1. [x] **Pure timing module + transform**
    - add `:core:timing`;
    - add the signed offset/effective-position model;
    - add the pure `projected + offset` transform;
    - no app/UI integration.
 
-2. [ ] **Tests + architecture guard**
+2. [x] **Tests + architecture guard**
    - add deterministic sign/zero/negative-position tests;
    - register `core/timing` as a pure module in `verify-architecture.sh`;
    - ensure no unauthorized production dependencies are introduced.
 
-3. [ ] **Validation + final alignment**
+3. [x] **Validation + final alignment**
    - run architecture checks;
    - run unit tests;
    - build the debug APK/repository build path;
    - inspect the diff for accidental app/UI/persistence changes;
    - re-evaluate Reset and record "no persisted state / no reset change";
    - align docs only if implementation evidence changed a contract;
-   - prepare PR/review, then stop before merge.
+   - open a Draft PR, then stop before review or merge.
+
+Validation: the architecture guard, debug APK build, and repository unit tests passed in [Build run 36098879658](https://github.com/whoxamxl/AALyrics/actions/runs/36098879658). The implementation adds no persisted state, so `Reset AALyrics` needs no change.
 
 ## Documentation alignment checkpoints
 

@@ -108,7 +108,7 @@ Phase 11 established the ownership seam in `docs/TIMING_ARCHITECTURE.md` and `do
 | Fork implementation | Classification | AALyrics destination / rule | Notes |
 | --- | --- | --- | --- |
 | `lyrics/KaraokeTiming.kt` | **PRESERVE / REFACTOR** | Phase 11.4 framework-neutral karaoke projection downstream of `:core:timing` | Re-checked at working-fork `v1.13.0` on 2026-09-25. Its tested active-word/end-gap/backward-seek semantics remain useful Phase 11.4 evidence, but are explicitly out of scope for Phase 11.3a. Karaoke must consume effective lyrics position and must not reapply calibration. |
-| `util/SyncCalibration.kt` | **PRESERVE / REFACTOR** | Phase 11.3 timing/calibration capability; first foundation in planned `:core:timing` | Re-checked at working-fork `v1.13.0` on 2026-09-25. Preserve the proven sign behavior `offsetForTap = targetTime - rawPosition`: a target ahead of raw yields positive offset, which matches AALyrics `effectivePosition = projectedPosition + offset` and therefore advances lyrics. Do not migrate the three-tap/upcoming-line workflow in Phase 11.3a; that is later Sync UX/policy. |
+| `util/SyncCalibration.kt` | **PRESERVE / REFACTOR** | Phase 11.3 timing/calibration capability; first foundation in `:core:timing` | Re-checked at working-fork `v1.13.0` on 2026-09-25. Preserve the proven sign behavior `offsetForTap = targetTime - rawPosition`: a target ahead of raw yields positive offset, which matches AALyrics `effectivePosition = projectedPosition + offset` and therefore advances lyrics. Do not migrate the three-tap/upcoming-line workflow in Phase 11.3a; that is later Sync UX/policy. |
 | `util/LyricWordLayout.kt` | **PRESERVE / REFACTOR** | future karaoke/presentation support after responsibility re-check | Valuable tested behavior may survive, but semantic karaoke projection and surface text layout are separate responsibilities. Do not assume the legacy utility's final module/API before implementation evidence. |
 | `ui/KaraokeSweepSpan.kt` | **REWRITE / REFACTOR** | Phone rendering downstream of framework-neutral karaoke projection | Rendering is Android-specific. Preserve useful visual behavior where desired, but do not migrate it as timing/domain logic or make Android Auto share Android span primitives. |
 
@@ -184,7 +184,7 @@ Do not bulk-port the old application. Each provider or subsystem remains a separ
 - Translation background scaffold: merged in PR #41 as Phase 11.2a.
 - Translation execution/orchestration: merged in PR #43 as Phase 11.2b.
 - Phone Translation presentation/diagnostics: merged in PR #79 as Phase 11.2c; Android Auto Translation and persistent Translation Cache remain deferred.
-- Effective Timing Foundation: Phase 11.3a is authorized on `feature/effective-timing-foundation`; implementation has not started at this documentation checkpoint.
+- Effective Timing Foundation: Phase 11.3a is implemented and validated on `feature/effective-timing-foundation`; Phone timing integration, Sync UX, persistence, and Karaoke projection remain deferred.
 
 
 ### Translation scaffold implementation re-check
