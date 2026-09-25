@@ -6,7 +6,7 @@ Phone Karaoke presentation mapping and rendering are authorized on `feature/phon
 
 The shared LINE/WORD timing semantics are no longer owned by a Karaoke-specific engine. They belong to the shared Timing Semantic Engine defined in `docs/TIMING_ARCHITECTURE.md`.
 
-The current authorized work stops at:
+The merged shared timing foundation ends at `LyricsTimingProjection`. The active Phone slice begins **after** that projection:
 
 ```text
 canonical timed lyrics
@@ -16,11 +16,13 @@ EffectiveLyricsPosition
 Timing Semantic Engine
         ↓
 LyricsTimingProjection
+        ↓
+Phone Karaoke presentation mapping
+        ↓
+current-line continuous sweep
 ```
 
-Current Phone presentation consumes only `activeLineIndex`, so the semantic engine runs in production without changing current UI behaviour.
-
-Future Karaoke work begins **after** that projection and consumes additional semantic facts. Karaoke enablement is not an input to the Timing Semantic Engine.
+Normal Phone presentation continues to consume only the facts it needs. Effective Karaoke may additionally consume the existing WORD facts, but Karaoke enablement is never an input to the Timing Semantic Engine.
 
 ## Purpose
 
@@ -106,11 +108,11 @@ PLAIN
     existing plain behaviour
 ```
 
-The fact that WORD semantics are computed does not authorize showing word highlighting or sweep animation.
+The fact that WORD semantics are computed does not by itself activate Karaoke; the documented Phone feature gate and live mode still control presentation.
 
 ## Karaoke consumer
 
-Future Karaoke mode is a **consumer-selection/presentation concern**, not a semantic-engine mode.
+Karaoke mode is a **consumer-selection/presentation concern**, not a semantic-engine mode.
 
 Conceptually:
 
@@ -128,7 +130,7 @@ surface renderer
 
 The consumer may choose which already-computed facts are relevant to presentation, but it does not reinterpret their timing.
 
-For WORD_SYNC, a future Karaoke consumer may use:
+For WORD_SYNC, the authorized Phone Karaoke consumer may use:
 
 - `activeLineIndex`;
 - `activeWordIndex`;
@@ -275,13 +277,13 @@ Karaoke consumer/presenter
             host-supported rendering
 ```
 
-Phone may eventually support continuous sweep animation.
+Phone 11.4c uses continuous current-line sweep animation.
 
 Automotive surfaces may be constrained to coarser emphasis/update cadence by host APIs.
 
 Both must consume shared timing facts and must not duplicate current-line/current-word algorithms.
 
-A dedicated `:core:karaoke` module is **not pre-authorized** merely because Karaoke exists. If the eventual consumer needs enough reusable framework-neutral policy to justify a module, that decision belongs to the Karaoke implementation slice. If the consumer is only thin presentation mapping, a new core module may be unnecessary.
+A dedicated `:core:karaoke` module is not justified by default. The active Phone slice should use the smallest presentation seam supported by implementation evidence; introduce a new shared module only if real reusable framework-neutral policy emerges.
 
 ## Karaoke enablement ownership
 
