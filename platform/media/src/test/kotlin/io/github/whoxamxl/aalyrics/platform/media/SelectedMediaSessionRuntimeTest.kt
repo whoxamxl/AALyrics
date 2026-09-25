@@ -179,6 +179,90 @@ class SelectedMediaSessionRuntimeTest {
     }
 
     @Test
+    fun `pause to play with unchanged source timestamp falls back before Phone projection`() {
+        val scheduler = FakeScheduler()
+        val snapshots = mutableListOf<PlaybackSnapshot>()
+        val session = controller("session", "Track", playing = false)
+        session.snapshot = snapshot(
+            title = "Track",
+            status = PlaybackStatus.PAUSED,
+            positionMs = 40_000L,
+            sourceTimestampMs = 10_000L,
+            sampleTimestampMs = 20_000L,
+        )
+        val runtime = runtime(scheduler, snapshots)
+
+        runtime.updateSessions(listOf(session))
+        session.playing = true
+        session.snapshot = snapshot(
+            title = "Track",
+            status = PlaybackStatus.PLAYING,
+            positionMs = 40_000L,
+            sourceTimestampMs = 10_000L,
+            sampleTimestampMs = 21_000L,
+        )
+        session.playbackChanged()
+
+        assertEquals(2, snapshots.size)
+        assertNull(snapshots.last().positionUpdatedAtMonotonicMs)
+        assertEquals(21_000L, snapshots.last().positionSampledAtMonotonicMs)
+    }
+
+    @Test
+    fun `clock validation and metadata stabilization preserve rejected clock across handoff`() {
+        val scheduler = FakeScheduler()
+        val snapshots = mutableListOf<PlaybackSnapshot>()
+        val session = controller("session", "Stable", playing = true)
+        session.snapshot = snapshot(
+            title = "Stable",
+            status = PlaybackStatus.PLAYING,
+            positionMs = 40_000L,
+            sourceTimestampMs = 10_000L,
+            sampleTimestampMs = 20_000L,
+        )
+        val runtime = runtime(scheduler, snapshots)
+
+        runtime.updateSessions(listOf(session))
+
+        session.snapshot = snapshot(
+            title = "Next",
+            status = PlaybackStatus.PLAYING,
+            positionMs = 1_000L,
+            sourceTimestampMs = 10_000L,
+            sampleTimestampMs = 20_100L,
+        )
+        session.metadataChanged()
+        assertEquals(listOf(250L, 600L), scheduler.scheduledDelays)
+
+        session.snapshot = snapshot(
+            title = "Next",
+            status = PlaybackStatus.PLAYING,
+            positionMs = 1_250L,
+            sourceTimestampMs = 10_000L,
+            sampleTimestampMs = 20_250L,
+        )
+        scheduler.runNext()
+
+        assertEquals("Stable", snapshots.last().track?.title)
+        assertEquals(1_250L, snapshots.last().positionMs)
+        assertNull(snapshots.last().positionUpdatedAtMonotonicMs)
+
+        session.snapshot = snapshot(
+            title = "Next",
+            status = PlaybackStatus.PLAYING,
+            positionMs = 1_500L,
+            sourceTimestampMs = 10_000L,
+            sampleTimestampMs = 20_600L,
+        )
+        scheduler.runNext()
+
+        assertEquals("Next", snapshots.last().track?.title)
+        assertEquals(1_500L, snapshots.last().positionMs)
+        assertNull(snapshots.last().positionUpdatedAtMonotonicMs)
+        assertEquals(20_600L, snapshots.last().positionSampledAtMonotonicMs)
+    }
+
+    @Test
     fun `initial playing snapshot is resampled to reject stale source timestamp paired with moving position`() {
         val scheduler = FakeScheduler()
         val snapshots = mutableListOf<PlaybackSnapshot>()
@@ -408,6 +492,16 @@ class SelectedMediaSessionRuntimeTest {
         override fun schedule(delayMs: Long, task: () -> Unit): ScheduledMetadataTask {
             scheduledDelays += delayMs
             return Task(task).also(tasks::add)
+        }
+
+        fun runNext() {
+            while (tasks.isNotEmpty()) {
+                val next = tasks.removeAt(0)
+                if (!next.cancelled) {
+                    next.block()
+                    return
+                }
+            }
         }
 
         fun runPending() {
