@@ -378,9 +378,12 @@ private fun LyricsViewportRow(
     val isCurrent = state.syncType != LyricsSyncType.PLAIN && index == state.currentLineIndex
     val virtualIndex = index + 1f
 
-    val sweep = state.karaokeSweep?.takeIf { karaoke ->
-        isCurrent && karaoke.start >= 0 && karaoke.end <= line.text.length &&
-            karaoke.start < karaoke.end && karaoke.progress.isFinite()
+    val karaokeLine = state.karaokeLine?.takeIf { karaoke ->
+        val sweepValid = karaoke.sweep?.let { sweep ->
+            sweep.start >= 0 && sweep.end <= line.text.length &&
+                sweep.start < sweep.end && sweep.progress.isFinite()
+        } ?: true
+        isCurrent && karaoke.completedEnd in 0..line.text.length && sweepValid
     }
 
     val isTimed = state.syncType != LyricsSyncType.PLAIN
@@ -457,10 +460,10 @@ private fun LyricsViewportRow(
                 } else {
                     AALyricsColors.TextPrimary
                 }
-            if (sweep != null) {
-                KaraokeSweepText(
+            if (karaokeLine != null) {
+                KaraokeLineText(
                     text = line.text,
-                    sweep = sweep,
+                    karaoke = karaokeLine,
                     style = lyricStyle,
                 )
             } else {
@@ -516,51 +519,59 @@ private fun OpeningFocusRow(
 }
 
 @Composable
-private fun KaraokeSweepText(
+private fun KaraokeLineText(
     text: String,
-    sweep: KaraokeSweepUiState,
+    karaoke: KaraokeLineUiState,
     style: androidx.compose.ui.text.TextStyle,
 ) {
     val primary = AALyricsColors.TextPrimary
     val secondary = AALyricsColors.TextSecondary.copy(alpha = 0.72f)
     val base = buildAnnotatedString {
-        withStyle(SpanStyle(color = primary)) { append(text, 0, sweep.start) }
-        withStyle(SpanStyle(color = secondary)) { append(text, sweep.start, text.length) }
+        withStyle(SpanStyle(color = primary)) { append(text, 0, karaoke.completedEnd) }
+        withStyle(SpanStyle(color = secondary)) { append(text, karaoke.completedEnd, text.length) }
     }
-    val overlay = buildAnnotatedString {
-        withStyle(SpanStyle(color = Color.Transparent)) { append(text, 0, sweep.start) }
-        withStyle(SpanStyle(color = primary)) { append(text, sweep.start, sweep.end) }
-        withStyle(SpanStyle(color = Color.Transparent)) { append(text, sweep.end, text.length) }
-    }
+    val sweep = karaoke.sweep
     var layout by remember(text) { mutableStateOf<TextLayoutResult?>(null) }
+
     Box(Modifier.fillMaxWidth()) {
         Text(text = base, style = style, textAlign = TextAlign.Start)
-        Text(
-            text = overlay,
-            style = style,
-            textAlign = TextAlign.Start,
-            onTextLayout = { layout = it },
-            modifier = Modifier
-                .fillMaxWidth()
-                .clearAndSetSemantics {}
-                .drawWithContent {
-                    val textLayout = layout ?: return@drawWithContent
-                    val totalWidth = (sweep.start until sweep.end).sumOf { index ->
-                        textLayout.getBoundingBox(index).width.toDouble()
-                    }.toFloat()
-                    var remaining = totalWidth * sweep.progress.coerceIn(0f, 1f)
-                    val clip = Path()
-                    for (index in sweep.start until sweep.end) {
-                        if (remaining <= 0f) break
-                        val bounds = textLayout.getBoundingBox(index)
-                        val width = remaining.coerceAtMost(bounds.width)
-                        clip.addRect(Rect(bounds.left, bounds.top, bounds.left + width, bounds.bottom))
-                        remaining -= width
-                    }
-                    val contentScope = this
-                    clipPath(clip) { contentScope.drawContent() }
-                },
-        )
+        if (sweep != null) {
+            val overlay = buildAnnotatedString {
+                withStyle(SpanStyle(color = Color.Transparent)) { append(text, 0, sweep.start) }
+                withStyle(SpanStyle(color = primary)) { append(text, sweep.start, sweep.end) }
+                withStyle(SpanStyle(color = Color.Transparent)) {
+                    append(text, sweep.end, text.length)
+                }
+            }
+            Text(
+                text = overlay,
+                style = style,
+                textAlign = TextAlign.Start,
+                onTextLayout = { layout = it },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clearAndSetSemantics {}
+                    .drawWithContent {
+                        val textLayout = layout ?: return@drawWithContent
+                        val totalWidth = (sweep.start until sweep.end).sumOf { index ->
+                            textLayout.getBoundingBox(index).width.toDouble()
+                        }.toFloat()
+                        var remaining = totalWidth * sweep.progress.coerceIn(0f, 1f)
+                        val clip = Path()
+                        for (index in sweep.start until sweep.end) {
+                            if (remaining <= 0f) break
+                            val bounds = textLayout.getBoundingBox(index)
+                            val width = remaining.coerceAtMost(bounds.width)
+                            clip.addRect(
+                                Rect(bounds.left, bounds.top, bounds.left + width, bounds.bottom),
+                            )
+                            remaining -= width
+                        }
+                        val contentScope = this
+                        clipPath(clip) { contentScope.drawContent() }
+                    },
+            )
+        }
     }
 }
 

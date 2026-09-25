@@ -66,6 +66,18 @@ data class KaraokeSweepUiState(
 )
 
 /**
+ * Presentation state for a mappable current Karaoke line.
+ *
+ * [completedEnd] marks the canonical prefix already completed. [sweep] is optional because
+ * BEFORE_FIRST, inter-word GAP, and AFTER_LAST are still Karaoke states even without animation.
+ */
+@Immutable
+data class KaraokeLineUiState(
+    val completedEnd: Int,
+    val sweep: KaraokeSweepUiState? = null,
+)
+
+/**
  * Presentation contract consumed by [LyricsViewport].
  *
  * Runtime mapping supplies authoritative timing/progress. The viewport owns only rendering and
@@ -78,7 +90,7 @@ data class LyricsViewportUiState(
     val currentLineIndex: Int? = null,
     val currentWordIndex: Int? = null,
     val currentWordProgress: Float = 0f,
-    val karaokeSweep: KaraokeSweepUiState? = null,
+    val karaokeLine: KaraokeLineUiState? = null,
     val playbackProgress: Float? = null,
     val plainAutoScrollEnabled: Boolean = true,
     val interactionMode: LyricsViewportInteractionMode = LyricsViewportInteractionMode.FOLLOW,

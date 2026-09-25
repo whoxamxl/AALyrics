@@ -91,7 +91,7 @@ internal fun mapPhoneLyricsState(
     } else {
         sourceSyncType
     }
-    val karaokeSweep = if (karaokeActive) {
+    val karaokeLine = if (karaokeActive) {
         val activeLineIndex = timingProjection?.activeLineIndex
         val activeLine = activeLineIndex
             ?.let { document?.lines?.getOrNull(it) as? TimedLyricLine }
@@ -104,7 +104,7 @@ internal fun mapPhoneLyricsState(
                     }
             }
         activeLine?.let { line ->
-            mapPhoneKaraokeSweep(
+            mapPhoneKaraokeLine(
                 line = line,
                 timing = timingProjection,
                 effectivePositionMs = lyricsPosition.milliseconds,
@@ -149,7 +149,7 @@ internal fun mapPhoneLyricsState(
             currentLineIndex = timingProjection?.activeLineIndex,
             currentWordIndex = if (karaokeActive) timingProjection?.activeWordIndex else null,
             currentWordProgress = if (karaokeActive) timingProjection?.wordProgress ?: 0f else 0f,
-            karaokeSweep = karaokeSweep,
+            karaokeLine = karaokeLine,
             playbackProgress = track
                 ?.durationMs
                 ?.takeIf { it > 0L }
