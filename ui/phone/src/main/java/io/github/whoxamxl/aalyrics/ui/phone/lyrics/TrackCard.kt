@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -26,6 +27,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.github.whoxamxl.aalyrics.ui.phone.R
+import io.github.whoxamxl.aalyrics.ui.designsystem.icon.AALyricsIcons
 import io.github.whoxamxl.aalyrics.ui.designsystem.component.AALyricsArtworkFallback
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsColors
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsRadius
@@ -191,10 +193,12 @@ private fun TranslationStatusRow(
 
             TrackCardTranslationUiState.DownloadingModels -> TranslationLoadingStatus(
                 text = stringResource(R.string.track_card_translation_downloading_models),
+                color = AALyricsColors.AccentBlue,
             )
 
             TrackCardTranslationUiState.Translating -> TranslationLoadingStatus(
                 text = stringResource(R.string.track_card_translation_translating),
+                color = AALyricsColors.AccentBlue,
             )
 
             is TrackCardTranslationUiState.Ready -> TranslationStatusText(
@@ -203,7 +207,7 @@ private fun TranslationStatusRow(
                     state.sourceLanguageLabel,
                     state.targetLanguageLabel,
                 ),
-                color = AALyricsColors.AccentCyan,
+                color = AALyricsColors.Success,
             )
 
             TrackCardTranslationUiState.NotRequired -> TranslationStatusText(
@@ -218,11 +222,7 @@ private fun TranslationStatusRow(
                     modifier = Modifier.weight(1f),
                 )
                 onRetry?.let { retry ->
-                    Text(
-                        text = stringResource(R.string.track_card_translation_retry),
-                        style = AALyricsTypography.Label,
-                        color = AALyricsColors.AccentCyan,
-                        maxLines = 1,
+                    Row(
                         modifier = Modifier
                             .clickable(
                                 role = Role.Button,
@@ -232,7 +232,22 @@ private fun TranslationStatusRow(
                                 horizontal = AALyricsSpacing.Space8,
                                 vertical = 2.dp,
                             ),
-                    )
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Icon(
+                            imageVector = AALyricsIcons.Retry,
+                            contentDescription = null,
+                            tint = AALyricsColors.AccentCyan,
+                            modifier = Modifier.size(AALyricsSpacing.Space16),
+                        )
+                        Spacer(Modifier.width(AALyricsSpacing.Space4))
+                        Text(
+                            text = stringResource(R.string.track_card_translation_retry),
+                            style = AALyricsTypography.Label,
+                            color = AALyricsColors.AccentCyan,
+                            maxLines = 1,
+                        )
+                    }
                 }
             }
         }
@@ -242,16 +257,17 @@ private fun TranslationStatusRow(
 @Composable
 private fun TranslationLoadingStatus(
     text: String,
+    color: androidx.compose.ui.graphics.Color,
 ) {
     CircularProgressIndicator(
         modifier = Modifier.size(12.dp),
-        color = AALyricsColors.AccentCyan,
+        color = color,
         strokeWidth = 1.5.dp,
     )
     Spacer(Modifier.width(AALyricsSpacing.Space4))
     TranslationStatusText(
         text = text,
-        color = AALyricsColors.AccentCyan,
+        color = color,
     )
 }
 
