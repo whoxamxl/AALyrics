@@ -722,6 +722,37 @@ class PhoneLyricsMapperTest {
     }
 
     @Test
+    fun `Phone receipt anchor does not alter LINE source when Karaoke switches are on`() {
+        val playback = PlaybackSnapshot(
+            track = track(),
+            status = PlaybackStatus.PLAYING,
+            positionMs = 4_000L,
+            playbackRate = 1f,
+            source = PlaybackSource("com.spotify.music"),
+            positionUpdatedAtMonotonicMs = null,
+        )
+        val state = mapPhoneLyricsState(
+            playback = playback,
+            lyricsState = ready(
+                playback = playback,
+                lines = listOf(
+                    TimedLyricLine("First", 0L),
+                    TimedLyricLine("Second", 5_000L),
+                ),
+            ),
+            plainLyricsAutoScrollEnabled = true,
+            interactionMode = LyricsViewportInteractionMode.FOLLOW,
+            currentMonotonicTimeMs = 12_000L,
+            playbackPositionFallbackUpdatedAtMonotonicMs = 10_000L,
+            karaokeFeatureEnabled = true,
+            karaokeModeEnabled = true,
+        )
+
+        assertEquals(0, state.viewport.currentLineIndex)
+        assertNull(state.viewport.karaokeSweep)
+    }
+
+    @Test
     fun `word source stays line-oriented while Karaoke is unavailable`() {
         val track = track()
         val playback = PlaybackSnapshot(
