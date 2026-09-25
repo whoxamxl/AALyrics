@@ -722,7 +722,7 @@ class PhoneLyricsMapperTest {
     }
 
     @Test
-    fun `Karaoke toggle does not change Phone playback projection when source timestamp is unavailable`() {
+    fun `WORD Karaoke toggle keeps the same projected lyrics position without source timestamp`() {
         val playback = PlaybackSnapshot(
             track = track(),
             status = PlaybackStatus.PLAYING,
@@ -734,8 +734,22 @@ class PhoneLyricsMapperTest {
         val lyrics = ready(
             playback = playback,
             lines = listOf(
-                TimedLyricLine("First", 0L),
-                TimedLyricLine("Second", 5_000L),
+                TimedLyricLine(
+                    "First word",
+                    0L,
+                    words = listOf(
+                        TimedWord("First", 0L, 1_000L),
+                        TimedWord("word", 1_000L, 2_000L),
+                    ),
+                ),
+                TimedLyricLine(
+                    "Second word",
+                    5_000L,
+                    words = listOf(
+                        TimedWord("Second", 5_000L, 6_000L),
+                        TimedWord("word", 6_000L, 7_000L),
+                    ),
+                ),
             ),
         )
 
@@ -744,7 +758,7 @@ class PhoneLyricsMapperTest {
             lyricsState = lyrics,
             plainLyricsAutoScrollEnabled = true,
             interactionMode = LyricsViewportInteractionMode.FOLLOW,
-            currentMonotonicTimeMs = 12_000L,
+            currentMonotonicTimeMs = 11_500L,
             playbackPositionFallbackUpdatedAtMonotonicMs = 10_000L,
             karaokeFeatureEnabled = true,
             karaokeModeEnabled = mode,
@@ -756,8 +770,12 @@ class PhoneLyricsMapperTest {
         assertEquals(1, off.currentLineIndex)
         assertEquals(off.currentLineIndex, on.currentLineIndex)
         assertEquals(off.playbackProgress, on.playbackProgress)
+        assertNull(off.currentWordIndex)
         assertNull(off.karaokeSweep)
-        assertNull(on.karaokeSweep)
+        assertEquals(0, on.currentWordIndex)
+        assertEquals(0.5f, on.currentWordProgress)
+        assertEquals(0.5f, on.karaokeSweep?.progress)
+        assertEquals(0 to 6, on.karaokeSweep?.let { it.start to it.end })
     }
 
     @Test
