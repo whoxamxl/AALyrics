@@ -1,344 +1,342 @@
-# Effective Timing Foundation + Existing Line Integration
+# Timing Semantic Engine + Behaviour-Preserving Wiring
 
 ## Branch and baseline
 
 - Branch: `feature/effective-timing-foundation`.
 - Base: `main` at `ae9ed3f27097388b32537ad4b40147679567efaf` (PR #79 merged).
-- Classification: TIMING / ARCHITECTURE / PURE CORE FOUNDATION.
-- Status: Phases 11.3a and 11.3b are implemented and validated on this branch; the existing Draft PR remains the stop point.
-- Authoritative references: `AGENTS.md`, `docs/ARCHITECTURE.md`, `docs/LYRICS_PIPELINE_ARCHITECTURE.md`, `docs/TIMING_ARCHITECTURE.md`, `docs/KARAOKE_ARCHITECTURE.md`, `docs/PRESENTATION_STATE_ARCHITECTURE.md`, `docs/MIGRATION_INVENTORY.md`, and current `main` code/tests.
+- Phase 11.3a — Effective Timing Foundation: implemented and validated.
+- Phase 11.3b — Existing timed-lyrics integration: implemented and validated.
+- Draft PR #80 was intentionally closed before review so the same branch can continue into the shared timing-semantic engine.
+- Active implementation has **not** started yet.
+- Before implementation begins, `docs/KARAOKE_ARCHITECTURE.md` still needs the separately planned consumer/rendering ownership alignment. Until that checkpoint is complete, it is background reference rather than the active implementation contract.
+
+Authoritative references for the active engine slice are:
+
+- `AGENTS.md`
+- this `TASK.md`
+- `docs/ARCHITECTURE.md`
+- `docs/LYRICS_PIPELINE_ARCHITECTURE.md`
+- `docs/TIMING_ARCHITECTURE.md`
+- `docs/ROADMAP.md`
+- current branch code/tests
 
 ## Goal
 
-Complete the framework-independent Phase 11.3a foundation and the separately authorized Phase 11.3b integration that routes the existing Phone current-line decision through that foundation.
+Implement one framework-neutral **Timing Semantic Engine** and wire it into the existing Phone production path without changing current UI behaviour.
 
-The completed foundation must provide a tested, reusable engine for one lyrics-specific virtual clock:
-
-```text
-effectiveLyricsPositionMs
-    = projectedPlaybackPositionMs + lyricsTimingOffsetMs
-```
-
-with these product semantics:
+Stable data flow:
 
 ```text
-positive offset -> advance lyrics
-negative offset -> delay lyrics
-zero offset     -> preserve current behavior
+projected playback position
+        +
+lyrics timing offset
+        ↓
+EffectiveLyricsPosition
+        +
+canonical timed lyrics
+        ↓
+Timing Semantic Engine
+        ↓
+LyricsTimingProjection
+├─ activeLineIndex
+├─ activeWordIndex
+├─ wordProgress
+└─ wordBoundary
+        ↓
+current Phone consumer
+        ↓
+activeLineIndex only
+        ↓
+existing UI behaviour unchanged
 ```
 
-Phase 11.3b is now explicitly authorized on this branch. It may connect the existing Phone current-line decision to `EffectiveLyricsPosition`, while the production offset remains zero by default. It must **not** add Sync UI, persistence, Android Auto timing integration, or Karaoke/WORD projection.
+The engine is shared timing semantics. It must **not** accept Karaoke mode as an input and must not branch on Karaoke ON/OFF.
 
-## User-facing sign contract
+Normal presentation and future Karaoke presentation consume the same semantic result. The current Phone consumer continues to use only `activeLineIndex`.
 
-The sign convention is fixed and must not be inverted by implementation details.
+## Current behaviour contract
 
-At the same real playback position:
+The active slice must preserve all current production behaviour:
 
-```text
-current:
-She'd take the world off | my shoulders if it was ever hard to move
+- `projectedPlaybackPosition(...)` remains unchanged;
+- production `LyricsTimingOffset` remains `ZERO`;
+- playback progress continues to use the real projected playback position, not effective lyrics position;
+- LINE_SYNC current-line selection remains exactly equivalent to the current `currentTimedLineIndex(...)` behaviour;
+- WORD_SYNC remains line-oriented in the current Phone UI;
+- current Phone WORD presentation still exposes no active word/sweep/progress;
+- PLAIN lyrics behaviour is unchanged;
+- Translation presentation and diagnostics are unchanged;
+- Sync UI remains a non-functional placeholder;
+- no timing persistence is added;
+- Android Auto timing/presentation is unchanged;
+- canonical provider timestamps are never rewritten.
 
-positive:
-She'd take the world off my shoulders | if it was ever hard to move
+A new engine may calculate additional WORD facts internally, but those facts must not become visible through the current UI in this slice.
 
-negative:
-She'd take the | world off my shoulders if it was ever hard to move
-```
+## Engine ownership
 
-Therefore:
+Extend the existing pure Kotlin/JVM `:core:timing` capability rather than create a Karaoke-mode-specific engine.
 
-- lyrics behind the music -> positive adjustment;
-- lyrics ahead of the music -> negative adjustment.
+After this slice, `:core:timing` owns:
 
-Future Phone/Android Auto controls may choose their own visual layout, but they must preserve this meaning.
+1. signed `LyricsTimingOffset`;
+2. `EffectiveLyricsPosition`;
+3. the pure effective-position transform;
+4. deterministic line/word timing semantics over canonical lyrics.
 
-## Current production baseline to preserve
+For semantic projection, `:core:timing` is authorized to depend on `:core:model`.
 
-Current `main` already has:
+It must remain independent of:
 
-- canonical normalized LINE/WORD timestamps in `:core:model`;
-- existing playback position projection in `PhoneLyricsMapper.projectedPlaybackPosition(...)`;
-- existing LINE current-row selection through `LyricsDocument.currentTimedLineIndex(positionMs)`;
-- Phone Translation presentation/diagnostics merged in PR #79 without changing timing ownership;
-- `SyncScreen` as an explicit non-functional placeholder;
-- no authorized timing offset persistence;
-- no effective-timing core module yet;
-- no production Karaoke/WORD projection.
-
-Phase 11.3b keeps the existing Phone playback projection helper in place. `PhoneLyricsMapper` derives `EffectiveLyricsPosition` from that projected position and a default-zero `LyricsTimingOffset`, then feeds only the existing current-line selector through the effective position. Playback progress continues to use the real projected playback position.
-
-## Working-fork re-check
-
-Working-fork `whoxamxl/auto-lyrics` `main` was re-checked at `8484bed2dbe8db5ca7b17dec5481b3c22714dc6f` (`v1.13.0`) on 2026-09-25.
-
-Relevant evidence:
-
-### `util/SyncCalibration.kt`
-
-The mature helper uses:
-
-```kotlin
-offsetForTap(targetTimeMs, rawPositionMs) = targetTimeMs - rawPositionMs
-```
-
-Its regression test proves:
-
-```text
-target 10,500 - raw 10,000 = +500
-target 10,000 - raw 10,500 = -500
-```
-
-This is compatible with the newly approved AALyrics convention when effective lyrics position is `raw/projected position + offset`:
-
-- positive advances the lyrics clock;
-- negative delays it.
-
-**PRESERVE / REFACTOR:** preserve this sign behavior.
-
-Do **not** migrate the old three-tap workflow or `upcomingTimedLineIndices(...)` in Phase 11.3a. Those are Sync calibration UX/policy and remain deferred.
-
-### `lyrics/KaraokeTiming.kt`
-
-The mature fork has tested active-word boundary semantics, including explicit end-time gaps and backward seeking.
-
-**PRESERVE / REFACTOR later:** keep this as Phase 11.4 evidence.
-
-Do **not** migrate active-word selection in Phase 11.3a. The foundation only creates the effective lyrics clock that a later Karaoke projection may consume.
-
-## Architectural ownership
-
-Phase 11.3a authorizes one new pure Kotlin/JVM capability module:
-
-```text
-:core:timing
-```
-
-It owns only framework-neutral timing offset semantics and effective-lyrics-position calculation.
-
-It must not own:
-
-- MediaSession or Android playback objects;
-- playback projection/monotonic ticking;
-- canonical lyrics mutation;
-- provider lookup/selection;
+- Android/framework types;
+- `:app`;
+- Phone/automotive UI;
+- providers and provider selection;
+- Translation;
 - persistence;
-- app lifecycle;
-- Phone/Android Auto UI;
-- current-line/current-word selection;
-- Karaoke projection.
+- MediaSession/runtime ownership;
+- coroutines/stateful ticking;
+- Karaoke mode/enablement;
+- rendering/layout primitives.
 
-The initial module should have **no production dependency** on Android, networking, providers, Translation, UI, or `:app`. It should also avoid depending on `:core:model` unless implementation evidence demonstrates a real need; the first transform only requires normalized millisecond values.
+Update the architecture guard so `core/timing` permits only its newly justified production dependency on `core:model`.
 
-## Canonical data invariant
+## Projection contract
 
-Provider/parser timestamps remain canonical.
-
-Phase 11.3a must not implement:
-
-```text
-sourceTimestamp += offset
-```
-
-or produce a copied lyrics document with rewritten timestamps.
-
-Instead:
-
-```text
-canonical source timestamp -----------┐
-                                      │ compare later
-projected playback position           │
-        + lyrics offset               │
-        ↓                             │
-effective lyrics position ------------┘
-```
-
-The pure timing engine does not need a `LyricsDocument` input.
-
-## Minimal production shape
-
-Use the smallest repository-idiomatic API that keeps signed offset and effective position semantically distinct.
-
-A preferred shape is conceptually:
+Use this concrete semantic shape unless implementation evidence requires a very small naming adjustment:
 
 ```kotlin
-@JvmInline
-value class LyricsTimingOffset(val milliseconds: Long)
+data class LyricsTimingProjection(
+    val activeLineIndex: Int?,
+    val activeWordIndex: Int?,
+    val wordProgress: Float?,
+    val wordBoundary: WordTimingBoundary,
+)
 
-@JvmInline
-value class EffectiveLyricsPosition(val milliseconds: Long)
+enum class WordTimingBoundary {
+    UNAVAILABLE,
+    BEFORE_FIRST,
+    ACTIVE,
+    GAP,
+    AFTER_LAST,
+}
 
-fun effectiveLyricsPosition(
-    projectedPlaybackPositionMs: Long,
-    offset: LyricsTimingOffset,
-): EffectiveLyricsPosition
+fun projectLyricsTiming(
+    document: LyricsDocument,
+    position: EffectiveLyricsPosition,
+): LyricsTimingProjection
 ```
 
-Equivalent naming/organization is acceptable if it remains equally small and preserves the documented semantics.
+Semantics:
+
+- `activeLineIndex` is an index into `LyricsDocument.lines`;
+- `activeWordIndex` is an index into the active `TimedLyricLine.words`;
+- `activeWordIndex == null` when no word is active;
+- `wordProgress` is `0f..1f` only when progress can be derived for the active word;
+- `wordProgress == null` when there is no active word or the active word has no defensible duration;
+- `wordBoundary` describes word-level timing state for the active timed line;
+- no field contains UI styling, animation cadence, text ranges, colors, alpha, scale, or Karaoke enablement.
+
+## LINE semantics
+
+LINE selection must preserve the existing production rule exactly:
+
+```text
+active line = latest TimedLyricLine whose startMs <= effectiveLyricsPosition
+```
+
+Rules:
+
+- return the original document-line index, including mixed plain/timed documents;
+- before the first timed line, return `null`;
+- an exact line start activates that line;
+- after the final line start, the final timed line remains active;
+- line `endMs` does not terminate `activeLineIndex` in this slice because current production behaviour does not use it for current-line selection;
+- negative effective position is valid and yields no active line;
+- backward seek is naturally deterministic because projection is stateless.
+
+Before production wiring replaces the app-local current-line calculation, tests must prove parity with the existing behaviour.
+
+## WORD semantics
+
+WORD semantics are derived only from the active timed line.
+
+When the active line has no timed words:
+
+```text
+activeWordIndex = null
+wordProgress    = null
+wordBoundary    = UNAVAILABLE
+```
+
+For a line with words:
+
+1. choose the latest word whose `startMs <= effectiveLyricsPosition`;
+2. if none has started, use `BEFORE_FIRST`;
+3. an explicit `endMs` is exclusive: `position >= endMs` means that word is no longer active;
+4. if the latest started word has explicitly ended and a later word has not started, use `GAP`;
+5. if the final explicitly-ended word has ended, use `AFTER_LAST`;
+6. if a word has no explicit end, it remains the latest active word until a later word starts;
+7. an ended newer word must not reactivate an older open-ended word;
+8. backward seek must select the earlier semantic state directly; no retained state/history is allowed.
+
+These preserve/refactor the mature working-fork `KaraokeTiming` behaviour rather than its Android rendering architecture.
+
+## Word progress
+
+For an active word:
+
+- when `endMs > startMs`, derive progress from that explicit interval;
+- when `endMs == null` and the next word starts later, the next word's start may be used as the inferred progress end;
+- when no defensible end exists (for example the final open-ended word), keep the word active but return `wordProgress = null`;
+- do not introduce an arbitrary fallback duration into the shared semantic engine;
+- zero-duration explicit words must not produce division-by-zero or fabricated progress;
+- clamp only the returned progress fraction to `0f..1f`; do not mutate timestamps or effective position.
+
+Display-token grouping, lexical range mapping, sweep easing, and final-word visual fallback durations are rendering/consumer concerns and are outside this slice.
+
+## Production wiring
+
+After semantic tests are established:
+
+```text
+PhoneLyricsMapper
+    projectedPlaybackPosition
+            +
+    LyricsTimingOffset.ZERO
+            ↓
+    EffectiveLyricsPosition
+            +
+    canonical LyricsDocument
+            ↓
+    projectLyricsTiming(...)
+            ↓
+    projection.activeLineIndex
+            ↓
+    existing LyricsViewport current line
+```
 
 Requirements:
 
-- provide an explicit zero/neutral offset;
-- positive values advance the effective lyrics position;
-- negative values delay it;
-- do not silently clamp to zero or track duration;
-- a negative effective position is valid and means "before timed lyrics";
-- do not add current-line/current-word logic to prove the API;
-- do not add coroutine/state machinery for a pure arithmetic transform.
+- use `projection.activeLineIndex` for the existing current-line field;
+- keep `playbackProgress` on `projectedPlaybackPositionMs`;
+- do not expose `activeWordIndex`, `wordProgress`, or `wordBoundary` to the current Phone UI;
+- keep WORD source downgraded to current line-oriented Phone presentation;
+- remove the duplicate app-local production current-line algorithm once parity is proven, so timing semantics have one owner;
+- do not change `PhoneRuntimeHost` to provide a non-zero offset.
 
-## Build/module integration
+## Working-fork evidence
 
-The foundation is considered architecturally integrated when:
+Working fork: `whoxamxl/auto-lyrics` `v1.13.0`.
 
-- `:core:timing` is included in `settings.gradle.kts`;
-- it uses the Kotlin/JVM plugin and JDK 17, matching existing pure-core modules;
-- its production dependency surface is empty unless a concrete requirement proves otherwise;
-- `scripts/verify-architecture.sh` treats `core/timing` as a pure module and rejects Android/network/unauthorized production dependencies;
-- its unit tests run in the normal repository test/build path.
+Preserve/refactor these semantic behaviours from `lyrics/KaraokeTiming.kt`:
 
-Phase 11.3b introduces the first real consumer: `:app` may depend on `:core:timing` because `PhoneLyricsMapper` now routes current-line selection through the effective position. Do not add any other consumer merely to manufacture usage.
+- latest-started word selection;
+- explicit end times leave gaps unhighlighted;
+- missing end falls back to latest-started word;
+- an ended newer word does not reactivate an older open-ended word;
+- backward seek deterministically selects earlier words.
 
-## Deterministic test contract
+Do **not** migrate into this engine:
 
-Add focused tests for at least:
-
-1. zero offset returns the projected position unchanged;
-2. positive offset advances the effective lyrics position;
-3. negative offset delays the effective lyrics position;
-4. a positive example matches the documented human sign convention;
-5. a negative example matches the documented human sign convention;
-6. a result may be negative rather than silently clamped;
-7. source timestamps are not part of mutable timing state and are not rewritten by this API.
-
-Suggested concrete examples:
-
-```text
-31,200 +    0 = 31,200
-31,200 +  800 = 32,000
-31,200 + -800 = 30,400
-   200 + -500 =   -300
-```
-
-Do not add LINE/WORD boundary tests here unless production integration is also changed, which is outside this slice.
+- `KaraokeSweepSpan`;
+- display-range/layout mapping;
+- arbitrary final-group visual fallback duration;
+- Compose/Canvas/Span behaviour;
+- Karaoke enablement state.
 
 ## Scope guardrails
 
-Do **not** implement or modify any of the following in Phase 11.3a:
+Do not implement in this slice:
 
-- `PhoneLyricsMapper` current-line behavior;
-- `projectedPlaybackPosition(...)` behavior;
-- `LyricsDocument.currentTimedLineIndex(...)`;
-- `SyncScreen` UI;
-- +/- controls, slider, step sizes, labels, or reset button;
-- SharedPreferences/DataStore timing state;
-- global/per-track/provider/Phone/Android Auto offset scope;
-- automatic calibration;
-- three-tap calibration;
+- Sync controls or SyncScreen behaviour;
+- timing persistence or calibration scope;
+- non-zero production timing offset;
+- provider-specific timing correction;
 - drift/rate correction;
 - audio/waveform analysis;
-- provider-specific timestamp correction;
-- Android Auto timing presentation;
-- Karaoke active-word/progress semantics;
-- WORD sweep/rendering;
-- Translation timing behavior.
-
-If implementation reveals a defect in an existing area, record it separately unless it directly blocks this foundation.
+- Karaoke mode toggle/enablement;
+- Karaoke consumer/presenter;
+- Karaoke sweep/rendering;
+- word highlighting in Phone UI;
+- Android Auto timing/Karaoke wiring;
+- text/token layout mapping;
+- Translation timing changes.
 
 ## Reset AALyrics contract
 
-Phase 11.3a adds no persisted state.
+No persisted state is introduced.
 
 Therefore:
 
-- `Reset AALyrics` behavior must remain unchanged;
-- no reset copy change is required;
-- no timing preference should be added preemptively.
-
-Phase 11.3c must re-evaluate Reset if/when a durable offset is introduced.
-
-## Expected implementation touch points
-
-Expected:
-
-- `settings.gradle.kts`
-- `core/timing/build.gradle.kts` (new)
-- `core/timing/src/main/kotlin/io/github/whoxamxl/aalyrics/core/timing/...kt` (new)
-- `core/timing/src/test/kotlin/io/github/whoxamxl/aalyrics/core/timing/...Test.kt` (new)
-- `scripts/verify-architecture.sh`
-- `TASK.md` / timing architecture docs only if implementation evidence requires a small correction
-
-Not expected:
-
-- `app/src/main/**`
-- `ui/**/src/main/**`
-- provider modules
-- Translation modules
-- Android manifests/resources
+- `Reset AALyrics` remains unchanged;
+- reset copy remains unchanged;
+- no timing preference is added.
 
 ## Implementation checkpoints
 
-Implement in small coherent commits.
+Implement in small coherent commits and push each completed checkpoint.
 
-1. [x] **Pure timing module + transform**
-   - add `:core:timing`;
-   - add the signed offset/effective-position model;
-   - add the pure `projected + offset` transform;
-   - no app/UI integration.
+1. [ ] **Pure semantic model + LINE projection**
+   - add `LyricsTimingProjection` / `WordTimingBoundary`;
+   - implement LINE selection in `:core:timing`;
+   - allow only `:core:model` as the new production dependency;
+   - add parity tests for existing current-line semantics.
 
-2. [x] **Tests + architecture guard**
-   - add deterministic sign/zero/negative-position tests;
-   - register `core/timing` as a pure module in `verify-architecture.sh`;
-   - ensure no unauthorized production dependencies are introduced.
+2. [ ] **WORD selection + boundary semantics**
+   - add active-word selection;
+   - preserve explicit-end gaps, open-ended fallback, no older-word reactivation, and backward-seek semantics;
+   - cover exact start/end and negative/before cases.
 
-3. [x] **11.3a validation + final alignment**
-   - architecture checks, unit tests, and debug APK build passed;
-   - the initial Draft PR was opened after 11.3a validation.
+3. [ ] **Word progress**
+   - explicit-end progress;
+   - inferred-next-start progress;
+   - null progress when duration is not defensible;
+   - zero-duration safety.
 
-4. [x] **11.3b existing line integration**
-   - add the real `:app -> :core:timing` consumer;
-   - keep the existing playback projection helper unchanged;
-   - derive effective lyrics position with a default-zero offset;
-   - route only `currentTimedLineIndex(...)` through effective lyrics position;
-   - keep playback progress on the real projected playback position;
-   - add positive/negative boundary-crossing regression coverage.
+4. [ ] **Behaviour-preserving production wiring**
+   - route Phone current-line selection through `LyricsTimingProjection.activeLineIndex`;
+   - remove duplicate production current-line semantics;
+   - keep current WORD/LINE/PLAIN UI behaviour unchanged;
+   - keep playback progress unchanged.
 
-5. [x] **11.3b final re-validation**
-   - run architecture checks;
-   - run unit tests;
-   - build the debug APK/repository build path;
-   - inspect the branch-wide diff for scope drift;
-   - confirm no Sync UI, persistence, Reset, Android Auto, or Karaoke behavior was added;
-   - update the existing Draft PR evidence, then stop.
+5. [ ] **Final validation**
+   - architecture guard;
+   - `:core:timing` tests;
+   - relevant app mapper tests;
+   - repository unit tests;
+   - debug APK build;
+   - branch-wide regression/scope audit;
+   - verify no user-visible timing/Karaoke/Sync change;
+   - update docs only when implementation evidence requires correction.
 
-Phase 11.3a validation previously passed in Build runs 36098879658 and 36099140235. Phase 11.3b validation passed in [Build run 36100805321](https://github.com/whoxamxl/AALyrics/actions/runs/36100805321): branch/commit checks, architecture guard, debug APK build, and repository unit tests all succeeded. Phase 11.3b adds no persisted state, so `Reset AALyrics` still needs no change.
+Do not open a PR during checkpoints.
 
-## Documentation alignment checkpoints
-
-The documentation preparation for this implementation is complete in three tasks:
-
-1. [x] remove stale completed-slice status after Update and PR #79 Translation merge;
-2. [x] fix the Timing/effective-position semantics across Timing, Karaoke, pipeline, presentation, and Phone boundary docs;
-3. [x] record the working-fork evidence, concrete module boundary, implementation scope, acceptance criteria, and Codex-ready task contract.
+After all implementation and final validation are complete, open a new **Draft PR** and stop according to `AGENTS.md`.
 
 ## Acceptance criteria
 
-Phase 11.3a is complete when:
+The slice is complete when:
 
-- a pure, tested effective-lyrics-position engine exists;
-- the sign convention is unambiguous and regression-tested;
-- canonical lyrics/source timestamps remain untouched;
-- zero offset is behaviorally neutral;
-- `:core:timing` is part of the build and architecture guard;
-- there is no user-visible behavior change;
-- no persistence/reset scope is added;
-- the existing Phone current-line call site explicitly consumes effective lyrics position with a default-zero offset;
-- playback progress remains based on real projected playback position;
-- Android Auto and Karaoke call sites remain unchanged;
-- CI/build/tests are green;
-- review finds no current-scope blocking issue.
+- one shared semantic engine owns current LINE and WORD timing facts;
+- the engine consumes canonical lyrics + `EffectiveLyricsPosition`;
+- Karaoke mode is not an engine input;
+- LINE active-line output is regression-equivalent to current production behaviour;
+- WORD active/boundary behaviour matches the documented semantic contract;
+- word progress is deterministic and does not invent timing when duration is unknown;
+- Phone production uses the engine but still consumes only `activeLineIndex`;
+- current Phone LINE/WORD/PLAIN behaviour is unchanged;
+- playback progress is unchanged;
+- canonical timestamps remain immutable;
+- no persistence/Reset/Sync/Karaoke UI scope is added;
+- CI/build/tests are green.
 
-## Stop point
+## Documentation checkpoint before implementation
 
-After Phase 11.3b is re-validated, **stop** at the existing Draft PR.
+This task and the timing/pipeline/roadmap architecture are aligned for the shared semantic engine.
 
-Do not continue automatically into Sync UX/persistence. Phase 11.3c remains deferred. Karaoke/WORD timing semantics remain a separate engine slice even if later authorized on this branch.
+One documentation checkpoint remains intentionally separate before implementation starts:
+
+- [ ] align `docs/KARAOKE_ARCHITECTURE.md` with the decided consumer model: shared engine is mode-agnostic; Normal consumes line facts; future Karaoke consumes additional word/progress/boundary facts.
+
+Stop here until that documentation checkpoint is explicitly authorized.

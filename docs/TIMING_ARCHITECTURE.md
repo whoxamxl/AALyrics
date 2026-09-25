@@ -2,11 +2,13 @@
 
 ## Status
 
-The timing/calibration architecture is now authorized for a first implementation foundation.
+Phase 11.3a (effective-position foundation) and Phase 11.3b (existing current-line integration) are implemented and validated on `feature/effective-timing-foundation`.
 
-The first slice establishes a framework-independent effective-lyrics clock and its sign semantics only. It does **not** add Sync controls, persistence, per-track/provider/device calibration, drift correction, or Karaoke projection.
+The next authorized timing-engine scope is the shared **Timing Semantic Engine**: canonical timed lyrics + `EffectiveLyricsPosition` produce deterministic line/word/progress/boundary facts. The engine is mode-agnostic; Karaoke ON/OFF is not an input.
 
-The working fork contains `lyrics/KaraokeTiming.kt` and `util/SyncCalibration.kt`. They were re-checked at `v1.13.0` on 2026-09-25. `SyncCalibration.offsetForTap(targetTimeMs, rawPositionMs) = targetTimeMs - rawPositionMs` already uses the same sign behavior required here when combined with `effective = projected + offset`, so that sign convention is **PRESERVE / REFACTOR**. The legacy three-tap/upcoming-line workflow remains deferred. `KaraokeTiming` remains Phase 11.4 evidence and must not be migrated into this foundation.
+The current Phone production consumer will be wired to the engine but will continue consuming only the active-line fact, preserving current UI behaviour. Sync controls, persistence, non-zero production calibration, Karaoke consumer/rendering, and Android Auto timing presentation remain outside this scope.
+
+The working fork contains `lyrics/KaraokeTiming.kt` and `util/SyncCalibration.kt`. They were re-checked at `v1.13.0` on 2026-09-25. `SyncCalibration.offsetForTap(targetTimeMs, rawPositionMs) = targetTimeMs - rawPositionMs` preserves the approved sign convention. `KaraokeTiming` provides mature active-word boundary evidence that is **PRESERVE / REFACTOR**; Android-specific sweep/layout behaviour remains outside the shared engine.
 
 ## Purpose
 
@@ -139,23 +141,25 @@ effectiveLyricsPositionMs
 
 The exact Kotlin type names may follow repository conventions, but the semantics above are fixed.
 
-## What the foundation does not decide
+## Timing semantic projection
 
-The first foundation does **not** decide which line or word is active.
-
-That is a downstream semantic projection:
+The effective-position transform and timing semantics are separate layers inside the same timing capability:
 
 ```text
 canonical LINE/WORD timestamps
             +
-effective lyrics position
+EffectiveLyricsPosition
             ↓
-current line / current word / progress
+Timing Semantic Engine
+            ↓
+active line / active word / word progress / word boundary
 ```
 
-Phase 11.3b routes the existing Phone LINE/current-line lookup through effective lyrics position instead of raw projected playback position. The production offset remains zero by default, so visible behavior is unchanged. Future Karaoke may derive word/progress facts from the same effective position.
+The semantic engine is not a Karaoke-mode engine. It returns the same facts regardless of how presentation later chooses to consume them.
 
-The timing foundation itself must not grow a second current-line/current-word implementation merely to prove the offset transform.
+Phase 11.3b currently feeds effective position into the legacy app-local current-line selector. The next engine slice replaces that duplicate production selector with the shared projection only after parity tests prove identical line behaviour.
+
+Current Phone presentation continues to consume only the active-line result, so computing additional WORD facts must not by itself change UI behaviour.
 
 ## Playback clock ownership
 
@@ -186,7 +190,11 @@ Rules:
 
 ## Relationship to LINE_SYNC
 
-LINE_SYNC will eventually compare canonical line starts against effective lyrics position.
+LINE active-line semantics are fixed by current production behaviour:
+
+```text
+active line = latest TimedLyricLine whose startMs <= effective lyrics position
+```
 
 Example:
 
@@ -196,38 +204,40 @@ line B start = 15,000 ms
 line C start = 20,000 ms
 
 effective lyrics position = 17,500 ms
-=> line B is active under the existing line-boundary semantics
+=> line B is active
 ```
 
-Phase 11.3a does not change the existing line-boundary semantics. Phase 11.3b keeps those semantics unchanged and only replaces their position input with effective lyrics position. Playback progress remains tied to the real projected playback position.
+The projection returns the original `LyricsDocument.lines` index. Before the first timed line (including a negative effective position), no line is active. Exact start timestamps activate the new line. Line `endMs` does not terminate the active-line fact in this slice because current production current-line semantics do not use it.
 
-## Relationship to WORD_SYNC / Karaoke
+The new engine must prove parity before replacing the existing app-local selector. Playback progress remains tied to the real projected playback position.
 
-WORD timing follows the same clock rule.
+## Relationship to WORD_SYNC
 
-Future Karaoke consumes:
+WORD timing follows the same effective clock and is part of the shared timing semantic projection:
 
 ```text
-canonical word/segment timestamps
+canonical word timestamps
         +
-effective lyrics position
+EffectiveLyricsPosition
         ↓
-karaoke semantic projection
+shared Timing Semantic Engine
         ↓
-active line / active word / progress
+active word / word progress / word boundary
 ```
 
-Karaoke must never add the offset again.
+Stable word-selection rules:
 
-The foundation does not implement:
+- choose the latest word whose start has occurred;
+- explicit `endMs` is exclusive and may create an unhighlighted gap;
+- a newer explicitly-ended word does not reactivate an older open-ended word;
+- an open-ended word remains active until a later word starts;
+- backward seek is stateless and deterministically recomputes earlier facts.
 
-- active-word calculation;
-- word-progress interpolation;
-- sweep animation;
-- malformed/overlapping-word policy;
-- line-only synthetic progress.
+Word progress uses an explicit end when available. When an open-ended word has a later word with a later start, that next start may bound progress. If no defensible end exists, the word may remain active while progress is unavailable.
 
-Those remain Phase 11.4 concerns.
+The shared engine must not invent visual fallback durations, lexical display ranges, sweep easing, or Karaoke enablement. Those are downstream consumer/rendering concerns.
+
+Karaoke must consume this semantic output and must never add the timing offset again.
 
 ## Relationship to Translation
 
@@ -303,38 +313,47 @@ Effective lyrics position
 
 Verbose Details must consume already-owned values and must not become the timing owner.
 
-## Deterministic foundation tests
+## Deterministic tests
 
-The first timing foundation must cover at least:
+The effective-position foundation already covers zero/positive/negative offset semantics.
 
-- zero offset preserves projected playback position exactly;
-- positive offset advances effective lyrics position;
-- negative offset delays effective lyrics position;
-- positive and negative examples preserve the documented sign convention;
-- negative effective position is representable without rewriting source timing;
-- canonical source timestamps are not inputs mutated by the transform.
+The shared semantic engine must additionally cover:
 
-LINE/WORD boundary, seek, pause/resume, playback-rate, and track-change integration tests belong to the later integration slice unless the foundation implementation directly touches those call sites.
+- LINE parity with current production selection;
+- mixed plain/timed document indices;
+- before-first, exact-start, between-line, after-last, negative-position, and backward-seek LINE cases;
+- WORD before-first, exact-start, explicit-end, gap, after-last, open-ended, newer-word-ended, and backward-seek cases;
+- explicit-end word progress;
+- inferred-next-start word progress;
+- unavailable progress for an open-ended final word;
+- zero-duration safety;
+- Phone mapper regression proving current WORD/LINE/PLAIN presentation remains unchanged when the engine is wired.
 
 ## Implementation sequence
 
-The intended sequence is:
+Current execution order is intentionally engine-first and UX-later:
 
 ```text
-Phase 11.3a — Effective Timing Foundation
-    pure offset model + effective lyrics position engine
+Phase 11.3a — Effective Timing Foundation                 ✅
+    pure offset model + effective lyrics position
             ↓
-Phase 11.3b — Existing timed-lyrics integration
-    implemented: Phone/current-line timing consumes effective lyrics position
+Phase 11.3b — Existing timed-lyrics integration          ✅
+    current Phone line path consumes effective position
             ↓
-Phase 11.3c — Sync calibration UX
-    user controls + scope/persistence only after explicit decisions
+Phase 11.4a — Shared Timing Semantic Engine              active next
+    LINE + WORD + progress + boundary semantics
+    + behaviour-preserving Phone wiring
             ↓
-Phase 11.4 — Karaoke / WORD projection
-    consume the same effective lyrics position
+Phase 11.3c — Sync calibration UX                        deferred
+    controls + scope + persistence
+            ↓
+Phase 11.4b — Karaoke consumer/rendering                 deferred
+    consume shared semantic facts; do not recompute them
 ```
 
-Do not collapse these phases into one PR.
+Phase numbering groups capabilities; implementation order follows dependency and regression safety.
+
+The active semantic-engine work continues on the existing timing topic branch. Its previous Draft PR was intentionally closed before review so implementation can continue without treating a partial checkpoint as final review scope.
 
 ## Architecture guardrails
 
@@ -345,6 +364,9 @@ The implementation must preserve these invariants:
 - the only foundation equation is `projectedPosition + offset`;
 - calibration math is not duplicated in Phone or automotive UI;
 - timing changes do not refetch providers or reselect lyrics;
-- the foundation is framework-independent;
+- the timing capability remains framework-independent;
+- `:core:timing` may depend on `:core:model` for semantic projection, but not Android/UI/provider/Translation/runtime infrastructure;
+- the shared semantic engine does not accept Karaoke enablement/mode as input;
+- current Phone presentation may consume only the active-line fact while preserving existing behaviour;
 - Sync UI and persistence remain out of scope until separately authorized;
-- Karaoke consumes effective lyrics position and never reapplies the offset.
+- future Karaoke consumers use shared semantic output and never reapply the offset or duplicate line/word timing semantics.

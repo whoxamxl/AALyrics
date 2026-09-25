@@ -323,9 +323,26 @@ The integration deliberately keeps `projectedPlaybackPosition(...)` unchanged, k
 
 This slice establishes the real timing-consumer boundary before any user calibration state exists.
 
+### Phase 11.4a — Shared Timing Semantic Engine — active documentation scope
+
+Build one framework-neutral projection from canonical timed lyrics + `EffectiveLyricsPosition` into shared timing facts:
+
+- active line;
+- active word when WORD timing exists;
+- deterministic word progress when duration is defensible;
+- explicit word boundary state for before/active/gap/after cases.
+
+The engine is presentation-mode agnostic. Karaoke ON/OFF is not an input.
+
+After semantic parity is proven, wire the current Phone production path to the engine while continuing to consume only `activeLineIndex`. LINE_SYNC, WORD_SYNC normal presentation, PLAIN lyrics, playback progress, Translation, Sync UI, and Android Auto must remain behaviourally unchanged.
+
+The existing timing topic branch continues for this work. Draft PR #80 was closed before review because it represented only the earlier 11.3a/11.3b checkpoint.
+
 ### Phase 11.3c — Sync calibration UX — deferred
 
-Only after the engine and zero-offset integration are proven, define the actual Sync interaction:
+UX deliberately follows the semantic engine.
+
+Only after shared timing semantics and behaviour-preserving wiring are proven, define:
 
 - adjustment controls and step sizes;
 - scope (session/global/track/provider/presentation-specific);
@@ -336,11 +353,11 @@ Only after the engine and zero-offset integration are proven, define the actual 
 
 Do not infer these choices from the legacy app or from the current placeholder.
 
-### Phase 11.4 — Karaoke projection
+### Phase 11.4b — Karaoke consumer/rendering — deferred
 
-Implement a framework-neutral semantic projection from timed lyrics + effective timing + playback position into line/word/progress facts.
+Karaoke presentation will consume the already-computed shared timing projection rather than own current-line/current-word/progress calculations.
 
-Must follow `docs/KARAOKE_ARCHITECTURE.md`. Phone Compose rendering and Android Auto host rendering stay downstream and may differ visually, but they must not duplicate karaoke timing semantics.
+The detailed Karaoke consumer/rendering contract is a separate documentation checkpoint before implementation. Phone Compose and Android Auto may render differently, but neither may duplicate timing semantics.
 
 ### Phase 11.5 — Presentation state integration
 

@@ -88,20 +88,29 @@ Pure Kotlin application lyrics orchestration. It owns `LyricsState`, lookup iden
 
 It must not become a general-purpose cache, translation, timing, karaoke, persistence, or presentation orchestrator merely because those capabilities consume lyrics.
 
-### `:core:timing` — Phase 11.3a authorized
+### `:core:timing`
 
-A dedicated pure Kotlin/JVM timing capability for the first effective-timing foundation.
+A dedicated pure Kotlin/JVM timing capability.
 
-The first authorized responsibilities are intentionally small:
+Implemented foundation responsibilities:
 
-- represent the signed lyrics timing offset semantics;
-- derive effective lyrics position from projected playback position plus that offset;
-- define zero offset as the neutral behavior;
-- remain framework-independent and stateless.
+- represent signed `LyricsTimingOffset` semantics;
+- derive `EffectiveLyricsPosition` from projected playback position plus offset;
+- define zero offset as neutral behaviour.
 
-The sign convention is fixed: positive advances lyrics, negative delays lyrics.
+The next authorized responsibility is the shared timing semantic engine:
 
-Phase 11.3a does not give `:core:timing` ownership of MediaSession projection, canonical lyrics mutation, persistence, Sync UI, current-line/current-word selection, or Karaoke projection. The initial module should have no production dependencies unless concrete implementation evidence proves one necessary.
+- consume canonical `:core:model` timed lyrics + `EffectiveLyricsPosition`;
+- project active line;
+- project active word for WORD timing;
+- derive word progress only when duration is defensible;
+- expose word boundary facts deterministically.
+
+The sign convention remains fixed: positive advances lyrics, negative delays lyrics.
+
+`:core:timing` is now authorized to depend on `:core:model` for this semantic projection and on no other production module. It remains framework-independent and stateless.
+
+It must not own MediaSession projection, canonical lyrics mutation, providers, Translation, persistence, Sync UI, Karaoke enablement, Phone/automotive presentation, rendering, layout, or animation cadence.
 
 ### `:provider:selection`
 
@@ -409,13 +418,13 @@ Stable rules:
 - cache/storage infrastructure stays behind a replaceable data-access boundary;
 - translation is additive and must not overwrite valid original lyrics;
 - calibration keeps source timing immutable and derives `effectiveLyricsPosition = projectedPlaybackPosition + lyricsOffset`; positive advances lyrics and negative delays lyrics;
-- karaoke semantics are framework-neutral and shared before surface-specific rendering;
+- line/word timing semantics are framework-neutral and shared in the timing capability before Normal or Karaoke presentation consumes them;
 - Phone and automotive consume common semantic facts but retain independent surface state;
 - asynchronous/persisted derived work must respect canonical lyrics identity and stale-result ownership;
 - optional capability failure must not erase valid lower-level lyrics state;
 - providers, MediaSession runtime, `LyricsCoordinator`, and UI must not absorb unrelated capability ownership.
 
-This foundation generally avoids speculative concrete module names and APIs. Translation introduced concrete modules only when its implementation slices justified them, and Phase 11.3a now similarly authorizes only the minimal `:core:timing` module and effective-position contract. Cache storage, timing persistence/scope, Sync UX, drift algorithms, Karaoke DTOs, ViewModels, and final UI-state shapes remain deferred until their own evidence-bearing slices.
+This foundation generally avoids speculative concrete modules and APIs. Translation introduced concrete modules only when implementation justified them; timing now has enough evidence to extend the existing `:core:timing` module with shared semantic projection over `:core:model`. Cache storage, timing persistence/scope, Sync UX, drift algorithms, Karaoke consumer/rendering contracts, ViewModels, and final UI-state shapes remain deferred until their own evidence-bearing slices.
 
 ## Core responsibilities
 

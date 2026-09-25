@@ -122,17 +122,21 @@ See `docs/TRANSLATION_ARCHITECTURE.md`.
 
 ### Timing and calibration
 
-Timing/calibration preserves canonical source timing and derives a lyrics-only virtual clock for playback-dependent behavior. The first authorized foundation fixes the sign convention and equation `effectiveLyricsPosition = projectedPlaybackPosition + lyricsOffset`: positive advances lyrics, negative delays lyrics, and zero preserves current behavior.
+Timing/calibration preserves canonical source timing and derives a lyrics-only virtual clock for playback-dependent behavior. The implemented foundation fixes `effectiveLyricsPosition = projectedPlaybackPosition + lyricsOffset`: positive advances lyrics, negative delays lyrics, and zero preserves current behavior.
+
+The next shared timing-semantic layer consumes canonical timed lyrics + effective lyrics position and deterministically projects active line/word/progress/boundary facts. These facts are independent of Karaoke enablement and are shared by Normal and future Karaoke presentation.
 
 Offset scope, persistence, Sync UI, provider/track/device-specific correction, and drift/rate correction remain deferred.
 
 See `docs/TIMING_ARCHITECTURE.md`.
 
-### Karaoke projection
+### Karaoke consumption
 
-Karaoke is a framework-neutral semantic projection over canonical timed lyrics and the timing capability's effective lyrics position. It decides semantic playback facts such as active line/word/progress; it does not render Compose, spans, canvas primitives, or Android Auto templates.
+Karaoke does not own the shared active-line/active-word/progress calculation. Those facts come from the timing semantic engine.
 
-See `docs/KARAOKE_ARCHITECTURE.md`.
+Future Karaoke work consumes that projection and maps it into Karaoke-specific presentation/rendering while remaining independent of Compose/Canvas/Span/Android Auto implementation details at the shared semantic boundary.
+
+The detailed consumer/rendering ownership contract remains a separate documentation checkpoint in `docs/KARAOKE_ARCHITECTURE.md` before Karaoke implementation.
 
 ### Presentation state
 
@@ -234,15 +238,18 @@ Phone Translation presentation integration  ✅
   │
   ├──────────────> Timing / Calibration
   │                    ↓
-  │              Karaoke Projection
+  │              Timing Semantic Engine
   │                    ↓
+  │              Normal presentation
+  │                    └────> future Karaoke consumer/rendering
+  │
   └──────────────> broader Presentation State / Automotive integration
 
 Persistent cache
   -> separate later capability only when explicitly authorized
 ```
 
-Phone Translation presentation is complete and preserves canonical line/timing ownership by adding only identity-aligned text to the existing row. Timing/calibration and Karaoke remain independent later capabilities, and Android Auto Translation remains a separate surface integration.
+Phone Translation presentation is complete and preserves canonical line/timing ownership by adding only identity-aligned text to the existing row. Effective timing and current-line integration are implemented; the next timing slice adds the shared semantic engine while preserving current presentation. Sync UX, Karaoke consumer/rendering, and Android Auto Translation remain separate later work.
 
 This sequencing reduces architectural churn while preserving Cache as an independent capability. It does not forbid non-persistent in-memory lifecycle state needed by Translation execution.
 
@@ -289,8 +296,8 @@ This umbrella intentionally does not decide:
 - whether each capability needs its own Gradle module;
 - cache placement, schema, storage engine, TTL, or invalidation policy;
 - concrete Translation Provider request/candidate signatures, contextual batching heuristics, LanguageProfiler thresholds, or persistent Translation cache implementation;
-- calibration scope, persistence, offset/drift algorithm, or editing workflow;
-- karaoke projection DTO shape, interpolation policy, update cadence, or visual rendering;
+- calibration scope, persistence, drift algorithm, or editing workflow;
+- Karaoke consumer/rendering DTOs, update cadence, visual styling, lexical layout, or sweep animation;
 - shared presentation-facts DTO, ViewModel structure, DI framework, Flow composition, or surface state fields;
 - final implementation order when product evidence justifies a different sequence.
 
