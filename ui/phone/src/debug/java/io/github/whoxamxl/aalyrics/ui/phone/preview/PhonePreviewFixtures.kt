@@ -37,8 +37,8 @@ internal object PhonePreviewFixtures {
         syncLabel = "Word synced",
         lyricsStatus = TrackCardLyricsStatus.READY,
     )
-    val trackCardTranslationOn = trackCardReady.copy(
-        translation = TrackCardTranslationUiState.On,
+    val trackCardTranslationEnabled = trackCardReady.copy(
+        translation = TrackCardTranslationUiState.Enabled,
     )
     val trackCardTranslationDownloadingModels = trackCardReady.copy(
         translation = TrackCardTranslationUiState.DownloadingModels,

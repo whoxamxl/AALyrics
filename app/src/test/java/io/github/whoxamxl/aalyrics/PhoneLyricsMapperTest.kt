@@ -177,7 +177,7 @@ class PhoneLyricsMapperTest {
             currentMonotonicTimeMs = 1_000L,
             translationSettings = enabledTranslation,
         )
-        assertEquals(TrackCardTranslationUiState.On, enabled.trackCard.translation)
+        assertEquals(TrackCardTranslationUiState.Enabled, enabled.trackCard.translation)
 
         val downloading = mapPhoneLyricsState(
             playback = playback,

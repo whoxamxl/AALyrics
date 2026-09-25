@@ -183,8 +183,8 @@ private fun TranslationStatusRow(
         when (state) {
             TrackCardTranslationUiState.Off -> Unit
 
-            TrackCardTranslationUiState.On -> TranslationStatusText(
-                text = stringResource(R.string.track_card_translation_on),
+            TrackCardTranslationUiState.Enabled -> TranslationStatusText(
+                text = stringResource(R.string.track_card_translation_enabled),
                 color = AALyricsColors.TextSecondary,
             )
 

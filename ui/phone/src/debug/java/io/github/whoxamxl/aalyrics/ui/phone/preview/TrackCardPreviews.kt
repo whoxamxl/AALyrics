@@ -23,8 +23,8 @@ private fun TrackCardReadyPreview() {
 
 @Preview(name = "Translation enabled", group = "TrackCard · Translation", widthDp = 412, showBackground = true)
 @Composable
-private fun TrackCardTranslationOnPreview() {
-    TrackCardPreview(state = PhonePreviewFixtures.trackCardTranslationOn, showArtwork = true)
+private fun TrackCardTranslationEnabledPreview() {
+    TrackCardPreview(state = PhonePreviewFixtures.trackCardTranslationEnabled, showArtwork = true)
 }
 
 @Preview(name = "Downloading models", group = "TrackCard · Translation", widthDp = 412, showBackground = true)

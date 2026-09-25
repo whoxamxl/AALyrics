@@ -221,7 +221,7 @@ private fun mapTrackCardTranslationState(
 
         TranslationModelPhase.CHECKING,
         TranslationModelPhase.READY,
-        null -> TrackCardTranslationUiState.On
+        null -> TrackCardTranslationUiState.Enabled
     }
 }
 

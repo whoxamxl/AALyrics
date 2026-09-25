@@ -15,7 +15,7 @@ enum class TrackCardLyricsStatus {
 @Immutable
 sealed interface TrackCardTranslationUiState {
     data object Off : TrackCardTranslationUiState
-    data object On : TrackCardTranslationUiState
+    data object Enabled : TrackCardTranslationUiState
     data object DownloadingModels : TrackCardTranslationUiState
     data object Translating : TrackCardTranslationUiState
     data object NotRequired : TrackCardTranslationUiState
