@@ -53,11 +53,11 @@ The display title is presentation only. Update comparison, APK naming, changelog
 ## Checkpoints
 
 - [x] Establish release-prep branch, scope, and Beta product decision.
-- [ ] Rewrite README as a product-first landing page.
-- [ ] Align Release policy and workflow with distinct human-readable Release titles.
-- [ ] Add the `1.0.0-beta.1` user-facing changelog entry.
-- [ ] Review the branch-wide diff for stale alpha/construction wording and release-version mismatches.
-- [ ] Run release-relevant validation, record evidence here, open a Draft PR, and STOP per `AGENTS.md`.
+- [x] Rewrite README as a product-first landing page.
+- [x] Align Release policy and workflow with distinct human-readable Release titles.
+- [x] Add the `1.0.0-beta.1` user-facing changelog entry.
+- [x] Review the branch-wide diff for stale alpha/construction wording and release-version mismatches.
+- [x] Run release-relevant pre-PR validation, record evidence here, open a Draft PR, and STOP per `AGENTS.md`.
 
 ## Known Beta limitations to communicate
 
@@ -75,3 +75,19 @@ The display title is presentation only. Update comparison, APK naming, changelog
 - The Release workflow accepts `v1.0.0-beta.1`, publishes it as a prerelease, retains canonical version/APK naming, and uses the human-facing Release title.
 - `docs/RELEASES.md` documents the distinction between canonical tag/version and Release display title.
 - No production runtime behavior changes as part of this release-prep slice.
+
+
+## Release-prep validation record
+
+- Baseline alignment: branch is five commits ahead of `main @ ad4ca154604e4846e273b21a098ba0e03c98bc97` and zero commits behind.
+- Branch-wide scope is limited to `.github/workflows/release.yml`, `CHANGELOG.md`, `README.md`, `TASK.md`, and `docs/RELEASES.md`; no production Kotlin/Java/resources or provider/runtime behavior changed.
+- README no longer contains the stale working-branch status or the old "new Android project" construction framing. Installation, Android Auto setup, Beta scope, user-visible capabilities, development entry points, and license are directly discoverable.
+- The newest in-app changelog heading is exactly `1.0.0-beta.1`, matching the intended canonical tag after removing its leading `v`.
+- Release-title mapping was exercised for Beta, Alpha, RC, stable, and non-zero patch examples. The intended tag maps to `AALyrics 1.0 Beta 1`; canonical `versionName`, tag, and APK naming remain `1.0.0-beta.1` / `v1.0.0-beta.1`.
+- Release policy documents that zero patch components may be omitted only from the human-facing GitHub Release title.
+- The first title implementation produced `AALyrics 1.0.0 Beta 1`, which conflicted with the approved human-facing contract. This was caught during validation and corrected before PR creation.
+- The repository cannot be checked out in the current execution environment because outbound GitHub DNS is unavailable. Full Gradle/architecture CI is therefore left to the normal pull-request Build workflow; this release-prep branch changes no production implementation code.
+
+## Result
+
+The branch is ready for Draft PR review as a release-preparation-only change. It does **not** create the tag, publish the Release, or merge into `main`. Those remain separate explicit gates.
