@@ -85,7 +85,7 @@ Preserve the current Phone contract unless a device regression forces a separate
 - [x] Port timed Follow/Browse, opening/final boundaries, return-to-playback direction/action, and PLAIN auto-scroll to lazy-list geometry.
 - [x] Isolate immutable row content from high-frequency current-line/Karaoke updates and verify Translation remeasurement behavior.
 - [x] Add/update focused unit/Compose/Preview coverage for lazy composition, variable-height rows, Translation, Karaoke, Follow/Browse, seeks, and document boundaries.
-- [ ] Run final validation, inspect branch-wide regression/scope alignment, update this task with evidence, then open a Draft PR and STOP per `AGENTS.md`.
+- [x] Run final validation, inspect branch-wide regression/scope alignment, update this task with evidence, then open a Draft PR and STOP per `AGENTS.md`.
 
 ## Checkpoint 1 record
 
@@ -130,6 +130,22 @@ Preserve the current Phone contract unless a device regression forces a separate
 - Added direct geometry tests for opening padding, final-row boundary padding, measured variable-height interpolation, fractional focus with an unmaterialized neighbor, visible playback focus tolerance, and invalid PLAIN lazy targets.
 - Existing tests continue to cover stable lazy keys across Translation-only changes, off-screen timed direction, PLAIN target progression/return direction, Karaoke timing semantics, Translation matching, stale identity rejection, and reuse of precomputed row lists across timing-only updates.
 - This checkpoint adds validation surfaces only; it does not change provider, Translation, timing, Android Auto, persistence, or caching behavior.
+
+## Final validation record
+
+Pre-PR review is complete for the branch state based on `main @ 0a02474f26bee3cb462f227a4293b9e9d3c52e3d`.
+
+- Baseline alignment: current `main` is still `0a02474f26bee3cb462f227a4293b9e9d3c52e3d`; the feature branch is ahead by five implementation commits and behind by zero.
+- Branch policy: `feature/phone-lyrics-lazy-viewport` satisfies the repository branch-name rule.
+- Commit policy: all five branch commits satisfy the conventional commit pattern used by CI.
+- Scope review: branch-wide diff is limited to Phone lyrics presentation/runtime mapping, focused tests/Previews, `TASK.md`, and the relevant viewport/Karaoke/Translation/roadmap documentation. No provider, Android Auto, persistence, cache, Gradle dependency, or build workflow file changed.
+- Architecture review: the changed `ui/phone` production source adds no provider client, provider-selection, networking, or Android media framework ownership. The pure-core/provider/translation module boundaries are untouched.
+- Behavioral parity review against the eager `main` viewport confirms the same 15% edge fades, approximately 45% timed focus target, opening `♪` model, final-row boundary padding formula, Follow/Browse ownership, and 5% PLAIN lead-in/lead-out policy.
+- Focused coverage now includes stable Translation-insensitive lazy keys, measured variable-height geometry, opening/final boundaries, off-screen return direction, PLAIN target mapping, stale playback identity, Karaoke timing semantics, Translation matching, precomputed row reuse, a 160-row lazy Preview, Browse far from playback, and large seek Preview coverage.
+- API compatibility review: the implementation uses supported `LazyListState` / `ScrollableState` scrolling APIs and lazy-list layout geometry.
+- Baseline CI evidence: the Build workflow for the unchanged base commit `0a02474f` completed successfully.
+- Executable branch validation could not be run before PR creation from this agent environment: the local runtime cannot resolve `github.com` to clone the repository, and the available GitHub connector cannot dispatch the repository's `workflow_dispatch` action. The Draft PR's `pull_request` Build workflow is therefore a required validation gate before Ready-for-review or merge. This limitation is recorded rather than represented as a green local Gradle run.
+- No Codex review was requested in this slice.
 
 ## Acceptance criteria
 
