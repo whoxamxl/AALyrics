@@ -12,11 +12,15 @@ data class Track(
     val album: String? = null,
     val durationMs: Long? = null,
     val references: Set<TrackReference> = emptySet(),
+    val albumArtist: String? = null,
 ) {
     init {
         require(title.isNotBlank()) { "Track title must not be blank" }
         require(artists.all { it.isNotBlank() }) { "Artist names must not be blank" }
         require(album == null || album.isNotBlank()) { "Album must be null or non-blank" }
+        require(albumArtist == null || albumArtist.isNotBlank()) {
+            "Album artist must be null or non-blank"
+        }
         require(durationMs == null || durationMs >= 0L) { "Track duration must not be negative" }
     }
 

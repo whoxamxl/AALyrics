@@ -163,7 +163,7 @@ Artwork, current-line timing, transport controls, cache, translation, and legacy
 
 The MediaSession runtime deliberately keeps session monitoring independent from lyrics-demand policy. PR #29 therefore forwards normalized playback whenever the listener runtime is connected.
 
-The next dedicated lifecycle slice is `feature/lyrics-demand-gating`, documented in `docs/LYRICS_DEMAND_GATING.md`. That slice preserves the working fork's `phone process foreground OR Android Auto projection connected` demand rule while keeping MediaSession discovery/selection alive.
+The subsequent demand-gating slice merged in PR #30 and is documented in `docs/LYRICS_DEMAND_GATING.md`. Its original Phone-foreground / Android Auto-projection rule now has a production extension in PR #84: active `LyricsBrowserService` lifetime is a third independent demand signal while MediaSession discovery/selection remains independently owned.
 
 Demand gating belongs between the platform playback sink and `PlaybackLyricsController`: when demand is inactive, the latest normalized snapshot is retained but provider-owning playback is not forwarded; deactivation cancels in-flight provider work while preserving an already resolved usable result in process memory, and reactivation immediately replays the latest snapshot.
 
@@ -173,7 +173,7 @@ Demand gating belongs between the platform playback sink and `PlaybackLyricsCont
 
 - Missing/disabled notification access fails safely without crashing the process.
 - `SecurityException` from active-session APIs does not crash the service; runtime ownership is cleared/detached.
-- A disconnected notification listener stops active-session observation and selected-controller callbacks.
+- A disconnected notification listener stops active-session observation and selected-controller callbacks, publishes the disconnected/error transition, and requests the system Notification Listener binding again so observation can recover without requiring the Phone Activity to reopen.
 - No eligible session clears the current playback lookup instead of leaving stale lyrics ownership.
 - Session-list reordering alone does not switch away from a currently playing selected session.
 - A destroyed selected session does not leave a dead callback/controller attached.
@@ -196,23 +196,25 @@ That feature may extend the existing selected-session boundary with normalized p
 
 The original PR #29 runtime did not own finished transport presentation. This follow-up consumes and may narrowly extend that runtime without changing its session-selection policy.
 
-## Explicitly out of scope
+## Explicitly out of scope for PR #29
 
-The following remain separate work from the MediaSession runtime itself:
+The MediaSession runtime itself still does not own the capabilities below, even though several were implemented later through their own boundaries:
 
-- lyrics-demand gating implementation, now specified separately in `docs/LYRICS_DEMAND_GATING.md`;
-- finished phone lyrics UI;
-- finished Android Auto presentation/service browsing UI;
+- lyrics-demand gating — implemented separately in PR #30 and currently documented in `docs/LYRICS_DEMAND_GATING.md`;
+- Phone lyrics UI — implemented later in the Phone presentation slices;
+- legacy Android Auto Now Playing — implemented later on PR #84; Browse/Car App Library presentation remains separate;
 - settings/persistence UI;
 - cache;
-- translation;
-- artwork/color extraction;
-- finished Phone playback-surface presentation and its capability mapping (specified separately in `docs/PHONE_PLAYBACK_SURFACE.md`);
+- Translation execution/presentation;
+- artwork/color extraction and presentation ownership;
+- Phone playback-surface presentation/capability mapping — specified separately in `docs/PHONE_PLAYBACK_SURFACE.md`;
 - current-line/current-word rendering state;
 - timing offset/calibration;
-- karaoke rendering;
+- Karaoke rendering;
 - provider transport/search behavior;
 - cross-provider scoring/selection-policy changes.
+
+These stay outside `:platform:media` even when downstream features are now production code.
 
 ## Tests and validation
 
@@ -245,10 +247,10 @@ The bounded review process in `AGENTS.md` completed with one P2 fixed in `7a5e82
 
 The implemented runtime keeps all Android session access in `:platform:media`:
 
-- `MediaSessionListenerService` waits for `onListenerConnected()`, observes active sessions through its notification-listener component, and retains notification-posted refresh as a compatibility fallback;
+- `MediaSessionListenerService` waits for `onListenerConnected()`, observes active sessions through its notification-listener component, retains notification-posted refresh as a compatibility fallback, and requests system rebind from `onListenerDisconnected()`;
 - `SelectedMediaSessionRuntime` owns token-based selection, the single selected callback, clear/re-selection behavior, stopped-session handoff, and the retained 600 ms metadata stabilization;
 - `MediaControllerSnapshotAdapter` remains the exclusive Android-to-`PlaybackSnapshot` normalization path;
 - `MediaSessionRuntimeHost` is the narrow platform/application handoff;
-- disconnect and `SecurityException` paths detach ownership and clear stale playback state.
+- disconnect and `SecurityException` paths detach ownership and clear stale playback state; Android Auto host activation may also proactively request the same system listener rebind through the platform-owned helper, while the decision that Automotive demand is active remains in `:app`.
 
 PR #29 intentionally did not add demand gating, provider changes, selection-policy changes, or finished presentation behavior.

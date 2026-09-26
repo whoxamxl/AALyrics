@@ -1,5 +1,6 @@
 package io.github.whoxamxl.aalyrics.ui.automotive.service
 
+import android.graphics.Bitmap
 import android.os.Bundle
 import android.os.SystemClock
 import android.support.v4.media.MediaBrowserCompat
@@ -9,8 +10,16 @@ import io.github.whoxamxl.aalyrics.core.lyrics.LyricsState
 import io.github.whoxamxl.aalyrics.core.model.PlaybackSnapshot
 import io.github.whoxamxl.aalyrics.ui.automotive.AutomotiveRuntimeBinding
 import io.github.whoxamxl.aalyrics.ui.automotive.AutomotiveRuntimeHost
+import io.github.whoxamxl.aalyrics.ui.automotive.AutomotiveArtworkState
+import io.github.whoxamxl.aalyrics.ui.automotive.AutomotiveTransportCapabilities
 import io.github.whoxamxl.aalyrics.ui.automotive.screen.NowPlayingScreen
 import io.github.whoxamxl.aalyrics.ui.automotive.state.AutomotiveLyricsUiStateMapper
+import io.github.whoxamxl.aalyrics.ui.automotive.state.AutomotiveMetadataSignature
+import io.github.whoxamxl.aalyrics.ui.automotive.state.metadataSignature
+import io.github.whoxamxl.aalyrics.ui.automotive.state.shouldRenderProjectionTick
+import io.github.whoxamxl.aalyrics.translation.api.TranslationSettings
+import io.github.whoxamxl.aalyrics.translation.core.CanonicalLyricsIdentity
+import io.github.whoxamxl.aalyrics.translation.core.TranslationState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -27,11 +36,20 @@ class LyricsBrowserService : MediaBrowserServiceCompat() {
     private var binding: AutomotiveRuntimeBinding? = null
     private var playbackCollection: Job? = null
     private var lyricsCollection: Job? = null
+    private var artworkCollection: Job? = null
+    private var capabilitiesCollection: Job? = null
+    private var translationSettingsCollection: Job? = null
+    private var translationStateCollection: Job? = null
 
     private var latestPlayback = PlaybackSnapshot()
     private var latestLyrics: LyricsState = LyricsState.Idle
-    private var playbackReceivedAtMs = 0L
-    private var lastMetadataSignature: MetadataSignature? = null
+    private var latestArtwork = AutomotiveArtworkState()
+    private var latestCapabilities = AutomotiveTransportCapabilities()
+    private var latestTranslationSettings = TranslationSettings(enabled = false)
+    private var latestTranslationState: TranslationState = TranslationState.Idle
+    private var latestCanonicalLyricsIdentity: CanonicalLyricsIdentity? = null
+    private var latestProjectionIsAnimatedLoading = false
+    private var lastMetadataSignature: AutomotiveMetadataSignature<Bitmap>? = null
 
     override fun onCreate() {
         super.onCreate()
@@ -47,19 +65,25 @@ class LyricsBrowserService : MediaBrowserServiceCompat() {
         sessionToken = mediaSession.sessionToken
 
         binding = AutomotiveRuntimeHost.current()
+        binding?.hostDemand?.setActive(true)
         bindState(binding)
 
         scope.launch {
             while (isActive) {
                 delay(PROJECTION_TICK_MS)
-                if (latestPlayback.isPlaying) render()
+                if (shouldRenderProjectionTick(latestPlayback, latestProjectionIsAnimatedLoading)) render()
             }
         }
     }
 
     override fun onDestroy() {
+        binding?.hostDemand?.setActive(false)
         playbackCollection?.cancel()
         lyricsCollection?.cancel()
+        artworkCollection?.cancel()
+        capabilitiesCollection?.cancel()
+        translationSettingsCollection?.cancel()
+        translationStateCollection?.cancel()
         scope.cancel()
         mediaSession.isActive = false
         mediaSession.release()
@@ -86,50 +110,73 @@ class LyricsBrowserService : MediaBrowserServiceCompat() {
 
     private fun bindState(runtimeBinding: AutomotiveRuntimeBinding?) {
         if (runtimeBinding == null) {
-            render(forceMetadata = true)
+            render()
             return
         }
 
         latestPlayback = runtimeBinding.playback.value
         latestLyrics = runtimeBinding.lyrics.value
-        playbackReceivedAtMs = SystemClock.elapsedRealtime()
+        latestArtwork = runtimeBinding.artwork.value
+        latestCapabilities = runtimeBinding.capabilities.value
+        latestTranslationSettings = runtimeBinding.translationSettings.value
+        latestTranslationState = runtimeBinding.translationState.value
+        latestCanonicalLyricsIdentity = runtimeBinding.canonicalLyricsIdentity(latestLyrics)
 
         playbackCollection = scope.launch {
             runtimeBinding.playback.collectLatest { snapshot ->
                 latestPlayback = snapshot
-                playbackReceivedAtMs = SystemClock.elapsedRealtime()
-                render(forceMetadata = true)
+                render()
             }
         }
         lyricsCollection = scope.launch {
             runtimeBinding.lyrics.collectLatest { state ->
                 latestLyrics = state
-                render(forceMetadata = true)
+                latestCanonicalLyricsIdentity = runtimeBinding.canonicalLyricsIdentity(state)
+                render()
+            }
+        }
+        artworkCollection = scope.launch {
+            runtimeBinding.artwork.collectLatest { state ->
+                latestArtwork = state
+                render()
+            }
+        }
+        capabilitiesCollection = scope.launch {
+            runtimeBinding.capabilities.collectLatest { capabilities ->
+                latestCapabilities = capabilities
+                render()
+            }
+        }
+        translationSettingsCollection = scope.launch {
+            runtimeBinding.translationSettings.collectLatest { settings ->
+                latestTranslationSettings = settings
+                render()
+            }
+        }
+        translationStateCollection = scope.launch {
+            runtimeBinding.translationState.collectLatest { state ->
+                latestTranslationState = state
+                render()
             }
         }
     }
 
-    private fun render(forceMetadata: Boolean = false) {
+    private fun render() {
         val now = SystemClock.elapsedRealtime()
-        val elapsed = if (playbackReceivedAtMs > 0L) {
-            (now - playbackReceivedAtMs).coerceAtLeast(0L)
-        } else {
-            0L
-        }
         val state = AutomotiveLyricsUiStateMapper.project(
             playback = latestPlayback,
             lyricsState = latestLyrics,
             currentMonotonicTimeMs = now,
-            elapsedSincePlaybackSnapshotMs = elapsed,
+            artwork = latestArtwork,
+            capabilities = latestCapabilities,
+            translationSettings = latestTranslationSettings,
+            translationState = latestTranslationState,
+            canonicalLyricsIdentity = latestCanonicalLyricsIdentity,
         )
+        latestProjectionIsAnimatedLoading = state.lyrics.isAnimatedLoading
 
-        val signature = MetadataSignature(
-            displayTitle = state.displayTitle,
-            subtitle = state.subtitle,
-            album = state.album,
-            durationMs = state.durationMs,
-        )
-        if (forceMetadata || signature != lastMetadataSignature) {
+        val signature = state.metadataSignature()
+        if (signature != lastMetadataSignature) {
             lastMetadataSignature = signature
             mediaSession.setMetadata(NowPlayingScreen.metadata(state))
         }
@@ -158,13 +205,6 @@ class LyricsBrowserService : MediaBrowserServiceCompat() {
             if (pos >= 0L) binding?.transport?.seekTo(pos)
         }
     }
-
-    private data class MetadataSignature(
-        val displayTitle: String,
-        val subtitle: String,
-        val album: String?,
-        val durationMs: Long?,
-    )
 
     private companion object {
         const val ROOT_ID = "root"

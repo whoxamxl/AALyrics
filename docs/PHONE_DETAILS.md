@@ -256,7 +256,7 @@ DetailsScreen
 
 PR #49 persists the preference through an application-owned SharedPreferences store. The stable requirement remains that `:ui:phone` receives only the resolved boolean/presentation state and never reads SharedPreferences directly.
 
-The setting may control whether diagnostic values and live progress presentation are mapped/presented, but it does not control data acquisition behavior. Live verbose playback/line progress reuses the already-available playback snapshot and resolved lyrics and does not trigger provider work.
+The setting may control whether diagnostic values and live progress presentation are mapped/presented, but it does not control data acquisition behavior. Live verbose playback/line progress reuses the already-available playback snapshot and resolved lyrics and does not trigger provider work. The lyrics coordinator's bounded transient-failure retry, when applicable, runs independently of Details/Verbose state; Details only observes the already-owned matching lookup diagnostics.
 
 ## Destination composition
 
@@ -307,7 +307,9 @@ DetailsScreenUiState
    ├─ appTargetSdkVersion
    ├─ providerId
    ├─ sourceId
-   └─ trackReferences
+   ├─ trackReferences
+   ├─ lyricsLookupAttempt
+   └─ lyricsProviderFailures
 ```
 
 PR #49 established the concrete `DetailsScreenUiState` shape and application-owned `phoneDetailsState` mapping. The Phone runtime host consumes that state directly and only adds the existing live Verbose progress projection; it does not remap provider/media/Translation facts in the Activity. Do not pass provider DTOs, `MediaController`, `PlaybackState`, framework queue objects, Android intents, or Translation runtime types into the screen.
@@ -327,7 +329,7 @@ Examples:
 - playback package available while app category metadata is undefined or unavailable;
 - playback package available while SDK metadata is unavailable because application metadata lookup failed.
 
-The screen should show only facts that are authoritative for the current state and avoid stale values from the previous track. Translation profile/runtime facts must be canonical-identity gated just like translated lyric presentation. Target settings/model inventory are process/application facts and must not be confused with a stale per-track profile.
+The screen should show only facts that are authoritative for the current state and avoid stale values from the previous track. Translation profile/runtime facts must be canonical-identity gated just like translated lyric presentation. Lyrics lookup attempt/provider-failure diagnostics must likewise match the current `LyricsLookupId`; stale diagnostics from a superseded lookup are omitted. Target settings/model inventory are process/application facts and must not be confused with a stale per-track profile.
 
 Exact loading/empty visual treatment will be tuned during implementation.
 

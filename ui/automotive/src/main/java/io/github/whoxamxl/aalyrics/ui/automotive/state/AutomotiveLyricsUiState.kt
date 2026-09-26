@@ -1,12 +1,22 @@
 package io.github.whoxamxl.aalyrics.ui.automotive.state
 
+import android.graphics.Bitmap
 import io.github.whoxamxl.aalyrics.core.lyrics.LyricsState
-import io.github.whoxamxl.aalyrics.core.model.LyricLine
+import io.github.whoxamxl.aalyrics.core.model.LyricsSyncType
 import io.github.whoxamxl.aalyrics.core.model.PlaybackSnapshot
 import io.github.whoxamxl.aalyrics.core.model.PlaybackStatus
+import io.github.whoxamxl.aalyrics.core.model.PlaybackTrackIdentity
 import io.github.whoxamxl.aalyrics.core.model.TimedLyricLine
-import io.github.whoxamxl.aalyrics.core.model.Track
-import kotlin.math.roundToLong
+import io.github.whoxamxl.aalyrics.core.timing.LyricsTimingOffset
+import io.github.whoxamxl.aalyrics.core.timing.effectiveLyricsPosition
+import io.github.whoxamxl.aalyrics.core.timing.projectLyricsTiming
+import io.github.whoxamxl.aalyrics.core.timing.projectedPlaybackPosition
+import io.github.whoxamxl.aalyrics.ui.automotive.AutomotiveTransportCapabilities
+import io.github.whoxamxl.aalyrics.ui.automotive.AutomotiveArtworkState
+import io.github.whoxamxl.aalyrics.translation.api.TranslationLanguages
+import io.github.whoxamxl.aalyrics.translation.api.TranslationSettings
+import io.github.whoxamxl.aalyrics.translation.core.CanonicalLyricsIdentity
+import io.github.whoxamxl.aalyrics.translation.core.TranslationState
 
 data class AutomotiveLyricsUiState(
     val trackTitle: String? = null,
@@ -16,8 +26,13 @@ data class AutomotiveLyricsUiState(
     val positionMs: Long = 0L,
     val playbackStatus: PlaybackStatus = PlaybackStatus.IDLE,
     val playbackRate: Float = 1.0f,
-    val subtitle: String = NO_MEDIA_MESSAGE,
+    val artwork: Bitmap? = null,
+    val capabilities: AutomotiveTransportCapabilities = AutomotiveTransportCapabilities(),
+    val lyrics: AutomotiveLyricPresentation = AutomotiveLyricPresentation(NO_MEDIA_MESSAGE),
 ) {
+    val subtitle: String
+        get() = lyrics.primaryText
+
     val displayTitle: String
         get() = when {
             trackTitle.isNullOrBlank() -> "AALyrics"
@@ -30,12 +45,33 @@ data class AutomotiveLyricsUiState(
     }
 }
 
+data class AutomotiveLyricPresentation(
+    val primaryText: String,
+    val secondaryText: String? = null,
+    val isAnimatedLoading: Boolean = false,
+)
+
+internal fun shouldRenderProjectionTick(
+    playback: PlaybackSnapshot,
+    isAnimatedLoading: Boolean,
+): Boolean = playback.isPlaying || isAnimatedLoading
+
+internal fun <T> artworkForTrack(
+    playbackIdentity: PlaybackTrackIdentity?,
+    artworkIdentity: PlaybackTrackIdentity?,
+    artwork: T?,
+): T? = artwork.takeIf { playbackIdentity != null && playbackIdentity == artworkIdentity }
+
 internal object AutomotiveLyricsUiStateMapper {
     fun project(
         playback: PlaybackSnapshot,
         lyricsState: LyricsState,
-        currentMonotonicTimeMs: Long? = null,
-        elapsedSincePlaybackSnapshotMs: Long = 0L,
+        currentMonotonicTimeMs: Long,
+        artwork: AutomotiveArtworkState = AutomotiveArtworkState(),
+        capabilities: AutomotiveTransportCapabilities = AutomotiveTransportCapabilities(),
+        translationSettings: TranslationSettings = TranslationSettings(enabled = false),
+        translationState: TranslationState = TranslationState.Idle,
+        canonicalLyricsIdentity: CanonicalLyricsIdentity? = null,
     ): AutomotiveLyricsUiState {
         val track = playback.track
         if (track == null) {
@@ -45,85 +81,112 @@ internal object AutomotiveLyricsUiStateMapper {
             )
         }
 
-        val positionMs = projectedPosition(
-            playback = playback,
-            currentMonotonicTimeMs = currentMonotonicTimeMs,
-            fallbackElapsedMs = elapsedSincePlaybackSnapshotMs,
-        )
-        val matchingState = lyricsState.takeIf { it.belongsTo(track) }
+        val positionMs = projectedPlaybackPosition(playback, currentMonotonicTimeMs)
+        val matchingState = lyricsState.takeIf { state ->
+            state !is LyricsState.ForLookup ||
+                state.lookup.playbackIdentity == playback.trackIdentity
+        }
         val document = when (matchingState) {
             is LyricsState.Ready -> matchingState.lyrics
             is LyricsState.Degraded -> matchingState.lyrics
             else -> null
         }
-        val currentLine = document?.lines?.currentTimedLine(positionMs)
+        val activeLineIndex = document?.let { lyrics ->
+            projectLyricsTiming(
+                lyrics,
+                effectiveLyricsPosition(positionMs, LyricsTimingOffset.ZERO),
+            ).activeLineIndex
+        }
+        val currentLine = activeLineIndex?.let { document?.lines?.getOrNull(it) as? TimedLyricLine }
 
-        val subtitle = when (matchingState) {
-            null -> "Loading lyrics…"
-            LyricsState.Idle -> "Waiting for lyrics…"
-            is LyricsState.Loading -> "Loading lyrics…"
-            is LyricsState.NotFound -> "No lyrics found"
-            is LyricsState.Failed -> "Unable to load lyrics"
+        val lyricsPresentation = when (matchingState) {
+            null,
+            is LyricsState.Loading,
+            -> AutomotiveLyricPresentation(
+                primaryText = "Loading lyrics${loadingDots(currentMonotonicTimeMs)}",
+                isAnimatedLoading = true,
+            )
+            LyricsState.Idle -> AutomotiveLyricPresentation("Waiting for lyrics…")
+            is LyricsState.NotFound -> AutomotiveLyricPresentation("No synced lyrics found")
+            is LyricsState.Failed -> AutomotiveLyricPresentation("Unable to load lyrics")
             is LyricsState.Ready,
             is LyricsState.Degraded,
-            -> when {
+            -> AutomotiveLyricPresentation(when {
+                document?.syncType == LyricsSyncType.PLAIN -> "Synced lyrics unavailable"
                 currentLine != null -> currentLine.text.ifBlank { "♪" }
-                document?.lines?.any { it is TimedLyricLine } == true -> "♪"
-                document?.lines?.isNotEmpty() == true -> "Unsynced lyrics"
-                else -> "No lyrics found"
-            }
+                else -> "♪"
+            })
         }
+        val presentation = if (
+            currentLine != null && currentLine.text.isNotBlank() &&
+            document?.syncType != LyricsSyncType.PLAIN
+        ) {
+            lyricsPresentation.withTranslation(
+                lineIndex = requireNotNull(activeLineIndex),
+                lineCount = document.lines.size,
+                settings = translationSettings,
+                state = translationState,
+                canonicalIdentity = canonicalLyricsIdentity,
+                currentMonotonicTimeMs = currentMonotonicTimeMs,
+            )
+        } else lyricsPresentation
 
         return AutomotiveLyricsUiState(
             trackTitle = track.title,
-            artist = track.primaryArtist,
+            artist = track.albumArtist ?: track.primaryArtist,
             album = track.album,
             durationMs = track.durationMs,
             positionMs = positionMs,
             playbackStatus = playback.status,
             playbackRate = playback.playbackRate,
-            subtitle = subtitle,
+            artwork = artworkForTrack(
+                playback.trackIdentity,
+                artwork.trackIdentity,
+                artwork.bitmap,
+            ),
+            capabilities = capabilities,
+            lyrics = presentation,
         )
     }
 
-    private fun projectedPosition(
-        playback: PlaybackSnapshot,
-        currentMonotonicTimeMs: Long?,
-        fallbackElapsedMs: Long,
-    ): Long {
-        val base = playback.positionMs
-        if (!playback.isPlaying || playback.playbackRate <= 0f) {
-            return clampToDuration(base, playback.track)
-        }
+    internal fun loadingDots(currentMonotonicTimeMs: Long): String =
+        ".".repeat(((currentMonotonicTimeMs.coerceAtLeast(0L) / 250L) % 3L).toInt() + 1)
 
-        val sourceElapsedMs = playback.positionUpdatedAtMonotonicMs?.let { updatedAt ->
-            currentMonotonicTimeMs?.let { now ->
-                (now - updatedAt).coerceAtLeast(0L)
+    private fun AutomotiveLyricPresentation.withTranslation(
+        lineIndex: Int,
+        lineCount: Int,
+        settings: TranslationSettings,
+        state: TranslationState,
+        canonicalIdentity: CanonicalLyricsIdentity?,
+        currentMonotonicTimeMs: Long,
+    ): AutomotiveLyricPresentation {
+        if (!settings.enabled || canonicalIdentity == null) return this
+        val target = TranslationLanguages.normalizeTargetLanguage(settings.targetLanguage)
+        return when (state) {
+            is TranslationState.Translating -> if (
+                state.request.canonicalLyrics == canonicalIdentity &&
+                state.request.targetLanguage == target
+            ) {
+                copy(
+                    secondaryText = "Translating${loadingDots(currentMonotonicTimeMs)}",
+                    isAnimatedLoading = true,
+                )
+            } else this
+            is TranslationState.Ready -> {
+                val artifact = state.artifact
+                val translated = artifact.takeIf {
+                    it.request.canonicalLyrics == canonicalIdentity &&
+                        it.request.targetLanguage == target &&
+                        it.lines.size == lineCount
+                }?.lines?.getOrNull(lineIndex)
+                    ?.takeIf { it.translated && it.text.isNotBlank() }
+                if (translated == null) this else copy(secondaryText = translated.text)
             }
+            TranslationState.Disabled,
+            TranslationState.Idle,
+            is TranslationState.NotRequired,
+            is TranslationState.Failed,
+            -> this
         }
-        val elapsedMs = sourceElapsedMs ?: fallbackElapsedMs.coerceAtLeast(0L)
-        if (elapsedMs == 0L) return clampToDuration(base, playback.track)
-
-        val advanced = base + (elapsedMs * playback.playbackRate)
-            .toDouble()
-            .roundToLong()
-        return clampToDuration(advanced.coerceAtLeast(base), playback.track)
     }
-
-    private fun clampToDuration(positionMs: Long, track: Track?): Long =
-        track?.durationMs?.let { positionMs.coerceIn(0L, it) } ?: positionMs.coerceAtLeast(0L)
-
-    private fun LyricsState.belongsTo(track: Track): Boolean = when (this) {
-        LyricsState.Idle -> true
-        is LyricsState.ForLookup -> lookup.track.samePresentationIdentity(track)
-    }
-
-    private fun Track.samePresentationIdentity(other: Track): Boolean =
-        title == other.title && artists == other.artists && album == other.album
-
-    private fun List<LyricLine>.currentTimedLine(positionMs: Long): TimedLyricLine? =
-        asSequence()
-            .filterIsInstance<TimedLyricLine>()
-            .takeWhile { it.startMs <= positionMs }
-            .lastOrNull()
 }

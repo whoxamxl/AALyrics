@@ -127,7 +127,7 @@ conditional rendering everywhere
 
 Presentation observes state; it does not own playback discovery or lyrics demand policy.
 
-Phone process foreground and Android Auto projection connection remain application/runtime lifecycle inputs to `LyricsDemandGate`. Individual screens/composables/templates must not start or cancel provider lookup merely because they appear or disappear.
+Phone process foreground, Android Auto projection connection, and active legacy `LyricsBrowserService` lifetime are application/runtime lifecycle inputs to `LyricsDemandGate`. The browser service reports host demand through a narrow application boundary; individual screens/composables/templates still must not start or cancel provider lookup merely because they appear or disappear.
 
 Playback controls, if/when implemented, should use an explicit transport/control boundary rather than importing `MediaController` into UI state.
 
@@ -149,6 +149,27 @@ surface presentation mapping
 ```
 
 This composition must preserve each capability's failure and lifecycle semantics. For example, translation failure must not convert valid lyrics into a lyrics failure screen.
+
+## Current implemented Automotive slice
+
+The Android Auto Now Playing completion in PR #84 provides concrete evidence for one surface-specific state contract without changing the general rule against a universal UI state.
+
+For this slice, Automotive presentation may compose:
+
+- normalized track/playback facts;
+- selected-session artwork;
+- `PlaybackControlState.capabilities`;
+- canonical `LyricsState`;
+- existing Translation settings/state;
+- shared timing projection, consuming `activeLineIndex` only.
+
+The resulting Automotive-local state should distinguish primary lyric text from optional secondary Translation/status text instead of continuing to hide the entire presentation in one ambiguous subtitle string.
+
+Surface-local presentation policy includes the 250 ms loading heartbeat and MediaSession metadata invalidation. Those facts must not be promoted into Lyrics, Translation, or timing domain state.
+
+This authorization does not justify a shared Phone/Automotive `UiState`, Automotive provider access, Android framework objects in core state, or Karaoke word presentation.
+
+See `docs/ANDROID_AUTO_NOW_PLAYING.md` for the exact surface contract.
 
 ## Deferred decisions
 

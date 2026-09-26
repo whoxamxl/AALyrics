@@ -3,7 +3,7 @@
 ## Branch and baseline
 
 - Branch: `fix/synclrc-final-word-sweep`.
-- Base: `main` at `86f4cd300161eb2038c637094a8e75a0afa9bf80` (`v0.2.0-alpha.3` release commit).
+- Base: `main` at `c710981525bbcf3d383fed1c702ec3216b2475ec` (latest main reconciled before Ready for review).
 - Scope is limited to preserving explicit provider end timing for Enhanced-LRC/SyncLRC and Musixmatch RichSync, plus Phone presentation of an otherwise genuinely open-ended final display group.
 
 ## Problem

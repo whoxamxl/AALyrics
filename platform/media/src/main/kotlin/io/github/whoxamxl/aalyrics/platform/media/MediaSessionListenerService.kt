@@ -1,6 +1,7 @@
 package io.github.whoxamxl.aalyrics.platform.media
 
 import android.content.ComponentName
+import android.content.Context
 import android.media.session.MediaSession
 import android.media.session.MediaSessionManager
 import android.os.Handler
@@ -52,6 +53,7 @@ class MediaSessionListenerService : NotificationListenerService() {
 
     override fun onListenerDisconnected() {
         observation.listenerDisconnected()
+        requestSystemRebind(this)
         super.onListenerDisconnected()
     }
 
@@ -64,5 +66,22 @@ class MediaSessionListenerService : NotificationListenerService() {
         MediaSessionRuntimeHost.detachSessionLauncher(runtime)
         MediaSessionRuntimeHost.detachTransport(runtime)
         super.onDestroy()
+    }
+
+    companion object {
+        /**
+         * Requests the system-owned notification-listener binding again.
+         *
+         * Android Auto can recreate the app process through the media-browser service while the
+         * Phone Activity remains closed. Re-requesting this binding lets active-session observation
+         * recover independently of the Activity lifecycle.
+         */
+        fun requestSystemRebind(context: Context) {
+            runCatching {
+                NotificationListenerService.requestRebind(
+                    ComponentName(context, MediaSessionListenerService::class.java),
+                )
+            }
+        }
     }
 }

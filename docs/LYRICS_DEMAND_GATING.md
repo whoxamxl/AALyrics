@@ -6,7 +6,8 @@
 - Base: main `c0bfb15` after live MediaSession runtime PR #29 merged.
 - Working-fork reference: `whoxamxl/auto-lyrics` main `8484bed2dbe8db5ca7b17dec5481b3c22714dc6f` (`v1.13.0`).
 - Classification: **PRESERVE / REFACTOR** for the proven demand semantics; **REWRITE** for ownership/integration into the AALyrics architecture.
-- State: **IMPLEMENTED — validated and reviewed in PR #30; awaiting explicit merge approval.**
+- State: **IMPLEMENTED AND MERGED — PR #30.**
+- Current production extension: PR #84 (`feature/android-auto-now-playing`) adds active `LyricsBrowserService` lifetime as a third independent demand source so Android Auto process recreation does not depend solely on `CarConnection` delivery.
 
 ## Purpose
 
@@ -38,17 +39,19 @@ No-demand retention is deliberately narrower than a lyrics cache. It keeps only 
 
 ## Demand semantics
 
-Preserve the mature working-fork rule:
+PR #30 originally preserved the mature working-fork two-source rule. Current production semantics extend it with the actual Android Auto browser-service lifetime:
 
 ```text
 phone process foreground
         OR
 Android Auto projection connected
+        OR
+LyricsBrowserService active for the Android Auto host
         =
 lyrics demand active
 ```
 
-The two demand sources are independent. Demand remains active while either source is active.
+All demand sources are independent. Demand remains active until the final active source is removed. The service-lifetime signal is recovery-oriented: it does not make the process immortal, but it ensures an Android Auto host-driven process recreation immediately re-establishes lyrics demand even if Phone UI is closed and `CarConnection` has not yet republished projection state.
 
 ### Phone demand
 
@@ -60,11 +63,12 @@ This slice must not add finished phone lyrics UI merely to generate demand.
 
 ### Android Auto demand
 
-Automotive demand represents an active Android Auto projection connection, not whether the AALyrics automotive surface is currently the foreground AA app.
+Automotive demand now has two independent application-level signals:
 
-Preserve the working fork's `CarConnection.CONNECTION_TYPE_PROJECTION` semantics: while projection is connected, lyrics demand stays active so lyrics can remain ready when the user returns to AALyrics.
+- `CarConnection.CONNECTION_TYPE_PROJECTION` keeps the original projection-wide demand semantics, so provider work may remain ready while Android Auto is connected even if the AALyrics surface is not foreground;
+- active `LyricsBrowserService` lifetime reflects that the Android Auto host is actually bound to the legacy media surface. `onCreate()` adds host-service demand and `onDestroy()` removes only that source.
 
-This slice must not implement Android Auto browsing/presentation UI.
+The second signal was added by the Android Auto Now Playing completion so process recreation through the media-browser service can recover without reopening the Phone Activity. It remains a demand signal only; the Automotive UI/service does not call providers directly.
 
 ## Gate ownership
 
@@ -112,8 +116,8 @@ Demand gating must not stop or detach MediaSession observation merely to stop pr
 ## Lifecycle and failure rules
 
 - Demand aggregation must be safe when phone and automotive lifecycle events arrive independently.
-- Removing one demand source must not deactivate lyrics work while the other remains active.
-- Notification-listener disconnect/security failure continues to be owned by the MediaSession runtime; any resulting no-track snapshot must remain compatible with demand gating.
+- Removing one demand source must not deactivate lyrics work while any other demand source remains active.
+- Notification-listener disconnect/security failure continues to be owned by the MediaSession runtime; disconnect now also requests the system listener binding again so active-session observation can recover after process/service recreation. Any resulting no-track snapshot remains compatible with demand gating.
 - Demand deactivation must suspend current lookup through the existing playback/lookup boundary rather than reaching into provider jobs directly. Resolved usable lyrics may remain in memory; in-flight work must still be cancelled.
 - Demand activation must not synthesize track metadata or bypass `MediaControllerSnapshotAdapter`.
 - Process/activity recreation must not create rapid OFF/ON provider churn.
@@ -147,8 +151,9 @@ Add deterministic coverage for at least:
 - `ON -> OFF` suspends lookup work exactly once;
 - repeated same-value demand updates are no-ops;
 - phone demand alone activates the gate;
-- automotive demand alone activates the gate;
-- removing one source while the other remains active keeps demand on;
+- CarConnection projection demand alone activates the gate;
+- Automotive host-service demand alone activates the gate;
+- removing one source while another remains active keeps demand on;
 - only removing the final active source deactivates demand;
 - track changes while demand is off do not trigger lookup but the newest track is used on activation;
 - empty/no-track playback while demand is off prevents stale replay;
@@ -163,7 +168,7 @@ Prefer pure deterministic tests for demand aggregation/gate transitions, with na
 
 This slice is complete when:
 
-> Media sessions continue to be tracked in the background, but provider lookup occurs only while phone-process foreground or Android Auto projection demand is active; disabling the final demand source cancels in-flight provider work while preserving an already resolved usable result in process memory, and re-enabling demand immediately resumes the latest observed playback without refetching when its identity is unchanged.
+> Media sessions continue to be tracked independently from provider demand. Provider lookup occurs while Phone foreground, Android Auto projection, or active Automotive host-service demand is present; disabling the final demand source cancels in-flight provider work while preserving an already resolved usable result in process memory, and re-enabling demand immediately resumes the latest observed playback without refetching when its identity is unchanged.
 
 Run the normal repository validation and bounded review from `AGENTS.md`, then stop before merge for explicit approval.
 
@@ -172,11 +177,12 @@ Run the normal repository validation and bounded review from `AGENTS.md`, then s
 The implemented application boundary preserves the working-fork demand rule without moving lifecycle policy into media or presentation modules:
 
 - `LyricsDemandGate` retains every normalized `PlaybackSnapshot` received from `MediaSessionRuntimeHost` and forwards it to `PlaybackLyricsController` only while combined demand is active;
-- phone-process and automotive-projection inputs are stored independently and combined with logical OR;
+- phone-process, automotive-projection, and Automotive host-service inputs are stored independently and combined with logical OR;
 - activation replays the retained snapshot once; final demand deactivation suspends the playback/lookup boundary, retaining an already resolved usable result but cancelling incomplete work; unchanged source/aggregate states are no-ops;
 - source ineligibility remains a hard clear and does not reuse a retained result from a blocked playback source;
 - `ProcessLifecycleOwner` supplies phone demand, preserving its delayed process-stop behavior across brief Activity recreation;
 - `CarConnection.CONNECTION_TYPE_PROJECTION` supplies projection-wide automotive demand through an application-owned observer;
-- MediaSession discovery, selected-controller callbacks, normalization, providers, selection, and UI modules are unchanged.
+- `LyricsBrowserService` supplies host-service demand through the narrow `AutomotiveHostDemand` application boundary, allowing Android Auto-driven process recreation to reactivate lyrics work without Phone foreground;
+- MediaSession discovery, selected-controller callbacks, normalization, providers, and selection remain independently owned; the Automotive service only reports lifecycle demand and consumes presentation-ready state.
 
 Deterministic tests cover all gate transitions, independent sources, retained/newest/empty snapshots, active playback churn, process-lifecycle idempotence, application preference ownership, cancellation of in-flight provider work when the final demand source turns off, and same-track foreground resume without a second provider request.

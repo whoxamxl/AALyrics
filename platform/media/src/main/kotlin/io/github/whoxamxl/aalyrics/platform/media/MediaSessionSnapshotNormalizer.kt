@@ -45,8 +45,9 @@ internal object MediaSessionSnapshotNormalizer {
 
         val title = input.title.nonBlankOrNull()
             ?: input.displayTitle.nonBlankOrNull()
+        val albumArtist = input.albumArtist.nonBlankOrNull()
         val artist = input.artist.nonBlankOrNull()
-            ?: input.albumArtist.nonBlankOrNull()
+            ?: albumArtist
         val album = input.album.nonBlankOrNull()
         val durationMs = input.durationMs?.takeIf { it > 0L }
 
@@ -62,6 +63,7 @@ internal object MediaSessionSnapshotNormalizer {
                 album = album,
                 durationMs = durationMs,
                 references = setOfNotNull(spotifyReference),
+                albumArtist = albumArtist,
             )
         }
 

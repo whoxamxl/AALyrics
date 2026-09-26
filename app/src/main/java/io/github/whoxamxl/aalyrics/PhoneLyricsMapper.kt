@@ -7,6 +7,7 @@ import io.github.whoxamxl.aalyrics.core.model.TimedLyricLine
 import io.github.whoxamxl.aalyrics.core.timing.LyricsTimingOffset
 import io.github.whoxamxl.aalyrics.core.timing.effectiveLyricsPosition
 import io.github.whoxamxl.aalyrics.core.timing.projectLyricsTiming
+import io.github.whoxamxl.aalyrics.core.timing.projectedPlaybackPosition as sharedProjectedPlaybackPosition
 import io.github.whoxamxl.aalyrics.translation.api.TranslationLanguages
 import io.github.whoxamxl.aalyrics.translation.api.TranslationModelPhase
 import io.github.whoxamxl.aalyrics.translation.api.TranslationModelState
@@ -23,7 +24,6 @@ import io.github.whoxamxl.aalyrics.ui.phone.lyrics.TrackCardLyricsStatus
 import io.github.whoxamxl.aalyrics.ui.phone.lyrics.TrackCardTranslationUiState
 import io.github.whoxamxl.aalyrics.ui.phone.lyrics.TrackCardUiState
 import java.util.Locale
-import kotlin.math.roundToLong
 
 internal fun mapPhoneLyricsState(
     playback: PlaybackSnapshot,
@@ -295,25 +295,7 @@ internal fun hasCurrentWordSyncedLyrics(
 internal fun projectedPlaybackPosition(
     playback: PlaybackSnapshot,
     currentMonotonicTimeMs: Long,
-): Long {
-    val base = playback.positionMs
-    if (!playback.isPlaying || playback.playbackRate <= 0f) {
-        return playback.track?.durationMs?.let { base.coerceIn(0L, it) } ?: base
-    }
-
-    val updatedAtMonotonicMs = playback.positionUpdatedAtMonotonicMs
-        ?: playback.positionSampledAtMonotonicMs
-    val elapsedMs = updatedAtMonotonicMs
-        ?.let { updatedAt -> (currentMonotonicTimeMs - updatedAt).coerceAtLeast(0L) }
-        ?: 0L
-    val projected = base + (elapsedMs * playback.playbackRate)
-        .toDouble()
-        .roundToLong()
-
-    return playback.track?.durationMs
-        ?.let { projected.coerceIn(0L, it) }
-        ?: projected.coerceAtLeast(0L)
-}
+): Long = sharedProjectedPlaybackPosition(playback, currentMonotonicTimeMs)
 
 private fun LyricsSyncType.label(): String = when (this) {
     LyricsSyncType.PLAIN -> "Plain"
