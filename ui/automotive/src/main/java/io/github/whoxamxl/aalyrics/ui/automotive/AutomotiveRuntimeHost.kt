@@ -1,8 +1,26 @@
 package io.github.whoxamxl.aalyrics.ui.automotive
 
+import android.graphics.Bitmap
 import io.github.whoxamxl.aalyrics.core.lyrics.LyricsState
 import io.github.whoxamxl.aalyrics.core.model.PlaybackSnapshot
+import io.github.whoxamxl.aalyrics.core.model.PlaybackTrackIdentity
+import io.github.whoxamxl.aalyrics.translation.api.TranslationSettings
+import io.github.whoxamxl.aalyrics.translation.core.CanonicalLyricsIdentity
+import io.github.whoxamxl.aalyrics.translation.core.TranslationState
 import kotlinx.coroutines.flow.StateFlow
+
+data class AutomotiveArtworkState(
+    val trackIdentity: PlaybackTrackIdentity? = null,
+    val bitmap: Bitmap? = null,
+)
+
+data class AutomotiveTransportCapabilities(
+    val canPlay: Boolean = false,
+    val canPause: Boolean = false,
+    val canSkipPrevious: Boolean = false,
+    val canSkipNext: Boolean = false,
+    val canSeek: Boolean = false,
+)
 
 interface AutomotiveTransport {
     fun play()
@@ -19,6 +37,11 @@ fun interface AutomotiveBrowserClientTrust {
 class AutomotiveRuntimeBinding(
     val playback: StateFlow<PlaybackSnapshot>,
     val lyrics: StateFlow<LyricsState>,
+    val artwork: StateFlow<AutomotiveArtworkState>,
+    val capabilities: StateFlow<AutomotiveTransportCapabilities>,
+    val translationSettings: StateFlow<TranslationSettings>,
+    val translationState: StateFlow<TranslationState>,
+    val canonicalLyricsIdentity: (LyricsState) -> CanonicalLyricsIdentity?,
     val transport: AutomotiveTransport,
     val browserClientTrust: AutomotiveBrowserClientTrust,
 )

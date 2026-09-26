@@ -4,7 +4,7 @@
 
 - Branch: `feature/android-auto-now-playing`.
 - Base: `main` at `52e9249395206f8c3821cc5c8e5893a8ccdcd125` (PR #82 merged).
-- Current checkpoint: documentation/preparation only. Production implementation has not started on this branch.
+- Current checkpoint: implementation in progress. Automotive runtime/state inputs are complete; shared timing integration is next.
 - Authoritative slice contract: `docs/ANDROID_AUTO_NOW_PLAYING.md`.
 - Broader Android Auto strategy: `docs/ANDROID_AUTO_MEDIA_STRATEGY.md`.
 - Shared timing authority: `docs/TIMING_ARCHITECTURE.md`.
@@ -135,7 +135,7 @@ Do not implement:
 
 1. [x] Documentation gate: create authoritative Android Auto Now Playing contract and align active task.
 2. [x] Align durable architecture/roadmap docs with the authorized surface contract and explicit Karaoke exclusion.
-3. [ ] Automotive state/runtime contract: expose the smallest required artwork, playback-capability, Translation, and timing inputs.
+3. [x] Automotive state/runtime contract: expose the smallest required artwork, playback-capability, Translation, and timing inputs.
 4. [ ] Shared timing integration: remove automotive-local current-line authority and consume shared `activeLineIndex`.
 5. [ ] Lyrics presentation: implement LINE/WORD line-only mapping, PLAIN fallback, lifecycle copy, and deterministic loading heartbeat.
 6. [ ] Artwork + controls: wire existing artwork state and real capability-derived PlaybackState actions.
@@ -217,13 +217,8 @@ Codex must implement deterministic tests for at least:
 - metadata unchanged for position-only motion inside one lyric line;
 - metadata changed for lyric/loading/Translation/artwork changes.
 
-## Stop point for the current documentation task
+## Implementation progress
 
-After durable docs are aligned and committed on this branch:
-
-- do **not** implement production code;
-- do **not** run implementation validation;
-- do **not** open a PR;
-- do **not** call Codex review.
-
-The next action is a separately initiated Codex implementation pass using this branch and its committed documentation as the source of truth.
+- Automotive runtime now receives selected-session artwork tagged to the playback track identity, source-derived transport capability facts, Translation settings/state, and the application-owned canonical lyrics identity adapter.
+- Automotive state has explicit lyric primary/secondary presentation slots. Existing visible output is retained at this checkpoint.
+- `:ui:automotive:compileDebugKotlin` and `:app:compileDebugKotlin` passed after this checkpoint.

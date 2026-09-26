@@ -1,11 +1,13 @@
 package io.github.whoxamxl.aalyrics.ui.automotive.state
 
+import android.graphics.Bitmap
 import io.github.whoxamxl.aalyrics.core.lyrics.LyricsState
 import io.github.whoxamxl.aalyrics.core.model.LyricLine
 import io.github.whoxamxl.aalyrics.core.model.PlaybackSnapshot
 import io.github.whoxamxl.aalyrics.core.model.PlaybackStatus
 import io.github.whoxamxl.aalyrics.core.model.TimedLyricLine
 import io.github.whoxamxl.aalyrics.core.model.Track
+import io.github.whoxamxl.aalyrics.ui.automotive.AutomotiveTransportCapabilities
 import kotlin.math.roundToLong
 
 data class AutomotiveLyricsUiState(
@@ -16,8 +18,13 @@ data class AutomotiveLyricsUiState(
     val positionMs: Long = 0L,
     val playbackStatus: PlaybackStatus = PlaybackStatus.IDLE,
     val playbackRate: Float = 1.0f,
-    val subtitle: String = NO_MEDIA_MESSAGE,
+    val artwork: Bitmap? = null,
+    val capabilities: AutomotiveTransportCapabilities = AutomotiveTransportCapabilities(),
+    val lyrics: AutomotiveLyricPresentation = AutomotiveLyricPresentation(NO_MEDIA_MESSAGE),
 ) {
+    val subtitle: String
+        get() = lyrics.primaryText
+
     val displayTitle: String
         get() = when {
             trackTitle.isNullOrBlank() -> "AALyrics"
@@ -29,6 +36,12 @@ data class AutomotiveLyricsUiState(
         const val NO_MEDIA_MESSAGE = "Play a song to see lyrics"
     }
 }
+
+data class AutomotiveLyricPresentation(
+    val primaryText: String,
+    val secondaryText: String? = null,
+    val isAnimatedLoading: Boolean = false,
+)
 
 internal object AutomotiveLyricsUiStateMapper {
     fun project(
@@ -82,7 +95,7 @@ internal object AutomotiveLyricsUiStateMapper {
             positionMs = positionMs,
             playbackStatus = playback.status,
             playbackRate = playback.playbackRate,
-            subtitle = subtitle,
+            lyrics = AutomotiveLyricPresentation(subtitle),
         )
     }
 
