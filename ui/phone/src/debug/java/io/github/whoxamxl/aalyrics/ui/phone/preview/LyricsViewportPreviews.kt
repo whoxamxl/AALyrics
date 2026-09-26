@@ -3,7 +3,7 @@ package io.github.whoxamxl.aalyrics.ui.phone.preview
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -17,6 +17,7 @@ import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsTheme
 import io.github.whoxamxl.aalyrics.ui.phone.lyrics.LyricsViewport
 import io.github.whoxamxl.aalyrics.ui.phone.lyrics.KaraokeLineUiState
 import io.github.whoxamxl.aalyrics.ui.phone.lyrics.LyricsViewportUiState
+import io.github.whoxamxl.aalyrics.core.model.LyricsSyncType
 import kotlinx.coroutines.delay
 
 @Preview(name = "WORD · karaoke progress", group = "LyricsViewport", widthDp = 412, heightDp = 520)
@@ -111,7 +112,7 @@ private fun LyricsViewportLineTransitionPreview() {
                 PhonePreviewFixtures.viewportLineFirst.copy(currentLineIndex = null),
             )
         }
-        val scrollState = rememberScrollState()
+        val listState = rememberLazyListState()
 
         LaunchedEffect(Unit) {
             delay(1200)
@@ -129,7 +130,7 @@ private fun LyricsViewportLineTransitionPreview() {
             LyricsViewport(
                 state = state,
                 modifier = Modifier.fillMaxSize(),
-                scrollState = scrollState,
+                listState = listState,
                 onInteractionModeChange = { mode ->
                     state = state.copy(interactionMode = mode)
                 },
@@ -202,12 +203,16 @@ private fun LyricsViewportPreview(
 ) {
     AALyricsTheme {
         var state by remember(initialState) { mutableStateOf(initialState) }
-        val scrollState = rememberScrollState()
+        val listState = rememberLazyListState()
 
         if (startAtEnd) {
-            LaunchedEffect(scrollState.maxValue) {
-                if (scrollState.maxValue > 0) {
-                    scrollState.scrollTo(scrollState.maxValue)
+            LaunchedEffect(state.lines.size, state.syncType) {
+                if (state.lines.isNotEmpty()) {
+                    val openingItemOffset =
+                        if (state.syncType == LyricsSyncType.PLAIN) 0 else 1
+                    listState.scrollToItem(
+                        state.lines.lastIndex + openingItemOffset,
+                    )
                 }
             }
         }
@@ -220,7 +225,7 @@ private fun LyricsViewportPreview(
             LyricsViewport(
                 state = state,
                 modifier = Modifier.fillMaxSize(),
-                scrollState = scrollState,
+                listState = listState,
                 onInteractionModeChange = { mode ->
                     state = state.copy(interactionMode = mode)
                 },

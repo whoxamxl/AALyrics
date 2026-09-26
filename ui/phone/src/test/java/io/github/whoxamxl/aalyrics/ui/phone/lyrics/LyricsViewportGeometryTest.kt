@@ -65,4 +65,38 @@ class LyricsViewportGeometryTest {
             )
         }
     }
+    @Test
+    fun `lazy row key ignores translation-only changes`() {
+        val canonical = LyricsViewportLineUiState(
+            text = "Hello world",
+            words = listOf("Hello", "world"),
+        )
+        val translated = canonical.copy(translatedText = "こんにちは世界")
+
+        assertEquals(
+            lyricsLazyItemKey(4, canonical),
+            lyricsLazyItemKey(4, translated),
+        )
+    }
+
+    @Test
+    fun `lazy row key distinguishes canonical row positions`() {
+        val line = LyricsViewportLineUiState(text = "Repeated line")
+
+        kotlin.test.assertNotEquals(
+            lyricsLazyItemKey(2, line),
+            lyricsLazyItemKey(3, line),
+        )
+    }
+
+    @Test
+    fun `lazy row key rejects negative indices`() {
+        assertFailsWith<IllegalArgumentException> {
+            lyricsLazyItemKey(
+                -1,
+                LyricsViewportLineUiState(text = "Invalid"),
+            )
+        }
+    }
+
 }

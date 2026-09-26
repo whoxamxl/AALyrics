@@ -81,11 +81,22 @@ Preserve the current Phone contract unless a device regression forces a separate
 ## Implementation checkpoints
 
 - [x] Align durable viewport/Translation/Karaoke/roadmap documentation and establish this task.
-- [ ] Replace eager Phone lyric-row composition with a stable lazy list foundation while preserving static rendering and manual scroll.
+- [x] Replace eager Phone lyric-row composition with a stable lazy list foundation while preserving static rendering and manual scroll.
 - [ ] Port timed Follow/Browse, opening/final boundaries, return-to-playback direction/action, and PLAIN auto-scroll to lazy-list geometry.
 - [ ] Isolate immutable row content from high-frequency current-line/Karaoke updates and verify Translation remeasurement behavior.
 - [ ] Add/update focused unit/Compose/Preview coverage for lazy composition, variable-height rows, Translation, Karaoke, Follow/Browse, seeks, and document boundaries.
 - [ ] Run final validation, inspect branch-wide regression/scope alignment, update this task with evidence, then open a Draft PR and STOP per `AGENTS.md`.
+
+## Checkpoint 1 record
+
+- Replaced the eager `Column + verticalScroll` row container with `LazyColumn + LazyListState`.
+- Kept the complete lyrics data in presentation state; only row composition/measurement is lazy.
+- Preserved the timed opening `♪` as a dedicated lazy item and canonical/Translation content as one lyric item.
+- Added stable canonical row keys that intentionally ignore Translation-only changes.
+- Preserved user-scroll detection so direct scrolling continues to hand ownership to Browse.
+- Removed the obsolete absolute-`ScrollState` Follow/PLAIN geometry instead of pretending it remains valid against a lazy list.
+- Timed Follow positioning, return-to-playback, PLAIN auto-scroll, and final-boundary settlement are intentionally pending Checkpoint 2.
+- No provider, Translation execution, shared timing, Android Auto, persistence, or cache behavior changed.
 
 ## Acceptance criteria
 
