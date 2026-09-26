@@ -4,7 +4,7 @@
 
 - Branch: `feature/android-auto-now-playing`.
 - Base: `main` at `52e9249395206f8c3821cc5c8e5893a8ccdcd125` (PR #82 merged).
-- Current checkpoint: implementation in progress. Automotive runtime/state inputs are complete; shared timing integration is next.
+- Current checkpoint: implementation in progress. Shared timing integration is complete; Lyrics presentation is next.
 - Authoritative slice contract: `docs/ANDROID_AUTO_NOW_PLAYING.md`.
 - Broader Android Auto strategy: `docs/ANDROID_AUTO_MEDIA_STRATEGY.md`.
 - Shared timing authority: `docs/TIMING_ARCHITECTURE.md`.
@@ -136,7 +136,7 @@ Do not implement:
 1. [x] Documentation gate: create authoritative Android Auto Now Playing contract and align active task.
 2. [x] Align durable architecture/roadmap docs with the authorized surface contract and explicit Karaoke exclusion.
 3. [x] Automotive state/runtime contract: expose the smallest required artwork, playback-capability, Translation, and timing inputs.
-4. [ ] Shared timing integration: remove automotive-local current-line authority and consume shared `activeLineIndex`.
+4. [x] Shared timing integration: remove automotive-local current-line authority and consume shared `activeLineIndex`.
 5. [ ] Lyrics presentation: implement LINE/WORD line-only mapping, PLAIN fallback, lifecycle copy, and deterministic loading heartbeat.
 6. [ ] Artwork + controls: wire existing artwork state and real capability-derived PlaybackState actions.
 7. [ ] Translation: wire exact-identity Translation state, two-line Ready presentation, translating heartbeat, and Failed source-only fallback.
@@ -222,3 +222,5 @@ Codex must implement deterministic tests for at least:
 - Automotive runtime now receives selected-session artwork tagged to the playback track identity, source-derived transport capability facts, Translation settings/state, and the application-owned canonical lyrics identity adapter.
 - Automotive state has explicit lyric primary/secondary presentation slots. Existing visible output is retained at this checkpoint.
 - `:ui:automotive:compileDebugKotlin` and `:app:compileDebugKotlin` passed after this checkpoint.
+- Automotive now uses the shared projected playback clock, zero-offset effective lyrics position, and `LyricsTimingProjection.activeLineIndex`. The Automotive-local line selector and observation-time fallback clock were removed. Source timestamps and AALyrics sample-time fallback are covered by focused test sources.
+- Checkpoint 4 test sources and app compiled; architecture checks passed. Local Gradle test workers cannot establish a loopback connection in this environment, so execution will be validated by branch GitHub Actions.

@@ -30,7 +30,6 @@ class LyricsBrowserService : MediaBrowserServiceCompat() {
 
     private var latestPlayback = PlaybackSnapshot()
     private var latestLyrics: LyricsState = LyricsState.Idle
-    private var playbackReceivedAtMs = 0L
     private var lastMetadataSignature: MetadataSignature? = null
 
     override fun onCreate() {
@@ -92,12 +91,10 @@ class LyricsBrowserService : MediaBrowserServiceCompat() {
 
         latestPlayback = runtimeBinding.playback.value
         latestLyrics = runtimeBinding.lyrics.value
-        playbackReceivedAtMs = SystemClock.elapsedRealtime()
 
         playbackCollection = scope.launch {
             runtimeBinding.playback.collectLatest { snapshot ->
                 latestPlayback = snapshot
-                playbackReceivedAtMs = SystemClock.elapsedRealtime()
                 render(forceMetadata = true)
             }
         }
@@ -111,16 +108,10 @@ class LyricsBrowserService : MediaBrowserServiceCompat() {
 
     private fun render(forceMetadata: Boolean = false) {
         val now = SystemClock.elapsedRealtime()
-        val elapsed = if (playbackReceivedAtMs > 0L) {
-            (now - playbackReceivedAtMs).coerceAtLeast(0L)
-        } else {
-            0L
-        }
         val state = AutomotiveLyricsUiStateMapper.project(
             playback = latestPlayback,
             lyricsState = latestLyrics,
             currentMonotonicTimeMs = now,
-            elapsedSincePlaybackSnapshotMs = elapsed,
         )
 
         val signature = MetadataSignature(

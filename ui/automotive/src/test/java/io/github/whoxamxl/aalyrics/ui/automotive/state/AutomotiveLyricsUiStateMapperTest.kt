@@ -39,12 +39,41 @@ class AutomotiveLyricsUiStateMapperTest {
             playback = playback,
             lyricsState = ready(track, lyrics),
             currentMonotonicTimeMs = 1_750L,
-            elapsedSincePlaybackSnapshotMs = 50L,
         )
 
         assertEquals(10_250L, state.positionMs)
         assertEquals("Song — Artist", state.displayTitle)
         assertEquals("Second", state.subtitle)
+    }
+
+    @Test
+    fun `sample timestamp drives both sides of a line boundary when source time is absent`() {
+        val track = Track(title = "Song", artists = listOf("Artist"))
+        val playback = PlaybackSnapshot(
+            track = track,
+            status = PlaybackStatus.PLAYING,
+            positionMs = 9_500L,
+            positionSampledAtMonotonicMs = 1_000L,
+        )
+        val lyrics = ready(
+            track,
+            LyricsDocument(
+                lines = listOf(
+                    TimedLyricLine("First", startMs = 0L),
+                    TimedLyricLine("Second", startMs = 10_000L),
+                ),
+            ),
+        )
+
+        assertEquals("First", AutomotiveLyricsUiStateMapper.project(
+            playback, lyrics, currentMonotonicTimeMs = 1_400L,
+        ).subtitle)
+        assertEquals("Second", AutomotiveLyricsUiStateMapper.project(
+            playback, lyrics, currentMonotonicTimeMs = 1_600L,
+        ).subtitle)
+        assertEquals("First", AutomotiveLyricsUiStateMapper.project(
+            playback.copy(positionMs = 8_000L), lyrics, currentMonotonicTimeMs = 1_600L,
+        ).subtitle)
     }
 
     @Test
@@ -57,7 +86,7 @@ class AutomotiveLyricsUiStateMapperTest {
         val state = AutomotiveLyricsUiStateMapper.project(
             playback = PlaybackSnapshot(track = track, status = PlaybackStatus.PLAYING),
             lyricsState = ready(track, lyrics),
-            elapsedSincePlaybackSnapshotMs = 5_000L,
+            currentMonotonicTimeMs = 5_000L,
         )
 
         assertEquals("Unsynced lyrics", state.subtitle)
@@ -78,6 +107,7 @@ class AutomotiveLyricsUiStateMapperTest {
                 positionMs = 30_000L,
             ),
             lyricsState = ready(oldTrack, oldLyrics),
+            currentMonotonicTimeMs = 0L,
         )
 
         assertEquals("New — Artist", state.displayTitle)
@@ -96,7 +126,7 @@ class AutomotiveLyricsUiStateMapperTest {
             lyricsState = LyricsState.Loading(
                 LyricsLookup(LyricsLookupId(1L), track),
             ),
-            elapsedSincePlaybackSnapshotMs = 10_000L,
+            currentMonotonicTimeMs = 10_000L,
         )
 
         assertEquals(12_345L, state.positionMs)
