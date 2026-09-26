@@ -90,14 +90,17 @@ The display title is presentation only. Update comparison, APK naming, changelog
 
 ## Release-prep validation record
 
-- Baseline alignment: branch is five commits ahead of `main @ ad4ca154604e4846e273b21a098ba0e03c98bc97` and zero commits behind.
-- Branch-wide scope is limited to `.github/workflows/release.yml`, `CHANGELOG.md`, `README.md`, `TASK.md`, `docs/RELEASES.md`, and three documentation-only files under `docs/screenshots/`; no production Kotlin/Java/resources or provider/runtime behavior changed.
+- High-quality README screenshot derivatives retain the supplied source dimensions: Phone 709×1536 and Android Auto 1536×864. Repository assets are approximately 67–82 KB for Phone and 78–112 KB for Android Auto, replacing the earlier visibly over-compressed 5–7 KB derivatives.
+- The README hero uses the rounded documentation derivative while `branding/AALyrics_MASTER.svg` remains untouched and authoritative.
+
+- Baseline alignment: the release-prep branch remains zero commits behind the intended `main @ ad4ca154604e4846e273b21a098ba0e03c98bc97` baseline.
+- Branch-wide scope is limited to release/docs surfaces: `.github/workflows/release.yml`, `CHANGELOG.md`, `README.md`, `TASK.md`, `docs/BRANDING.md`, `docs/RELEASES.md`, the README-only rounded brand derivative, and five documentation screenshots; no production Kotlin/Java/resources or provider/runtime behavior changed.
 - README no longer contains the stale working-branch status or the old "new Android project" construction framing. Installation, Android Auto setup, Beta scope, user-visible capabilities, development entry points, and license are directly discoverable.
 - The newest in-app changelog heading is exactly `1.0.0-beta.1`, matching the intended canonical tag after removing its leading `v`.
 - Release-title mapping was exercised for Beta, Alpha, RC, stable, and non-zero patch examples. The intended tag maps to `AALyrics 1.0 Beta 1`; canonical `versionName`, tag, and APK naming remain `1.0.0-beta.1` / `v1.0.0-beta.1`.
 - Release policy documents that zero patch components may be omitted only from the human-facing GitHub Release title.
 - The first title implementation produced `AALyrics 1.0.0 Beta 1`, which conflicted with the approved human-facing contract. This was caught during validation and corrected before PR creation.
-- The repository cannot be checked out in the current execution environment because outbound GitHub DNS is unavailable. Full Gradle/architecture CI is therefore left to the normal pull-request Build workflow; this release-prep branch changes no production implementation code.
+- Full Gradle, unit-test, branch-policy, and architecture validation is delegated to the normal pull-request Build workflow. The visual-only asset/refinement commits continue to change no production implementation code.
 
 ## Result
 
