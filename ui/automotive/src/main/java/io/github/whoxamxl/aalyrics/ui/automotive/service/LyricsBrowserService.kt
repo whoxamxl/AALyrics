@@ -65,6 +65,7 @@ class LyricsBrowserService : MediaBrowserServiceCompat() {
         sessionToken = mediaSession.sessionToken
 
         binding = AutomotiveRuntimeHost.current()
+        binding?.hostDemand?.setActive(true)
         bindState(binding)
 
         scope.launch {
@@ -76,6 +77,7 @@ class LyricsBrowserService : MediaBrowserServiceCompat() {
     }
 
     override fun onDestroy() {
+        binding?.hostDemand?.setActive(false)
         playbackCollection?.cancel()
         lyricsCollection?.cancel()
         artworkCollection?.cancel()

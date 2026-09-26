@@ -34,6 +34,10 @@ fun interface AutomotiveBrowserClientTrust {
     fun isTrusted(clientPackageName: String, clientUid: Int): Boolean
 }
 
+fun interface AutomotiveHostDemand {
+    fun setActive(active: Boolean)
+}
+
 class AutomotiveRuntimeBinding(
     val playback: StateFlow<PlaybackSnapshot>,
     val lyrics: StateFlow<LyricsState>,
@@ -42,6 +46,7 @@ class AutomotiveRuntimeBinding(
     val translationSettings: StateFlow<TranslationSettings>,
     val translationState: StateFlow<TranslationState>,
     val canonicalLyricsIdentity: (LyricsState) -> CanonicalLyricsIdentity?,
+    val hostDemand: AutomotiveHostDemand,
     val transport: AutomotiveTransport,
     val browserClientTrust: AutomotiveBrowserClientTrust,
 )
