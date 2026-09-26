@@ -4,7 +4,8 @@
 
 - Branch: `feature/android-auto-now-playing`.
 - Original base: `main` at `52e9249395206f8c3821cc5c8e5893a8ccdcd125` (PR #82 merged).
-- Current checkpoint: implementation and software validation complete. Current `main` has one later changelog-only commit; reconcile it before the Draft PR.
+- Reconciled baseline: current `main` at `86f4cd300161eb2038c637094a8e75a0afa9bf80` (changelog-only PR #83).
+- Current checkpoint: implementation and software validation complete. Final CI rerun on the reconciled branch is pending before the Draft PR.
 - Authoritative slice contract: `docs/ANDROID_AUTO_NOW_PLAYING.md`.
 - Broader Android Auto strategy: `docs/ANDROID_AUTO_MEDIA_STRATEGY.md`.
 - Shared timing authority: `docs/TIMING_ARCHITECTURE.md`.
@@ -236,5 +237,6 @@ Codex must implement deterministic tests for at least:
 - Branch Build workflow [run 36210991011](https://github.com/whoxamxl/AALyrics/actions/runs/36210991011) passed architecture checks, `:app:assembleDebug`, and `./gradlew test` across all modules, including timing, Translation, platform/media, application, Phone, and Automotive tests.
 - Local Automotive/application production and test sources compiled. Local Gradle test and APK worker processes cannot establish a loopback connection in this environment; CI provided the complete test/APK result.
 - The branch-wide diff contains the approved documentation, application boundary, shared clock extraction, Automotive runtime/state/metadata wiring, and focused tests. No provider, Translation engine, Karaoke, queue, Browse, Sync, Car App Library, or persisted-state change is present. Reset behavior needs no change.
+- The branch was reconciled with current `main` after the scope audit. Its only intervening change was `CHANGELOG.md`, with no implementation conflict.
 - The CI debug APK was installed over the existing debuggable phone build using the matching local debug certificate; app data was preserved. DHU connected over ADB, but reported no video focus and could not capture a rendered host frame. Thus actual host artwork display, source/Translation line layout and ellipsis, refresh cadence, and control rendering remain **unverified**.
 - A physical Android Auto host was not available. Repeat DHU with an active video session and validate the same host behaviors on physical Android Auto before treating host presentation as verified.
