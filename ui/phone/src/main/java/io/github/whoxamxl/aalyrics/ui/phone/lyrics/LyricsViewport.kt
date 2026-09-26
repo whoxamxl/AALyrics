@@ -175,13 +175,26 @@ fun LyricsViewport(
         val fallbackPlainRowHeightPx = with(density) {
             StableLyricsLineHeight.roundToPx()
         }
-        val plainEstimatedRowStridePx = (
-            if (lineHeights.isEmpty()) {
-                fallbackPlainRowHeightPx
-            } else {
-                lineHeights.values.average().roundToInt()
-            } + rowSpacingPx
-            ).coerceAtLeast(1)
+        val plainEstimatedRowHeightPx = if (lineHeights.isEmpty()) {
+            fallbackPlainRowHeightPx
+        } else {
+            lineHeights.values.average().roundToInt()
+        }.coerceAtLeast(1)
+        val plainEstimatedRowStridePx =
+            (plainEstimatedRowHeightPx + rowSpacingPx).coerceAtLeast(1)
+        val plainEstimatedBottomPaddingPx = lazyBottomContentPaddingPx(
+            endingBoundaryStartPx = endingBoundaryStartPx,
+            lastLineHeightPx = plainEstimatedRowHeightPx,
+            minimumContentPaddingPx = minimumContentPaddingPx,
+        )
+        val plainEstimatedMaxScrollPx = estimatedPlainMaxScrollPx(
+            lineCount = state.lines.size,
+            estimatedRowHeightPx = plainEstimatedRowHeightPx,
+            rowSpacingPx = rowSpacingPx,
+            topContentPaddingPx = topContentPaddingPx,
+            bottomContentPaddingPx = plainEstimatedBottomPaddingPx,
+            viewportHeightPx = viewportHeightPx,
+        )
         val plainTarget = if (
             state.syncType == LyricsSyncType.PLAIN &&
             state.plainAutoScrollEnabled
@@ -190,6 +203,7 @@ fun LyricsViewport(
                 lineCount = state.lines.size,
                 playbackProgress = state.playbackProgress,
                 estimatedRowStridePx = plainEstimatedRowStridePx,
+                estimatedMaxScrollPx = plainEstimatedMaxScrollPx,
             )
         } else {
             null
@@ -1000,32 +1014,62 @@ private fun timedPlaybackItemIndex(state: LyricsViewportUiState): Int? {
     return currentLineIndex?.plus(1) ?: 0
 }
 
+internal fun estimatedPlainMaxScrollPx(
+    lineCount: Int,
+    estimatedRowHeightPx: Int,
+    rowSpacingPx: Int,
+    topContentPaddingPx: Int,
+    bottomContentPaddingPx: Int,
+    viewportHeightPx: Int,
+): Int {
+    if (
+        lineCount <= 0 ||
+        estimatedRowHeightPx <= 0 ||
+        rowSpacingPx < 0 ||
+        topContentPaddingPx < 0 ||
+        bottomContentPaddingPx < 0 ||
+        viewportHeightPx <= 0
+    ) {
+        return 0
+    }
+
+    val contentHeightPx =
+        topContentPaddingPx.toLong() +
+            (lineCount.toLong() * estimatedRowHeightPx.toLong()) +
+            ((lineCount - 1).toLong() * rowSpacingPx.toLong()) +
+            bottomContentPaddingPx.toLong()
+    return (contentHeightPx - viewportHeightPx.toLong())
+        .coerceIn(0L, Int.MAX_VALUE.toLong())
+        .toInt()
+}
+
 internal fun plainLazyTarget(
     lineCount: Int,
     playbackProgress: Float?,
     estimatedRowStridePx: Int,
+    estimatedMaxScrollPx: Int,
 ): PlainLazyTarget? {
     if (
         lineCount <= 0 ||
         playbackProgress == null ||
         !playbackProgress.isFinite() ||
-        estimatedRowStridePx <= 0
+        estimatedRowStridePx <= 0 ||
+        estimatedMaxScrollPx <= 0
     ) {
         return null
     }
-
-    if (lineCount == 1) return PlainLazyTarget(index = 0, scrollOffsetPx = 0)
 
     val documentProgress = (
         (playbackProgress.coerceIn(0f, 1f) - PlainLeadInFraction) /
             (1f - PlainLeadInFraction - PlainLeadOutFraction)
         ).coerceIn(0f, 1f)
-    val itemProgress = documentProgress * (lineCount - 1)
-    val index = floor(itemProgress).toInt().coerceIn(0, lineCount - 1)
-    val localProgress = itemProgress - index
-    val scrollOffsetPx = (localProgress * estimatedRowStridePx)
+    val targetScrollPx = (estimatedMaxScrollPx * documentProgress)
         .roundToInt()
-        .coerceAtLeast(0)
+        .coerceIn(0, estimatedMaxScrollPx)
+    val index = (targetScrollPx / estimatedRowStridePx)
+        .coerceIn(0, lineCount - 1)
+    val scrollOffsetPx =
+        (targetScrollPx - (index * estimatedRowStridePx)).coerceAtLeast(0)
 
     return PlainLazyTarget(
         index = index,
