@@ -48,15 +48,15 @@ AALyrics brings the active lyric context into Android Auto Now Playing and stays
 
 AALyrics observes the active Android media session, matches the current track against multiple lyrics providers, and presents the best available lyrics in real time. The core experience is already functional on Phone and Android Auto, with on-device Translation, experimental word-synced Karaoke, playback controls, and signed in-app updates built around it.
 
-## ✨ Highlights
+## Highlights
 
-- 🎵 **Synchronized lyrics** — plain, line-synced, and genuine word-synced lyrics when the selected provider supplies them.
-- 🚘 **Android Auto Now Playing** — current lyric line, artwork, translated line when eligible, and the transport controls exposed by the active media app.
-- 🔎 **Multiple lyrics providers** — LRCLIB, PetitLyrics, Musixmatch, and SyncLRC with provider-independent candidate selection.
-- 🌍 **On-device Translation** — translated lyrics remain tied to the canonical lyric document and playback timing.
-- 🎤 **Experimental WORD_SYNC Karaoke** — opt-in Phone presentation for genuine word-timed lyrics.
-- 🎛️ **Phone playback surface** — play/pause, previous/next, seek, relative seek, and Queue support where the active media app exposes them.
-- 🔄 **Built-in updates** — signed GitHub Release APK discovery, SHA-256 verification, package/signing preflight, and Android PackageInstaller handoff.
+- **Synchronized lyrics** — plain, line-synced, and genuine word-synced lyrics when the selected provider supplies them.
+- **Android Auto Now Playing** — current lyric line, artwork, translated line when eligible, and the transport controls exposed by the active media app.
+- **Multiple lyrics providers** — LRCLIB, PetitLyrics, Musixmatch, and SyncLRC with provider-independent candidate selection.
+- **On-device Translation** — translated lyrics remain tied to the canonical lyric document and playback timing.
+- **Experimental WORD_SYNC Karaoke** — opt-in Phone presentation for genuine word-timed lyrics.
+- **Phone playback surface** — play/pause, previous/next, seek, relative seek, and Queue support where the active media app exposes them.
+- **Built-in updates** — signed GitHub Release APK discovery, SHA-256 verification, package/signing preflight, and Android PackageInstaller handoff.
 
 ## Get AALyrics
 
@@ -111,6 +111,14 @@ Phone lyrics automatically follow playback while still allowing manual browsing.
 Translation uses the established AALyrics Translation pipeline and on-device language models where supported. Translated text is secondary presentation only: it remains tied to the identity and timing of the canonical lyrics.
 
 Actual lyric availability and timing quality depend on the metadata exposed by the active media app and on matching lyric data available from the providers.
+
+## Support AALyrics
+
+If AALyrics is useful to you and you want to support continued development, you can contribute through Buy Me a Coffee.
+
+<p>
+  <a href="https://www.buymeacoffee.com/whoxamxi"><img src="https://img.shields.io/badge/Support-Buy_Me_a_Coffee-FFDD00?style=for-the-badge&logo=buymeacoffee&logoColor=000000" alt="Support AALyrics on Buy Me a Coffee" /></a>
+</p>
 
 ## Development
 
