@@ -55,7 +55,7 @@ The GitHub Social Preview should communicate the real Android Auto product witho
 - [x] Document the public MediaSession player-compatibility meaning in `docs/MEDIA_SESSION_RUNTIME.md`.
 - [x] Align `docs/ANDROID_AUTO_NOW_PLAYING.md` with that player-source contract.
 - [x] Record the GitHub Social Preview design/brand contract in `docs/BRANDING.md`.
-- [ ] Run a branch-wide documentation regression/staleness review and normal repository validation.
+- [x] Run a branch-wide documentation regression/staleness review and normal repository validation.
 
 ## Acceptance criteria
 
@@ -65,3 +65,15 @@ The GitHub Social Preview should communicate the real Android Auto product witho
 - Branding docs prevent future Social Preview work from substituting an approximate AALyrics logo or fictional product UI.
 - Roadmap status no longer points at a historical working branch/TASK as if it were current execution state.
 - No production application behavior changes.
+
+
+## Validation record
+
+- Branch-wide diff is documentation-only: `TASK.md`, `docs/RELEASES.md`, `docs/ROADMAP.md`, `docs/MEDIA_SESSION_RUNTIME.md`, `docs/ANDROID_AUTO_NOW_PLAYING.md`, and `docs/BRANDING.md`.
+- The branch is zero commits behind `main` at the final documentation review point.
+- README compatibility wording is present on `main` and matches the MediaSession compatibility contract added here.
+- The live GitHub Release state was re-verified: `v1.0.0-beta.1` is published, `prerelease=false`, and is returned by `/releases/latest`; durable docs explicitly distinguish that presentation state from the semantic Beta version channel.
+- Roadmap no longer treats the historical Android Auto working branch or release-preparation TASK as current execution state.
+- Branding documentation now requires the canonical AALyrics logo and authentic product UI as the factual source for Social Preview artwork, with 1280×640 / under-1-MB output guidance and the approved glassmorphism direction.
+- No production source, Android resources, provider implementation, runtime behavior, signing configuration, or workflow behavior changed.
+- Branch pushes do not start the normal Build workflow in this repository; the Draft PR Build remains the normal CI gate after PR creation.
