@@ -660,4 +660,6 @@ For missing source timestamps:
 
 A source timestamp is not considered invalid only because it is old. The source clock is rejected when the same timestamp is paired with changed position/status/rate, when the timestamp moves backwards on the same track, or when it is later than the local sample time. A null timestamp does not clear an existing quarantine; recovery requires a new valid non-null timestamp or a track/session identity change. A newly selected playing session is re-sampled once after 250ms so these contradictions can be detected even when AALyrics attaches in the middle of a track.
 
-This keeps the player clock aligned with LINE/WORD Phone lyrics timing and PLAIN playback progress without making Karaoke enablement part of playback timing.
+Track transitions obey the same platform invariant. During the 600 ms metadata-stabilization window, the Playback Surface may temporarily continue displaying the last coherent stable track snapshot. It must not receive or construct a hybrid such as old title/artist identity with the pending track's position/status/rate/timestamps. Once the new identity is committed, its timeline replaces the old snapshot atomically.
+
+This keeps the player clock aligned with LINE/WORD Phone lyrics timing and PLAIN playback progress without making Karaoke enablement part of playback timing. The Playback Surface consumes the coherent snapshot supplied by `:platform:media`; it does not own metadata-stabilization or cross-track clock repair.

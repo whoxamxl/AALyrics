@@ -102,10 +102,13 @@ When ownership changes, the runtime:
 - registers the callback on the new controller;
 - immediately normalizes and forwards the new controller's current snapshot;
 - forwards relevant metadata/playback-state changes through `MediaControllerSnapshotAdapter`;
+- keeps same-identity playback updates live while a metadata candidate is pending;
+- never rewrites a different track's timeline onto the stable track identity;
+- commits a different track identity and its timeline together after the 600 ms stabilization window;
 - re-evaluates active sessions when the selected session is destroyed;
 - unregisters callbacks/listeners when the notification listener disconnects or the service is destroyed.
 
-Normal callback churn relies on the existing `PlaybackLyricsController` identity rules: position, status, rate, and duration changes alone do not start a new lyrics lookup, while a real track-identity change does.
+Normal callback churn relies on the existing `PlaybackLyricsController` identity rules only after `:platform:media` has produced an internally coherent snapshot. Position, status, rate, and duration changes alone do not start a new lyrics lookup when they belong to the current stable identity; a real track-identity change is committed as one coherent playback snapshot and then starts fresh ownership.
 
 ## Playback position clock
 
@@ -139,6 +142,18 @@ Playback identity and timeline are atomic across this window:
 - cross-identity position/status/rate/timestamps are held until the metadata stabilization task commits the new track snapshot as one coherent unit.
 
 This deliberately permits up to the stabilization window of visual staleness during a real track transition rather than fabricating an impossible snapshot such as Track A identity with Track B position.
+
+The invariant at the `:platform:media -> PlaybackSnapshot` boundary is:
+
+```text
+emitted track/source identity
+        +
+emitted position/status/rate/timestamps
+        =
+one logical playback sample for the same track
+```
+
+Downstream application, timing, Karaoke, Details, and playback-surface code may project this sample, but must not repair or reinterpret cross-track identity/timeline mismatches because such mismatches must not cross the platform boundary.
 
 Deterministic regressions verify the delay, replacement of older pending metadata, playback-first callback ordering, same-identity live updates during a pending candidate, and atomic commit of a different track timeline. The stabilization remains outside `PlaybackLyricsController` and does not redefine core lookup identity semantics. Clock hardening also covers the overlap between the 250ms initial clock validation and the 600ms metadata-stabilization task so clock reconciliation cannot leak a pending track timeline into the stable identity.
 

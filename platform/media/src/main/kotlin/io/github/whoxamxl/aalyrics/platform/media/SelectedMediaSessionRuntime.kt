@@ -73,8 +73,9 @@ internal object MediaSessionSelectionPolicy {
  * Owns one selected session callback and forwards normalized snapshots.
  *
  * Track-changing metadata is stabilized for the working fork's 600 ms window.
- * Playback status/timeline updates remain immediate, but retain the last stable
- * track identity while a metadata change is pending.
+ * Same-identity playback updates remain live. When a different track identity is
+ * pending, its timeline is held until stabilization commits that identity and
+ * timeline together, so downstream never receives a synthetic cross-track snapshot.
  */
 internal class SelectedMediaSessionRuntime<Token>(
     private val selfPackageName: String,

@@ -455,17 +455,21 @@ For the same playback timing sample and monotonic instant:
 - they must produce the same shared `LyricsTimingProjection`;
 - enabling Karaoke only decides whether the already-computed WORD presentation facts are rendered.
 
-Some Android MediaSession sources omit `lastPositionUpdateTime`. For Phone WORD_SYNC presentation, AALyrics may anchor the received `positionMs` to the monotonic time at which that timing sample was received so continuous progress can be projected between coarse callbacks.
+Some Android MediaSession sources omit or publish internally contradictory `lastPositionUpdateTime` values. The platform runtime therefore emits a coherent playback sample with two possible monotonic anchors:
 
-That fallback anchor:
+- a valid source `positionUpdatedAtMonotonicMs`, which remains authoritative;
+- otherwise the AALyrics-side `positionSampledAtMonotonicMs` captured when `MediaControllerSnapshotAdapter` sampled the controller.
 
-- applies to WORD_SYNC independently of the Karaoke live toggle;
-- is ignored when the source supplies a valid monotonic position timestamp;
-- resets for an actual timing-sample change such as position, playback rate, playback status, track identity, or source timestamp;
-- must not reset merely because unrelated track metadata such as duration is updated;
-- may change presentation update cadence when Karaoke is active, but cadence must never change clock semantics.
+The platform-owned `PlaybackClockReconciler` decides whether the source timestamp is usable. Karaoke does not make that decision and does not create its own fallback anchor.
 
-Verbose Details for WORD_SYNC must consume the same Phone fallback clock so diagnostics cannot disagree with the Lyrics surface.
+The shared Phone playback clock:
+
+- applies to LINE_SYNC, WORD_SYNC, PLAIN playback progress, Details progress, and the Playback Surface independently of the Karaoke live toggle;
+- survives Activity/Compose recreation because the fallback anchor is attached to the immutable playback snapshot;
+- receives only identity/timeline-coherent snapshots from `:platform:media`; a pending different track's timeline is held during the 600 ms metadata-stabilization window rather than being rewritten onto the stable identity;
+- may be observed at a higher presentation cadence while Karaoke is active, but cadence must never change clock semantics.
+
+Karaoke OFF and ON therefore consume the same already-reconciled projected playback position. No Karaoke code may compensate for MediaSession drift, metadata stabilization, or cross-track identity/timeline errors.
 
 
 ## Line-wide pseudo-token policy

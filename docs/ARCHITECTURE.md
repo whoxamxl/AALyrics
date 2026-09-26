@@ -182,6 +182,7 @@ Current implemented responsibilities:
 - selected `MediaController.Callback` lifecycle
 - safe normalization/forwarding of live controller state
 - platform-owned 600 ms track-metadata stabilization
+- identity/timeline atomicity across that stabilization window: same-identity playback updates may flow immediately, but a different track's timeline is held until its identity is committed
 
 It must not fetch/rank lyrics, depend on concrete providers, own `LyricsState`, implement presentation, or decide whether phone/automotive lifecycle currently demands lyrics.
 
@@ -361,6 +362,8 @@ The implemented runtime preserves/refactors the mature session-selection semanti
 
 The selected controller alone owns a runtime callback. Switching selection detaches the old callback and attaches the new one. Session destruction re-evaluates active sessions.
 
+Track identity and playback timeline are one platform-normalization unit. During the 600 ms track-metadata stabilization window, `:platform:media` may keep the last coherent snapshot briefly stale, but it must never emit the old track/source identity with position, status, rate, or timestamps sampled from a different pending track. Same-identity playback churn remains live. Presentation and timing consumers rely on this invariant and do not perform cross-track repair.
+
 Android notification-listener access is a platform concern. The service must be declared with `BIND_NOTIFICATION_LISTENER_SERVICE`, must wait for `onListenerConnected()`, and should pass its component to active-session APIs rather than depending on privileged `MEDIA_CONTENT_CONTROL`.
 
 Detailed runtime behavior is in `docs/MEDIA_SESSION_RUNTIME.md`.
@@ -485,7 +488,7 @@ As future capability modules become concrete, their implementation slices should
 
 ## Future extension points
 
-The architecture seam for cache, translation, timing/calibration, Karaoke consumption/rendering, and presentation state is defined. Translation is implemented through Phone presentation, and `:core:timing` now implements the effective lyrics clock plus shared LINE/WORD timing projection used by the current Phone line path. Sync UX/persistence and Karaoke consumer/rendering remain separate later slices.
+The architecture seam for cache, translation, timing/calibration, Karaoke consumption/rendering, and presentation state is defined. Translation is implemented through Phone presentation, `:core:timing` owns the effective lyrics clock plus shared LINE/WORD timing projection, and the current Phone topic branch implements gated WORD_SYNC Karaoke presentation after that shared projection. Sync UX/persistence and Android Auto Karaoke remain separate later slices.
 
 Settings/persistence, release/signing, and other later features remain separate responsibilities. Their future existence must not be used as a reason to mix those concerns into `LyricsCoordinator`, `PlaybackLyricsController`, the media-session runtime, demand gate, provider selection, concrete provider adapters, capability services, or shared design-system components.
 
