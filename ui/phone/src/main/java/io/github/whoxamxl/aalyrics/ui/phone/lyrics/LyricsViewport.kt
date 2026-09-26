@@ -553,24 +553,82 @@ private fun KaraokeLineText(
                     .clearAndSetSemantics {}
                     .drawWithContent {
                         val textLayout = layout ?: return@drawWithContent
-                        val totalWidth = (sweep.start until sweep.end).sumOf { index ->
-                            textLayout.getBoundingBox(index).width.toDouble()
-                        }.toFloat()
-                        var remaining = totalWidth * sweep.progress.coerceIn(0f, 1f)
-                        val clip = Path()
-                        for (index in sweep.start until sweep.end) {
-                            if (remaining <= 0f) break
-                            val bounds = textLayout.getBoundingBox(index)
-                            val width = remaining.coerceAtMost(bounds.width)
-                            clip.addRect(
-                                Rect(bounds.left, bounds.top, bounds.left + width, bounds.bottom),
+                        val visualBoxes = (sweep.start until sweep.end).map { index ->
+                            KaraokeVisualBox(
+                                line = textLayout.getLineForOffset(index),
+                                bounds = textLayout.getBoundingBox(index),
                             )
-                            remaining -= width
                         }
+                        val clip = Path()
+                        karaokeVisualSweepClipRects(
+                            boxes = visualBoxes,
+                            progress = sweep.progress,
+                        ).forEach(clip::addRect)
                         val contentScope = this
                         clipPath(clip) { contentScope.drawContent() }
                     },
             )
+        }
+    }
+}
+
+internal data class KaraokeVisualBox(
+    val line: Int,
+    val bounds: Rect,
+)
+
+internal fun karaokeVisualSweepClipRects(
+    boxes: List<KaraokeVisualBox>,
+    progress: Float,
+): List<Rect> {
+    val segments = boxes
+        .filter { it.bounds.width > 0f && it.bounds.height > 0f }
+        .groupBy(KaraokeVisualBox::line)
+        .toSortedMap()
+        .values
+        .flatMap { lineBoxes ->
+            val sorted = lineBoxes
+                .map(KaraokeVisualBox::bounds)
+                .sortedWith(compareBy<Rect> { it.left }.thenBy { it.right })
+            if (sorted.isEmpty()) {
+                emptyList()
+            } else {
+                buildList {
+                    var current = sorted.first()
+                    sorted.drop(1).forEach { next ->
+                        current = if (next.left <= current.right) {
+                            Rect(
+                                left = current.left,
+                                top = minOf(current.top, next.top),
+                                right = maxOf(current.right, next.right),
+                                bottom = maxOf(current.bottom, next.bottom),
+                            )
+                        } else {
+                            add(current)
+                            next
+                        }
+                    }
+                    add(current)
+                }
+            }
+        }
+
+    val totalWidth = segments.sumOf { it.width.toDouble() }.toFloat()
+    var remaining = totalWidth * progress.coerceIn(0f, 1f)
+
+    return buildList {
+        for (segment in segments) {
+            if (remaining <= 0f) break
+            val width = remaining.coerceAtMost(segment.width)
+            add(
+                Rect(
+                    left = segment.left,
+                    top = segment.top,
+                    right = segment.left + width,
+                    bottom = segment.bottom,
+                ),
+            )
+            remaining -= width
         }
     }
 }
