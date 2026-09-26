@@ -114,6 +114,21 @@ class MusixmatchClientTest {
     }
 
     @Test
+    fun nonFiniteRichSyncLineEndsAreIgnored() {
+        val nan = MusixmatchClient.parseRichSyncResponse(richSyncResponse(
+            """[{"ts":2.0,"te":"NaN","x":"Hello world","l":[{"c":"Hello","o":0.0},{"c":"world","o":0.4}]}]""",
+        ))
+        val infinity = MusixmatchClient.parseRichSyncResponse(richSyncResponse(
+            """[{"ts":2.0,"te":"Infinity","x":"Hello world","l":[{"c":"Hello","o":0.0},{"c":"world","o":0.4}]}]""",
+        ))
+
+        assertEquals(null, nan.single().endMs)
+        assertEquals(null, infinity.single().endMs)
+        assertEquals(listOf(2_000L, 2_400L), nan.single().words.map { it.startMs })
+        assertEquals(listOf(2_000L, 2_400L), infinity.single().words.map { it.startMs })
+    }
+
+    @Test
     fun malformedOrDescendingRichSyncIsRejected() {
         assertTrue(MusixmatchClient.parseRichSyncResponse("{broken").isEmpty())
         assertTrue(MusixmatchClient.parseRichSyncResponse(richSyncResponse(
