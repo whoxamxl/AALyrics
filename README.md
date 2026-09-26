@@ -19,6 +19,7 @@
 </p>
 
 <p align="center">
+  <a href="https://www.buymeacoffee.com/whoxamxi"><img src="https://img.shields.io/badge/Support-Buy_Me_a_Coffee-FFDD00?style=for-the-badge&logo=buymeacoffee&logoColor=000000" height="40" alt="Support AALyrics on Buy Me a Coffee" /></a>
   <a href="https://github.com/whoxamxl/AALyrics/releases"><img src="https://img.shields.io/badge/Download_APK-GitHub_Releases-181717?style=for-the-badge&logo=github&logoColor=white" height="40" alt="Download AALyrics APK from GitHub Releases" /></a>
 </p>
 

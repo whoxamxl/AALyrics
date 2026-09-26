@@ -80,7 +80,7 @@ The display title is presentation only. Update comparison, APK naming, changelog
 ## Visual README refinement
 
 - Emoji-free README presentation: feature headings and bullets use plain product language rather than decorative emoji markers.
-- A real funding route is exposed through a restrained `Support AALyrics` section using the existing `.github/FUNDING.yml` Buy Me a Coffee account (`whoxamxi`); the primary download/usage path remains visually dominant.
+- A real funding route is exposed through the existing `.github/FUNDING.yml` Buy Me a Coffee account (`whoxamxi`). The top-level CTA row places Support immediately to the left of Download APK, while the lower `Support AALyrics` section provides context without replacing the primary download/usage path.
 
 - `branding/AALyrics_MASTER.svg` remains authoritative. The README uses `docs/branding/aalyrics-readme-icon-rounded.svg`, a documentation-only derivative that preserves the master artwork and adds only a rounded-corner clip.
 - Two authentic DHU screenshots cover Android Auto full Now Playing and split view alongside navigation, and appear before the Phone screenshots because Android Auto is AALyrics' primary differentiating surface.
