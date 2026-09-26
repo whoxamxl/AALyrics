@@ -125,7 +125,7 @@ normalized PlaybackSnapshot
         ↓
 shared projected playback clock
         ↓
-effectiveLyricsPosition(projectedPlaybackPosition, LyricsTimingOffset.ZERO)
+effectiveLyricsPosition(projectedPlaybackPosition, ANDROID_AUTO_AUDIO_LATENCY_COMPENSATION /* -75 ms */)
         ↓
 projectLyricsTiming(canonicalLyrics, effectivePosition)
         ↓
@@ -137,7 +137,8 @@ Automotive one-line presentation
 Rules:
 
 - canonical provider timestamps remain unchanged;
-- the production lyrics offset remains zero in this slice;
+- Android Auto currently applies a fixed `-75 ms` presentation-only audio-latency compensation during physical-host validation;
+- the fixed compensation is not Sync calibration: it is not persisted, user-configurable, provider-specific, or applied to playback position/source timestamps;
 - Android Auto does not implement Sync UX or calibration persistence;
 - LINE_SYNC and WORD_SYNC both use `activeLineIndex`;
 - WORD_SYNC ignores `activeWordIndex`, `wordProgress`, and `wordBoundary` for automotive presentation;
@@ -148,7 +149,7 @@ Rules:
 - when it is unavailable, the existing AALyrics-side `positionSampledAtMonotonicMs` fallback must be honored rather than anchoring to the time the Automotive UI happens to observe the snapshot;
 - track identity and timeline coherence remain a `:platform:media` invariant.
 
-For the same normalized playback sample and monotonic instant, Phone normal timed presentation and Android Auto must agree on the active line.
+Phone and Android Auto share the same normalized playback clock and timing semantics. During this host-validation checkpoint, Android Auto may cross a lyric boundary up to 75 ms later because only its effective lyrics position carries the fixed audio-path compensation.
 
 ## Lyrics presentation contract
 

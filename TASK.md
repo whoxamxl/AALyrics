@@ -5,7 +5,7 @@
 - Branch: `feature/android-auto-now-playing`.
 - Original base: `main` at `52e9249395206f8c3821cc5c8e5893a8ccdcd125` (PR #82 merged).
 - Reconciled baseline: current `main` at `86f4cd300161eb2038c637094a8e75a0afa9bf80` (changelog-only PR #83).
-- Current checkpoint: implementation and final software validation complete. Draft PR #84 is open; only Android Auto host rendering validation remains.
+- Current checkpoint: Draft PR #84 is open. Physical-host validation identified a small Android Auto audio-path lead, and a fixed `-75 ms` Automotive lyrics presentation compensation is now under device validation.
 - Authoritative slice contract: `docs/ANDROID_AUTO_NOW_PLAYING.md`.
 - Broader Android Auto strategy: `docs/ANDROID_AUTO_MEDIA_STRATEGY.md`.
 - Shared timing authority: `docs/TIMING_ARCHITECTURE.md`.
@@ -82,12 +82,12 @@ The product contract is intentionally narrow:
 ### Timing
 
 - Reuse the current normalized playback clock.
-- Use `LyricsTimingOffset.ZERO` in this slice.
+- During the current physical-host validation checkpoint, use a fixed Automotive-only `LyricsTimingOffset(-75L)` compensation.
 - Use `effectiveLyricsPosition(...)` + `projectLyricsTiming(...)`.
 - Automotive consumes `LyricsTimingProjection.activeLineIndex` only.
 - Remove/deprecate automotive-local current-line selection and avoid a second UI-owned playback clock.
 - Respect `positionUpdatedAtMonotonicMs` when valid and the existing `positionSampledAtMonotonicMs` fallback when source time is unavailable.
-- Do not implement Sync UX or timing persistence.
+- Keep the `-75 ms` compensation presentation-only: do not shift MediaSession playback position, canonical timestamps, Phone timing, or add Sync UX/persistence.
 
 ### Loading heartbeat
 
@@ -126,7 +126,7 @@ Do not implement:
 - queue presentation;
 - Browse/Expanded Lyrics;
 - Sync/calibration controls;
-- non-zero persisted timing offset;
+- non-zero persisted or user-configurable timing offset;
 - Car App Library / templated media;
 - provider selection/refetch changes;
 - Translation algorithms/providers/model lifecycle changes;

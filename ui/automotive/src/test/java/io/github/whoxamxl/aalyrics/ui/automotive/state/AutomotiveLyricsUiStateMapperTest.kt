@@ -59,6 +59,36 @@ class AutomotiveLyricsUiStateMapperTest {
     }
 
     @Test
+    fun `Android Auto lyrics apply fixed 75ms audio latency compensation without shifting playback position`() {
+        val track = Track(title = "Song", artists = listOf("Artist"))
+        val lyrics = ready(
+            track,
+            LyricsDocument(
+                lines = listOf(
+                    TimedLyricLine("First", startMs = 0L),
+                    TimedLyricLine("Second", startMs = 10_000L),
+                ),
+            ),
+        )
+
+        val beforeBoundary = AutomotiveLyricsUiStateMapper.project(
+            playback = PlaybackSnapshot(track = track, positionMs = 10_050L),
+            lyricsState = lyrics,
+            currentMonotonicTimeMs = 0L,
+        )
+        val atCompensatedBoundary = AutomotiveLyricsUiStateMapper.project(
+            playback = PlaybackSnapshot(track = track, positionMs = 10_075L),
+            lyricsState = lyrics,
+            currentMonotonicTimeMs = 0L,
+        )
+
+        assertEquals(10_050L, beforeBoundary.positionMs)
+        assertEquals("First", beforeBoundary.subtitle)
+        assertEquals(10_075L, atCompensatedBoundary.positionMs)
+        assertEquals("Second", atCompensatedBoundary.subtitle)
+    }
+
+    @Test
     fun `sample timestamp drives both sides of a line boundary when source time is absent`() {
         val track = Track(title = "Song", artists = listOf("Artist"))
         val playback = PlaybackSnapshot(
