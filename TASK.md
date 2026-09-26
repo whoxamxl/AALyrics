@@ -38,7 +38,7 @@ The README should answer, in this order:
 
 Internal implementation terminology should not dominate the opening sections. Detailed architecture remains authoritative in `docs/`.
 
-Authentic product screenshots are desirable, but none are currently stored in the repository. This release-prep slice must not fabricate UI screenshots merely to fill the README.
+Authentic product screenshots are stored under `docs/screenshots/` and are used for the README showcase. This release-prep slice must not fabricate UI screenshots merely to fill the README.
 
 ## Release naming contract
 
@@ -79,12 +79,13 @@ The display title is presentation only. Update comparison, APK naming, changelog
 
 ## Visual README refinement
 
-- `branding/AALyrics_MASTER.svg` is used directly as the README hero mark, consistent with `docs/BRANDING.md` and without inventing a substitute logo.
-- Three authentic physical-device screenshots were added under `docs/screenshots/`: the synchronized Lyrics surface, Expanded Player, and Queue.
-- The README opening now follows a product-page flow: brand mark -> product name/tagline -> Android/Beta/license badges -> Download APK CTA -> real product screenshot -> concise Highlights.
-- Expanded Player and Queue screenshots provide a second visual showcase before installation and technical documentation.
+- `branding/AALyrics_MASTER.svg` remains authoritative. The README uses `docs/branding/aalyrics-readme-icon-rounded.svg`, a documentation-only derivative that preserves the master artwork and adds only a rounded-corner clip.
+- Three authentic Phone screenshots cover the synchronized Lyrics surface, Expanded Player, and Queue.
+- Two authentic DHU screenshots cover Android Auto full Now Playing and split view alongside navigation.
+- The README opening follows a product-page flow: rounded brand mark -> product name/tagline -> Android/Beta/license badges -> Download APK CTA -> real product screenshot -> concise Highlights.
+- Phone Expanded Player/Queue and Android Auto full/split presentation provide visual proof of the current product state before installation and developer documentation.
+- The original Phone dimensions (709×1536) and Android Auto dimensions (1536×864) are preserved. README derivatives use high-quality WebP encoding rather than the earlier over-compressed 5–7 KB assets.
 - Project structure and architecture links remain available but are collapsed below the user-facing product/install sections rather than dominating the landing surface.
-- Documentation screenshots are stored as lightweight WebP derivatives for repository/README delivery; the supplied originals remain the visual source material.
 - No application runtime, UI implementation, provider, timing, playback, Translation, Karaoke, or Android Auto behavior changed in this refinement.
 
 ## Release-prep validation record
