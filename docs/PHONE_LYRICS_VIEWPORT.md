@@ -53,7 +53,7 @@ For LINE/WORD Follow, the approximately 45% target remains the visible contract.
 
 For Browse, visible-item indices and offsets replace the previous absolute `ScrollState` displacement calculation. The user still owns scrolling until the playback region is intentionally restored or manually re-entered according to the existing contract.
 
-PLAIN auto-scroll remains an estimate rather than authoritative timing. The lazy implementation maps continuous playback progress to a target item plus local estimated row stride; it deliberately does not reconstruct the old full-document pixel extent.
+PLAIN auto-scroll remains an estimate rather than authoritative timing. The lazy implementation estimates the scrollable document extent from visible-row height evidence, row spacing, viewport height, and the established top/final boundary padding, then maps the existing 5%–95% playback window across that estimated maximum extent. The resulting target is expressed as a lazy item plus local offset. It deliberately avoids eager full-document measurement while preserving the old lead-in/lead-out semantics instead of mapping directly across the raw row-top span.
 
 ## Presentation latency and loading semantics
 
