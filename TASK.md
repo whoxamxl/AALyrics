@@ -80,17 +80,17 @@ The display title is presentation only. Update comparison, APK naming, changelog
 ## Visual README refinement
 
 - `branding/AALyrics_MASTER.svg` remains authoritative. The README uses `docs/branding/aalyrics-readme-icon-rounded.svg`, a documentation-only derivative that preserves the master artwork and adds only a rounded-corner clip.
-- Three authentic Phone screenshots cover the synchronized Lyrics surface, Expanded Player, and Queue.
+- Three authentic Phone screenshots cover the synchronized Lyrics surface, Expanded Player, and Queue, displayed as one responsive three-column row near the top of the README.
 - Two authentic DHU screenshots cover Android Auto full Now Playing and split view alongside navigation.
 - The README opening follows a product-page flow: rounded brand mark -> product name/tagline -> Android/Beta/license badges -> Download APK CTA -> real product screenshot -> concise Highlights.
 - Phone Expanded Player/Queue and Android Auto full/split presentation provide visual proof of the current product state before installation and developer documentation.
-- The original Phone dimensions (709×1536) and Android Auto dimensions (1536×864) are preserved. README derivatives use high-quality WebP encoding rather than the earlier over-compressed 5–7 KB assets.
+- Phone screenshots are cropped uniformly by 60 px at the top to remove the Android system status bar while preserving the AALyrics header, resulting in 709×1476 assets. Android Auto screenshots remain 1536×864. README derivatives use high-quality WebP encoding rather than the earlier over-compressed 5–7 KB assets.
 - Project structure and architecture links remain available but are collapsed below the user-facing product/install sections rather than dominating the landing surface.
 - No application runtime, UI implementation, provider, timing, playback, Translation, Karaoke, or Android Auto behavior changed in this refinement.
 
 ## Release-prep validation record
 
-- High-quality README screenshot derivatives retain the supplied source dimensions: Phone 709×1536 and Android Auto 1536×864. Repository assets are approximately 67–82 KB for Phone and 78–112 KB for Android Auto, replacing the earlier visibly over-compressed 5–7 KB derivatives.
+- High-quality README screenshot derivatives retain full source width and UI detail. Phone assets are uniformly status-bar-cropped to 709×1476 and remain approximately 64–79 KB; Android Auto assets remain 1536×864 at approximately 78–112 KB, replacing the earlier visibly over-compressed 5–7 KB derivatives.
 - The README hero uses the rounded documentation derivative while `branding/AALyrics_MASTER.svg` remains untouched and authoritative.
 
 - Baseline alignment: the release-prep branch remains zero commits behind the intended `main @ ad4ca154604e4846e273b21a098ba0e03c98bc97` baseline.

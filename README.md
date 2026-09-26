@@ -23,7 +23,9 @@
 </p>
 
 <div align="center">
-  <img src="docs/screenshots/phone-lyrics.webp" width="260" alt="AALyrics synchronized lyrics screen" />
+  <img src="docs/screenshots/phone-lyrics.webp" width="31%" alt="AALyrics synchronized lyrics screen" />
+  <img src="docs/screenshots/phone-expanded-player.webp" width="31%" alt="AALyrics expanded player" />
+  <img src="docs/screenshots/phone-queue.webp" width="31%" alt="AALyrics playback queue" />
 </div>
 
 AALyrics observes the active Android media session, matches the current track against multiple lyrics providers, and presents the best available lyrics in real time. The core experience is already functional on Phone and Android Auto, with on-device Translation, experimental word-synced Karaoke, playback controls, and signed in-app updates built around it.
@@ -37,13 +39,6 @@ AALyrics observes the active Android media session, matches the current track ag
 - 🎤 **Experimental WORD_SYNC Karaoke** — opt-in Phone presentation for genuine word-timed lyrics.
 - 🎛️ **Phone playback surface** — play/pause, previous/next, seek, relative seek, and Queue support where the active media app exposes them.
 - 🔄 **Built-in updates** — signed GitHub Release APK discovery, SHA-256 verification, package/signing preflight, and Android PackageInstaller handoff.
-
-### Phone experience
-
-<div align="center">
-  <img src="docs/screenshots/phone-expanded-player.webp" width="230" alt="AALyrics expanded player" />
-  <img src="docs/screenshots/phone-queue.webp" width="230" alt="AALyrics playback queue" />
-</div>
 
 ### Android Auto experience
 
