@@ -77,7 +77,7 @@ Artifact projection rules:
 
 The translated text is additive content inside the same logical Phone lyric row. Canonical timing/current-line ownership remains unchanged. The canonical + translated pair is measured and moved as one viewport row so the existing Follow/Browse geometry remains the only scrolling authority. Translated text does not gain independent WORD progress, current-line calculation, or timing.
 
-This slice intentionally does **not** add Android Auto Translation presentation, Musixmatch native Translation, persistent Translation Cache, new Translation algorithms, or Translation-specific Lyrics error chrome.
+That Phone slice intentionally did **not** add Android Auto Translation presentation. The separately authorized Android Auto Now Playing completion now consumes the existing Translation settings/state without changing Translation execution, providers, caching, or algorithms.
 
 The executable scope and acceptance criteria are recorded in `TASK.md`; the visual row contract is defined in `docs/PHONE_LYRICS_VIEWPORT.md`.
 
@@ -525,6 +525,27 @@ Stable rules:
 - stale work cannot publish after lyrics/target/request supersession;
 - foreground presentation does not own the model download lifecycle.
 
+## Android Auto Now Playing presentation
+
+The authorized Android Auto Now Playing integration is a downstream consumer of the existing atomic Translation lifecycle. It must not run LanguageProfiler, open Translation sessions, prepare models, or create another Translation engine path.
+
+For an active synchronized canonical lyric line:
+
+- Disabled / Idle / NotRequired -> canonical source line only;
+- Translating -> canonical source line + a presentation-only `Translating.` / `..` / `...` second-line heartbeat;
+- Ready -> canonical source line first + translated second line only when the artifact matches the exact current canonical lyrics identity/current target and the artifact line is genuinely translated with nonblank text;
+- Failed -> canonical source line only.
+
+The translating heartbeat is status text, not a partial Translation Artifact. Atomic artifact publication remains unchanged.
+
+Lyrics lifecycle has priority. If Lyrics is loading, not found, failed, PLAIN-only, or has no active synchronized canonical line, Automotive must not invent translated current-line content.
+
+The two-line layout is fixed for the host: source first, optional translation second. Host ellipsis for long lines is an accepted tradeoff; Translation must not mutate or truncate canonical/translated content to fit Android Auto.
+
+Android Auto Karaoke remains out of scope, so translated text has no word-level Automotive timing or sweep.
+
+Detailed copy/cadence/identity behavior is defined in `docs/ANDROID_AUTO_NOW_PLAYING.md`.
+
 ## Timing and karaoke relationship
 
 Translation does not own provider timestamps, calibration, playback position, or karaoke progression.
@@ -558,7 +579,7 @@ It must not prematurely implement:
 - Phone/Android Auto Translation presentation;
 - persistent Translation Cache.
 
-Those exclusions defined Phase 11.2a only. Phase 11.2b subsequently implemented the execution responsibilities described in "Current execution implementation" while preserving the scaffold's settings and model-lifecycle ownership. Phase 11.2c then completed **Phone** Translation presentation integration in PR #79 under the downstream rules above; Android Auto Translation presentation remains deferred.
+Those exclusions defined Phase 11.2a only. Phase 11.2b subsequently implemented the execution responsibilities described in "Current execution implementation" while preserving the scaffold's settings and model-lifecycle ownership. Phase 11.2c then completed **Phone** Translation presentation integration in PR #79 under the downstream rules above. Android Auto Translation presentation is now separately authorized only for the line-oriented Now Playing contract in `docs/ANDROID_AUTO_NOW_PLAYING.md`.
 
 ## Invariants
 
