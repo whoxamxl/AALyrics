@@ -5,12 +5,14 @@ import io.github.whoxamxl.aalyrics.core.lyrics.LyricsState
 import io.github.whoxamxl.aalyrics.core.model.LyricsSyncType
 import io.github.whoxamxl.aalyrics.core.model.PlaybackSnapshot
 import io.github.whoxamxl.aalyrics.core.model.PlaybackStatus
+import io.github.whoxamxl.aalyrics.core.model.PlaybackTrackIdentity
 import io.github.whoxamxl.aalyrics.core.model.TimedLyricLine
 import io.github.whoxamxl.aalyrics.core.timing.LyricsTimingOffset
 import io.github.whoxamxl.aalyrics.core.timing.effectiveLyricsPosition
 import io.github.whoxamxl.aalyrics.core.timing.projectLyricsTiming
 import io.github.whoxamxl.aalyrics.core.timing.projectedPlaybackPosition
 import io.github.whoxamxl.aalyrics.ui.automotive.AutomotiveTransportCapabilities
+import io.github.whoxamxl.aalyrics.ui.automotive.AutomotiveArtworkState
 
 data class AutomotiveLyricsUiState(
     val trackTitle: String? = null,
@@ -50,11 +52,19 @@ internal fun shouldRenderProjectionTick(
     isAnimatedLoading: Boolean,
 ): Boolean = playback.isPlaying || isAnimatedLoading
 
+internal fun <T> artworkForTrack(
+    playbackIdentity: PlaybackTrackIdentity?,
+    artworkIdentity: PlaybackTrackIdentity?,
+    artwork: T?,
+): T? = artwork.takeIf { playbackIdentity != null && playbackIdentity == artworkIdentity }
+
 internal object AutomotiveLyricsUiStateMapper {
     fun project(
         playback: PlaybackSnapshot,
         lyricsState: LyricsState,
         currentMonotonicTimeMs: Long,
+        artwork: AutomotiveArtworkState = AutomotiveArtworkState(),
+        capabilities: AutomotiveTransportCapabilities = AutomotiveTransportCapabilities(),
     ): AutomotiveLyricsUiState {
         val track = playback.track
         if (track == null) {
@@ -109,6 +119,12 @@ internal object AutomotiveLyricsUiStateMapper {
             positionMs = positionMs,
             playbackStatus = playback.status,
             playbackRate = playback.playbackRate,
+            artwork = artworkForTrack(
+                playback.trackIdentity,
+                artwork.trackIdentity,
+                artwork.bitmap,
+            ),
+            capabilities = capabilities,
             lyrics = presentation,
         )
     }

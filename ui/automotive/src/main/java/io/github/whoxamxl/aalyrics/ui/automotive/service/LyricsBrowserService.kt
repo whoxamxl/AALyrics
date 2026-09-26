@@ -9,6 +9,8 @@ import io.github.whoxamxl.aalyrics.core.lyrics.LyricsState
 import io.github.whoxamxl.aalyrics.core.model.PlaybackSnapshot
 import io.github.whoxamxl.aalyrics.ui.automotive.AutomotiveRuntimeBinding
 import io.github.whoxamxl.aalyrics.ui.automotive.AutomotiveRuntimeHost
+import io.github.whoxamxl.aalyrics.ui.automotive.AutomotiveArtworkState
+import io.github.whoxamxl.aalyrics.ui.automotive.AutomotiveTransportCapabilities
 import io.github.whoxamxl.aalyrics.ui.automotive.screen.NowPlayingScreen
 import io.github.whoxamxl.aalyrics.ui.automotive.state.AutomotiveLyricsUiStateMapper
 import io.github.whoxamxl.aalyrics.ui.automotive.state.shouldRenderProjectionTick
@@ -28,9 +30,13 @@ class LyricsBrowserService : MediaBrowserServiceCompat() {
     private var binding: AutomotiveRuntimeBinding? = null
     private var playbackCollection: Job? = null
     private var lyricsCollection: Job? = null
+    private var artworkCollection: Job? = null
+    private var capabilitiesCollection: Job? = null
 
     private var latestPlayback = PlaybackSnapshot()
     private var latestLyrics: LyricsState = LyricsState.Idle
+    private var latestArtwork = AutomotiveArtworkState()
+    private var latestCapabilities = AutomotiveTransportCapabilities()
     private var latestProjectionIsAnimatedLoading = false
     private var lastMetadataSignature: MetadataSignature? = null
 
@@ -61,6 +67,8 @@ class LyricsBrowserService : MediaBrowserServiceCompat() {
     override fun onDestroy() {
         playbackCollection?.cancel()
         lyricsCollection?.cancel()
+        artworkCollection?.cancel()
+        capabilitiesCollection?.cancel()
         scope.cancel()
         mediaSession.isActive = false
         mediaSession.release()
@@ -93,6 +101,8 @@ class LyricsBrowserService : MediaBrowserServiceCompat() {
 
         latestPlayback = runtimeBinding.playback.value
         latestLyrics = runtimeBinding.lyrics.value
+        latestArtwork = runtimeBinding.artwork.value
+        latestCapabilities = runtimeBinding.capabilities.value
 
         playbackCollection = scope.launch {
             runtimeBinding.playback.collectLatest { snapshot ->
@@ -106,6 +116,18 @@ class LyricsBrowserService : MediaBrowserServiceCompat() {
                 render(forceMetadata = true)
             }
         }
+        artworkCollection = scope.launch {
+            runtimeBinding.artwork.collectLatest { state ->
+                latestArtwork = state
+                render(forceMetadata = true)
+            }
+        }
+        capabilitiesCollection = scope.launch {
+            runtimeBinding.capabilities.collectLatest { capabilities ->
+                latestCapabilities = capabilities
+                render()
+            }
+        }
     }
 
     private fun render(forceMetadata: Boolean = false) {
@@ -114,6 +136,8 @@ class LyricsBrowserService : MediaBrowserServiceCompat() {
             playback = latestPlayback,
             lyricsState = latestLyrics,
             currentMonotonicTimeMs = now,
+            artwork = latestArtwork,
+            capabilities = latestCapabilities,
         )
         latestProjectionIsAnimatedLoading = state.lyrics.isAnimatedLoading
 

@@ -7,6 +7,7 @@ import io.github.whoxamxl.aalyrics.core.model.LyricsDocument
 import io.github.whoxamxl.aalyrics.core.model.PlainLyricLine
 import io.github.whoxamxl.aalyrics.core.model.PlaybackSnapshot
 import io.github.whoxamxl.aalyrics.core.model.PlaybackStatus
+import io.github.whoxamxl.aalyrics.core.model.PlaybackTrackIdentity
 import io.github.whoxamxl.aalyrics.core.model.TimedLyricLine
 import io.github.whoxamxl.aalyrics.core.model.TimedWord
 import io.github.whoxamxl.aalyrics.core.model.Track
@@ -214,6 +215,18 @@ class AutomotiveLyricsUiStateMapperTest {
         assertEquals("♪", textAt(lineDocument, 2_500L))
         assertEquals("Third", textAt(lineDocument, 3_500L))
         assertEquals("Current words", textAt(wordDocument, 1_500L))
+    }
+
+    @Test
+    fun `artwork arrival null and track transition preserve current identity only`() {
+        val first = PlaybackTrackIdentity.Metadata(null, "First", listOf("Artist"), null)
+        val second = PlaybackTrackIdentity.Metadata(null, "Second", listOf("Artist"), null)
+
+        assertEquals(null, artworkForTrack(first, first, null as String?))
+        assertEquals("jacket", artworkForTrack(first, first, "jacket"))
+        assertEquals(null, artworkForTrack(first, first, null as String?))
+        assertEquals(null, artworkForTrack(second, first, "jacket"))
+        assertEquals("new jacket", artworkForTrack(second, second, "new jacket"))
     }
 
     private fun ready(track: Track, lyrics: LyricsDocument): LyricsState.Ready =
