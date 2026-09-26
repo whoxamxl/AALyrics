@@ -76,6 +76,7 @@ class MusixmatchClientTest {
 
         assertEquals(1, lines.size)
         assertEquals(1_500L, lines.single().startMs)
+        assertEquals(4_000L, lines.single().endMs)
         assertEquals("Hey Jude", lines.single().text)
         assertEquals(listOf("Hey", "Jude"), lines.single().words.map { it.text })
         assertEquals(listOf(1_500L, 2_000L), lines.single().words.map { it.startMs })
@@ -88,8 +89,28 @@ class MusixmatchClientTest {
         ))
 
         assertEquals("君を忘れない", lines.single().text)
+        assertEquals(5_000L, lines.single().endMs)
         assertEquals(listOf("君を", "忘れない"), lines.single().words.map { it.text })
         assertEquals(listOf(2_000L, 2_800L), lines.single().words.map { it.startMs })
+    }
+
+    @Test
+    fun richSyncWithoutLineEndKeepsLineOpenEnded() {
+        val lines = MusixmatchClient.parseRichSyncResponse(richSyncResponse(
+            """[{"ts":1.5,"x":"Hey Jude","l":[{"c":"Hey","o":0.0},{"c":"Jude","o":0.5}]}]""",
+        ))
+
+        assertEquals(null, lines.single().endMs)
+    }
+
+    @Test
+    fun invalidRichSyncLineEndIsIgnoredWithoutRewritingWordTiming() {
+        val lines = MusixmatchClient.parseRichSyncResponse(richSyncResponse(
+            """[{"ts":2.0,"te":1.5,"x":"Hello world","l":[{"c":"Hello","o":0.0},{"c":"world","o":0.4}]}]""",
+        ))
+
+        assertEquals(null, lines.single().endMs)
+        assertEquals(listOf(2_000L, 2_400L), lines.single().words.map { it.startMs })
     }
 
     @Test
