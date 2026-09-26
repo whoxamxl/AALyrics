@@ -70,8 +70,34 @@ jobs:
             echo "Release tag must use vMAJOR.MINOR.PATCH or -alpha.N/-beta.N/-rc.N, for example v0.1.0-alpha.1."
             exit 1
           fi
+
           version_name="${GITHUB_REF_NAME#v}"
+          release_title="AALyrics $version_name"
+
+          if [[ "$version_name" =~ ^([0-9]+\.[0-9]+)\.([0-9]+)(-(alpha|beta|rc)\.([0-9]+))?$ ]]; then
+            display_version="${BASH_REMATCH[1]}"
+            patch="${BASH_REMATCH[2]}"
+            channel="${BASH_REMATCH[4]}"
+            channel_number="${BASH_REMATCH[5]}"
+
+            if [[ "$patch" != "0" ]]; then
+              display_version="$display_version.$patch"
+            fi
+
+            if [[ -n "$channel" ]]; then
+              case "$channel" in
+                alpha) channel_title="Alpha" ;;
+                beta) channel_title="Beta" ;;
+                rc) channel_title="RC" ;;
+              esac
+              release_title="AALyrics $display_version $channel_title $channel_number"
+            else
+              release_title="AALyrics $display_version"
+            fi
+          fi
+
           echo "AALYRICS_VERSION_NAME=$version_name" >> "$GITHUB_ENV"
+          echo "AALYRICS_RELEASE_TITLE=$release_title" >> "$GITHUB_ENV"
           echo "AALYRICS_VERSION_CODE=$GITHUB_RUN_NUMBER" >> "$GITHUB_ENV"
 
       - name: Verify changelog release version
@@ -95,6 +121,35 @@ jobs:
             echo "Update CHANGELOG.md before creating the release tag."
             exit 1
           fi
+
+      - name: Prepare curated release notes
+        shell: bash
+        run: |
+          notes_file="$RUNNER_TEMP/aalyrics-release-notes.md"
+          awk -v version="$AALYRICS_VERSION_NAME" '
+            /^## \[/ {
+              heading = $0
+              sub(/^## \[/, "", heading)
+              sub(/\].*$/, "", heading)
+              if (in_release) {
+                exit
+              }
+              if (heading == version) {
+                in_release = 1
+                next
+              }
+            }
+            in_release {
+              print
+            }
+          ' CHANGELOG.md > "$notes_file"
+
+          if [[ ! -s "$notes_file" ]]; then
+            echo "Could not extract curated release notes for '$AALYRICS_VERSION_NAME' from CHANGELOG.md."
+            exit 1
+          fi
+
+          echo "AALYRICS_RELEASE_NOTES_FILE=$notes_file" >> "$GITHUB_ENV"
 
       - name: Verify architecture boundaries
         run: bash scripts/verify-architecture.sh
@@ -143,7 +198,8 @@ jobs:
             "$GITHUB_REF_NAME"
             "dist/AALyrics-${GITHUB_REF_NAME}.apk"
             "dist/AALyrics-${GITHUB_REF_NAME}.apk.sha256"
-            --title "AALyrics $GITHUB_REF_NAME"
+            --title "$AALYRICS_RELEASE_TITLE"
+            --notes "$(cat "$AALYRICS_RELEASE_NOTES_FILE")"
             --generate-notes
           )
           if [[ "$GITHUB_REF_NAME" == *-* ]]; then

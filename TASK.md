@@ -1,173 +1,121 @@
-# Phone LyricsViewport Lazy Composition
+# AALyrics v1.0.0-beta.1 Release Preparation
 
 ## Branch and baseline
 
-- Branch: `feature/phone-lyrics-lazy-viewport`.
-- Base: `main` at `0a02474f26bee3cb462f227a4293b9e9d3c52e3d`.
-- This slice is a Phone presentation/performance refactor only. It does not change Lyrics Provider lookup, provider selection, canonical lyrics, Translation execution, shared timing semantics, Android Auto presentation, or persistent state.
+- Branch: `release/v1.0.0-beta.1`.
+- Base: `main` at `ad4ca154604e4846e273b21a098ba0e03c98bc97`.
+- This slice prepares the first AALyrics 1.0 Beta release. It does not change lyrics retrieval, playback, timing, Translation, Karaoke, Android Auto runtime behavior, persistence, or provider behavior.
 
-## Problem
+## Product decision
 
-Android Auto Now Playing can present a resolved lyric almost immediately because it projects only the current line into its subtitle surface. Before this branch, the Phone `LyricsViewport` kept the complete lyrics document in a non-lazy `Column + verticalScroll` tree, so a newly resolved document composed and measured every lyric row before/while it became visible.
+AALyrics has reached the point where its primary purpose is functional as a product: it can observe supported Android playback, resolve synchronized lyrics from production providers, present those lyrics on Phone and Android Auto, and expose the established Phone playback/settings/update experience.
 
-The Phone runtime also updates presentation timing every 250 ms during ordinary timed playback and every 33 ms while effective Karaoke is active. Immutable lyric-row content should not be forced through the same high-frequency presentation path as current-line/Karaoke progress.
+The release therefore advances from the 0.2 alpha line to `v1.0.0-beta.1`.
 
-The goal is to reduce Phone presentation work after `LyricsState.Ready/Degraded` without changing lyrics retrieval behavior or the established viewport UX.
+Beta means the intended AALyrics 1.0 product identity and core lyrics experience are established, while some advanced functionality and validation remain intentionally incomplete. It does not claim feature completeness or stable-release readiness.
 
-## Approved design
+## Goals
 
-### Full document data, lazy visual composition
+- Make the repository README a human-facing AALyrics landing page rather than a construction/status document.
+- Present current user-visible capabilities before architecture and implementation details.
+- Keep installation and Android Auto sideload requirements concise and discoverable.
+- Record `1.0.0-beta.1` as the next in-app changelog version.
+- Keep the canonical Git tag/version machine-readable as `v1.0.0-beta.1`.
+- Give the GitHub Release a separate human-readable title, `AALyrics 1.0 Beta 1`.
+- Keep GitHub's generated PR-level release ledger below the curated milestone summary.
+- Preserve the existing signed APK/checksum pipeline and prerelease classification.
 
-- Keep the complete canonical lyrics document and any matching Translation artifact available in memory.
-- Lazy loading here means lazy **Compose/layout of lyric rows**, not incremental network fetching and not partial lyrics data.
-- Replace the eager scrolling row container with a lazy list model so only visible and nearby prefetched rows are composed/measured.
-- Use stable per-document row identity; do not use mutable timing/focus state as item identity.
-- Treat the timed opening `♪` as a stable virtual lazy item before lyric index 0.
-- Do not require global upfront measurement of every lyric row in order to enter Follow mode.
+## README contract
 
-### Follow / Browse ownership
+The README should answer, in this order:
 
-Preserve the existing product contract:
+1. What is AALyrics?
+2. What can I do with it now?
+3. How do I install it?
+4. What does Android Auto support?
+5. What does Beta mean / what is still evolving?
+6. Where do developers find build, architecture, release, and license details?
 
-- deliberate user scrolling enters Browse and playback must not fight the gesture;
-- Browse has no timeout;
-- manual scrolling can reach any row even when it was never composed before;
-- the return indicator points toward the playback region;
-- tapping it returns to playback and restores Follow;
-- manually returning to the accepted playback region may re-arm Follow after scrolling settles.
+Internal implementation terminology should not dominate the opening sections. Detailed architecture remains authoritative in `docs/`.
 
-The lazy implementation may use `LazyListState` and visible-item geometry instead of a global absolute pixel scroll model. The approximately 45% current-row target remains authoritative for LINE/WORD once scrolling is available.
+Authentic product screenshots are stored under `docs/screenshots/` and are used for the README showcase. This release-prep slice must not fabricate UI screenshots merely to fill the README.
 
-### Variable row height and Translation
+## Release naming contract
 
-- Canonical text plus optional translated text remain one logical row and one lazy item.
-- Translation may change an item's measured height when an exact-identity `TranslationState.Ready` artifact arrives.
-- In Follow, remeasure/re-align the current row as needed to keep the approximately 45% target.
-- In Browse, Translation updates must not forcibly restore Follow or deliberately jump the user back to playback; stable item identity should preserve the browsing anchor as far as Compose permits.
-- Translation remains secondary text only and receives no independent scrolling/timing model.
+- Git tag: `v1.0.0-beta.1`
+- Android `versionName`: `1.0.0-beta.1`
+- APK: `AALyrics-v1.0.0-beta.1.apk`
+- GitHub Release title: `AALyrics 1.0 Beta 1`
+- GitHub classification: **Pre-release**
 
-### Karaoke and high-frequency state
+The display title is presentation only. Update comparison, APK naming, changelog validation, and installed version identity continue to use the canonical SemVer-style version.
 
-- Karaoke remains current-line-only presentation.
-- The 33 ms Karaoke cadence must not require every lyric row to recompose.
-- Keep static row presentation (canonical text, translated text, stable typography/layout inputs) separable from dynamic facts (current line, focus, current Karaoke sweep/progress).
-- Non-current rows must not consume current-line Karaoke state merely because the viewport state changed.
-- If the playback/current row is off-screen during Browse, it does not need to remain composed solely to advance Karaoke visually; timing state remains authoritative and rendering catches up when the row becomes visible again.
+## Checkpoints
 
-### Existing visual geometry
+- [x] Establish release-prep branch, scope, and Beta product decision.
+- [x] Rewrite README as a product-first, visual-first landing page using the canonical brand master and authentic device screenshots.
+- [x] Align Release policy and workflow with distinct human-readable Release titles.
+- [x] Add the `1.0.0-beta.1` user-facing changelog entry.
+- [x] Review the branch-wide diff for stale alpha/construction wording and release-version mismatches.
+- [x] Run release-relevant pre-PR validation, record evidence here, open a Draft PR, and STOP per `AGENTS.md`.
 
-Preserve the current Phone contract unless a device regression forces a separately documented adjustment:
+## Known Beta limitations to communicate
 
-- continuous responsive document rather than a fixed visible-line count;
-- 15% top/bottom edge fades;
-- timed current-row center near 45% when Follow scrolling is available;
-- opening `♪` behavior before the first timed lyric;
-- final lyric row top edge at approximately the 50% viewport boundary;
-- timed 1.15x focus hierarchy and stable wrapping/overflow reservation;
-- manual scrolling for WORD, LINE, and PLAIN;
-- existing PLAIN auto-scroll semantics, adapted so they do not depend on eagerly measuring the full document.
-
-## Non-goals
-
-- no Lyrics Provider/network timeout or query changes;
-- no lyrics cache or track cache;
-- no Translation algorithm/model changes;
-- no Karaoke timing-semantic changes;
-- no Android Auto changes;
-- no Sync calibration work;
-- no new persisted settings;
-- no visual redesign of lyric typography, focus colors, or return control.
-
-## Implementation checkpoints
-
-- [x] Align durable viewport/Translation/Karaoke/roadmap documentation and establish this task.
-- [x] Replace eager Phone lyric-row composition with a stable lazy list foundation while preserving static rendering and manual scroll.
-- [x] Port timed Follow/Browse, opening/final boundaries, return-to-playback direction/action, and PLAIN auto-scroll to lazy-list geometry.
-- [x] Isolate immutable row content from high-frequency current-line/Karaoke updates and verify Translation remeasurement behavior.
-- [x] Add/update focused unit/Compose/Preview coverage for lazy composition, variable-height rows, Translation, Karaoke, Follow/Browse, seeks, and document boundaries.
-- [x] Run final validation, inspect branch-wide regression/scope alignment, update this task with evidence, then open a Draft PR and STOP per `AGENTS.md`.
-
-## Checkpoint 1 record
-
-- Replaced the eager `Column + verticalScroll` row container with `LazyColumn + LazyListState`.
-- Kept the complete lyrics data in presentation state; only row composition/measurement is lazy.
-- Preserved the timed opening `♪` as a dedicated lazy item and canonical/Translation content as one lyric item.
-- Added stable canonical row keys that intentionally ignore Translation-only changes.
-- Preserved user-scroll detection so direct scrolling continues to hand ownership to Browse.
-- Removed the obsolete absolute-`ScrollState` Follow/PLAIN geometry instead of pretending it remains valid against a lazy list.
-- Timed Follow positioning, return-to-playback, PLAIN auto-scroll, and final-boundary settlement are intentionally pending Checkpoint 2.
-- No provider, Translation execution, shared timing, Android Auto, persistence, or cache behavior changed.
-
-## Checkpoint 2 record
-
-- Timed LINE/WORD Follow now derives scroll correction from visible lazy-item centers and the shared animated focus coordinate; it no longer needs a complete row-height map.
-- The timed virtual index maps directly to lazy item indices (`♪ = 0`, canonical lyric `n = n + 1`), preserving the opening focus model.
-- When a timed playback item is not materialized, Follow first brings that item into the lazy window, then refines its measured center toward the established 45% viewport target.
-- Start-of-document clamping preserves the opening region; end-of-document clamping plus the measured last-row bottom padding preserves the final-row boundary behavior.
-- Browse return direction uses visible item indices for off-screen targets and measured geometry for visible targets.
-- Return-to-playback supports both timed and PLAIN targets and restores Follow only after the return action.
-- Manual scrolling that settles back inside the accepted playback region re-arms Follow.
-- PLAIN auto-scroll now maps continuous playback progress (with the existing lead-in/lead-out policy) into a lazy item + local estimated stride rather than requiring the full document pixel extent.
-- No current-row/Karaoke recomposition isolation was attempted here; that remains Checkpoint 3.
-
-## Checkpoint 3 record
-
-- PhoneRuntimeHost now memoizes canonical + optional Translation row presentation independently of the 250 ms / 33 ms playback clock tick.
-- `mapPhoneLyricsState` can consume that precomputed row list, so timing/Karaoke projection updates no longer allocate the complete lyric-row presentation on every tick.
-- `LyricsViewportRow` no longer receives the complete `LyricsViewportUiState`; each lazy item receives only its immutable row content, sync mode, shared focus object, and an optional Karaoke line for the current row.
-- Karaoke sweep/progress changes therefore alter the current row's dynamic parameter while non-current row parameters remain unchanged and eligible for Compose skipping.
-- Canonical row identity and cached lazy measurements intentionally ignore Translation-only changes.
-- When Translation adds/removes secondary text on a materialized row, `onSizeChanged` updates that row's measurement. Follow re-aligns from the new measured geometry; Browse does not run the Follow effect and remains user-owned.
-- Stable lazy item keys remain unchanged across Translation-only updates, allowing LazyColumn to preserve its keyed browse anchor instead of treating translated rows as new items.
-- Off-screen Karaoke rows are still not retained solely for animation; when composed again they receive the latest current timing state.
-- No Translation execution, Karaoke timing semantics, provider behavior, Android Auto behavior, or persistence changed.
-
-## Checkpoint 4 record
-
-- Added a deterministic 160-row Phone preview fixture to exercise lazy composition with mixed Translation rows.
-- Added a long-document Follow preview centered deep in the document, a long-document Browse preview with playback far below the visible window, and an interactive large-seek preview that jumps across distant lazy regions.
-- Existing Previews continue to cover Karaoke + Translation, narrow/large-font Translation reflow, opening `♪`, final row, Browse above/below, PLAIN follow, PLAIN no-duration, PLAIN auto-scroll off, and long wrapped canonical rows.
-- Added direct geometry tests for opening padding, final-row boundary padding, measured variable-height interpolation, fractional focus with an unmaterialized neighbor, visible playback focus tolerance, and invalid PLAIN lazy targets.
-- Existing tests continue to cover stable lazy keys across Translation-only changes, off-screen timed direction, PLAIN target progression/return direction, Karaoke timing semantics, Translation matching, stale identity rejection, and reuse of precomputed row lists across timing-only updates.
-- This checkpoint adds validation surfaces only; it does not change provider, Translation, timing, Android Auto, persistence, or caching behavior.
-
-## Final validation record
-
-Branch validation is current for the feature branch based on `main @ 0a02474f26bee3cb462f227a4293b9e9d3c52e3d`.
-
-- Baseline alignment: current `main` remains `0a02474f26bee3cb462f227a4293b9e9d3c52e3d`; the feature branch is behind by zero.
-- Branch policy and commit-message validation pass in CI.
-- Architecture-boundary validation passes in CI.
-- The first PR Build exposed an implementation mistake from Checkpoint 1: existing non-eager rendering helpers (`timedFocusIndex`, stable lazy key helpers, return control, focus/scale helpers) had been removed together with obsolete eager-scroll helpers. Commit `239fb7b` restores only the required rendering helpers; obsolete `ScrollState`/absolute eager-scroll geometry remains removed.
-- Build workflow #1296 on `239fb7b` passes `assembleDebug`, repository-wide `./gradlew test --stacktrace`, `:ui:phone:testDebugUnitTest`, `:app:testDebugUnitTest`, APK artifact generation, branch naming, commit-message checks, and architecture checks.
-- Scope review remains limited to Phone lyrics presentation/runtime mapping, focused tests/Previews, `TASK.md`, and related viewport/Karaoke/Translation/presentation architecture documentation. No provider, Android Auto production, persistence, cache, Gradle dependency, or build-workflow behavior changed.
-- Regression audit A (semantic/main comparison): the eager `main` and lazy implementation were compared by behavior for 15% fades, approximately 45% timed focus, opening `♪`, final-row boundary, Follow/Browse ownership, Return-to-playback, Translation reflow, Karaoke current-row rendering, track identity, and seek behavior. The normal timed-focus geometry is mathematically equivalent before normal scroll-boundary clamping.
-- Regression audit B (execution/coverage): green debug build + repository unit tests exercise focused lazy geometry, stable Translation-insensitive keys, variable-height rows, opening/final boundaries, off-screen return direction, PLAIN target mapping, stale playback identity, Karaoke timing, Translation matching, and precomputed-row reuse. Debug Previews include a 160-row document, distant Browse, and large seeks.
-- Codex review identified a valid P2 regression in the first lazy PLAIN mapping: progress was scaled across the raw row-top span, so short/medium documents could clamp at the final boundary before the established 95% lead-out point. The fix now estimates the actual scrollable extent from row-height evidence, spacing, viewport size, and boundary padding, then maps 5%–95% playback progress across that extent before converting to lazy item + offset. Focused tests cover the 10-row / 500px viewport case and verify that ~78% playback no longer reaches the end early.
-- Preliminary physical-device observation indicates a noticeable improvement in user-visible lyrics loading speed after the lazy migration. This is recorded as qualitative Phone presentation evidence only; this branch does not demonstrate faster provider/network lookup.
-- Codex review round 2 on `eba19304` identified two valid current-scope P2 Browse regressions: (1) unavailable lazy layout geometry could be mistaken for being inside the playback region and re-arm Follow during restored Browse, and (2) PLAIN proximity used an index discontinuity even when an adjacent visible target remained inside the 15% pixel tolerance. The fixes require valid lazy geometry before re-arming and evaluate visible PLAIN targets by continuous item/viewport displacement. Focused tests cover both cases.
-
-## Result
-
-The branch now implements and validates the intended Phone presentation optimization:
-
-- full lyrics/Translation data remains available while only visible/near-visible rows are composed;
-- static canonical + Translation row projection is reused across playback timing ticks;
-- current-row Karaoke remains high-frequency without intentionally rebuilding static rows;
-- established Follow/Browse and timed visual geometry are preserved;
-- PR #86 Build workflow #1296 is green after the rendering-helper restoration fix;
-- preliminary device use suggests the user-visible loading delay is substantially reduced.
-
-The last point is intentionally not generalized into a provider optimization claim. Quantifying the remaining latency requires separate instrumentation of provider lookup (`LOOKUP_START -> LYRICS_READY`) and Phone presentation (`LYRICS_READY -> first presented`).
+- Sync calibration controls/persistence are not yet part of the finished user experience.
+- Phone WORD_SYNC Karaoke remains experimental and opt-in.
+- Android Auto currently focuses on line-oriented Now Playing lyrics rather than Phone feature parity or Karaoke presentation.
+- AALyrics is distributed outside Google Play; Android Auto use of the sideloaded compatibility path requires the documented developer/unknown-source setup.
 
 ## Acceptance criteria
 
-- A resolved long lyrics document is not eagerly composed/measured in full merely to show the Phone viewport.
-- Scrolling to previously uncomposed lyrics works naturally in all sync modes.
-- LINE/WORD Follow keeps the active row near the established 45% target after the opening region and across ordinary row-height variation.
-- The opening `♪`, top fade, final-row boundary, focus scale/alpha hierarchy, and return control retain their current visible behavior.
-- User scroll reliably enters Browse; playback does not pull the viewport back; return-to-playback works even when the current row is outside the composed window.
-- Translation stays inside the same logical row, supports variable height, and does not create a second scroll/timing owner.
-- Karaoke continues to render the current WORD_SYNC line correctly while high-frequency sweep updates are localized to the smallest necessary presentation scope.
-- PLAIN manual scroll and optional auto-scroll remain usable without requiring full-document eager measurement.
-- Canonical lyrics/timestamps, timing projection semantics, Translation execution, provider selection/retrieval, and Android Auto behavior are unchanged.
+- A first-time repository visitor can understand AALyrics and reach installation instructions without reading architecture terminology.
+- README contains no working-branch status text and does not present AALyrics as merely a newly constructed project.
+- User-visible capabilities described in README match current `main`.
+- `CHANGELOG.md` has `1.0.0-beta.1` as its newest version before tagging.
+- The Release workflow accepts `v1.0.0-beta.1`, publishes it as a prerelease, retains canonical version/APK naming, and uses the human-facing Release title.
+- `docs/RELEASES.md` documents the distinction between canonical tag/version and Release display title.
+- No production runtime behavior changes as part of this release-prep slice.
+
+
+## Visual README refinement
+
+- Emoji-free README presentation: feature headings and bullets use plain product language rather than decorative emoji markers.
+- A real funding route is exposed through the existing `.github/FUNDING.yml` Buy Me a Coffee account (`whoxamxi`). The top-level CTA row places Support immediately to the left of Download APK, while the lower `Support AALyrics` section provides context without replacing the primary download/usage path.
+
+- `branding/AALyrics_MASTER.svg` remains authoritative. The README uses `docs/branding/aalyrics-readme-icon-rounded.svg`, a documentation-only derivative that preserves the master artwork and adds only a rounded-corner clip.
+- Two authentic DHU screenshots cover Android Auto full Now Playing and split view alongside navigation, and appear before the Phone screenshots because Android Auto is AALyrics' primary differentiating surface.
+- Three authentic Phone screenshots cover the synchronized Lyrics surface, Expanded Player, and Queue, displayed as one responsive three-column row immediately after the Android Auto showcase.
+- The README opening follows a product-page flow: rounded brand mark -> product name/tagline -> Android/Beta/license badges -> Download APK CTA -> Android Auto showcase -> Phone showcase -> concise Highlights.
+- Android Auto full/split presentation is the first product visual, followed by Phone Lyrics/Expanded Player/Queue, so the README communicates the automotive value proposition before the companion Phone surface.
+- Phone screenshots are cropped uniformly by 60 px at the top to remove the Android system status bar while preserving the AALyrics header, resulting in 709×1476 assets. Android Auto screenshots are cropped by 120 px only at the top and bottom, preserving the full 1536 px width and resulting in 1536×624 assets. New `*-cropped.webp` / `*-vcrop.webp` filenames avoid stale GitHub image caching.
+- Project structure and architecture links remain available but are collapsed below the user-facing product/install sections rather than dominating the landing surface.
+- No application runtime, UI implementation, provider, timing, playback, Translation, Karaoke, or Android Auto behavior changed in this refinement.
+
+## Release-prep validation record
+
+- The `Android 8.0+` README badge is grounded in `app/build.gradle.kts` `minSdk = 26` (Android 8.0 / API 26). It describes the APK installation floor, not a separate Android Auto host compatibility guarantee.
+
+- High-quality README screenshot derivatives retain UI detail. Phone assets are uniformly status-bar-cropped to 709×1476 and remain approximately 64–79 KB. Android Auto assets preserve the full 1536 px width and are cropped only 120 px from the top and bottom to 1536×624, at approximately 78–112 KB. New filenames intentionally bust stale README image caching.
+- The README hero uses the rounded documentation derivative while `branding/AALyrics_MASTER.svg` remains untouched and authoritative.
+
+- Baseline alignment: the release-prep branch remains zero commits behind the intended `main @ ad4ca154604e4846e273b21a098ba0e03c98bc97` baseline.
+- Branch-wide scope is limited to release/docs surfaces: `.github/workflows/release.yml`, `CHANGELOG.md`, `README.md`, `TASK.md`, `docs/BRANDING.md`, `docs/RELEASES.md`, the README-only rounded brand derivative, and five documentation screenshots; no production Kotlin/Java/resources or provider/runtime behavior changed.
+- README no longer contains the stale working-branch status or the old "new Android project" construction framing. Installation, Android Auto setup, Beta scope, user-visible capabilities, development entry points, and license are directly discoverable.
+- The newest in-app changelog heading is exactly `1.0.0-beta.1`, matching the intended canonical tag after removing its leading `v`.
+- Release-title mapping was exercised for Beta, Alpha, RC, stable, and non-zero patch examples. The intended tag maps to `AALyrics 1.0 Beta 1`; canonical `versionName`, tag, and APK naming remain `1.0.0-beta.1` / `v1.0.0-beta.1`.
+- Release policy documents that zero patch components may be omitted only from the human-facing GitHub Release title.
+- The first title implementation produced `AALyrics 1.0.0 Beta 1`, which conflicted with the approved human-facing contract. This was caught during validation and corrected before PR creation.
+- Pull-request Build workflow completed successfully on the finalized release-prep head, covering the normal Gradle/unit-test/branch-policy/architecture validation path. The visual-only asset/refinement commits change no production implementation code.
+
+## Result
+
+The Codex release-notes fix has passed the normal PR Build workflow, so the branch is Merge Ready again. This task does **not** create the tag, publish the Release, or merge into `main`. Those remain separate explicit gates.
+
+
+## Codex review follow-up
+
+- Codex P2 finding on PR #87 was valid: the Release workflow used `--generate-notes` without prepending the curated `CHANGELOG.md` milestone summary, directly violating the release-body acceptance criterion.
+- The workflow now extracts only the changelog section matching `AALYRICS_VERSION_NAME`, fails closed if that section is empty, and passes the extracted text through `--notes` together with `--generate-notes`.
+- Expected Release body order is now: curated changelog milestone summary first, GitHub-generated change ledger second.
+- This follow-up changes release publication composition only; application runtime and signed-APK build behavior remain unchanged.
+- The normal PR Build workflow passed on the corrected release-notes implementation (`90899ce2db0b606fccd6b867416966a5390fc076`).

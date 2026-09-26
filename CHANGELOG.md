@@ -1,3 +1,33 @@
+## [1.0.0-beta.1] - 2026-09-26
+
+### Beta milestone
+
+- AALyrics now presents its core product experience as a 1.0 Beta: synchronized lyrics on Phone and Android Auto, production lyric-provider selection, Phone Translation, experimental WORD_SYNC Karaoke, playback controls, and signed in-app updates.
+- The primary lyrics experience is functional; remaining work is concentrated in advanced calibration, experimental Karaoke refinement, and broader Android Auto feature parity rather than initial product construction.
+
+### Added
+
+- Completed the current Android Auto Now Playing experience with artwork, supported transport actions, line-oriented synchronized lyrics, eligible translated lines, and playback/lyrics demand recovery when the Phone UI is not active.
+- Added bounded cold-start lyrics lookup recovery and user-visible lyrics lookup diagnostics for transient media-session startup failures.
+
+### Changed
+
+- Phone lyrics rendering now lazily composes visible/near-visible rows instead of eagerly composing the full lyrics document, reducing presentation work for long lyrics while preserving Follow/Browse behavior, Translation rows, and Karaoke presentation.
+- Android Auto runtime handling is more resilient to process/lifecycle and media-session listener rebinding while the automotive host remains active.
+- Provider timing normalization preserves additional explicit end-timing evidence for Enhanced LRC and Musixmatch RichSync.
+
+### Fixed
+
+- Fixed open-ended final Karaoke sweeps that could stretch a final word across an inter-line pause when explicit provider timing or defensible local cadence was available.
+- Fixed lazy Phone lyrics edge cases around PLAIN auto-scroll extent, Browse ownership/re-arm behavior, and off-screen playback geometry.
+- Fixed Android Auto lyrics demand paths that could stop resolving lyrics after the Phone UI was closed or the media-session listener needed to recover.
+
+### Known limitations
+
+- Sync calibration controls and persistence are still in development.
+- Phone WORD_SYNC Karaoke remains experimental, defaults OFF, and requires genuine word-synchronized lyrics.
+- Android Auto remains focused on line-oriented Now Playing presentation; Karaoke and broader Phone feature parity are not yet implemented.
+
 ## [0.2.0-alpha.3] - 2026-09-26
 
 ### Added

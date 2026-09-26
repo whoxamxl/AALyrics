@@ -72,6 +72,23 @@ Do not move or reuse a tag after a release has been published. If a published bu
 
 The tag without the leading `v` becomes Android `versionName`. The Release workflow run number is used as Android `versionCode`, providing increasing update ordering across this workflow's releases.
 
+### GitHub Release display title
+
+The Git tag and Android version remain the canonical machine-readable identifiers. The GitHub Release **display title** is intentionally human-readable and may differ from the literal tag.
+
+The Release workflow maps accepted prerelease tags like this:
+
+```text
+v1.0.0-alpha.1 -> AALyrics 1.0 Alpha 1
+v1.0.0-beta.1  -> AALyrics 1.0 Beta 1
+v1.0.0-rc.1    -> AALyrics 1.0 RC 1
+v1.0.0         -> AALyrics 1.0
+```
+
+For display only, a zero patch component is omitted (`1.0.0` -> `1.0`). Non-zero patch components remain visible.
+
+This distinction is presentation-only. Tag matching, update comparison, Android `versionName`, APK filenames, changelog validation, and release-asset identity continue to use the canonical version string.
+
 ## Signing identity
 
 All durable AALyrics release APKs must be signed by the same release key.
@@ -432,3 +449,10 @@ For an early Pre-release, feature completeness is not required. At minimum, the 
 Product-specific behavior, including Android Auto rendering and playback/lyrics behavior, should be documented in release notes with known limitations rather than hidden behind an implication that an alpha release is complete.
 
 Stable releases should use a stricter product-readiness decision appropriate to the functionality present at that time.
+
+
+### Release body composition
+
+The GitHub Release body must present the curated user-facing changelog section first and GitHub's generated PR-level change ledger below it.
+
+The Release workflow extracts the matching newest `CHANGELOG.md` section for the tag version and passes it as explicit release notes alongside `--generate-notes`. This keeps the curated milestone summary authoritative while retaining generated notes underneath it.

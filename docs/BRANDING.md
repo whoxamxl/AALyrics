@@ -21,3 +21,12 @@ Normal product UI and Compose Preview surfaces should render the foreground mark
 ## Preview rule
 
 Production composables and Compose Previews that show AALyrics identity should use the shared `AALyricsBrandMark` rather than embedding a local logo approximation. This keeps Preview output aligned with the product brand and makes future master-icon updates propagate through the shared design-system path.
+
+
+## README presentation derivative
+
+`docs/branding/aalyrics-readme-icon-rounded.svg` is a documentation-only presentation derivative of the canonical master. It preserves the master artwork and applies only a rounded-corner clip for the GitHub README hero.
+
+- `branding/AALyrics_MASTER.svg` remains the source of truth.
+- The README derivative must not become the source for launcher, Compose, or future branding assets.
+- Changes to the README derivative should be regenerated from the current master rather than edited as an independent logo.
