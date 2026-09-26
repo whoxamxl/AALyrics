@@ -41,7 +41,7 @@ Migration classification for the active Phone slice:
 - same-visible-range grouping from `PhoneKaraokeSweep` in `ui/KaraokeSweepSpan.kt` — **PRESERVE / REFACTOR now** as display-group policy downstream of the shared active-word decision;
 - `KaraokeSweepSpan` drawing behavior — preserve the useful continuous left-to-right sweep idea, but **REWRITE for Compose** rather than transplanting Android `ReplacementSpan`;
 - working-fork layout/grouping tests — **PRESERVE / ADAPT** wherever their behavior is still part of the approved AALyrics contract;
-- the working fork's final-group `650ms` fallback — **PRESERVE only as Phone presentation policy**. It is a visual duration for an otherwise open-ended final display group; it must never be inserted into `:core:timing`, canonical timestamps, or semantic `wordProgress`.
+- the working fork's final-group `650ms` fallback — **PRESERVE only as the no-evidence Phone presentation fallback**. When an otherwise open-ended final display group has useful local provider cadence, Phone may infer its visual end from that cadence first. Neither inferred nor fallback duration may enter `:core:timing`, canonical timestamps, or semantic `wordProgress`.
 
 ## Ownership model
 
@@ -266,7 +266,9 @@ Instead:
 4. that visible range sweeps once from the first grouped token's start to the group's defensible end;
 5. the group end may use the final grouped token's explicit end, or the next token start when that provides the natural end;
 6. if a non-final group has no defensible end, use normal current-line styling rather than invent timing;
-7. if the final visible display group has neither an explicit end nor a following token start, Phone may use the working fork's `650ms` visual fallback measured from that display group's start. This fallback exists only for rendering and does not alter semantic timing.
+7. if the final visible display group has neither an explicit end nor a following token start, Phone first infers a presentation-only terminal interval from same-line provider cadence: fragmented groups prefer their own positive intra-group timestamp intervals, while a single-token final group may use the median of recent positive visible-group onset intervals when at least two samples exist;
+8. if no such local cadence evidence exists, Phone uses the working fork's `650ms` visual fallback measured from that display group's start;
+9. any inferred/fallback final-group end is capped at the next timed line start when one exists. These durations exist only for rendering and do not alter semantic timing.
 
 This display-group interval exists only to render one readable lexical unit smoothly. It must not select a different active token, alter `wordBoundary`, rewrite source timestamps, or become a second Timing Semantic Engine.
 
@@ -333,7 +335,7 @@ The active Phone slice must preserve the same non-Karaoke behavior whenever its 
 
 ## Remaining deferred decisions
 
-The active Phone slice fixes feature gating, WORD-only presentation mapping, continuous sweep, working-fork display grouping, and the Phone-only 650ms final-group visual fallback.
+The active Phone slice fixes feature gating, WORD-only presentation mapping, continuous sweep, working-fork display grouping, and the Phone-only adaptive final-group visual fallback with 650ms retained as the no-evidence default.
 
 Still deferred:
 
@@ -405,7 +407,7 @@ Stable rules:
 - do not rewrite `TimedWord` timestamps;
 - if token-to-text alignment is not credible, render the normal current line rather than invent a Karaoke range;
 - if an ordinary/non-final display group has no defensible end, fall back to normal styling;
-- for the final open-ended display group only, preserve the working fork's 650ms Phone visual fallback without converting it into shared semantic progress;
+- for the final open-ended display group only, infer a bounded Phone visual end from same-line provider cadence when defensible, otherwise retain the working fork's 650ms fallback; never convert either into shared semantic progress;
 - expose Karaoke presentation facts only while effective Phone Karaoke is active;
 - when Karaoke is disabled, WORD source keeps the existing line-oriented Phone behaviour.
 
@@ -500,18 +502,33 @@ This rule is language-independent and preserves sequential source alignment for 
 
 ## Final open-ended group boundary
 
-The 650ms visual duration is the last fallback, not the default end for a final open-ended word.
+A final open-ended display group must not stretch across an unrelated inter-line pause merely because the next timed line is far away.
 
-Phone presentation resolves a final display group's visual end from existing canonical timing before synthesizing any duration:
+Phone presentation resolves the visual end in this order:
 
 ```text
-explicit word end
-    -> next word start
-    -> line end
-    -> next timed line start
-    -> 650ms Phone-only fallback
+explicit final word/group end
+    -> following token start
+    -> explicit line end
+    -> same-line provider cadence inference
+         fragmented final group:
+             infer one terminal interval from its own positive token-start intervals
+         single-token final group:
+             median of up to four recent positive visible-group onset intervals
+             (requires at least two intervals)
+    -> 650ms Phone-only no-evidence fallback
+
+then:
+    cap inferred/fallback end at next timed line start, if earlier
 ```
 
-A timed `♪` line participates naturally as the next timed line, so an interlude transition does not require a separate inferred-gap rule.
+This makes the next timed line an upper boundary rather than the default duration source. A timed `♪` line therefore still prevents a sweep from crossing into an interlude, but a distant interlude no longer stretches the preceding final word.
 
-The shared timing engine remains unchanged. An open-ended provider word may still have semantic `wordProgress = null`; only the Phone renderer derives a bounded visual duration from later canonical timing.
+Provider normalization should preserve explicit source end timing before presentation inference is considered:
+
+- Enhanced-LRC normalization preserves a trailing textless timestamp as the preceding visible word's `endMs`;
+- Musixmatch RichSync preserves `te` as canonical `TimedLyricLine.endMs`, not as a synthetic final-word end.
+
+When either canonical boundary exists, Phone presentation uses it before adaptive inference.
+
+The shared timing engine remains unchanged. A genuinely open-ended provider word may still have semantic `wordProgress = null`; only the Phone mapper derives a bounded visual duration from same-line provider evidence, with 650ms retained when that evidence is insufficient.

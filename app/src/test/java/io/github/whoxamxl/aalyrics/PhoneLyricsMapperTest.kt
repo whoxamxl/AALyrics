@@ -738,7 +738,7 @@ class PhoneLyricsMapperTest {
     }
 
     @Test
-    fun `Phone Karaoke uses following interlude start for final open ended group`() {
+    fun `Phone Karaoke does not stretch final open ended group to distant interlude`() {
         val playback = PlaybackSnapshot(
             track = track(),
             status = PlaybackStatus.PAUSED,
@@ -776,8 +776,8 @@ class PhoneLyricsMapperTest {
         )
 
         assertEquals(0, state.viewport.currentLineIndex)
-        assertEquals(0 to 5, state.viewport.karaokeLine?.sweep?.let { it.start to it.end })
-        assertEquals(0.5f, state.viewport.karaokeLine?.sweep?.progress)
+        assertEquals(5, state.viewport.karaokeLine?.completedEnd)
+        assertNull(state.viewport.karaokeLine?.sweep)
     }
 
     @Test

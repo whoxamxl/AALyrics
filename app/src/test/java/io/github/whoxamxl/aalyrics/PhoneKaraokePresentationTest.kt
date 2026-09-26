@@ -211,16 +211,67 @@ class PhoneKaraokePresentationTest {
     }
 
     @Test
-    fun `final open ended group uses next timed line before visual fallback`() {
+    fun `final open ended group does not stretch across a distant next line without cadence evidence`() {
         val line = TimedLyricLine(
             text = "shine",
             startMs = 1_000L,
             words = listOf(TimedWord("shine", 1_000L)),
         )
 
-        assertEquals(0.5f, sweep(line, 2_000L, nextTimedLineStartMs = 3_000L)?.progress)
-        assertEquals(0.95f, sweep(line, 2_900L, nextTimedLineStartMs = 3_000L)?.progress)
-        assertNull(sweep(line, 3_000L, nextTimedLineStartMs = 3_000L))
+        assertEquals(0.5f, sweep(line, 1_325L, nextTimedLineStartMs = 3_000L)?.progress)
+        assertNull(sweep(line, 1_650L, nextTimedLineStartMs = 3_000L))
+        assertNull(sweep(line, 2_900L, nextTimedLineStartMs = 3_000L))
+    }
+
+    @Test
+    fun `final open ended single token uses recent visible group cadence`() {
+        val line = TimedLyricLine(
+            text = "one two three four",
+            startMs = 1_000L,
+            words = listOf(
+                TimedWord("one ", 1_000L),
+                TimedWord("two ", 1_400L),
+                TimedWord("three ", 1_800L),
+                TimedWord("four", 2_200L),
+            ),
+        )
+
+        assertEquals(14 to 18, sweep(line, 2_400L)?.let { it.start to it.end })
+        assertEquals(0.5f, sweep(line, 2_400L)?.progress)
+        assertNull(sweep(line, 2_600L))
+    }
+
+    @Test
+    fun `next timed line caps inferred final group duration`() {
+        val line = TimedLyricLine(
+            text = "one two three four",
+            startMs = 1_000L,
+            words = listOf(
+                TimedWord("one ", 1_000L),
+                TimedWord("two ", 1_400L),
+                TimedWord("three ", 1_800L),
+                TimedWord("four", 2_200L),
+            ),
+        )
+
+        assertEquals(0.5f, sweep(line, 2_300L, nextTimedLineStartMs = 2_400L)?.progress)
+        assertNull(sweep(line, 2_400L, nextTimedLineStartMs = 2_400L))
+    }
+
+    @Test
+    fun `final fragmented display group infers one terminal token interval from its own cadence`() {
+        val text = "君を忘れない"
+        val line = TimedLyricLine(
+            text = text,
+            startMs = 1_000L,
+            words = text.mapIndexed { index, char ->
+                TimedWord(char.toString(), 1_000L + index * 150L)
+            },
+        )
+
+        assertEquals(2 to text.length, sweep(line, 1_600L)?.let { it.start to it.end })
+        assertEquals(0.5f, sweep(line, 1_600L)?.progress)
+        assertNull(sweep(line, 1_900L))
     }
 
     @Test
@@ -237,7 +288,7 @@ class PhoneKaraokePresentationTest {
     }
 
     @Test
-    fun `interlude marker start can terminate previous open ended visual group`() {
+    fun `distant interlude marker does not stretch final group without enough cadence evidence`() {
         val line = TimedLyricLine(
             text = "last lyric",
             startMs = 1_000L,
@@ -247,15 +298,10 @@ class PhoneKaraokePresentationTest {
             ),
         )
 
-        val nearInterlude = sweep(
-            line = line,
-            positionMs = 3_500L,
-            nextTimedLineStartMs = 4_000L,
-        )
-
-        assertEquals(5 to 10, nearInterlude?.let { it.start to it.end })
-        assertEquals(0.8f, nearInterlude?.progress)
-        assertNull(sweep(line, 4_000L, nextTimedLineStartMs = 4_000L))
+        assertEquals(5 to 10, sweep(line, 1_825L, nextTimedLineStartMs = 4_000L)?.let { it.start to it.end })
+        assertEquals(0.5f, sweep(line, 1_825L, nextTimedLineStartMs = 4_000L)?.progress)
+        assertNull(sweep(line, 2_150L, nextTimedLineStartMs = 4_000L))
+        assertNull(sweep(line, 3_500L, nextTimedLineStartMs = 4_000L))
     }
 
     @Test

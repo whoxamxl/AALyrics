@@ -19,6 +19,27 @@ class LrcParserTest {
     }
 
     @Test
+    fun enhancedLrcUsesFollowingTimestampAsWordEnd() {
+        val lrc = "[00:01.00]<00:01.00>Hello <00:01.50>world<00:02.10>"
+
+        val line = LrcParser.parseKaraoke(lrc).single()
+
+        assertEquals(listOf("Hello ", "world"), line.words.map { it.text })
+        assertEquals(listOf(1_000L, 1_500L), line.words.map { it.startMs })
+        assertEquals(listOf(1_500L, 2_100L), line.words.map { it.endMs })
+    }
+
+    @Test
+    fun enhancedLrcWithoutTrailingTimestampLeavesFinalWordOpenEnded() {
+        val lrc = "[00:01.00]<00:01.00>Hello <00:01.50>world"
+
+        val line = LrcParser.parseKaraoke(lrc).single()
+
+        assertEquals(1_500L, line.words.first().endMs)
+        assertEquals(null, line.words.last().endMs)
+    }
+
+    @Test
     fun enhancedLrcIgnoresFormattingSpaceBeforeFirstToken() {
         val lrc = "[00:01.00] <00:01.05>Hello <00:01.50>world"
 

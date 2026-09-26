@@ -293,8 +293,17 @@ internal class MusixmatchClient(
                     val startSec = line.doubleOrNull("ts") ?: return@mapNotNull null
                     val startMs = secondsToMs(startSec).takeIf { it >= 0L } ?: return@mapNotNull null
                     val words = parseRichSyncWords(line, startSec) ?: return@mapNotNull null
+                    val lastWordStartMs = words.lastOrNull()?.startMs
+                    val endMs = line.doubleOrNull("te")
+                        ?.takeIf { it.isFinite() }
+                        ?.let(::secondsToMs)
+                        ?.takeIf { candidate ->
+                            candidate >= startMs &&
+                                (lastWordStartMs == null || candidate > lastWordStartMs)
+                        }
                     TimedLyricLine(
                         startMs = startMs,
+                        endMs = endMs,
                         text = line.string("x").ifBlank { "♪" },
                         words = words,
                     )

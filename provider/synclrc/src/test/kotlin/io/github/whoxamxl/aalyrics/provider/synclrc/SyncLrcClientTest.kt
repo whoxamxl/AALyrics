@@ -68,6 +68,18 @@ class SyncLrcClientTest {
     }
 
     @Test
+    fun preservesEnhancedLrcTrailingEndMarkerThroughSyncLrcProvider() {
+        val result = client.parseApiResponse(
+            """{"karaoke":"[00:01.00]<00:01.00>Hello <00:01.50>world<00:02.10>"}""",
+            track,
+        )
+
+        val words = result?.lines?.single()?.words.orEmpty()
+        assertEquals(listOf("Hello ", "world"), words.map { it.text })
+        assertEquals(listOf(1_500L, 2_100L), words.map { it.endMs })
+    }
+
+    @Test
     fun acceptsLegacyTypeSpecificKaraokeResponseForCompatibility() {
         val result = client.parseApiResponse(
             """{"type":"KaRaOkE","lyrics":"[00:01.00]<00:01.00>Provider"}""",

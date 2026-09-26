@@ -24,6 +24,7 @@ internal fun mapPhoneKaraokeLine(
             val group = displayGroup(line, ranges, activeIndex) ?: return null
             val groupEndMs = resolveGroupEndMs(
                 line = line,
+                ranges = ranges,
                 group = group,
                 nextTimedLineStartMs = nextTimedLineStartMs,
             )
@@ -73,6 +74,7 @@ internal fun mapPhoneKaraokeLine(
                 val group = displayGroup(line, ranges, completedIndex) ?: return null
                 val groupEndMs = resolveGroupEndMs(
                     line = line,
+                    ranges = ranges,
                     group = group,
                     nextTimedLineStartMs = nextTimedLineStartMs,
                 )
@@ -123,13 +125,73 @@ private fun displayGroup(
 
 private fun resolveGroupEndMs(
     line: TimedLyricLine,
+    ranges: List<LyricWordLayout.DisplayRange>,
     group: DisplayGroup,
     nextTimedLineStartMs: Long?,
 ): Long = line.words[group.lastIndex].endMs
     ?: line.words.getOrNull(group.lastIndex + 1)?.startMs
     ?: line.endMs
-    ?: nextTimedLineStartMs
-    ?: (group.startMs + FINAL_GROUP_VISUAL_DURATION_MS)
+    ?: inferOpenEndedFinalGroupEndMs(
+        line = line,
+        ranges = ranges,
+        group = group,
+        nextTimedLineStartMs = nextTimedLineStartMs,
+    )
+
+private fun inferOpenEndedFinalGroupEndMs(
+    line: TimedLyricLine,
+    ranges: List<LyricWordLayout.DisplayRange>,
+    group: DisplayGroup,
+    nextTimedLineStartMs: Long?,
+): Long {
+    val groupWordStarts = (group.firstIndex..group.lastIndex)
+        .map { line.words[it].startMs }
+    val intraGroupIntervals = groupWordStarts
+        .zipWithNext { left, right -> right - left }
+        .filter { it > 0L }
+
+    val inferredDurationMs = if (intraGroupIntervals.isNotEmpty()) {
+        val terminalIntervalMs = medianDurationMs(intraGroupIntervals)
+        (groupWordStarts.last() - group.startMs) + terminalIntervalMs
+    } else {
+        val displayGroupStartIndices = line.words.indices.filter { index ->
+            index == 0 || ranges[index] != ranges[index - 1]
+        }
+        val currentGroupPosition = displayGroupStartIndices.indexOf(group.firstIndex)
+        val previousGroupIntervals = if (currentGroupPosition > 1) {
+            displayGroupStartIndices
+                .take(currentGroupPosition + 1)
+                .zipWithNext { leftIndex, rightIndex ->
+                    line.words[rightIndex].startMs - line.words[leftIndex].startMs
+                }
+                .filter { it > 0L }
+                .takeLast(RECENT_GROUP_INTERVAL_COUNT)
+        } else {
+            emptyList()
+        }
+        if (previousGroupIntervals.size >= MIN_GROUP_INTERVAL_EVIDENCE) {
+            medianDurationMs(previousGroupIntervals)
+        } else {
+            FINAL_GROUP_VISUAL_DURATION_MS
+        }
+    }
+
+    val inferredEndMs = group.startMs + inferredDurationMs
+    return nextTimedLineStartMs
+        ?.takeIf { it > group.startMs }
+        ?.let { minOf(it, inferredEndMs) }
+        ?: inferredEndMs
+}
+
+private fun medianDurationMs(values: List<Long>): Long {
+    val sorted = values.sorted()
+    val middle = sorted.size / 2
+    return if (sorted.size % 2 == 1) {
+        sorted[middle]
+    } else {
+        (sorted[middle - 1] + sorted[middle]) / 2L
+    }
+}
 
 private fun progressBetween(
     positionMs: Long,
@@ -140,3 +202,5 @@ private fun progressBetween(
     .toFloat()
 
 private const val FINAL_GROUP_VISUAL_DURATION_MS = 650L
+private const val RECENT_GROUP_INTERVAL_COUNT = 4
+private const val MIN_GROUP_INTERVAL_EVIDENCE = 2
