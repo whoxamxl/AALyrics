@@ -155,7 +155,7 @@ Presentation uses `:ui:designsystem` for shared tokens/components, `:ui:phone` f
 
 PR #49 implements the approved read-only Details destination plus the Settings-owned Advanced surface with a persisted presentation-only Verbose Details preference and an intentionally disabled/unwired Karaoke affordance. Sync remains the only primary Phone destination that is both a placeholder and interaction-model-deferred pending timing/calibration redesign.
 
-PR #50 established the **Phone runtime host / device-test enablement** boundary documented in `docs/PHONE_RUNTIME_HOST.md`. Subsequent merged Phone work completed the Settings legal/help surfaces, playback-source eligibility and diagnostics, storage/reset controls, queue/artwork refinements, and the verified in-app update flow. `MainActivity` continues to preserve onboarding while hosting live application-owned Lyrics/Playback/Details/Settings state. Sync remains a deliberate non-functional placeholder. The separately authorized Phase 11.4b/11.4c Phone slice adds gated WORD_SYNC Karaoke presentation; Android Auto Karaoke remains deferred.
+PR #50 established the **Phone runtime host / device-test enablement** boundary documented in `docs/PHONE_RUNTIME_HOST.md`. Subsequent merged Phone work completed the Settings legal/help surfaces, playback-source eligibility and diagnostics, storage/reset controls, queue/artwork refinements, and the verified in-app update flow. `MainActivity` continues to preserve onboarding while hosting live application-owned Lyrics/Playback/Details/Settings state. Sync remains a deliberate non-functional placeholder. The separately authorized Phase 11.4b/11.4c Phone slice adds gated WORD_SYNC Karaoke presentation. Android Auto Now Playing intentionally remains line-oriented and does not adopt Karaoke presentation.
 
 The production Settings information architecture is now merged on `main`: Version/Changelog/Source code and automatic/manual update controls live under `APP`; Privacy Policy, Terms of Use, License/third-party licenses, Help & Feedback, and Support AALyrics live under `ABOUT & SUPPORT`; Advanced remains a separate application-owned settings surface. External browser/payment handoffs remain app-owned and do not move runtime capability ownership into `:ui:phone`.
 
@@ -367,15 +367,35 @@ Preserve/refactor the working fork's `LyricWordLayout`, same-visible-range group
 
 The existing line focus, Follow/Browse behaviour, Translation layout, and timing engine ownership remain unchanged.
 
-### Phase 11.4d — Android Auto Karaoke — documented / deferred
+### Phase 11.4d — Android Auto Karaoke — not adopted for Now Playing
 
-Android Auto will eventually consume the same shared timing projection through its own host-appropriate presentation. No Android Auto Karaoke production code belongs to the Phone implementation branch.
+The current Android Auto Now Playing product contract deliberately uses line-level presentation for both LINE_SYNC and WORD_SYNC. It consumes the shared timing projection's `activeLineIndex` but does not render active-word progress, sweep, pulse, or a current-line marker.
+
+A future Android Auto Karaoke proposal would require a new explicit product decision and implementation slice; it is not an automatic deferred requirement created by Phone Karaoke.
 
 ### Phase 11.5 — Presentation state integration
 
 Compose application/domain capability facts into the smallest presentation contracts demonstrated by actual Phone and automotive requirements.
 
 Must follow `docs/PRESENTATION_STATE_ARCHITECTURE.md`. Do not create one universal giant UI state. Keep shared semantic facts shareable and surface-local state local.
+
+#### Android Auto Now Playing completion — authorized / documentation gate complete
+
+The active `feature/android-auto-now-playing` slice completes the existing legacy `MediaBrowserServiceCompat` + `MediaSessionCompat` Now Playing presentation before the separate Car App Library templated-media work.
+
+It is authorized to integrate existing application capabilities only:
+
+- selected-session artwork;
+- real playback control capabilities;
+- shared current-line timing through `LyricsTimingProjection.activeLineIndex`;
+- line-oriented LINE_SYNC and WORD_SYNC display;
+- explicit PLAIN unsynchronized fallback;
+- Lyrics loading/not-found/failed presentation with a 250 ms loading heartbeat;
+- identity-gated Translation as canonical source first + optional translated second line, including a translating heartbeat and source-only failure fallback.
+
+It explicitly excludes Karaoke, Provider/source/queue presentation, Browse/Expanded Lyrics, Sync controls, provider/refetch changes, and Car App Library templates.
+
+The authoritative implementation contract is `docs/ANDROID_AUTO_NOW_PLAYING.md`; `TASK.md` owns the execution checklist.
 
 These implementation slices are separate responsibilities and should normally use separate topic branches/PRs. The order may change when concrete implementation or product evidence justifies it, but the dependency and ownership rules in the Phase 11 foundation remain the guardrail.
 
