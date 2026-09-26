@@ -3,11 +3,11 @@
 ## Status
 
 - Active topic branch: `feature/android-auto-now-playing`.
-- Branch baseline: `main` at `52e9249395206f8c3821cc5c8e5893a8ccdcd125` (PR #82 merged).
+- Original branch baseline: `main` at `52e9249395206f8c3821cc5c8e5893a8ccdcd125` (PR #82 merged); the branch was later reconciled with `main` at `86f4cd300161eb2038c637094a8e75a0afa9bf80`.
 - This slice completes the existing legacy Android Auto Now Playing path built on `MediaBrowserServiceCompat` + `MediaSessionCompat`.
 - Car App Library templated media remains a separate future slice under `docs/ANDROID_AUTO_MEDIA_STRATEGY.md`.
 - Android Auto Karaoke is intentionally out of scope for this product surface. WORD_SYNC is presented line-by-line.
-- Production integration and focused tests are implemented on this branch. See `TASK.md` for validation evidence and the remaining host checks.
+- Production integration and focused tests are implemented on this branch. Physical Android Auto rendering and forced process-death recovery have been validated; the bounded cold-start retry is CI-covered and has one focused physical re-check remaining. See `TASK.md` for the exact evidence.
 
 This document is the authoritative product/implementation contract for the Android Auto Now Playing completion slice. `TASK.md` records execution checkpoints; capability documents remain authoritative for their underlying ownership rules.
 
@@ -26,9 +26,9 @@ The surface should expose:
 
 It deliberately does not expose unrelated diagnostics or browse/detail information.
 
-## Current baseline and known gaps
+## Baseline context
 
-At the branch baseline:
+At the original branch baseline:
 
 - `LyricsBrowserService` publishes a `MediaSessionCompat` and transport callback.
 - `NowPlayingScreen` publishes title, artist, album, duration, display title, one subtitle, playback position/state/rate, and a fixed action mask.
@@ -557,17 +557,25 @@ At minimum cover:
 
 ## Validation
 
-Before the branch is considered implementation-complete:
+Required validation for this slice is:
 
-- run relevant `:core:timing`, Translation, platform/media, application, and `:ui:automotive` unit tests;
-- run repository architecture checks;
-- build the debug APK;
-- inspect the branch-wide diff for scope drift;
-- validate with DHU where available;
-- validate on the physical Android Auto host because ellipsis, artwork display, metadata refresh cadence, and control rendering are host behaviors;
-- confirm Phone Lyrics/Translation/Karaoke behavior is unchanged;
-- update `TASK.md` and affected docs to record actual implementation/validation evidence;
-- open a Draft PR only after final validation, then stop.
+- relevant `:core:timing`, Translation, platform/media, application, and `:ui:automotive` unit tests;
+- repository architecture checks;
+- debug APK build;
+- branch-wide scope-drift inspection;
+- DHU where useful/available;
+- physical Android Auto validation for host-controlled rendering behavior;
+- confirmation that Phone Lyrics/Translation/Karaoke behavior is unchanged;
+- documentation/TASK alignment.
+
+Current result:
+
+- latest CI run `36220867319` passes architecture checks, debug APK build, all unit tests, and sideloadable APK upload;
+- physical Android Auto rendering has been observed on-device;
+- forced process-death recovery has been validated end-to-end without reopening the Phone Activity;
+- fixed Android Auto lyrics latency compensation is intentionally absent from production after physical comparison;
+- bounded cold-start provider-failure recovery is deterministic-test covered; the original mid-track cold-start scenario remains the focused physical re-check after that fix;
+- PR #84 remains Draft pending the user's final review/merge sequence.
 
 ## Explicit non-goals after completion
 

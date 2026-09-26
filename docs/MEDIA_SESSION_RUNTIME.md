@@ -196,23 +196,25 @@ That feature may extend the existing selected-session boundary with normalized p
 
 The original PR #29 runtime did not own finished transport presentation. This follow-up consumes and may narrowly extend that runtime without changing its session-selection policy.
 
-## Explicitly out of scope
+## Explicitly out of scope for PR #29
 
-The following remain separate work from the MediaSession runtime itself:
+The MediaSession runtime itself still does not own the capabilities below, even though several were implemented later through their own boundaries:
 
-- lyrics-demand gating implementation, now specified separately in `docs/LYRICS_DEMAND_GATING.md`;
-- finished phone lyrics UI;
-- finished Android Auto presentation/service browsing UI;
+- lyrics-demand gating — implemented separately in PR #30 and currently documented in `docs/LYRICS_DEMAND_GATING.md`;
+- Phone lyrics UI — implemented later in the Phone presentation slices;
+- legacy Android Auto Now Playing — implemented later on PR #84; Browse/Car App Library presentation remains separate;
 - settings/persistence UI;
 - cache;
-- translation;
-- artwork/color extraction;
-- finished Phone playback-surface presentation and its capability mapping (specified separately in `docs/PHONE_PLAYBACK_SURFACE.md`);
+- Translation execution/presentation;
+- artwork/color extraction and presentation ownership;
+- Phone playback-surface presentation/capability mapping — specified separately in `docs/PHONE_PLAYBACK_SURFACE.md`;
 - current-line/current-word rendering state;
 - timing offset/calibration;
-- karaoke rendering;
+- Karaoke rendering;
 - provider transport/search behavior;
 - cross-provider scoring/selection-policy changes.
+
+These stay outside `:platform:media` even when downstream features are now production code.
 
 ## Tests and validation
 
