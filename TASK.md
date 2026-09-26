@@ -134,7 +134,7 @@ Do not implement:
 ## Implementation checkpoints
 
 1. [x] Documentation gate: create authoritative Android Auto Now Playing contract and align active task.
-2. [ ] Align durable architecture/roadmap docs with the authorized surface contract and explicit Karaoke exclusion.
+2. [x] Align durable architecture/roadmap docs with the authorized surface contract and explicit Karaoke exclusion.
 3. [ ] Automotive state/runtime contract: expose the smallest required artwork, playback-capability, Translation, and timing inputs.
 4. [ ] Shared timing integration: remove automotive-local current-line authority and consume shared `activeLineIndex`.
 5. [ ] Lyrics presentation: implement LINE/WORD line-only mapping, PLAIN fallback, lifecycle copy, and deterministic loading heartbeat.
