@@ -168,6 +168,7 @@ Implementation evidence may justify a small new Automotive presentation type/fil
 
 ## Acceptance criteria
 
+- Automotive display identity prefers album artist when available and falls back to the full track artist without rewriting upstream track-artist metadata.
 - Jacket artwork appears when selected-session artwork is available.
 - Clearing/changing artwork cannot intentionally leave a previous track's jacket attached to the new track.
 - Android Auto action mask reflects real `PlaybackControlState.capabilities`.

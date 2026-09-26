@@ -133,7 +133,7 @@ internal object AutomotiveLyricsUiStateMapper {
 
         return AutomotiveLyricsUiState(
             trackTitle = track.title,
-            artist = track.primaryArtist,
+            artist = track.albumArtist ?: track.primaryArtist,
             album = track.album,
             durationMs = track.durationMs,
             positionMs = positionMs,

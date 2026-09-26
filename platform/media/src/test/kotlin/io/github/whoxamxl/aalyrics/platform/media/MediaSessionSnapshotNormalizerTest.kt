@@ -42,6 +42,25 @@ class MediaSessionSnapshotNormalizerTest {
     }
 
     @Test
+    fun `track artist and album artist remain distinct metadata`() {
+        val snapshot = MediaSessionSnapshotNormalizer.normalize(
+            MediaSessionSnapshotInput(
+                sourceId = SpotifyPlaybackReference.SOURCE_ID,
+                title = "Do You Hear The People Sing?",
+                artist = "Aaron Tveit, Eddie Redmayne, Students, Les Misérables Cast • Lossless",
+                albumArtist = "Les Misérables Cast",
+                album = "Les Misérables",
+            ),
+        )
+
+        assertEquals(
+            listOf("Aaron Tveit, Eddie Redmayne, Students, Les Misérables Cast • Lossless"),
+            snapshot.track?.artists,
+        )
+        assertEquals("Les Misérables Cast", snapshot.track?.albumArtist)
+    }
+
+    @Test
     fun `spotify track URL in media id is accepted as explicit resource`() {
         val snapshot = MediaSessionSnapshotNormalizer.normalize(
             MediaSessionSnapshotInput(

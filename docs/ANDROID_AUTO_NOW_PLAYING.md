@@ -63,7 +63,8 @@ Codex may choose a smaller internal type split when implementation evidence supp
 Track/media:
 
 - title;
-- artist;
+- compact Automotive artist identity: prefer album artist when available, otherwise track artist;
+- preserve the upstream full track artist metadata for non-Automotive consumers and lyrics lookup;
 - album;
 - duration;
 - album artwork.

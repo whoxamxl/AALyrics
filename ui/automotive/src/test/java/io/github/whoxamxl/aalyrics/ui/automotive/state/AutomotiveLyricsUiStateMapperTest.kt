@@ -59,6 +59,30 @@ class AutomotiveLyricsUiStateMapperTest {
     }
 
     @Test
+    fun `album artist is preferred only for compact Automotive identity`() {
+        val track = Track(
+            title = "Do You Hear The People Sing?",
+            artists = listOf(
+                "Aaron Tveit, Eddie Redmayne, Students, Les Misérables Cast • Lossless",
+            ),
+            albumArtist = "Les Misérables Cast",
+        )
+
+        val state = AutomotiveLyricsUiStateMapper.project(
+            playback = PlaybackSnapshot(track = track),
+            lyricsState = LyricsState.Idle,
+            currentMonotonicTimeMs = 0L,
+        )
+
+        assertEquals("Les Misérables Cast", state.artist)
+        assertEquals("Do You Hear The People Sing? — Les Misérables Cast", state.displayTitle)
+        assertEquals(
+            "Aaron Tveit, Eddie Redmayne, Students, Les Misérables Cast • Lossless",
+            track.primaryArtist,
+        )
+    }
+
+    @Test
     fun `sample timestamp drives both sides of a line boundary when source time is absent`() {
         val track = Track(title = "Song", artists = listOf("Artist"))
         val playback = PlaybackSnapshot(
