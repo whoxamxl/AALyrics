@@ -11,6 +11,16 @@ import io.github.whoxamxl.aalyrics.core.model.PlaybackTrackIdentity
 import io.github.whoxamxl.aalyrics.core.model.TimedLyricLine
 import io.github.whoxamxl.aalyrics.core.model.TimedWord
 import io.github.whoxamxl.aalyrics.core.model.Track
+import io.github.whoxamxl.aalyrics.translation.api.TranslationProviderId
+import io.github.whoxamxl.aalyrics.translation.api.TranslationSettings
+import io.github.whoxamxl.aalyrics.translation.core.CanonicalLyrics
+import io.github.whoxamxl.aalyrics.translation.core.LanguageProfile
+import io.github.whoxamxl.aalyrics.translation.core.TranslationArtifact
+import io.github.whoxamxl.aalyrics.translation.core.TranslationArtifactLine
+import io.github.whoxamxl.aalyrics.translation.core.TranslationRequestId
+import io.github.whoxamxl.aalyrics.translation.core.TranslationRequestIdentity
+import io.github.whoxamxl.aalyrics.translation.core.TranslationState
+import io.github.whoxamxl.aalyrics.translation.core.SecondaryActivation
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -227,6 +237,106 @@ class AutomotiveLyricsUiStateMapperTest {
         assertEquals(null, artworkForTrack(first, first, null as String?))
         assertEquals(null, artworkForTrack(second, first, "jacket"))
         assertEquals("new jacket", artworkForTrack(second, second, "new jacket"))
+    }
+
+    @Test
+    fun `translating heartbeat keeps source first while paused`() {
+        val track = Track(title = "Song", artists = listOf("Artist"))
+        val document = LyricsDocument(lines = listOf(TimedLyricLine("Source", startMs = 0L)))
+        val identity = CanonicalLyrics.create("lyrics-lookup-1", document).identity
+        val request = TranslationRequestIdentity(TranslationRequestId(1L), identity, "en")
+        val playback = PlaybackSnapshot(track = track, status = PlaybackStatus.PAUSED)
+
+        listOf("Translating.", "Translating..", "Translating...")
+            .forEachIndexed { frame, expected ->
+                val state = AutomotiveLyricsUiStateMapper.project(
+                    playback = playback,
+                    lyricsState = ready(track, document),
+                    currentMonotonicTimeMs = frame * 250L,
+                    translationSettings = TranslationSettings(enabled = true),
+                    translationState = TranslationState.Translating(request),
+                    canonicalLyricsIdentity = identity,
+                )
+                assertEquals("Source", state.lyrics.primaryText)
+                assertEquals(expected, state.lyrics.secondaryText)
+                assertEquals(true, state.lyrics.isAnimatedLoading)
+                assertEquals(true, shouldRenderProjectionTick(playback, state.lyrics.isAnimatedLoading))
+            }
+    }
+
+    @Test
+    fun `ready translation requires exact identity target and translated nonblank line`() {
+        val track = Track(title = "Song", artists = listOf("Artist"))
+        val document = LyricsDocument(lines = listOf(TimedLyricLine("Source", startMs = 0L)))
+        val identity = CanonicalLyrics.create("lyrics-lookup-1", document).identity
+        val request = TranslationRequestIdentity(TranslationRequestId(1L), identity, "en")
+        val line = TranslationArtifactLine(0, "Translated", "ja", translated = true)
+        fun readyTranslation(
+            requestIdentity: TranslationRequestIdentity = request,
+            artifactLine: TranslationArtifactLine = line,
+        ) = TranslationState.Ready(TranslationArtifact(
+            request = requestIdentity,
+            providerId = TranslationProviderId("test"),
+            profile = LanguageProfile(null, null, SecondaryActivation.NONE, emptyList()),
+            lines = listOf(artifactLine),
+        ))
+        fun secondary(
+            settings: TranslationSettings = TranslationSettings(enabled = true),
+            state: TranslationState = readyTranslation(),
+        ) = AutomotiveLyricsUiStateMapper.project(
+            playback = PlaybackSnapshot(track = track),
+            lyricsState = ready(track, document),
+            currentMonotonicTimeMs = 0L,
+            translationSettings = settings,
+            translationState = state,
+            canonicalLyricsIdentity = identity,
+        ).lyrics.secondaryText
+
+        assertEquals("Translated", secondary())
+        assertEquals(null, secondary(settings = TranslationSettings(enabled = false)))
+        assertEquals(null, secondary(state = readyTranslation(
+            requestIdentity = request.copy(canonicalLyrics = identity.copy(ownerId = "old")),
+        )))
+        assertEquals(null, secondary(state = readyTranslation(
+            requestIdentity = request.copy(targetLanguage = "ja"),
+        )))
+        assertEquals(null, secondary(state = readyTranslation(
+            artifactLine = line.copy(translated = false),
+        )))
+        assertEquals(null, secondary(state = readyTranslation(
+            artifactLine = line.copy(text = " "),
+        )))
+        assertEquals(null, secondary(state = TranslationState.Failed(request)))
+        assertEquals(null, secondary(state = TranslationState.NotRequired(
+            request,
+            LanguageProfile(null, null, SecondaryActivation.NONE, emptyList()),
+        )))
+    }
+
+    @Test
+    fun `lyrics lifecycle and plain content take precedence over translation`() {
+        val track = Track(title = "Song", artists = listOf("Artist"))
+        val lookup = LyricsLookup(LyricsLookupId(1L), track)
+        val document = LyricsDocument(lines = listOf(TimedLyricLine("Source", startMs = 0L)))
+        val identity = CanonicalLyrics.create("lyrics-lookup-1", document).identity
+        val translating = TranslationState.Translating(
+            TranslationRequestIdentity(TranslationRequestId(1L), identity, "en"),
+        )
+        fun presentation(lyrics: LyricsState) = AutomotiveLyricsUiStateMapper.project(
+            playback = PlaybackSnapshot(track = track),
+            lyricsState = lyrics,
+            currentMonotonicTimeMs = 0L,
+            translationSettings = TranslationSettings(enabled = true),
+            translationState = translating,
+            canonicalLyricsIdentity = identity,
+        ).lyrics
+
+        assertEquals(null, presentation(LyricsState.Loading(lookup)).secondaryText)
+        assertEquals(null, presentation(LyricsState.Failed(lookup, failedAttempts = 1)).secondaryText)
+        assertEquals(null, presentation(LyricsState.NotFound(lookup)).secondaryText)
+        assertEquals(null, presentation(ready(track, LyricsDocument(
+            lines = listOf(PlainLyricLine("Plain")),
+        ))).secondaryText)
     }
 
     private fun ready(track: Track, lyrics: LyricsDocument): LyricsState.Ready =

@@ -13,6 +13,10 @@ import io.github.whoxamxl.aalyrics.core.timing.projectLyricsTiming
 import io.github.whoxamxl.aalyrics.core.timing.projectedPlaybackPosition
 import io.github.whoxamxl.aalyrics.ui.automotive.AutomotiveTransportCapabilities
 import io.github.whoxamxl.aalyrics.ui.automotive.AutomotiveArtworkState
+import io.github.whoxamxl.aalyrics.translation.api.TranslationLanguages
+import io.github.whoxamxl.aalyrics.translation.api.TranslationSettings
+import io.github.whoxamxl.aalyrics.translation.core.CanonicalLyricsIdentity
+import io.github.whoxamxl.aalyrics.translation.core.TranslationState
 
 data class AutomotiveLyricsUiState(
     val trackTitle: String? = null,
@@ -65,6 +69,9 @@ internal object AutomotiveLyricsUiStateMapper {
         currentMonotonicTimeMs: Long,
         artwork: AutomotiveArtworkState = AutomotiveArtworkState(),
         capabilities: AutomotiveTransportCapabilities = AutomotiveTransportCapabilities(),
+        translationSettings: TranslationSettings = TranslationSettings(enabled = false),
+        translationState: TranslationState = TranslationState.Idle,
+        canonicalLyricsIdentity: CanonicalLyricsIdentity? = null,
     ): AutomotiveLyricsUiState {
         val track = playback.track
         if (track == null) {
@@ -92,7 +99,7 @@ internal object AutomotiveLyricsUiStateMapper {
         }
         val currentLine = activeLineIndex?.let { document?.lines?.getOrNull(it) as? TimedLyricLine }
 
-        val presentation = when (matchingState) {
+        val lyricsPresentation = when (matchingState) {
             null,
             is LyricsState.Loading,
             -> AutomotiveLyricPresentation(
@@ -110,6 +117,19 @@ internal object AutomotiveLyricsUiStateMapper {
                 else -> "♪"
             })
         }
+        val presentation = if (
+            currentLine != null && currentLine.text.isNotBlank() &&
+            document?.syncType != LyricsSyncType.PLAIN
+        ) {
+            lyricsPresentation.withTranslation(
+                lineIndex = requireNotNull(activeLineIndex),
+                lineCount = document.lines.size,
+                settings = translationSettings,
+                state = translationState,
+                canonicalIdentity = canonicalLyricsIdentity,
+                currentMonotonicTimeMs = currentMonotonicTimeMs,
+            )
+        } else lyricsPresentation
 
         return AutomotiveLyricsUiState(
             trackTitle = track.title,
@@ -131,4 +151,42 @@ internal object AutomotiveLyricsUiStateMapper {
 
     internal fun loadingDots(currentMonotonicTimeMs: Long): String =
         ".".repeat(((currentMonotonicTimeMs.coerceAtLeast(0L) / 250L) % 3L).toInt() + 1)
+
+    private fun AutomotiveLyricPresentation.withTranslation(
+        lineIndex: Int,
+        lineCount: Int,
+        settings: TranslationSettings,
+        state: TranslationState,
+        canonicalIdentity: CanonicalLyricsIdentity?,
+        currentMonotonicTimeMs: Long,
+    ): AutomotiveLyricPresentation {
+        if (!settings.enabled || canonicalIdentity == null) return this
+        val target = TranslationLanguages.normalizeTargetLanguage(settings.targetLanguage)
+        return when (state) {
+            is TranslationState.Translating -> if (
+                state.request.canonicalLyrics == canonicalIdentity &&
+                state.request.targetLanguage == target
+            ) {
+                copy(
+                    secondaryText = "Translating${loadingDots(currentMonotonicTimeMs)}",
+                    isAnimatedLoading = true,
+                )
+            } else this
+            is TranslationState.Ready -> {
+                val artifact = state.artifact
+                val translated = artifact.takeIf {
+                    it.request.canonicalLyrics == canonicalIdentity &&
+                        it.request.targetLanguage == target &&
+                        it.lines.size == lineCount
+                }?.lines?.getOrNull(lineIndex)
+                    ?.takeIf { it.translated && it.text.isNotBlank() }
+                if (translated == null) this else copy(secondaryText = translated.text)
+            }
+            TranslationState.Disabled,
+            TranslationState.Idle,
+            is TranslationState.NotRequired,
+            is TranslationState.Failed,
+            -> this
+        }
+    }
 }

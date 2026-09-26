@@ -4,7 +4,7 @@
 
 - Branch: `feature/android-auto-now-playing`.
 - Base: `main` at `52e9249395206f8c3821cc5c8e5893a8ccdcd125` (PR #82 merged).
-- Current checkpoint: implementation in progress. Artwork and controls are complete; Translation is next.
+- Current checkpoint: implementation in progress. Translation is complete; metadata invalidation is next.
 - Authoritative slice contract: `docs/ANDROID_AUTO_NOW_PLAYING.md`.
 - Broader Android Auto strategy: `docs/ANDROID_AUTO_MEDIA_STRATEGY.md`.
 - Shared timing authority: `docs/TIMING_ARCHITECTURE.md`.
@@ -139,7 +139,7 @@ Do not implement:
 4. [x] Shared timing integration: remove automotive-local current-line authority and consume shared `activeLineIndex`.
 5. [x] Lyrics presentation: implement LINE/WORD line-only mapping, PLAIN fallback, lifecycle copy, and deterministic loading heartbeat.
 6. [x] Artwork + controls: wire existing artwork state and real capability-derived PlaybackState actions.
-7. [ ] Translation: wire exact-identity Translation state, two-line Ready presentation, translating heartbeat, and Failed source-only fallback.
+7. [x] Translation: wire exact-identity Translation state, two-line Ready presentation, translating heartbeat, and Failed source-only fallback.
 8. [ ] MediaSession invalidation: ensure visible metadata changes update while position-only movement within one lyric line does not rebuild metadata.
 9. [ ] Focused tests: cover the matrix in `docs/ANDROID_AUTO_NOW_PLAYING.md`.
 10. [ ] Final validation: architecture checks, relevant unit tests, debug APK, regression/scope audit, docs alignment, DHU/physical-host validation where available.
@@ -226,3 +226,5 @@ Codex must implement deterministic tests for at least:
 - Checkpoint 4 test sources and app compiled; architecture checks passed. Branch Build workflow [run 36210171777](https://github.com/whoxamxl/AALyrics/actions/runs/36210171777) passed the debug APK build and unit tests. Local Gradle test workers cannot establish a loopback connection in this environment.
 - Automotive Lyrics now distinguishes no media, waiting, loading, not found, failed, PLAIN, and timed states. LINE and WORD use one canonical line, blank/interlude moments show `♪`, and loading frames derive from monotonic time every 250 ms. The service continues ticking during paused loading. Focused Automotive test sources compiled.
 - Selected-session artwork now enters MediaSession metadata only when its tagged track identity matches current playback; arrival and clear events render immediately. PlaybackState actions derive individually from existing selected-source capability facts and omit unsupported controls and queue actions. Focused artwork identity and action-mask test sources compiled with the app.
+- Branch Build workflow [run 36210491667](https://github.com/whoxamxl/AALyrics/actions/runs/36210491667) passed through artwork/controls, including unit tests and debug APK build.
+- Translation presentation now consumes application-owned settings/state and canonical identity. Current synchronized source stays first; exact matching Translating adds animated second-line status, matching Ready adds a genuinely translated nonblank second line, and Failed/NotRequired/stale states remain source-only. Focused test sources compiled with the app.

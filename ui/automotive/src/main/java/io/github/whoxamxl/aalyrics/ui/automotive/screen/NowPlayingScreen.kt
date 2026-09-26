@@ -16,6 +16,9 @@ internal object NowPlayingScreen {
             state.artwork?.let { putBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART, it) }
             putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_TITLE, state.displayTitle)
             putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_SUBTITLE, state.subtitle)
+            state.lyrics.secondaryText?.let {
+                putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_DESCRIPTION, it)
+            }
         }.build()
 
     fun playbackState(state: AutomotiveLyricsUiState): PlaybackStateCompat {
