@@ -125,7 +125,7 @@ A source timestamp is not rejected merely because it is old. Old anchors are nor
 - the source timestamp moves backwards on the same track;
 - the source timestamp is later than the AALyrics local sample time.
 
-Once a specific source timestamp is rejected, snapshots carrying that same timestamp continue to use the local sample clock. A temporary snapshot with no source timestamp does not clear the quarantine. Recovery requires a new valid non-null source timestamp or a track/session identity change.
+Once a source timestamp is rejected, that rejected sample does not become the next comparison baseline. The reconciler retains the last accepted source snapshot and advances that baseline only when a source timestamp is accepted. A temporary snapshot with no source timestamp does not clear quarantine. Recovery requires a new valid non-null timestamp that is consistent with the last accepted source clock, or a track/session identity change.
 
 A newly selected playing session that exposes both timestamps receives one 250ms validation re-sample. This catches the mid-track attach case where a player returns a current-looking raw position while retaining an older `lastPositionUpdateTime`. A valid Android anchor remains stationary at the raw position during that re-sample and is preserved.
 
