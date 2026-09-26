@@ -5,7 +5,7 @@
 - Branch: `feature/android-auto-now-playing`.
 - Original base: `main` at `52e9249395206f8c3821cc5c8e5893a8ccdcd125` (PR #82 merged).
 - Reconciled baseline: current `main` at `86f4cd300161eb2038c637094a8e75a0afa9bf80` (changelog-only PR #83).
-- Current checkpoint: implementation and final software validation complete. Open the Draft PR and stop.
+- Current checkpoint: implementation and final software validation complete. Draft PR #84 is open; only Android Auto host rendering validation remains.
 - Authoritative slice contract: `docs/ANDROID_AUTO_NOW_PLAYING.md`.
 - Broader Android Auto strategy: `docs/ANDROID_AUTO_MEDIA_STRATEGY.md`.
 - Shared timing authority: `docs/TIMING_ARCHITECTURE.md`.
