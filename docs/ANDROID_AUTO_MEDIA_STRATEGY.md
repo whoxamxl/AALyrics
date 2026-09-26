@@ -5,6 +5,7 @@
 - Decision date: 2026-09-19.
 - Product classification: **Media app**.
 - Current production path: legacy `MediaBrowserServiceCompat` + `MediaSessionCompat`.
+- Active legacy Now Playing completion contract: `docs/ANDROID_AUTO_NOW_PLAYING.md`.
 - Planned primary Android Auto presentation: **Car App Library templated media**.
 - Planned Car App Library baseline: `androidx.car.app:app:1.8.0-rc01`.
 - Planned primary browsing template: `SectionedItemTemplate`.
@@ -48,6 +49,26 @@ Reasons:
 - `SectionedItemTemplate` provides the sectioned list/grid structure needed for a richer AALyrics automotive experience than the legacy host-generated MediaBrowser UI.
 
 The repository may still contain an older Car App Library dependency until the dedicated implementation slice changes it. Documentation of this decision does not authorize an incidental dependency upgrade in unrelated work.
+
+## Active legacy Now Playing completion
+
+The current authorized Android Auto implementation slice completes the existing legacy host-generated Now Playing path before any Car App Library work begins.
+
+The authoritative behavior contract is `docs/ANDROID_AUTO_NOW_PLAYING.md`.
+
+That slice is intentionally limited to:
+
+- current track metadata + selected-session artwork;
+- playback state/position and real source-advertised transport capabilities;
+- one synchronized current lyric line for LINE_SYNC and WORD_SYNC;
+- PLAIN lyrics reported as unavailable for synchronized presentation rather than pseudo-synchronized;
+- Lyrics loading/not-found/failed states, including a 250 ms `.` / `..` / `...` loading heartbeat;
+- Translation as a fixed source-first + optional translated-second-line presentation, with a matching translating heartbeat and source-only failure fallback;
+- consumption of the shared timing semantic authority through `LyricsTimingProjection.activeLineIndex` only.
+
+It explicitly does **not** add Android Auto Karaoke, current-word progress, a `▶` marker, queue, playback-source/package diagnostics, Lyrics Provider attribution, Browse/Expanded Lyrics, Sync controls, or Car App Library templates.
+
+The legacy Now Playing completion must preserve the existing application/platform ownership boundaries: Automotive consumes existing artwork, playback-capability, Lyrics, Translation, and timing facts rather than rediscovering or reimplementing them.
 
 ## Planned templated-media requirements
 
