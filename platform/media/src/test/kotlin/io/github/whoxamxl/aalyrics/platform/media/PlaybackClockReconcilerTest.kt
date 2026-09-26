@@ -144,6 +144,44 @@ class PlaybackClockReconcilerTest {
     }
 
     @Test
+    fun `rejected backward timestamp does not become next comparison baseline`() {
+        val accepted = reconciler.reconcile(
+            snapshot(positionMs = 40_000L, sourceTimestampMs = 20_000L, sampleTimestampMs = 20_100L),
+        )
+        val backward = reconciler.reconcile(
+            snapshot(positionMs = 40_500L, sourceTimestampMs = 19_000L, sampleTimestampMs = 21_000L),
+        )
+        val stillBehindLastAccepted = reconciler.reconcile(
+            snapshot(positionMs = 41_000L, sourceTimestampMs = 19_500L, sampleTimestampMs = 21_500L),
+        )
+        val recovered = reconciler.reconcile(
+            snapshot(positionMs = 41_500L, sourceTimestampMs = 20_500L, sampleTimestampMs = 21_600L),
+        )
+
+        assertEquals(20_000L, accepted.positionUpdatedAtMonotonicMs)
+        assertNull(backward.positionUpdatedAtMonotonicMs)
+        assertNull(stillBehindLastAccepted.positionUpdatedAtMonotonicMs)
+        assertEquals(20_500L, recovered.positionUpdatedAtMonotonicMs)
+    }
+
+    @Test
+    fun `future outlier does not poison recovery from last accepted timestamp`() {
+        val accepted = reconciler.reconcile(
+            snapshot(positionMs = 40_000L, sourceTimestampMs = 20_000L, sampleTimestampMs = 20_100L),
+        )
+        val futureOutlier = reconciler.reconcile(
+            snapshot(positionMs = 40_500L, sourceTimestampMs = 30_000L, sampleTimestampMs = 21_000L),
+        )
+        val recovered = reconciler.reconcile(
+            snapshot(positionMs = 41_000L, sourceTimestampMs = 21_000L, sampleTimestampMs = 21_100L),
+        )
+
+        assertEquals(20_000L, accepted.positionUpdatedAtMonotonicMs)
+        assertNull(futureOutlier.positionUpdatedAtMonotonicMs)
+        assertEquals(21_000L, recovered.positionUpdatedAtMonotonicMs)
+    }
+
+    @Test
     fun `different track starts a fresh clock comparison`() {
         reconciler.reconcile(
             snapshot(positionMs = 40_000L, sourceTimestampMs = 10_000L, sampleTimestampMs = 20_000L),

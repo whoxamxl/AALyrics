@@ -15,12 +15,12 @@ internal class PlaybackClockReconciler {
     )
 
     private var identity: ClockIdentity? = null
-    private var previousSourceSnapshot: PlaybackSnapshot? = null
+    private var lastAcceptedSourceSnapshot: PlaybackSnapshot? = null
     private var rejectedSourceTimestampMs: Long? = null
 
     fun reset() {
         identity = null
-        previousSourceSnapshot = null
+        lastAcceptedSourceSnapshot = null
         rejectedSourceTimestampMs = null
     }
 
@@ -38,7 +38,7 @@ internal class PlaybackClockReconciler {
         val sourceTimestamp = raw.positionUpdatedAtMonotonicMs
             ?: return raw
         val sampleTimestamp = raw.positionSampledAtMonotonicMs
-        val previous = previousSourceSnapshot
+        val previous = lastAcceptedSourceSnapshot
 
         if (rejectedSourceTimestampMs != null &&
             rejectedSourceTimestampMs != sourceTimestamp
@@ -60,20 +60,19 @@ internal class PlaybackClockReconciler {
                         previous.playbackRate != raw.playbackRate
                     )
 
-        if (
+        val sourceTimestampRejected =
             timestampIsInFuture ||
-            timestampWentBackwards ||
-            sameTimestampTimingFactsChanged
-        ) {
+                timestampWentBackwards ||
+                sameTimestampTimingFactsChanged ||
+                rejectedSourceTimestampMs == sourceTimestamp
+
+        if (sourceTimestampRejected) {
             rejectedSourceTimestampMs = sourceTimestamp
+            return raw.copy(positionUpdatedAtMonotonicMs = null)
         }
 
-        previousSourceSnapshot = raw
-
-        return if (rejectedSourceTimestampMs == sourceTimestamp) {
-            raw.copy(positionUpdatedAtMonotonicMs = null)
-        } else {
-            raw
-        }
+        rejectedSourceTimestampMs = null
+        lastAcceptedSourceSnapshot = raw
+        return raw
     }
 }
