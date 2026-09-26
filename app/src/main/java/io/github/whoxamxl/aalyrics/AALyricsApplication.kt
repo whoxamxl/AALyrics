@@ -17,6 +17,7 @@ import io.github.whoxamxl.aalyrics.provider.petitlyrics.PetitLyricsProvider
 import io.github.whoxamxl.aalyrics.provider.selection.CrossProviderCandidateSelector
 import io.github.whoxamxl.aalyrics.provider.synclrc.SyncLrcProvider
 import io.github.whoxamxl.aalyrics.platform.media.MediaBrowserClientTrust
+import io.github.whoxamxl.aalyrics.platform.media.MediaSessionListenerService
 import io.github.whoxamxl.aalyrics.platform.media.MediaSessionRuntimeHost
 import io.github.whoxamxl.aalyrics.platform.media.PlaybackArtworkSink
 import io.github.whoxamxl.aalyrics.platform.media.PlaybackControlState
@@ -636,7 +637,12 @@ class AALyricsApplication : Application() {
             translationSettings = translationSettingsStore.settings,
             translationState = translationCoordinator.state,
             canonicalLyricsIdentity = { state -> state.canonicalLyricsOrNull()?.identity },
-            hostDemand = AutomotiveHostDemand(graph.lyricsDemandGate::setAutomotiveHostActive),
+            hostDemand = AutomotiveHostDemand { active ->
+                graph.lyricsDemandGate.setAutomotiveHostActive(active)
+                if (active) {
+                    MediaSessionListenerService.requestSystemRebind(this)
+                }
+            },
             transport = object : AutomotiveTransport {
                 override fun play() = MediaSessionRuntimeHost.play()
                 override fun pause() = MediaSessionRuntimeHost.pause()
