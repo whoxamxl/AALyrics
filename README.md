@@ -1,102 +1,120 @@
+<p align="center">
+  <img src="app/src/main/ic_launcher-playstore.png" alt="AALyrics" width="128" />
+</p>
+
 # AALyrics
 
-AALyrics is a new Android project for synchronized lyrics on phone and Android Auto.
+**Synchronized lyrics for Android and Android Auto.**
 
-> **Status:** the production Phone shell, all four Lyrics Providers, live Android media-session runtime, demand gating, Settings/Details, verified in-app update flow, Phone Translation, and gated Phone WORD_SYNC Karaoke are established. The current `feature/android-auto-now-playing` branch completes the legacy Android Auto Now Playing path with artwork, real transport capabilities, line-oriented synchronized lyrics, identity-gated Translation, process-recovery hardening, and bounded cold-start lookup recovery. Sync calibration UX/persistence and the richer Car App Library presentation remain later work.
+AALyrics follows what is playing on your Android device and presents matched lyrics in real time. The current Beta already covers the core experience: synchronized Phone lyrics, Android Auto Now Playing lyrics, multiple lyric providers, on-device Translation support, experimental word-synced Karaoke, and signed in-app updates.
 
-## Project direction
+AALyrics is distributed as a signed APK through [GitHub Releases](https://github.com/whoxamxl/AALyrics/releases). It is not currently distributed through Google Play.
 
-AALyrics is built around strict ownership boundaries:
+## What you can do
 
-- playback tracking is separate from lyrics retrieval,
-- lyrics providers are isolated behind `LyricsProvider`,
-- provider fan-out and lifecycle live in the lyrics core,
-- cross-provider winner selection is centralized behind `CandidateSelector`,
-- phone and automotive presentation consume shared domain state,
-- platform-specific code does not leak into provider/domain code,
-- timing, translation, caching, and provider implementations remain independently replaceable.
+- **Follow synchronized lyrics on your phone** with automatic current-line tracking and manual browsing.
+- **See the current lyric in Android Auto Now Playing** together with artwork and the media app's available transport controls.
+- **Use multiple lyric sources** — LRCLIB, PetitLyrics, Musixmatch, and SyncLRC — with provider-independent candidate selection.
+- **Translate lyrics on-device** when a supported Translation route/model is available.
+- **Try experimental WORD_SYNC Karaoke** for genuine word-timed lyrics on Phone.
+- **Control playback from the Phone surface** with play/pause, previous/next, seek, relative seek, and queue support where the active media app exposes them.
+- **Update AALyrics from inside the app** using signed GitHub Release APKs with SHA-256 verification and Android package/signing checks.
 
-The codebase is greenfield in structure, while proven behavior from `whoxamxl/auto-lyrics` is used as the migration and regression reference. Mature behavior is preserved/refactored into the new boundaries rather than reimplemented without reason.
+## AALyrics 1.0 Beta
 
-## Current implementation status
+AALyrics has moved beyond the construction-only stage: its primary lyrics experience is functional on Phone and Android Auto, and the project is now preparing the **1.0 Beta** line.
 
-Current production capabilities include:
+Beta does not mean every planned feature is complete. The main areas still evolving are:
 
-- provider-independent track/playback/lyrics models, race-safe lyrics lifecycle, and stale-result protection;
-- concurrent provider orchestration and production cross-provider candidate selection;
-- LRCLIB, PetitLyrics, Musixmatch, and SyncLRC provider adapters;
-- live Android MediaSession observation plus Phone/projection/Automotive-host lyrics-demand gating and listener-rebind recovery;
-- the production Phone Compose shell with Lyrics, Playback Surface, Details, Settings, and the explicit Sync placeholder;
-- playback-source eligibility, queue/artwork handling, legal/help surfaces, storage/reset controls, and Android Auto compatibility onboarding;
-- Translation background/model lifecycle, execution/orchestration, Phone translated lyric rows, Track Card runtime feedback, read-only Translation diagnostics, and the current branch's line-oriented Android Auto Translation projection;
-- manual and automatic GitHub Release discovery, verified APK download, SHA-256 checking, package/signing preflight, install-source permission handling, PackageInstaller handoff, recovery, and post-update feedback;
-- signed GitHub prerelease distribution, currently through `v0.2.0-alpha.2`.
+- Sync calibration controls and persistence;
+- Phone WORD_SYNC Karaoke, which remains experimental and opt-in;
+- broader Android Auto feature parity beyond the current line-oriented Now Playing experience.
 
-The framework-independent timing engine derives line and word timing facts from canonical lyrics and effective lyrics position. Normal Phone presentation and Android Auto consume the shared active-line fact; gated Phone WORD_SYNC Karaoke additionally consumes the shared word/progress facts. Sync controls/calibration remain separate future work, and Android Auto intentionally remains line-oriented rather than adopting Karaoke sweep presentation.
+These are Beta limitations rather than blockers for using AALyrics for its primary purpose: following lyrics for the track currently playing.
 
-## Distribution and Android Auto sideloading
+## Install AALyrics
 
-AALyrics is distributed outside Google Play. The durable distribution path is a **signed release APK attached to a GitHub Release**. Debug APKs remain development-only artifacts.
+### Phone
 
-### Install a release
+1. Open [GitHub Releases](https://github.com/whoxamxl/AALyrics/releases) and download the current signed `AALyrics-vX.Y.Z[-channel.N].apk`.
+2. Install the APK. Android may ask you to allow the browser or file manager to install unknown apps.
+3. Open AALyrics.
+4. Grant **Notification access** when prompted. AALyrics uses Android's media-session access to identify the active playback session and follow playback state.
 
-1. Open the desired GitHub Release and download `AALyrics-vX.Y.Z.apk`.
-2. Install the APK on the Android phone. When installing from a browser or file manager, Android may require permission for that app to install unknown apps.
-3. Open AALyrics once.
-4. In Android system settings, open **Notification access** and enable **AALyrics**. This is required for AALyrics to observe the active media session.
-5. For the current legacy Android Auto media path, enable Android Auto developer mode once, then enable **Developer settings → Unknown sources**. This applies to the sideloaded `MediaBrowserServiceCompat` compatibility path; the separately planned Car App Library templated-media path has different sideload rules.
-6. Reconnect Android Auto or the Desktop Head Unit and enable AALyrics in the Android Auto launcher/customize list if necessary.
+The Release also includes a matching `.sha256` file if you want to verify the downloaded APK before installation.
 
-The legacy Android Auto host renders AALyrics' `MediaSessionCompat` metadata in compact/split and full Now Playing layouts. The display title uses track title plus compact Automotive artist identity (album artist when available, otherwise track artist), the current synchronized source lyric is published through the display subtitle, and an eligible translated line uses the display description. Host layout/ellipsis remains Android Auto controlled. Lyrics Browse/Expanded UI is intentionally deferred.
+After the first release-signed installation, later AALyrics releases signed with the same key can update the installed app normally. AALyrics can also discover, verify, and hand off newer GitHub Release APKs through its in-app update flow.
 
-If a debug build is already installed, uninstall it before installing the first signed release because debug and release APKs use different signing certificates. After that first switch, later GitHub Release APKs signed with the same release keystore can update the installed release normally.
+> If you already have a debug build installed, uninstall it before installing the first signed Release APK. Debug and Release builds use different signing identities.
 
-### Development build
+### Android Auto
 
-For a local debug build:
+AALyrics currently uses a sideloaded Android Auto media compatibility path.
+
+For Android Auto use:
+
+1. Install and open AALyrics on the phone and enable its Notification access.
+2. Enable **Android Auto developer mode**.
+3. In Android Auto Developer settings, enable **Unknown sources**.
+4. Reconnect Android Auto if needed.
+5. Make sure AALyrics is enabled in the Android Auto launcher/customize list.
+
+The current Android Auto experience is intentionally focused on **Now Playing**. It publishes the active track, artwork, supported playback actions, the current synchronized lyric line, and an eligible translated line when available. Android Auto controls the final host layout and text truncation.
+
+## Lyrics and timing
+
+AALyrics can consume plain, line-synchronized, and genuine word-synchronized lyric data depending on what the selected provider returns.
+
+The app keeps lyric selection provider-independent and uses shared playback/timing semantics across Phone and Android Auto. On Phone, the lyrics viewport follows the current line while still allowing manual browsing; word-synchronized data can additionally drive the experimental Karaoke presentation.
+
+Actual lyric availability and timing quality depend on the metadata exposed by the active media app and on the matching lyric data available from the providers.
+
+## Translation
+
+Phone Translation runs through the established AALyrics Translation pipeline and uses on-device language models where supported.
+
+Translated text is presented as secondary lyric text and remains tied to the identity and timing of the canonical lyric document. Model availability and language routing can be inspected from the app's Details/Settings surfaces.
+
+## Development
+
+AALyrics is an Android project built with Gradle. For a local debug installation:
 
 ```bash
 ./gradlew :app:installDebug
 ```
 
-CI also uploads `aalyrics-debug-apk` for pull requests and `main` builds. This artifact is not the durable distribution package.
+The CI build uses JDK 17. Debug APKs produced by local/CI development builds are development artifacts and are not interchangeable with the signed GitHub Release channel.
 
-### Release policy
-
-Signed GitHub Releases are the durable distribution channel. Early functional snapshots use GitHub Pre-releases rather than pretending to be stable builds:
-
-- `v0.1.0-alpha.1`, `-beta.N`, and `-rc.N` are published as **Pre-releases**;
-- `v0.1.0`-style tags with no suffix are normal/stable GitHub Releases;
-- release tags must point to commits contained in `main`;
-- the initial signed distribution `v0.1.0-alpha.1` has been published as a GitHub Pre-release;
-- release signing material is stored only through GitHub Actions secrets, never in Git.
-
-An alpha release may be functionally incomplete. Its purpose can be to validate signing, installation, update compatibility, Android Auto discovery, and the durable distribution pipeline while clearly documenting current limitations.
-
-See [docs/RELEASES.md](docs/RELEASES.md) for the authoritative versioning, signing, secret setup, publishing, checksum, backup, and update policy.
-
-## Modules
+### Project structure
 
 ```text
 app                    Android application / composition root
 core:model             Shared domain models
-core:lyrics            Lyrics state, orchestration, playback ownership, selector port
-core:timing            Effective lyrics clock + shared LINE/WORD timing semantics
+core:lyrics            Lyrics lifecycle and orchestration
+core:timing            Shared synchronized-lyrics timing semantics
 provider:api           Provider contracts
-provider:matching      Shared provider-neutral matching semantics
+provider:matching      Provider-neutral matching semantics
 provider:lrc           Shared LRC parsing
-provider:selection     Production cross-provider candidate selection
-provider:lrclib        LRCLIB adapter
-provider:petitlyrics   PetitLyrics adapter
-provider:musixmatch    Musixmatch adapter
-provider:synclrc       SyncLRC karaoke adapter
+provider:selection     Cross-provider candidate selection
+provider:lrclib        LRCLIB integration
+provider:petitlyrics   PetitLyrics integration
+provider:musixmatch    Musixmatch integration
+provider:synclrc       SyncLRC integration
 platform:media         Android media-session / playback integration
-ui:designsystem        Shared presentation tokens/components
-ui:phone               Phone presentation composition
-ui:automotive          Android Auto presentation composition
+ui:designsystem        Shared UI tokens and components
+ui:phone               Phone presentation
+ui:automotive          Android Auto presentation
 ```
 
-See `docs/ARCHITECTURE.md`, `docs/ROADMAP.md`, `docs/APPLICATION_COMPOSITION.md`, `docs/MEDIA_SESSION_RUNTIME.md`, `docs/LYRICS_DEMAND_GATING.md`, `docs/UI_ARCHITECTURE.md`, and `docs/PROVIDER_ARCHITECTURE.md` for the authoritative architecture and migration plan.
+For implementation details, start with:
+
+- [Architecture](docs/ARCHITECTURE.md)
+- [Lyrics pipeline](docs/LYRICS_PIPELINE_ARCHITECTURE.md)
+- [Timing architecture](docs/TIMING_ARCHITECTURE.md)
+- [Translation architecture](docs/TRANSLATION_ARCHITECTURE.md)
+- [Android Auto Now Playing](docs/ANDROID_AUTO_NOW_PLAYING.md)
+- [Release policy](docs/RELEASES.md)
+- [Roadmap](docs/ROADMAP.md)
 
 ## Package
 
@@ -108,4 +126,4 @@ AALyrics is **source-available**, not Open Source Initiative (OSI) open source.
 
 The project is licensed under the **PolyForm Noncommercial License 1.0.0**. Personal and other noncommercial uses are permitted under its terms. Commercial use requires separate permission from the copyright holder.
 
-See [LICENSE](LICENSE).
+See [LICENSE](LICENSE) for the complete terms.
