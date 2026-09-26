@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  Follow the song that is playing with real-time lyrics on your phone and in Android Auto.
+  Works with Spotify, YouTube Music, Apple Music and other Android MediaSession players.
 </p>
 
 <p align="center">
