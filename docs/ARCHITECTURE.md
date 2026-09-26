@@ -15,7 +15,7 @@ Completed milestones:
 - live Android media-session runtime — PR #29
 - process-wide lyrics-demand gating — PR #30
 
-The live Android media-session runtime is implemented and merged in PR #29. Process-wide lyrics-demand gating is implemented and merged in PR #30; its boundary is specified in `docs/LYRICS_DEMAND_GATING.md`. Presentation remains in the dedicated `:ui` boundary: a shared Compose design system plus separate phone and automotive screen-composition modules.
+The live Android media-session runtime is implemented and merged in PR #29. Process-wide lyrics-demand gating is implemented and merged in PR #30; its current production contract is specified in `docs/LYRICS_DEMAND_GATING.md` and is extended by the PR #84 Android Auto Now Playing work with an active-browser-service demand source plus listener-rebind recovery. Presentation remains in the dedicated `:ui` boundary: a shared Compose design system plus separate phone and automotive screen-composition modules.
 
 The lyrics-capability architecture is defined by `docs/LYRICS_PIPELINE_ARCHITECTURE.md` and its focused capability documents for cache, translation, timing/calibration, Karaoke consumption/rendering, and presentation state. That foundation fixes ownership, dependency direction, lifecycle constraints, and canonical-versus-derived data rules. Translation has justified its concrete modules through implementation, and `:core:timing` now owns both the effective lyrics clock and the shared framework-neutral LINE/WORD timing projection. Future capability modules remain evidence-driven rather than pre-created.
 
@@ -72,7 +72,7 @@ The demand-gating slice adds an application-lifecycle boundary in front of `Play
 
 The Translation background scaffold also lets `:app` compose persisted Translation settings with a process-level ML Kit target-model preparation runtime. That runtime does not observe canonical lyrics, execute lyric Translation, or publish foreground state.
 
-Translation execution and Phone presentation are now composed through their dedicated capability/application boundaries. Future cache, timing integration, karaoke, Android Auto Translation, and broader presentation-capability composition may be wired from `:app` or other appropriate composition roots, but the composition root must not become the owner of their feature logic.
+Translation execution and Phone presentation are composed through their dedicated capability/application boundaries. The PR #84 legacy Android Auto Now Playing path also consumes the existing Translation state downstream without moving Translation execution into `:app` or `:ui:automotive`. Future persistent cache, Sync/calibration UX, Android Auto Karaoke, and Car App Library presentation may be wired from appropriate composition roots, but the composition root must not become the owner of their feature logic.
 
 ### `:core:model`
 
@@ -84,7 +84,7 @@ Pure Kotlin provider contracts. Concrete providers normalize results into `Lyric
 
 ### `:core:lyrics`
 
-Pure Kotlin application lyrics orchestration. It owns `LyricsState`, lookup identity/lifecycle, provider fan-out, stale-result protection, playback-to-lookup ownership, and the `CandidateSelector` port. It depends on provider contracts, never concrete providers or the production selector implementation.
+Pure Kotlin application lyrics orchestration. It owns `LyricsState`, lookup identity/lifecycle, provider fan-out, provider-failure isolation, the bounded one-retry transient recovery policy, stale-result protection, playback-to-lookup ownership, lookup diagnostics, and the `CandidateSelector` port. It depends on provider contracts, never concrete providers or the production selector implementation.
 
 It must not become a general-purpose cache, translation, timing, karaoke, persistence, or presentation orchestrator merely because those capabilities consume lyrics.
 
@@ -180,6 +180,7 @@ Current implemented responsibilities:
 - `MediaSessionManager` active-session discovery
 - selected-session ownership and token-based retention
 - selected `MediaController.Callback` lifecycle
+- Notification Listener disconnect recovery through system rebind requests
 - safe normalization/forwarding of live controller state
 - platform-owned 600 ms track-metadata stabilization
 - identity/timeline atomicity across that stabilization window: same-identity playback updates may flow immediately, but a different track's timeline is held until its identity is committed
@@ -204,7 +205,7 @@ Phone lyrics demand is process-lifecycle state owned/wired above the presentatio
 
 Automotive-specific presentation and screen composition. It consumes the same application/domain capability facts as the phone UI plus `:ui:designsystem`. It must not own lyrics fetching, provider selection, cache storage, translation execution, timing math, karaoke semantics, or Android media-session adaptation.
 
-Android Auto lyrics demand is projection-connection lifecycle state owned/wired above the presentation module; the automotive composables do not own that policy.
+Android Auto lyrics demand is owned/wired above presentation and currently combines projection connection with active legacy browser-service lifetime. `:ui:automotive` may report its service lifecycle through the narrow application-owned demand callback, but it does not own provider lookup policy or call providers directly.
 
 Detailed presentation/source-set rules are defined in `docs/UI_ARCHITECTURE.md`.
 

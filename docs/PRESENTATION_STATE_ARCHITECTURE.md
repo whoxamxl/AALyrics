@@ -127,7 +127,7 @@ conditional rendering everywhere
 
 Presentation observes state; it does not own playback discovery or lyrics demand policy.
 
-Phone process foreground and Android Auto projection connection remain application/runtime lifecycle inputs to `LyricsDemandGate`. Individual screens/composables/templates must not start or cancel provider lookup merely because they appear or disappear.
+Phone process foreground, Android Auto projection connection, and active legacy `LyricsBrowserService` lifetime are application/runtime lifecycle inputs to `LyricsDemandGate`. The browser service reports host demand through a narrow application boundary; individual screens/composables/templates still must not start or cancel provider lookup merely because they appear or disappear.
 
 Playback controls, if/when implemented, should use an explicit transport/control boundary rather than importing `MediaController` into UI state.
 
@@ -150,9 +150,9 @@ surface presentation mapping
 
 This composition must preserve each capability's failure and lifecycle semantics. For example, translation failure must not convert valid lyrics into a lyrics failure screen.
 
-## Current authorized Automotive slice
+## Current implemented Automotive slice
 
-The Android Auto Now Playing completion now provides concrete evidence for one surface-specific state contract without changing the general rule against a universal UI state.
+The Android Auto Now Playing completion in PR #84 provides concrete evidence for one surface-specific state contract without changing the general rule against a universal UI state.
 
 For this slice, Automotive presentation may compose:
 
