@@ -208,6 +208,16 @@ fun LyricsViewport(
         } else {
             null
         }
+        val returnGeometryReady by remember(listState) {
+            derivedStateOf {
+                val geometry = listState.lazyViewportGeometry()
+                lazyViewportGeometryReady(
+                    visibleItems = geometry.items,
+                    viewportStartOffset = geometry.viewportStartOffset,
+                    viewportEndOffset = geometry.viewportEndOffset,
+                )
+            }
+        }
         val returnDirection by remember(
             state.interactionMode,
             state.syncType,
@@ -233,12 +243,9 @@ fun LyricsViewport(
                         LyricsSyncType.PLAIN -> plainTarget?.let { target ->
                             plainPlaybackRegionDirection(
                                 target = target,
-                                firstVisibleItemIndex = listState.firstVisibleItemIndex,
-                                firstVisibleItemScrollOffset =
-                                    listState.firstVisibleItemScrollOffset,
-                                viewportSizePx =
-                                    geometry.viewportEndOffset -
-                                        geometry.viewportStartOffset,
+                                visibleItems = geometry.items,
+                                viewportStartOffset = geometry.viewportStartOffset,
+                                viewportEndOffset = geometry.viewportEndOffset,
                             )
                         }
                     }
@@ -315,6 +322,7 @@ fun LyricsViewport(
         LaunchedEffect(
             state.interactionMode,
             returnDirection,
+            returnGeometryReady,
             listState.isScrollInProgress,
             timedPlaybackItemIndex,
             plainTarget,
@@ -325,10 +333,13 @@ fun LyricsViewport(
                 LyricsSyncType.PLAIN -> plainTarget != null
             }
             if (
-                state.interactionMode == LyricsViewportInteractionMode.BROWSE &&
-                hasPlaybackTarget &&
-                returnDirection == null &&
-                !listState.isScrollInProgress
+                shouldRearmFollow(
+                    interactionMode = state.interactionMode,
+                    hasPlaybackTarget = hasPlaybackTarget,
+                    geometryReady = returnGeometryReady,
+                    returnDirection = returnDirection,
+                    isScrollInProgress = listState.isScrollInProgress,
+                )
             ) {
                 latestModeChange.value(LyricsViewportInteractionMode.FOLLOW)
             }
@@ -1111,27 +1122,56 @@ internal fun timedPlaybackRegionDirection(
     }
 }
 
+internal fun lazyViewportGeometryReady(
+    visibleItems: List<LazyViewportItemGeometry>,
+    viewportStartOffset: Int,
+    viewportEndOffset: Int,
+): Boolean =
+    visibleItems.isNotEmpty() && viewportEndOffset > viewportStartOffset
+
+internal fun shouldRearmFollow(
+    interactionMode: LyricsViewportInteractionMode,
+    hasPlaybackTarget: Boolean,
+    geometryReady: Boolean,
+    returnDirection: PlaybackRegionDirection?,
+    isScrollInProgress: Boolean,
+): Boolean =
+    interactionMode == LyricsViewportInteractionMode.BROWSE &&
+        hasPlaybackTarget &&
+        geometryReady &&
+        returnDirection == null &&
+        !isScrollInProgress
+
 internal fun plainPlaybackRegionDirection(
     target: PlainLazyTarget,
-    firstVisibleItemIndex: Int,
-    firstVisibleItemScrollOffset: Int,
-    viewportSizePx: Int,
+    visibleItems: List<LazyViewportItemGeometry>,
+    viewportStartOffset: Int,
+    viewportEndOffset: Int,
     toleranceFraction: Float = PlainFocusToleranceFraction,
 ): PlaybackRegionDirection? {
     if (
         target.index < 0 ||
-        firstVisibleItemIndex < 0 ||
-        firstVisibleItemScrollOffset < 0 ||
-        viewportSizePx <= 0
+        !lazyViewportGeometryReady(
+            visibleItems = visibleItems,
+            viewportStartOffset = viewportStartOffset,
+            viewportEndOffset = viewportEndOffset,
+        )
     ) {
         return null
     }
 
-    if (target.index < firstVisibleItemIndex) return PlaybackRegionDirection.ABOVE
-    if (target.index > firstVisibleItemIndex) return PlaybackRegionDirection.BELOW
+    val sorted = visibleItems.sortedBy { it.index }
+    if (target.index < sorted.first().index) return PlaybackRegionDirection.ABOVE
+    if (target.index > sorted.last().index) return PlaybackRegionDirection.BELOW
 
+    val targetItem = sorted.firstOrNull { it.index == target.index } ?: return null
+    val viewportSizePx = viewportEndOffset - viewportStartOffset
     val tolerance = viewportSizePx * toleranceFraction
-    val delta = target.scrollOffsetPx - firstVisibleItemScrollOffset
+    val delta =
+        targetItem.offset -
+            viewportStartOffset +
+            target.scrollOffsetPx
+
     return when {
         delta < -tolerance -> PlaybackRegionDirection.ABOVE
         delta > tolerance -> PlaybackRegionDirection.BELOW
