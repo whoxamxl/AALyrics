@@ -74,13 +74,26 @@ jobs:
           version_name="${GITHUB_REF_NAME#v}"
           release_title="AALyrics $version_name"
 
-          if [[ "$version_name" =~ ^([0-9]+\.[0-9]+\.[0-9]+)-(alpha|beta|rc)\.([0-9]+)$ ]]; then
-            case "${BASH_REMATCH[2]}" in
-              alpha) channel_title="Alpha" ;;
-              beta) channel_title="Beta" ;;
-              rc) channel_title="RC" ;;
-            esac
-            release_title="AALyrics ${BASH_REMATCH[1]} $channel_title ${BASH_REMATCH[3]}"
+          if [[ "$version_name" =~ ^([0-9]+\.[0-9]+)\.([0-9]+)(-(alpha|beta|rc)\.([0-9]+))?$ ]]; then
+            display_version="${BASH_REMATCH[1]}"
+            patch="${BASH_REMATCH[2]}"
+            channel="${BASH_REMATCH[4]}"
+            channel_number="${BASH_REMATCH[5]}"
+
+            if [[ "$patch" != "0" ]]; then
+              display_version="$display_version.$patch"
+            fi
+
+            if [[ -n "$channel" ]]; then
+              case "$channel" in
+                alpha) channel_title="Alpha" ;;
+                beta) channel_title="Beta" ;;
+                rc) channel_title="RC" ;;
+              esac
+              release_title="AALyrics $display_version $channel_title $channel_number"
+            else
+              release_title="AALyrics $display_version"
+            fi
           fi
 
           echo "AALYRICS_VERSION_NAME=$version_name" >> "$GITHUB_ENV"

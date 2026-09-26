@@ -79,11 +79,13 @@ The Git tag and Android version remain the canonical machine-readable identifier
 The Release workflow maps accepted prerelease tags like this:
 
 ```text
-v1.0.0-alpha.1 -> AALyrics 1.0.0 Alpha 1
-v1.0.0-beta.1  -> AALyrics 1.0.0 Beta 1
-v1.0.0-rc.1    -> AALyrics 1.0.0 RC 1
-v1.0.0         -> AALyrics 1.0.0
+v1.0.0-alpha.1 -> AALyrics 1.0 Alpha 1
+v1.0.0-beta.1  -> AALyrics 1.0 Beta 1
+v1.0.0-rc.1    -> AALyrics 1.0 RC 1
+v1.0.0         -> AALyrics 1.0
 ```
+
+For display only, a zero patch component is omitted (`1.0.0` -> `1.0`). Non-zero patch components remain visible.
 
 This distinction is presentation-only. Tag matching, update comparison, Android `versionName`, APK filenames, changelog validation, and release-asset identity continue to use the canonical version string.
 
