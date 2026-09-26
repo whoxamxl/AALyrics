@@ -128,7 +128,7 @@ Do not implement:
 - Sync/calibration controls;
 - non-zero persisted or user-configurable timing offset;
 - Car App Library / templated media;
-- provider selection/refetch changes;
+- provider selection changes or unbounded/manual refetch behavior;
 - Translation algorithms/providers/model lifecycle changes;
 - Phone UI changes except unavoidable shared-contract compile fixes.
 
@@ -146,6 +146,7 @@ Do not implement:
 10. [x] Final validation: architecture checks, relevant unit tests, debug APK, regression/scope audit, docs alignment, DHU/physical-host validation where available. Host rendering remains explicitly unverified below.
 11. [x] Open a Draft PR only after final validation and stop per `AGENTS.md`.
 12. [x] Android Auto process-recovery hardening: treat the active Automotive browser service as an independent lyrics-demand source and re-request Notification Listener binding when the host service activates or the listener disconnects.
+13. [x] Cold-start lookup recovery: retry a provider-failure terminal path once after a bounded 500 ms backoff, never retry clean NotFound, and expose current lookup attempt/provider failure types in Verbose Details diagnostics.
 
 ## Expected implementation surface
 
@@ -192,7 +193,9 @@ Implementation evidence may justify a small new Automotive presentation type/fil
 - Closing the Phone Activity must not suspend lyrics work while either Android Auto projection or the active Automotive browser service still represents presentation demand.
 - If Android Auto recreates the process through `LyricsBrowserService`, the Automotive host demand becomes active immediately and AALyrics re-requests the system Notification Listener binding so current playback observation can recover without reopening the Phone Activity.
 - Notification Listener disconnection requests a system rebind instead of leaving MediaSession observation permanently detached.
-- No foreground-service keepalive, unconditional started service, or boot receiver is introduced for this recovery path.
+- A current-track lookup that produces no usable candidate because one or more provider calls failed receives exactly one automatic retry after a 500 ms backoff; a clean NotFound result is never retried.
+- Provider failure diagnostics remain separate from canonical LyricsState and are shown only in Verbose Details for the matching current lookup.
+- No foreground-service keepalive, unconditional started service, boot receiver, or unbounded provider retry loop is introduced for this recovery path.
 - No provider, Translation-engine, timing-engine, or Car App Library ownership is moved into `:ui:automotive`.
 
 ## Validation matrix
@@ -224,7 +227,11 @@ Codex must implement deterministic tests for at least:
 - metadata unchanged for position-only motion inside one lyric line;
 - metadata changed for lyric/loading/Translation/artwork changes;
 - Automotive host-service demand keeps the gate active independently of Phone foreground and CarConnection demand;
-- removing one Automotive demand source does not suspend provider work while another remains active.
+- removing one Automotive demand source does not suspend provider work while another remains active;
+- transient provider failure retries exactly once and can resolve within the same playback identity;
+- persistent failure performs exactly two attempts total and then becomes Failed;
+- clean NotFound does not retry;
+- stale lookup diagnostics are not shown for the current track.
 
 ## Implementation progress
 

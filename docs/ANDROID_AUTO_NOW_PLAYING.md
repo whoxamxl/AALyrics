@@ -111,7 +111,7 @@ Do not add these to Now Playing:
 - Sync/calibration controls or non-zero calibration persistence;
 - Browse/Expanded Lyrics screens;
 - Car App Library / `CarAppService` / `MediaPlaybackTemplate` / `SectionedItemTemplate`;
-- provider selection or refetch behavior changes.
+- provider selection changes or general/manual refetch behavior changes; the one bounded transient-failure retry defined by the process-recovery contract is the only retry exception in this slice.
 
 Provider/source/queue/detail facts may be useful on later Browse/Details surfaces, but they do not belong in the constrained Now Playing lyric area.
 
@@ -399,6 +399,34 @@ Requirements:
 
 The recovery goal is **correct reconstruction after process death**, not making the application process immortal.
 
+### Cold-start lyrics lookup recovery
+
+Process reconstruction can recover the current MediaSession while the first provider fan-out is still subject to transient network/provider initialization failure. That failure must not pin the current playback identity in `LyricsState.Failed` until the user changes tracks.
+
+The bounded recovery rule is:
+
+```text
+attempt 1
+    ├─ usable candidate -> complete normally
+    ├─ all providers complete successfully with no usable candidate -> NotFound
+    └─ no usable candidate + one or more provider failures
+            ↓ 500 ms
+         attempt 2
+            ↓
+         complete normally or terminal Failed
+```
+
+Rules:
+
+- retry only when no usable candidate exists and at least one provider attempt failed;
+- retry exactly once;
+- do not retry a clean `NotFound`;
+- do not use MediaSession position/metadata churn as the retry trigger;
+- a new playback identity still supersedes/cancels the old lookup normally;
+- provider-specific failure identifiers and exception types stay out of canonical `LyricsState`;
+- current lookup attempt count and provider failure types may be exposed through Verbose Details diagnostics for validation;
+- no infinite retry, periodic retry, or persistent background polling is introduced.
+
 ## Automotive state boundary
 
 Do not continue growing one ambiguous `subtitle: String` as the entire presentation model.
@@ -522,7 +550,10 @@ At minimum cover:
 - CarConnection demand can disappear temporarily while an active `LyricsBrowserService` still keeps lyrics work active;
 - final removal of all Phone/Automotive demand suspends provider-owning work;
 - Notification Listener disconnection must request rebind;
-- process recreation via the Automotive browser service must not require reopening the Phone Activity before MediaSession observation can recover.
+- process recreation via the Automotive browser service must not require reopening the Phone Activity before MediaSession observation can recover;
+- a first-attempt provider failure can recover on one bounded retry without requiring a track change;
+- persistent provider failure stops after the second attempt;
+- clean NotFound remains single-attempt behavior.
 
 ## Validation
 
