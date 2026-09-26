@@ -125,7 +125,7 @@ normalized PlaybackSnapshot
         ↓
 shared projected playback clock
         ↓
-effectiveLyricsPosition(projectedPlaybackPosition, sessionLyricsTimingOffset)
+effectiveLyricsPosition(projectedPlaybackPosition, LyricsTimingOffset.ZERO)
         ↓
 projectLyricsTiming(canonicalLyrics, effectivePosition)
         ↓
@@ -137,9 +137,7 @@ Automotive one-line presentation
 Rules:
 
 - canonical provider timestamps remain unchanged;
-- while `CarConnection` reports Android Auto projection, application timing policy supplies a fixed `-75 ms` audio-path compensation to both Phone and Automotive lyrics presentation;
-- outside Android Auto projection, that session offset is `0 ms`;
-- the fixed compensation is not Sync calibration: it is not persisted, user-configurable, provider-specific, or applied to playback position/source timestamps;
+- the production lyrics offset remains zero in this slice;
 - Android Auto does not implement Sync UX or calibration persistence;
 - LINE_SYNC and WORD_SYNC both use `activeLineIndex`;
 - WORD_SYNC ignores `activeWordIndex`, `wordProgress`, and `wordBoundary` for automotive presentation;
@@ -150,7 +148,7 @@ Rules:
 - when it is unavailable, the existing AALyrics-side `positionSampledAtMonotonicMs` fallback must be honored rather than anchoring to the time the Automotive UI happens to observe the snapshot;
 - track identity and timeline coherence remain a `:platform:media` invariant.
 
-Phone and Android Auto share the same normalized playback clock, timing semantics, and connection-scoped lyrics offset. During Android Auto projection they therefore cross lyric boundaries together 75 ms later than the unadjusted playback clock; when projection ends both return to zero offset.
+For the same normalized playback sample and monotonic instant, Phone normal timed presentation and Android Auto agree on the active line.
 
 ## Lyrics presentation contract
 

@@ -11,7 +11,6 @@ import io.github.whoxamxl.aalyrics.core.model.PlaybackTrackIdentity
 import io.github.whoxamxl.aalyrics.core.model.TimedLyricLine
 import io.github.whoxamxl.aalyrics.core.model.TimedWord
 import io.github.whoxamxl.aalyrics.core.model.Track
-import io.github.whoxamxl.aalyrics.core.timing.LyricsTimingOffset
 import io.github.whoxamxl.aalyrics.translation.api.TranslationProviderId
 import io.github.whoxamxl.aalyrics.translation.api.TranslationSettings
 import io.github.whoxamxl.aalyrics.translation.core.CanonicalLyrics
@@ -57,38 +56,6 @@ class AutomotiveLyricsUiStateMapperTest {
         assertEquals(10_250L, state.positionMs)
         assertEquals("Song — Artist", state.displayTitle)
         assertEquals("Second", state.subtitle)
-    }
-
-    @Test
-    fun `supplied 75ms audio latency compensation shifts lyrics only and not playback position`() {
-        val track = Track(title = "Song", artists = listOf("Artist"))
-        val lyrics = ready(
-            track,
-            LyricsDocument(
-                lines = listOf(
-                    TimedLyricLine("First", startMs = 0L),
-                    TimedLyricLine("Second", startMs = 10_000L),
-                ),
-            ),
-        )
-
-        val beforeBoundary = AutomotiveLyricsUiStateMapper.project(
-            playback = PlaybackSnapshot(track = track, positionMs = 10_050L),
-            lyricsState = lyrics,
-            currentMonotonicTimeMs = 0L,
-            lyricsTimingOffset = LyricsTimingOffset(-75L),
-        )
-        val atCompensatedBoundary = AutomotiveLyricsUiStateMapper.project(
-            playback = PlaybackSnapshot(track = track, positionMs = 10_075L),
-            lyricsState = lyrics,
-            currentMonotonicTimeMs = 0L,
-            lyricsTimingOffset = LyricsTimingOffset(-75L),
-        )
-
-        assertEquals(10_050L, beforeBoundary.positionMs)
-        assertEquals("First", beforeBoundary.subtitle)
-        assertEquals(10_075L, atCompensatedBoundary.positionMs)
-        assertEquals("Second", atCompensatedBoundary.subtitle)
     }
 
     @Test

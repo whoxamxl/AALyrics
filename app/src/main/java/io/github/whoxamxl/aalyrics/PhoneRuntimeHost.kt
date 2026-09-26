@@ -81,7 +81,6 @@ internal fun PhoneRuntimeHost(
     val playbackSourceRuntimeState by
         application.playbackSourceRuntimeState.collectAsStateWithLifecycle()
     val lyricsState by application.lyricsState.collectAsStateWithLifecycle()
-    val lyricsTimingOffset by application.lyricsTimingOffset.collectAsStateWithLifecycle()
     val translationState by application.translationState.collectAsStateWithLifecycle()
     val playbackSurface by application.phonePlaybackSurfaceState.collectAsStateWithLifecycle()
     val playbackSourceAppInfo by
@@ -185,7 +184,6 @@ internal fun PhoneRuntimeHost(
         plainLyricsAutoScrollEnabled = plainLyricsAutoScrollEnabled,
         interactionMode = lyricsInteractionMode,
         currentMonotonicTimeMs = monotonicTimeMs,
-        lyricsTimingOffset = lyricsTimingOffset,
         karaokeFeatureEnabled = karaokeFeatureEnabled,
         karaokeModeEnabled = karaokeModeEnabled,
     )

@@ -5,7 +5,7 @@
 - Branch: `feature/android-auto-now-playing`.
 - Original base: `main` at `52e9249395206f8c3821cc5c8e5893a8ccdcd125` (PR #82 merged).
 - Reconciled baseline: current `main` at `86f4cd300161eb2038c637094a8e75a0afa9bf80` (changelog-only PR #83).
-- Current checkpoint: Draft PR #84 is open. Physical-host validation identified a small Android Auto audio-path lead; a fixed `-75 ms` connection-scoped lyrics compensation is now under device validation on both Phone and Automotive presentation while Android Auto projection is active.
+- Current checkpoint: Draft PR #84 is open. Physical-host validation found that an experimental `-75 ms` offset made LINE_SYNC appear aligned, but the fixed compensation is intentionally not retained in production because the perceived lead may have been confounded by Karaoke sweep presentation timing.
 - Authoritative slice contract: `docs/ANDROID_AUTO_NOW_PLAYING.md`.
 - Broader Android Auto strategy: `docs/ANDROID_AUTO_MEDIA_STRATEGY.md`.
 - Shared timing authority: `docs/TIMING_ARCHITECTURE.md`.
@@ -82,12 +82,12 @@ The product contract is intentionally narrow:
 ### Timing
 
 - Reuse the current normalized playback clock.
-- During the current physical-host validation checkpoint, use a fixed `LyricsTimingOffset(-75L)` while Android Auto projection is connected and `LyricsTimingOffset.ZERO` otherwise.
+- Use `LyricsTimingOffset.ZERO` in production for this slice.
 - Use `effectiveLyricsPosition(...)` + `projectLyricsTiming(...)`.
 - Automotive consumes `LyricsTimingProjection.activeLineIndex` only.
 - Remove/deprecate automotive-local current-line selection and avoid a second UI-owned playback clock.
 - Respect `positionUpdatedAtMonotonicMs` when valid and the existing `positionSampledAtMonotonicMs` fallback when source time is unavailable.
-- Feed the same connection-scoped offset to Phone and Automotive lyrics projection so both stay aligned to the delayed AA audio path; do not shift MediaSession playback position, canonical timestamps, or add Sync UX/persistence.
+- Do not add fixed Android Auto audio-latency compensation in this slice. Keep playback position, canonical timestamps, Phone timing, and Automotive timing on the shared zero-offset semantics; investigate Karaoke sweep timing separately.
 
 ### Loading heartbeat
 
@@ -186,7 +186,7 @@ Implementation evidence may justify a small new Automotive presentation type/fil
 - Provider/source/queue facts remain absent from Now Playing.
 - Position-only advancement inside the same lyric line does not require metadata reconstruction.
 - Lyric line, loading frame, Translation state/result, artwork, and track metadata changes invalidate visible metadata.
-- Phone Lyrics/Translation/Karaoke timing remains unchanged outside Android Auto projection and consumes the same `-75 ms` session compensation while projection is active.
+- Existing Phone Lyrics/Translation/Karaoke timing remains unchanged by Android Auto connection state.
 - No provider, Translation-engine, timing-engine, or Car App Library ownership is moved into `:ui:automotive`.
 
 ## Validation matrix
@@ -239,4 +239,4 @@ Codex must implement deterministic tests for at least:
 - The branch-wide diff contains the approved documentation, application boundary, shared clock extraction, Automotive runtime/state/metadata wiring, and focused tests. No provider, Translation engine, Karaoke, queue, Browse, Sync, Car App Library, or persisted-state change is present. Reset behavior needs no change.
 - The branch was reconciled with current `main` after the scope audit. Its only intervening change was `CHANGELOG.md`, with no implementation conflict.
 - The CI debug APK was installed over the existing debuggable phone build using the matching local debug certificate; app data was preserved. DHU connected over ADB, but reported no video focus and could not capture a rendered host frame. Thus actual host artwork display, source/Translation line layout and ellipsis, refresh cadence, and control rendering remain **unverified**.
-- A physical Android Auto host was not available. Repeat DHU with an active video session and validate the same host behaviors on physical Android Auto before treating host presentation as verified.
+- Physical Android Auto host validation later became available. An experimental `-75 ms` lyrics-only offset made LINE_SYNC appear aligned, but that fixed value was deliberately removed rather than promoted to product behavior; the earlier perceived lead may have been influenced by Karaoke sweep presentation. Continue validating Karaoke timing independently from the shared playback clock.
