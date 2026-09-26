@@ -431,7 +431,7 @@ Stable rules:
 - optional capability failure must not erase valid lower-level lyrics state;
 - providers, MediaSession runtime, `LyricsCoordinator`, and UI must not absorb unrelated capability ownership.
 
-This foundation generally avoids speculative concrete modules and APIs. Translation introduced concrete modules only when implementation justified them; timing now has enough evidence to extend the existing `:core:timing` module with shared semantic projection over `:core:model`. Cache storage, timing persistence/scope, Sync UX, drift algorithms, Karaoke consumer/rendering contracts, ViewModels, and final UI-state shapes remain deferred until their own evidence-bearing slices.
+This foundation generally avoids speculative concrete modules and APIs. Translation introduced concrete modules only when implementation justified them; timing extends the existing `:core:timing` module with shared semantic projection over `:core:model`, and the Phone WORD_SYNC Karaoke consumer/rendering contract is now implemented downstream of that engine. Cache storage, timing persistence/scope, Sync UX, dedicated calibration/drift-offset algorithms, Android Auto Karaoke, ViewModels, and additional final UI-state shapes remain deferred until their own evidence-bearing slices.
 
 ## Core responsibilities
 

@@ -404,7 +404,7 @@ The mature working-fork `LyricWordLayout` and `PhoneKaraokeSweep` grouping behav
 
 Karaoke ON/OFF changes only word-level rendering. It must not shift the current line or playback position.
 
-When a WORD_SYNC MediaSession omits its source position timestamp, the Phone layer may continuously project from a receipt-time anchor. The same anchor is used whether Karaoke is OFF or ON. Entering/leaving the Lyrics destination, changing Karaoke update cadence, or toggling the feature must not reset the timing sample or move the lyrics clock. Metadata-only playback updates must not re-anchor the clock.
+When a MediaSession omits or publishes an unusable source position timestamp, `:platform:media` supplies the stable AALyrics-side `positionSampledAtMonotonicMs` captured when the controller snapshot was sampled. Phone presentation projects from that immutable snapshot anchor; it does not create a receipt-time/Compose-time anchor. The same reconciled playback clock is used whether Karaoke is OFF or ON. Entering/leaving the Lyrics destination, changing Karaoke update cadence, or toggling the feature must not reset the timing sample or move the lyrics clock. Metadata-only playback updates must not re-anchor the clock, and a pending different track timeline must not be spliced onto the stable identity.
 
 
 ### Line-wide timing tokens
