@@ -127,12 +127,17 @@ jobs:
         run: |
           notes_file="$RUNNER_TEMP/aalyrics-release-notes.md"
           awk -v version="$AALYRICS_VERSION_NAME" '
-            $0 ~ "^## \[" version "\]" {
-              in_release = 1
-              next
-            }
-            in_release && /^## \[/ {
-              exit
+            /^## \[/ {
+              heading = $0
+              sub(/^## \[/, "", heading)
+              sub(/\].*$/, "", heading)
+              if (in_release) {
+                exit
+              }
+              if (heading == version) {
+                in_release = 1
+                next
+              }
             }
             in_release {
               print
