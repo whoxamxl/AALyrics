@@ -371,6 +371,34 @@ Do not advertise queue actions in this slice.
 
 Existing transport callbacks remain the command boundary. Unsupported capabilities should not be advertised merely because AALyrics has a callback method.
 
+## Process and service lifecycle contract
+
+Android Auto lyrics demand must not depend on the Phone Activity remaining foreground.
+
+The production demand contract is:
+
+```text
+Phone process foreground
+        OR
+CarConnection projection connected
+        OR
+LyricsBrowserService active for the Android Auto host
+        ↓
+lyrics presentation demand
+```
+
+Requirements:
+
+- `LyricsBrowserService.onCreate()` marks Automotive host demand active through the application-owned demand gate;
+- `LyricsBrowserService.onDestroy()` removes only that host-service demand source;
+- losing Phone foreground or one Automotive signal must not suspend provider work while another demand source remains active;
+- Automotive host activation re-requests the system Notification Listener binding so process recreation can recover active MediaSession observation without requiring the Phone Activity to reopen;
+- `MediaSessionListenerService.onListenerDisconnected()` requests a system rebind after publishing the disconnected/error transition;
+- recovery must rebuild state from current MediaSession observation and canonical provider work rather than persisting transient playback/lyrics state;
+- do not use an unconditional started service, foreground-service keepalive, or boot receiver merely to prevent process death in this slice.
+
+The recovery goal is **correct reconstruction after process death**, not making the application process immortal.
+
 ## Automotive state boundary
 
 Do not continue growing one ambiguous `subtitle: String` as the entire presentation model.
@@ -487,6 +515,14 @@ At minimum cover:
 - loading frame change rebuilds metadata;
 - Translation state/result change rebuilds metadata;
 - artwork change rebuilds metadata.
+
+### Lifecycle/recovery
+
+- Phone foreground demand can disappear while Automotive host demand keeps lyrics work active;
+- CarConnection demand can disappear temporarily while an active `LyricsBrowserService` still keeps lyrics work active;
+- final removal of all Phone/Automotive demand suspends provider-owning work;
+- Notification Listener disconnection must request rebind;
+- process recreation via the Automotive browser service must not require reopening the Phone Activity before MediaSession observation can recover.
 
 ## Validation
 

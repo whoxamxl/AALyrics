@@ -145,6 +145,7 @@ Do not implement:
 9. [x] Focused tests: cover the matrix in `docs/ANDROID_AUTO_NOW_PLAYING.md`.
 10. [x] Final validation: architecture checks, relevant unit tests, debug APK, regression/scope audit, docs alignment, DHU/physical-host validation where available. Host rendering remains explicitly unverified below.
 11. [x] Open a Draft PR only after final validation and stop per `AGENTS.md`.
+12. [x] Android Auto process-recovery hardening: treat the active Automotive browser service as an independent lyrics-demand source and re-request Notification Listener binding when the host service activates or the listener disconnects.
 
 ## Expected implementation surface
 
@@ -188,6 +189,10 @@ Implementation evidence may justify a small new Automotive presentation type/fil
 - Position-only advancement inside the same lyric line does not require metadata reconstruction.
 - Lyric line, loading frame, Translation state/result, artwork, and track metadata changes invalidate visible metadata.
 - Existing Phone Lyrics/Translation/Karaoke timing remains unchanged by Android Auto connection state.
+- Closing the Phone Activity must not suspend lyrics work while either Android Auto projection or the active Automotive browser service still represents presentation demand.
+- If Android Auto recreates the process through `LyricsBrowserService`, the Automotive host demand becomes active immediately and AALyrics re-requests the system Notification Listener binding so current playback observation can recover without reopening the Phone Activity.
+- Notification Listener disconnection requests a system rebind instead of leaving MediaSession observation permanently detached.
+- No foreground-service keepalive, unconditional started service, or boot receiver is introduced for this recovery path.
 - No provider, Translation-engine, timing-engine, or Car App Library ownership is moved into `:ui:automotive`.
 
 ## Validation matrix
@@ -217,7 +222,9 @@ Codex must implement deterministic tests for at least:
 - missing source timestamp fallback using the stable AALyrics sample anchor;
 - paused position stability;
 - metadata unchanged for position-only motion inside one lyric line;
-- metadata changed for lyric/loading/Translation/artwork changes.
+- metadata changed for lyric/loading/Translation/artwork changes;
+- Automotive host-service demand keeps the gate active independently of Phone foreground and CarConnection demand;
+- removing one Automotive demand source does not suspend provider work while another remains active.
 
 ## Implementation progress
 
@@ -231,7 +238,9 @@ Codex must implement deterministic tests for at least:
 - Branch Build workflow [run 36210491667](https://github.com/whoxamxl/AALyrics/actions/runs/36210491667) passed through artwork/controls, including unit tests and debug APK build.
 - Translation presentation now consumes application-owned settings/state and canonical identity. Current synchronized source stays first; exact matching Translating adds animated second-line status, matching Ready adds a genuinely translated nonblank second line, and Failed/NotRequired/stale states remain source-only. Focused test sources compiled with the app.
 - MediaSession metadata publication now keys on all serialized track, lyric, Translation, and artwork facts. Playback position/rate are excluded from this key, so same-line position ticks update PlaybackState without reconstructing metadata. Focused invalidation tests compiled with the app.
-- Focused tests cover Lyrics lifecycle and loading frames, LINE/WORD and PLAIN behavior, shared timing boundaries and clock anchors, stale lyrics/Translation identity, Translation state and artifact gating, selected artwork identity/clearing, action masks, playback status mapping, paused heartbeat, and metadata invalidation.
+- Focused tests cover Lyrics lifecycle and loading frames, LINE/WORD and PLAIN behavior, shared timing boundaries and clock anchors, stale lyrics/Translation identity, Translation state and artifact gating, selected artwork identity/clearing, action masks, playback status mapping, paused heartbeat, metadata invalidation, and independent Automotive host-service demand.
+- Android Auto lifecycle recovery now has two independent demand signals: `CarConnection.CONNECTION_TYPE_PROJECTION` and the actual `LyricsBrowserService` lifecycle. Process recreation through the Automotive service therefore reactivates provider demand even before Phone UI foregrounding.
+- Automotive host activation proactively requests Notification Listener rebind, and `MediaSessionListenerService.onListenerDisconnected()` requests rebind again. This is recovery-oriented; the branch intentionally does not add a foreground-service keepalive or unconditional `startService()`.
 
 ## Final validation evidence and host follow-up
 

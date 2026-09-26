@@ -70,6 +70,8 @@ It explicitly does **not** add Android Auto Karaoke, current-word progress, a `â
 
 The legacy Now Playing completion must preserve the existing application/platform ownership boundaries: Automotive consumes existing artwork, playback-capability, Lyrics, Translation, and timing facts rather than rediscovering or reimplementing them.
 
+Its lifecycle policy is recovery-oriented rather than keepalive-oriented. Active `LyricsBrowserService` lifetime is an independent lyrics-demand signal alongside CarConnection projection state, and active-session observation re-requests the system Notification Listener binding when Automotive host activity or listener disconnection requires recovery. The app does not keep itself alive with an unconditional started service or foreground-service notification merely for Android Auto.
+
 ## Planned templated-media requirements
 
 The dedicated Car App Library implementation slice should introduce and validate the Android for Cars templated-media contract, including:
