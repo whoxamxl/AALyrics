@@ -8,7 +8,7 @@
 
 ## Problem
 
-Android Auto Now Playing can present a resolved lyric almost immediately because it projects only the current line into its subtitle surface. The Phone `LyricsViewport` currently keeps the complete lyrics document in a non-lazy `Column + verticalScroll` tree, so a newly resolved document composes and measures every lyric row before/while it becomes visible.
+Android Auto Now Playing can present a resolved lyric almost immediately because it projects only the current line into its subtitle surface. Before this branch, the Phone `LyricsViewport` kept the complete lyrics document in a non-lazy `Column + verticalScroll` tree, so a newly resolved document composed and measured every lyric row before/while it became visible.
 
 The Phone runtime also updates presentation timing every 250 ms during ordinary timed playback and every 33 ms while effective Karaoke is active. Immutable lyric-row content should not be forced through the same high-frequency presentation path as current-line/Karaoke progress.
 
@@ -133,19 +133,32 @@ Preserve the current Phone contract unless a device regression forces a separate
 
 ## Final validation record
 
-Pre-PR review is complete for the branch state based on `main @ 0a02474f26bee3cb462f227a4293b9e9d3c52e3d`.
+Branch validation is current for the feature branch based on `main @ 0a02474f26bee3cb462f227a4293b9e9d3c52e3d`.
 
-- Baseline alignment: current `main` is still `0a02474f26bee3cb462f227a4293b9e9d3c52e3d`; the feature branch is ahead by five implementation commits and behind by zero.
-- Branch policy: `feature/phone-lyrics-lazy-viewport` satisfies the repository branch-name rule.
-- Commit policy: all five branch commits satisfy the conventional commit pattern used by CI.
-- Scope review: branch-wide diff is limited to Phone lyrics presentation/runtime mapping, focused tests/Previews, `TASK.md`, and the relevant viewport/Karaoke/Translation/roadmap documentation. No provider, Android Auto, persistence, cache, Gradle dependency, or build workflow file changed.
-- Architecture review: the changed `ui/phone` production source adds no provider client, provider-selection, networking, or Android media framework ownership. The pure-core/provider/translation module boundaries are untouched.
-- Behavioral parity review against the eager `main` viewport confirms the same 15% edge fades, approximately 45% timed focus target, opening `♪` model, final-row boundary padding formula, Follow/Browse ownership, and 5% PLAIN lead-in/lead-out policy.
-- Focused coverage now includes stable Translation-insensitive lazy keys, measured variable-height geometry, opening/final boundaries, off-screen return direction, PLAIN target mapping, stale playback identity, Karaoke timing semantics, Translation matching, precomputed row reuse, a 160-row lazy Preview, Browse far from playback, and large seek Preview coverage.
-- API compatibility review: the implementation uses supported `LazyListState` / `ScrollableState` scrolling APIs and lazy-list layout geometry.
-- Baseline CI evidence: the Build workflow for the unchanged base commit `0a02474f` completed successfully.
-- Executable branch validation could not be run before PR creation from this agent environment: the local runtime cannot resolve `github.com` to clone the repository, and the available GitHub connector cannot dispatch the repository's `workflow_dispatch` action. The Draft PR's `pull_request` Build workflow is therefore a required validation gate before Ready-for-review or merge. This limitation is recorded rather than represented as a green local Gradle run.
+- Baseline alignment: current `main` remains `0a02474f26bee3cb462f227a4293b9e9d3c52e3d`; the feature branch is behind by zero.
+- Branch policy and commit-message validation pass in CI.
+- Architecture-boundary validation passes in CI.
+- The first PR Build exposed an implementation mistake from Checkpoint 1: existing non-eager rendering helpers (`timedFocusIndex`, stable lazy key helpers, return control, focus/scale helpers) had been removed together with obsolete eager-scroll helpers. Commit `239fb7b` restores only the required rendering helpers; obsolete `ScrollState`/absolute eager-scroll geometry remains removed.
+- Build workflow #1296 on `239fb7b` passes `assembleDebug`, repository-wide `./gradlew test --stacktrace`, `:ui:phone:testDebugUnitTest`, `:app:testDebugUnitTest`, APK artifact generation, branch naming, commit-message checks, and architecture checks.
+- Scope review remains limited to Phone lyrics presentation/runtime mapping, focused tests/Previews, `TASK.md`, and related viewport/Karaoke/Translation/presentation architecture documentation. No provider, Android Auto production, persistence, cache, Gradle dependency, or build-workflow behavior changed.
+- Regression audit A (semantic/main comparison): the eager `main` and lazy implementation were compared by behavior for 15% fades, approximately 45% timed focus, opening `♪`, final-row boundary, Follow/Browse ownership, Return-to-playback, Translation reflow, Karaoke current-row rendering, track identity, and seek behavior. The normal timed-focus geometry is mathematically equivalent before normal scroll-boundary clamping.
+- Regression audit B (execution/coverage): green debug build + repository unit tests exercise focused lazy geometry, stable Translation-insensitive keys, variable-height rows, opening/final boundaries, off-screen return direction, PLAIN target mapping, stale playback identity, Karaoke timing, Translation matching, and precomputed-row reuse. Debug Previews include a 160-row document, distant Browse, and large seeks.
+- PLAIN auto-scroll is the one intentional behavioral approximation: it now estimates item + local stride from playback progress rather than measuring the complete document pixel extent. It remains non-authoritative by product contract and requires device judgment rather than exact old-pixel equivalence.
+- Preliminary physical-device observation indicates a noticeable improvement in user-visible lyrics loading speed after the lazy migration. This is recorded as qualitative Phone presentation evidence only; this branch does not demonstrate faster provider/network lookup.
 - No Codex review was requested in this slice.
+
+## Result
+
+The branch now implements and validates the intended Phone presentation optimization:
+
+- full lyrics/Translation data remains available while only visible/near-visible rows are composed;
+- static canonical + Translation row projection is reused across playback timing ticks;
+- current-row Karaoke remains high-frequency without intentionally rebuilding static rows;
+- established Follow/Browse and timed visual geometry are preserved;
+- PR #86 Build workflow #1296 is green after the rendering-helper restoration fix;
+- preliminary device use suggests the user-visible loading delay is substantially reduced.
+
+The last point is intentionally not generalized into a provider optimization claim. Quantifying the remaining latency requires separate instrumentation of provider lookup (`LOOKUP_START -> LYRICS_READY`) and Phone presentation (`LYRICS_READY -> first presented`).
 
 ## Acceptance criteria
 

@@ -379,13 +379,15 @@ Compose application/domain capability facts into the smallest presentation contr
 
 Must follow `docs/PRESENTATION_STATE_ARCHITECTURE.md`. Do not create one universal giant UI state. Keep shared semantic facts shareable and surface-local state local.
 
-#### Phone LyricsViewport lazy composition — active
+#### Phone LyricsViewport lazy composition — implemented / PR #86 validated
 
-The Phone lyrics presentation is being refactored from eager full-document Compose/layout to lazy row composition without changing retrieval or timing semantics.
+PR #86 replaces eager full-document Phone Compose/layout with lazy row composition without changing retrieval or shared timing semantics.
 
-The slice keeps the full canonical/translated document in memory, virtualizes only visual rows, preserves Follow/Browse and the approximately 45% timed focus target, supports variable-height Translation rows, and confines high-frequency Karaoke presentation updates to the smallest necessary composed scope. It does not add lyrics caching, provider optimization, Translation execution changes, timing-semantic changes, or Android Auto behavior.
+The implemented slice keeps the full canonical/translated document in memory, virtualizes only visual rows, preserves Follow/Browse and the approximately 45% timed focus target, supports variable-height Translation rows, and confines high-frequency Karaoke presentation updates to the current row. `PhoneRuntimeHost` also memoizes static canonical + Translation row projection outside the 250 ms normal / 33 ms effective-Karaoke timing tick.
 
-The authoritative interaction/composition contract is `docs/PHONE_LYRICS_VIEWPORT.md`; `TASK.md` owns the active implementation checklist.
+Validation on the PR branch includes successful debug APK assembly, repository-wide unit tests, architecture/branch/commit checks, focused lazy-geometry tests, and two independent regression audits against the eager `main` behavior. Preliminary physical-device observation indicates noticeably faster user-visible lyrics appearance. That observation is treated as presentation evidence only; provider/network lookup performance remains a separate optimization track.
+
+The slice does not add lyrics caching, provider optimization, Translation execution changes, timing-semantic changes, or Android Auto behavior. The authoritative interaction/composition contract is `docs/PHONE_LYRICS_VIEWPORT.md`; `TASK.md` records branch validation evidence.
 
 #### Android Auto Now Playing completion — implemented / physical host validated
 
