@@ -44,6 +44,26 @@ LyricsCoordinator -> LyricsState
 
 The STOP gate for this slice is runtime integration, not rendering: with notification-listener access enabled and a supported media app playing, real playback can drive the existing production lookup pipeline and update `LyricsState` even though finished lyrics presentation is a separate later concern.
 
+## Player compatibility contract
+
+AALyrics is player-agnostic at the application boundary. It does not use private Spotify, YouTube Music, Apple Music, or other service-specific playback APIs to drive lyrics ownership. It observes Android's active `MediaSession` / `MediaController` surface through the runtime described in this document.
+
+The public README may therefore describe compatibility using familiar examples:
+
+> Works with Spotify, YouTube Music, Apple Music and other Android MediaSession players.
+
+That statement means those applications are examples of players that can participate through Android's MediaSession contract; it is not a claim of partnership, endorsement, or a separate direct integration with those services.
+
+Compatibility remains capability-driven:
+
+- the active media app must expose an eligible Android MediaSession that AALyrics can observe;
+- track identity, position, duration, artwork, queue, launch intent, and transport actions are limited to what that session publishes;
+- AALyrics may classify or block sessions that are not usable audio sources;
+- missing queue, seek, artwork, or transport capabilities must degrade independently rather than being synthesized as player-specific behavior;
+- player updates may change the metadata or capabilities exposed through Android without any AALyrics code change.
+
+This MediaSession contract is the source of truth behind named-player compatibility wording in public documentation.
+
 ## Android access boundary
 
 AALyrics uses an enabled `NotificationListenerService` as the permission path for reading other apps' active media sessions. The service is declared with `android.permission.BIND_NOTIFICATION_LISTENER_SERVICE` and the `android.service.notification.NotificationListenerService` intent action.

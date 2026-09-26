@@ -36,9 +36,11 @@ Development milestones use semantic-version-style prerelease tags:
 - `v0.1.0-beta.1`
 - `v0.1.0-rc.1`
 
-Any accepted release tag containing a prerelease suffix is published with GitHub's **Pre-release** flag.
+By default, the Release workflow publishes an accepted tag containing a prerelease suffix with GitHub's **Pre-release** flag. The semantic version suffix remains the canonical product channel even if the GitHub Release label is changed later for repository presentation.
 
-The initial signed distribution, `v0.1.0-alpha.1`, has been published successfully as a GitHub Pre-release. It is intentionally functionally incomplete; its immediate purpose is to validate the durable signing/distribution path and provide an installable baseline.
+The signed distribution pipeline has been exercised through `v1.0.0-beta.1`. That release remains semantically **AALyrics 1.0 Beta 1** because its tag and Android version are `v1.0.0-beta.1` / `1.0.0-beta.1`.
+
+For the current repository presentation, the published `v1.0.0-beta.1` Release has been manually changed from GitHub's **Pre-release** label to **None**. Because it is the newest normal Release, GitHub currently surfaces it as **Latest** in the repository sidebar and `/releases/latest`. This is a display/discoverability exception only: it does not rename the tag, change update ordering, remove the Beta product designation, or declare stable `1.0.0` readiness.
 
 ### Stable releases
 
@@ -169,9 +171,9 @@ The Release workflow then:
 6. builds the signed release APK, which bundles that same checked-in changelog;
 7. publishes `AALyrics-vX.Y.Z[-suffix].apk`;
 8. publishes a matching SHA-256 checksum;
-9. marks prerelease-suffixed tags as GitHub Pre-releases.
+9. marks prerelease-suffixed tags as GitHub Pre-releases by default.
 
-A stable tag follows the same process but is published without the Pre-release flag. A tag/changelog mismatch is a release-blocking error: the workflow must fail before building or publishing the APK.
+A stable tag follows the same process but is published without the Pre-release flag. A published Release label may be adjusted manually afterward for an explicit repository-presentation decision, as with the current `v1.0.0-beta.1` Latest-display exception; that manual label does not change the canonical tag/version channel. A tag/changelog mismatch is a release-blocking error: the workflow must fail before building or publishing the APK.
 
 ## Changelog policy
 
@@ -438,7 +440,7 @@ AALyrics is intentionally distributed outside Google Play. For Android Auto, non
 
 ## Release readiness
 
-For an early Pre-release, feature completeness is not required. At minimum, the release pipeline should establish that:
+For an early alpha/beta/RC channel release, feature completeness is not required. GitHub's visible Release label may differ from the semantic channel only through an explicit post-publication presentation decision. At minimum, the release pipeline should establish that:
 
 - CI tests pass;
 - the APK is release-signed;

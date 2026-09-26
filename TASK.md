@@ -1,121 +1,79 @@
-# AALyrics v1.0.0-beta.1 Release Preparation
+# Documentation Alignment — 1.0 Beta / README / Social Preview
 
 ## Branch and baseline
 
-- Branch: `release/v1.0.0-beta.1`.
-- Base: `main` at `ad4ca154604e4846e273b21a098ba0e03c98bc97`.
-- This slice prepares the first AALyrics 1.0 Beta release. It does not change lyrics retrieval, playback, timing, Translation, Karaoke, Android Auto runtime behavior, persistence, or provider behavior.
+- Branch: `docs/post-beta-alignment`.
+- Base: `main @ 6f0ff14f9afe2daaa4262af1df37f6d73a593ce0`.
+- This slice aligns durable documentation after the `v1.0.0-beta.1` release and the product-facing README compatibility update.
+- No application runtime, provider, playback, timing, Translation, Karaoke, Android Auto, persistence, signing, or update behavior changes are in scope.
 
-## Product decision
+## Current public state
 
-AALyrics has reached the point where its primary purpose is functional as a product: it can observe supported Android playback, resolve synchronized lyrics from production providers, present those lyrics on Phone and Android Auto, and expose the established Phone playback/settings/update experience.
+- `v1.0.0-beta.1` is published as **AALyrics 1.0 Beta 1**.
+- The canonical tag / Android version identity remains `v1.0.0-beta.1` / `1.0.0-beta.1`.
+- The GitHub Release is currently a normal Release with no explicit Pre-release label, so GitHub exposes it as the repository's current **Latest** release.
+- This GitHub presentation choice does not change the product channel: the release is still **1.0 Beta** and is not a stable `1.0.0` product release.
+- The Release workflow still defaults prerelease-suffixed tags to GitHub Pre-release; the current Beta's label is a deliberate post-publication presentation exception.
 
-The release therefore advances from the 0.2 alpha line to `v1.0.0-beta.1`.
+## README compatibility contract
 
-Beta means the intended AALyrics 1.0 product identity and core lyrics experience are established, while some advanced functionality and validation remain intentionally incomplete. It does not claim feature completeness or stable-release readiness.
+The public README uses this concise compatibility statement:
 
-## Goals
+> Works with Spotify, YouTube Music, Apple Music and other Android MediaSession players.
 
-- Make the repository README a human-facing AALyrics landing page rather than a construction/status document.
-- Present current user-visible capabilities before architecture and implementation details.
-- Keep installation and Android Auto sideload requirements concise and discoverable.
-- Record `1.0.0-beta.1` as the next in-app changelog version.
-- Keep the canonical Git tag/version machine-readable as `v1.0.0-beta.1`.
-- Give the GitHub Release a separate human-readable title, `AALyrics 1.0 Beta 1`.
-- Keep GitHub's generated PR-level release ledger below the curated milestone summary.
-- Preserve the existing signed APK/checksum pipeline and prerelease classification.
+This means:
 
-## README contract
+- AALyrics observes Android's active MediaSession / MediaController surface.
+- Spotify, YouTube Music, and Apple Music are named examples of media apps that can participate through that Android contract.
+- AALyrics does not claim a private/direct API integration, partnership, or endorsement with those services.
+- Exact metadata, artwork, queue, seek, and transport capabilities remain dependent on what the active media app exposes through Android.
 
-The README should answer, in this order:
+## Social Preview contract
 
-1. What is AALyrics?
-2. What can I do with it now?
-3. How do I install it?
-4. What does Android Auto support?
-5. What does Beta mean / what is still evolving?
-6. Where do developers find build, architecture, release, and license details?
+The GitHub Social Preview should communicate the real Android Auto product without inventing a substitute application UI.
 
-Internal implementation terminology should not dominate the opening sections. Detailed architecture remains authoritative in `docs/`.
+- Use the canonical AALyrics brand mark from `branding/AALyrics_MASTER.svg` or a derivative generated from it.
+- Use authentic AALyrics / Android Auto product imagery as the factual UI reference.
+- Preferred composition: dark automotive / navy background, blurred Android Auto context, and the authentic AALyrics Android Auto surface presented in the foreground with restrained glassmorphism, depth, and cyan-blue edge light.
+- Marketing treatment may crop, blur, frame, shadow, or composite authentic UI, but should not fabricate unsupported controls, metadata, capabilities, or a replacement AALyrics logo.
+- Target GitHub Social Preview output: **1280×640**, under **1 MB**.
+- Approved primary copy:
+  - `Synchronized lyrics for Android Auto`
+  - `Multi-provider lyrics matching for your music player of choice.`
+- Approved feature labels:
+  - `Multi-provider matching`
+  - `Intelligent provider selection`
+  - `Synchronized lyrics`
+  - `Built for Android Auto`
+- Provider row may identify Musixmatch, LRCLIB, PetitLyrics, and SyncLRC.
 
-Authentic product screenshots are stored under `docs/screenshots/` and are used for the README showcase. This release-prep slice must not fabricate UI screenshots merely to fill the README.
+## Alignment targets
 
-## Release naming contract
-
-- Git tag: `v1.0.0-beta.1`
-- Android `versionName`: `1.0.0-beta.1`
-- APK: `AALyrics-v1.0.0-beta.1.apk`
-- GitHub Release title: `AALyrics 1.0 Beta 1`
-- GitHub classification: **Pre-release**
-
-The display title is presentation only. Update comparison, APK naming, changelog validation, and installed version identity continue to use the canonical SemVer-style version.
-
-## Checkpoints
-
-- [x] Establish release-prep branch, scope, and Beta product decision.
-- [x] Rewrite README as a product-first, visual-first landing page using the canonical brand master and authentic device screenshots.
-- [x] Align Release policy and workflow with distinct human-readable Release titles.
-- [x] Add the `1.0.0-beta.1` user-facing changelog entry.
-- [x] Review the branch-wide diff for stale alpha/construction wording and release-version mismatches.
-- [x] Run release-relevant pre-PR validation, record evidence here, open a Draft PR, and STOP per `AGENTS.md`.
-
-## Known Beta limitations to communicate
-
-- Sync calibration controls/persistence are not yet part of the finished user experience.
-- Phone WORD_SYNC Karaoke remains experimental and opt-in.
-- Android Auto currently focuses on line-oriented Now Playing lyrics rather than Phone feature parity or Karaoke presentation.
-- AALyrics is distributed outside Google Play; Android Auto use of the sideloaded compatibility path requires the documented developer/unknown-source setup.
+- [x] Replace stale release-preparation `TASK.md` with the current documentation slice.
+- [x] Align `docs/RELEASES.md` with the published 1.0 Beta state and GitHub Release-label exception.
+- [x] Align `docs/ROADMAP.md` with the completed 1.0 Beta milestone and merged Android Auto work.
+- [x] Document the public MediaSession player-compatibility meaning in `docs/MEDIA_SESSION_RUNTIME.md`.
+- [x] Align `docs/ANDROID_AUTO_NOW_PLAYING.md` with that player-source contract.
+- [x] Record the GitHub Social Preview design/brand contract in `docs/BRANDING.md`.
+- [x] Run a branch-wide documentation regression/staleness review and normal repository validation.
 
 ## Acceptance criteria
 
-- A first-time repository visitor can understand AALyrics and reach installation instructions without reading architecture terminology.
-- README contains no working-branch status text and does not present AALyrics as merely a newly constructed project.
-- User-visible capabilities described in README match current `main`.
-- `CHANGELOG.md` has `1.0.0-beta.1` as its newest version before tagging.
-- The Release workflow accepts `v1.0.0-beta.1`, publishes it as a prerelease, retains canonical version/APK naming, and uses the human-facing Release title.
-- `docs/RELEASES.md` documents the distinction between canonical tag/version and Release display title.
-- No production runtime behavior changes as part of this release-prep slice.
+- Durable docs no longer describe `v1.0.0-beta.1` as an upcoming release.
+- Durable docs distinguish the semantic Beta channel from GitHub's current Latest/label presentation.
+- README player examples are explicitly grounded in Android MediaSession compatibility rather than implied service-specific integrations.
+- Branding docs prevent future Social Preview work from substituting an approximate AALyrics logo or fictional product UI.
+- Roadmap status no longer points at a historical working branch/TASK as if it were current execution state.
+- No production application behavior changes.
 
 
-## Visual README refinement
+## Validation record
 
-- Emoji-free README presentation: feature headings and bullets use plain product language rather than decorative emoji markers.
-- A real funding route is exposed through the existing `.github/FUNDING.yml` Buy Me a Coffee account (`whoxamxi`). The top-level CTA row places Support immediately to the left of Download APK, while the lower `Support AALyrics` section provides context without replacing the primary download/usage path.
-
-- `branding/AALyrics_MASTER.svg` remains authoritative. The README uses `docs/branding/aalyrics-readme-icon-rounded.svg`, a documentation-only derivative that preserves the master artwork and adds only a rounded-corner clip.
-- Two authentic DHU screenshots cover Android Auto full Now Playing and split view alongside navigation, and appear before the Phone screenshots because Android Auto is AALyrics' primary differentiating surface.
-- Three authentic Phone screenshots cover the synchronized Lyrics surface, Expanded Player, and Queue, displayed as one responsive three-column row immediately after the Android Auto showcase.
-- The README opening follows a product-page flow: rounded brand mark -> product name/tagline -> Android/Beta/license badges -> Download APK CTA -> Android Auto showcase -> Phone showcase -> concise Highlights.
-- Android Auto full/split presentation is the first product visual, followed by Phone Lyrics/Expanded Player/Queue, so the README communicates the automotive value proposition before the companion Phone surface.
-- Phone screenshots are cropped uniformly by 60 px at the top to remove the Android system status bar while preserving the AALyrics header, resulting in 709×1476 assets. Android Auto screenshots are cropped by 120 px only at the top and bottom, preserving the full 1536 px width and resulting in 1536×624 assets. New `*-cropped.webp` / `*-vcrop.webp` filenames avoid stale GitHub image caching.
-- Project structure and architecture links remain available but are collapsed below the user-facing product/install sections rather than dominating the landing surface.
-- No application runtime, UI implementation, provider, timing, playback, Translation, Karaoke, or Android Auto behavior changed in this refinement.
-
-## Release-prep validation record
-
-- The `Android 8.0+` README badge is grounded in `app/build.gradle.kts` `minSdk = 26` (Android 8.0 / API 26). It describes the APK installation floor, not a separate Android Auto host compatibility guarantee.
-
-- High-quality README screenshot derivatives retain UI detail. Phone assets are uniformly status-bar-cropped to 709×1476 and remain approximately 64–79 KB. Android Auto assets preserve the full 1536 px width and are cropped only 120 px from the top and bottom to 1536×624, at approximately 78–112 KB. New filenames intentionally bust stale README image caching.
-- The README hero uses the rounded documentation derivative while `branding/AALyrics_MASTER.svg` remains untouched and authoritative.
-
-- Baseline alignment: the release-prep branch remains zero commits behind the intended `main @ ad4ca154604e4846e273b21a098ba0e03c98bc97` baseline.
-- Branch-wide scope is limited to release/docs surfaces: `.github/workflows/release.yml`, `CHANGELOG.md`, `README.md`, `TASK.md`, `docs/BRANDING.md`, `docs/RELEASES.md`, the README-only rounded brand derivative, and five documentation screenshots; no production Kotlin/Java/resources or provider/runtime behavior changed.
-- README no longer contains the stale working-branch status or the old "new Android project" construction framing. Installation, Android Auto setup, Beta scope, user-visible capabilities, development entry points, and license are directly discoverable.
-- The newest in-app changelog heading is exactly `1.0.0-beta.1`, matching the intended canonical tag after removing its leading `v`.
-- Release-title mapping was exercised for Beta, Alpha, RC, stable, and non-zero patch examples. The intended tag maps to `AALyrics 1.0 Beta 1`; canonical `versionName`, tag, and APK naming remain `1.0.0-beta.1` / `v1.0.0-beta.1`.
-- Release policy documents that zero patch components may be omitted only from the human-facing GitHub Release title.
-- The first title implementation produced `AALyrics 1.0.0 Beta 1`, which conflicted with the approved human-facing contract. This was caught during validation and corrected before PR creation.
-- Pull-request Build workflow completed successfully on the finalized release-prep head, covering the normal Gradle/unit-test/branch-policy/architecture validation path. The visual-only asset/refinement commits change no production implementation code.
-
-## Result
-
-The Codex release-notes fix has passed the normal PR Build workflow, so the branch is Merge Ready again. This task does **not** create the tag, publish the Release, or merge into `main`. Those remain separate explicit gates.
-
-
-## Codex review follow-up
-
-- Codex P2 finding on PR #87 was valid: the Release workflow used `--generate-notes` without prepending the curated `CHANGELOG.md` milestone summary, directly violating the release-body acceptance criterion.
-- The workflow now extracts only the changelog section matching `AALYRICS_VERSION_NAME`, fails closed if that section is empty, and passes the extracted text through `--notes` together with `--generate-notes`.
-- Expected Release body order is now: curated changelog milestone summary first, GitHub-generated change ledger second.
-- This follow-up changes release publication composition only; application runtime and signed-APK build behavior remain unchanged.
-- The normal PR Build workflow passed on the corrected release-notes implementation (`90899ce2db0b606fccd6b867416966a5390fc076`).
+- Branch-wide diff is documentation-only: `TASK.md`, `docs/RELEASES.md`, `docs/ROADMAP.md`, `docs/MEDIA_SESSION_RUNTIME.md`, `docs/ANDROID_AUTO_NOW_PLAYING.md`, and `docs/BRANDING.md`.
+- The branch is zero commits behind `main` at the final documentation review point.
+- README compatibility wording is present on `main` and matches the MediaSession compatibility contract added here.
+- The live GitHub Release state was re-verified: `v1.0.0-beta.1` is published, `prerelease=false`, and is returned by `/releases/latest`; durable docs explicitly distinguish that presentation state from the semantic Beta version channel.
+- Roadmap no longer treats the historical Android Auto working branch or release-preparation TASK as current execution state.
+- Branding documentation now requires the canonical AALyrics logo and authentic product UI as the factual source for Social Preview artwork, with 1280×640 / under-1-MB output guidance and the approved glassmorphism direction.
+- No production source, Android resources, provider implementation, runtime behavior, signing configuration, or workflow behavior changed.
+- Branch pushes do not start the normal Build workflow in this repository; the Draft PR Build remains the normal CI gate after PR creation.
