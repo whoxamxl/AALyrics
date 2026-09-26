@@ -183,6 +183,8 @@ LyricsState
 
 The runtime preserves/refactors the mature working-fork session-selection behavior while keeping Android framework ownership in `:platform:media` and avoiding the old `MediaTracker` monolith. It retains token-based ownership and the platform-owned 600 ms track-metadata stabilization, and hands normalized snapshots to the existing application graph through a narrow host/sink boundary.
 
+The current runtime hardens that original stabilization contract by keeping playback identity and timeline atomic: same-identity playback updates remain live, while a different track's position/status/rate/timestamps are held until its stabilized identity is committed. The runtime must never emit an old track identity paired with a new track timeline.
+
 ### Phase 10 — Lyrics demand gating ✅
 
 Merged in PR #30.

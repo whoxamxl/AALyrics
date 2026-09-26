@@ -163,7 +163,13 @@ Current Phone presentation continues to consume only the active-line result, so 
 
 ## Playback clock ownership
 
-The existing playback projection remains upstream.
+Playback projection remains upstream. Before timing sees a playback sample, `:platform:media` is responsible for making the snapshot internally coherent:
+
+- source timestamp contradictions are reconciled at the MediaSession boundary;
+- a fallback sample timestamp is captured when the platform snapshot is sampled, not when UI later observes it;
+- during track-metadata stabilization, track/source identity and position/status/rate/timestamps are committed as one logical sample rather than cross-spliced between tracks.
+
+The timing layer therefore accepts projected playback position as an already-normalized fact. It does not carry MediaSession drift state, metadata-stabilization state, or a second identity/timeline repair mechanism.
 
 Timing calibration must not:
 

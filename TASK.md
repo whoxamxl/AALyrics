@@ -167,6 +167,7 @@ Do not:
 - A newly selected playing session with both source and local sample timestamps is re-sampled once after 250ms. If the raw position moves while the source timestamp stays unchanged, that source timestamp is quarantined until the source publishes a new timestamp and Phone falls back to the stable local sample clock.
 - A missing/null source timestamp does not clear an existing quarantine. Recovery requires a new valid non-null source timestamp or a track/session identity change.
 - Track metadata stabilization and playback timeline are atomic: while a different track identity is pending, AALyrics keeps the last coherent stable snapshot instead of combining the stable track/source with the pending track's position/status/rate/timestamps. Same-identity playback updates remain live.
+- Downstream application/timing/Karaoke/Playback Surface code consumes that coherent snapshot and must not add a second cross-track repair path or drift-offset model for this stabilization case.
 
 ## Validation record
 
@@ -175,6 +176,7 @@ Do not:
 - `:app:compileDebugKotlin` and `:ui:phone:compileDebugKotlin` passed locally. The local Windows Gradle test worker could not establish its loopback connection; the Linux CI run executed the tests successfully.
 - Branch merge base with `origin/main` is the documented `fa17dcbd364718aa1ab475b93b29c8d39581c331`. The complete diff against that baseline contains Phone settings, Quick controls, mapping, viewport rendering, tests/Previews, and task/documentation alignment. Android Auto production, provider, Translation execution, `:core:timing`, Sync UX/persistence, and Performance Karaoke code are unchanged.
 - Reset AALyrics explicitly restores both new persisted Karaoke switches to OFF. Phase 11.4d Android Auto Karaoke remains documentation-only and deferred.
+- Documentation is aligned across MediaSession runtime, architecture, timing, Karaoke, Playback Surface, runtime host, demand gating, presentation-state, roadmap, and runtime KDoc to the same identity/timeline atomicity invariant.
 
 
 ### Line-wide pseudo-token guard

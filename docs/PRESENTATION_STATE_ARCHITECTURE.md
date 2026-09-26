@@ -96,6 +96,7 @@ Forbidden ownership:
 - UI must not read cache storage directly;
 - UI must not own translation engine execution;
 - UI must not normalize MediaSession data;
+- UI must not repair or synthesize cross-track playback snapshots; track identity and timeline coherence is a `:platform:media` invariant;
 - UI must not implement calibration formulas or compute `projectedPlaybackPosition + lyricsOffset` itself;
 - UI must not duplicate karaoke current-line/current-word algorithms;
 - `:ui:phone` and `:ui:automotive` must not depend on each other.
