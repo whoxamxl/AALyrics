@@ -16,7 +16,7 @@ The current production branch state now has:
 - selected MediaSession album artwork forwarded through an app-owned Android boundary and rendered in both Track Card and Playback Surface, with the AALyrics mark as the no-artwork fallback;
 - playback source packages resolved through an application-owned metadata boundary to a human-readable app label and source app icon where possible, with the package identifier retained as the final normal-UI fallback and always exposed separately in Verbose Details; Android application category and min/target SDK levels are available to Verbose Details from the same resolved metadata;
 - Translation persisted default disabled on an unconfigured install while English remains the built-in/default target;
-- production Lyrics and Settings presentation mapping;
+- production Lyrics and Settings presentation mapping, including memoized static Phone lyric-row projection outside the playback clock tick;
 - in-app License navigation backed by build-synchronized repository `NOTICE` + `LICENSE`, rendered through the shared Phone Markdown wrapper;
 - adopted Phone-local popup and second-level Settings-header primitives;
 - an explicit non-functional Sync placeholder;
@@ -199,6 +199,27 @@ Phone presentation preference state ---┘
 
 The host lifecycle-collects the existing `translationState`, `translationSettings`, and model lifecycle state for presentation. It does not start or cancel Translation execution merely to render state. Explicit Track Card Retry remains an application-owned action through the existing retry boundary.
 
+The PR #86 Phone viewport performance path keeps static row projection separate from high-frequency timing projection:
+
+```text
+playback identity + LyricsState + TranslationState/settings
+        ↓
+remembered canonical + optional translated row list
+        │
+        ├───────────────┐
+        │               │
+        ↓               ↓
+250 ms normal tick   33 ms effective-Karaoke tick
+        │               │
+        └───────┬───────┘
+                ↓
+current timing / Karaoke presentation facts
+                ↓
+LyricsViewportUiState
+```
+
+`PhoneRuntimeHost` recomputes the static row list when playback identity, lyrics state, Translation state, or Translation settings change. A monotonic playback tick does not rebuild the complete row list. `mapPhoneLyricsState` continues to project current line/progress/Karaoke state at the required cadence while reusing the precomputed rows. This split is presentation performance policy only; it does not alter provider retrieval, timing semantics, Translation execution, or lyrics demand ownership.
+
 The Phone mapper owns presentation composition for the permanent Track Card Translation status row. It combines current Translation settings/state with the existing model-lifecycle presentation facts so the UI distinguishes active automatic model download from actual Translation execution. Model-preparation feedback is route-scoped: only the current target plus matching **model-supported** Profile Primary/ACTIVE Secondary may produce `Downloading language models…`; unsupported detected languages, unrelated model work, and superseded model work must not affect the row. The UI receives only a Phone-local state such as OFF / ENABLED / DOWNLOADING_MODELS / TRANSLATING / READY(route) / NOT_REQUIRED / FAILED; it does not inspect ML Kit or Translation core types directly.
 
 The status row is always reserved, preventing Translation transitions from changing Track Card height or shifting the LyricsViewport. A Failed row emits a semantic Retry callback to `:app`. The application retries only failed/timed-out models belonging to the current route (current target plus matching Profile Primary/ACTIVE Secondary, excluding built-in English), then republishes the current canonical lyrics/settings through `TranslationExecutionRuntime`; stale or unrelated model failures are not retried. Retry ownership remains application/capability-side.
@@ -341,7 +362,7 @@ Before merge:
 - the final diff receives bounded Codex review;
 - no current-scope blocking P0/P1/P2 remains.
 
-A physical-device smoke test remains useful evidence in addition to CI/build checks. The current Translation follow-up has completed that device verification; merge authorization remains a separate explicit user decision.
+A physical-device smoke test remains useful evidence in addition to CI/build checks. For PR #86, preliminary device observation indicates materially faster user-visible lyrics appearance after the lazy viewport change; this remains qualitative presentation evidence rather than an instrumented claim about provider/network latency. Merge authorization remains a separate explicit user decision.
 
 ## Explicitly deferred
 

@@ -62,6 +62,10 @@ It may depend on `:core:model`, `:core:lyrics`, and `:ui:designsystem`. It must 
 
 Phone-specific components are local-first. A component should move to `:ui:designsystem` only after real screen use demonstrates a reusable and stable API without Phone-specific runtime/navigation ownership.
 
+The production Phone Lyrics viewport is also intentionally Phone-local. PR #86 uses `LazyColumn + LazyListState` for visual-row virtualization while keeping the complete canonical/translated lyrics document in presentation state. Lazy composition is not paged lyrics retrieval. Follow/Browse geometry, the opening `♪`, Translation row remeasurement, Return-to-playback, PLAIN estimation, and current-row Karaoke rendering remain `:ui:phone` presentation concerns.
+
+High-frequency timing state is kept narrow: the app-owned host reuses static lyric-row projection across normal 250 ms and effective-Karaoke 33 ms ticks, and the viewport passes Karaoke sweep state only to the current row. This is a performance characteristic of the Phone presentation boundary, not a shared design-system responsibility.
+
 ### `:ui:automotive`
 
 Automotive-specific presentation. It owns both host-rendered screen composition and the automotive-local design adapters needed to express AALyrics semantics through Android Auto models.

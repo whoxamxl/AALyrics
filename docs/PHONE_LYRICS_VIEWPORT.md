@@ -2,7 +2,7 @@
 
 ## Status
 
-This document defines the interaction, visual, and composition contract for the Phone `LyricsViewport`, including the merged additive Translation-row extension. The current performance slice migrates row composition from an eager scrolling column to a lazy list while preserving the established viewport behavior.
+This document defines the interaction, visual, and composition contract for the Phone `LyricsViewport`, including additive Translation rows and gated Phone Karaoke presentation. On `feature/phone-lyrics-lazy-viewport` / PR #86, the production viewport uses lazy row composition while preserving the established viewport behavior.
 
 The viewport is the primary reading surface of the Lyrics destination. It must remain responsive to available height, width, text wrapping, and system font scale rather than targeting a fixed visible-line count.
 
@@ -37,7 +37,7 @@ Rules:
 
 The lyrics document remains complete in memory. Lazy composition is strictly a rendering optimization: it must not turn lyrics retrieval into paged/incremental fetching, discard off-screen canonical rows, or create a second source of truth.
 
-The production viewport should use lazy row composition so that visible and nearby prefetched items are composed/measured on demand rather than eagerly composing every lyric row when a document becomes ready.
+The production viewport uses `LazyColumn + LazyListState` so that visible and nearby prefetched items are composed/measured on demand rather than eagerly composing every lyric row when a document becomes ready.
 
 Rules:
 
@@ -49,11 +49,38 @@ Rules:
 - do not require a complete map of all row heights before the viewport can present resolved lyrics;
 - derive Follow/Browse direction and positioning from lazy-list item/viewport geometry rather than rebuilding a global absolute-height model.
 
-For LINE/WORD Follow, the approximately 45% target remains the visible contract. The implementation may first bring a distant current item into the composed window and then use its measured lazy-item geometry to settle the row center at the target. Large seeks may still snap according to the existing discontinuity policy.
+For LINE/WORD Follow, the approximately 45% target remains the visible contract. The implementation first materializes a distant current item when necessary, then uses measured lazy-item geometry to settle the row center at the target. Large seeks retain the existing discontinuity/snap policy.
 
-For Browse, visible-item indices and offsets may replace the previous absolute `ScrollState` displacement calculation. The user still owns scrolling until the playback region is intentionally restored or manually re-entered according to the existing contract.
+For Browse, visible-item indices and offsets replace the previous absolute `ScrollState` displacement calculation. The user still owns scrolling until the playback region is intentionally restored or manually re-entered according to the existing contract.
 
-PLAIN auto-scroll remains an estimate rather than authoritative timing. Its lazy implementation may estimate an item/offset from playback progress and refine from measured visible geometry; it must not force eager full-document measurement merely to recover an exact total pixel extent.
+PLAIN auto-scroll remains an estimate rather than authoritative timing. The lazy implementation maps continuous playback progress to a target item plus local estimated row stride; it deliberately does not reconstruct the old full-document pixel extent.
+
+## Presentation latency and loading semantics
+
+Phone-visible lyrics latency has two distinct parts and must be diagnosed separately:
+
+```text
+provider lookup / candidate selection
+        ↓
+LyricsState.Ready or LyricsState.Degraded
+        ↓
+Phone presentation mapping
+        ↓
+lazy Compose / measure / layout
+        ↓
+lyrics visible on screen
+```
+
+PR #86 changes only the downstream Phone presentation portion. It does not make provider HTTP requests, provider fallback chains, cross-provider selection, or `LyricsCoordinator` complete sooner.
+
+The implemented optimization removes two avoidable Phone costs:
+
+- a newly resolved document no longer eagerly composes/measures every lyric row before the useful viewport can settle;
+- canonical + Translation row presentation is memoized outside the 250 ms normal / 33 ms effective-Karaoke clock tick, while Karaoke dynamic state is passed only to the current row.
+
+Preliminary physical-device observation after the lazy migration indicates a noticeable improvement in user-visible lyrics loading speed. This is useful device evidence, but it is not an instrumented provider-latency measurement and must not be recorded as proof that network/provider lookup became faster.
+
+Future performance diagnostics should keep at least these boundaries distinct: `LOOKUP_START`, `LYRICS_READY`, and first Phone presentation. Provider optimization and Phone presentation optimization remain separate workstreams.
 
 ## Edge fading
 
