@@ -2,7 +2,7 @@
 
 ## Status
 
-This document defines the implemented interaction and visual contract for the Phone `LyricsViewport`, including the merged additive Translation-row extension.
+This document defines the interaction, visual, and composition contract for the Phone `LyricsViewport`, including additive Translation rows and gated Phone Karaoke presentation. On `feature/phone-lyrics-lazy-viewport` / PR #86, the production viewport uses lazy row composition while preserving the established viewport behavior.
 
 The viewport is the primary reading surface of the Lyrics destination. It must remain responsive to available height, width, text wrapping, and system font scale rather than targeting a fixed visible-line count.
 
@@ -32,6 +32,55 @@ Rules:
 - Keep scroll at the document origin while the focused row remains above the 45% center target. As successive current rows progress downward and their measured center would pass 45%, begin Follow scrolling so later current rows remain centered near 45%.
 - At the document end, place the final lyric row so its **top edge** begins at the 50% viewport boundary.
 - All focus/boundary positions are responsive viewport fractions, not fixed dp offsets.
+
+## Lazy composition and item identity
+
+The lyrics document remains complete in memory. Lazy composition is strictly a rendering optimization: it must not turn lyrics retrieval into paged/incremental fetching, discard off-screen canonical rows, or create a second source of truth.
+
+The production viewport uses `LazyColumn + LazyListState` so that visible and nearby prefetched items are composed/measured on demand rather than eagerly composing every lyric row when a document becomes ready.
+
+Rules:
+
+- represent each canonical lyric row as one stable lazy-list item;
+- use stable per-document row identity so Translation/recomposition does not make Compose treat an existing row as a different item;
+- represent the timed opening `♪` as a stable virtual item before lyric index 0;
+- allow arbitrary user scrolling to materialize previously uncomposed rows naturally;
+- do not keep off-screen rows composed solely for playback timing or Karaoke animation;
+- do not require a complete map of all row heights before the viewport can present resolved lyrics;
+- derive Follow/Browse direction and positioning from lazy-list item/viewport geometry rather than rebuilding a global absolute-height model.
+
+For LINE/WORD Follow, the approximately 45% target remains the visible contract. The implementation first materializes a distant current item when necessary, then uses measured lazy-item geometry to settle the row center at the target. Large seeks retain the existing discontinuity/snap policy.
+
+For Browse, visible-item indices and offsets replace the previous absolute `ScrollState` displacement calculation. The user still owns scrolling until the playback region is intentionally restored or manually re-entered according to the existing contract. Browse must not re-arm Follow until the lazy list has valid layout geometry; an empty/unmeasured viewport is not equivalent to being inside the accepted playback region. For PLAIN Browse, proximity is evaluated as continuous pixel displacement when the target item is visible, including across an adjacent item boundary, rather than treating every index change as automatically outside tolerance.
+
+PLAIN auto-scroll remains an estimate rather than authoritative timing. The lazy implementation estimates the scrollable document extent from visible-row height evidence, row spacing, viewport height, and the established top/final boundary padding, then maps the existing 5%–95% playback window across that estimated maximum extent. The resulting target is expressed as a lazy item plus local offset. It deliberately avoids eager full-document measurement while preserving the old lead-in/lead-out semantics instead of mapping directly across the raw row-top span.
+
+## Presentation latency and loading semantics
+
+Phone-visible lyrics latency has two distinct parts and must be diagnosed separately:
+
+```text
+provider lookup / candidate selection
+        ↓
+LyricsState.Ready or LyricsState.Degraded
+        ↓
+Phone presentation mapping
+        ↓
+lazy Compose / measure / layout
+        ↓
+lyrics visible on screen
+```
+
+PR #86 changes only the downstream Phone presentation portion. It does not make provider HTTP requests, provider fallback chains, cross-provider selection, or `LyricsCoordinator` complete sooner.
+
+The implemented optimization removes two avoidable Phone costs:
+
+- a newly resolved document no longer eagerly composes/measures every lyric row before the useful viewport can settle;
+- canonical + Translation row presentation is memoized outside the 250 ms normal / 33 ms effective-Karaoke clock tick, while Karaoke dynamic state is passed only to the current row.
+
+Preliminary physical-device observation after the lazy migration indicates a noticeable improvement in user-visible lyrics loading speed. This is useful device evidence, but it is not an instrumented provider-latency measurement and must not be recorded as proof that network/provider lookup became faster.
+
+Future performance diagnostics should keep at least these boundaries distinct: `LOOKUP_START`, `LYRICS_READY`, and first Phone presentation. Provider optimization and Phone presentation optimization remain separate workstreams.
 
 ## Edge fading
 
@@ -258,13 +307,13 @@ The numeric values above are the initial production tuning target for Preview/de
 
 ### Geometry and focus
 
-Canonical text plus optional translated text form **one logical measured lyric row**.
+Canonical text plus optional translated text form **one logical measured lyric row and one stable lazy-list item**.
 
 For LINE/WORD presentation:
 
-- measure the complete canonical + translated block as the row height;
+- measure the complete canonical + translated block as the row height when that lazy item is composed;
 - apply the existing row focus scale/alpha transform to the complete block as one unit;
-- calculate the row center and approximately 45% Follow target from that complete measured block;
+- calculate the row center and approximately 45% Follow target from that complete measured block when it is visible/composed; do not require all other rows to be measured first;
 - keep `currentLineIndex` derived solely from canonical source timing;
 - keep the opening `♪` virtual row and all existing focus interpolation unchanged.
 

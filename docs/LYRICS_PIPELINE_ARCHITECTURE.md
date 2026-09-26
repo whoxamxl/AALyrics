@@ -124,7 +124,7 @@ See `docs/TRANSLATION_ARCHITECTURE.md`.
 
 Timing/calibration preserves canonical source timing and derives a lyrics-only virtual clock for playback-dependent behavior. The implemented foundation fixes `effectiveLyricsPosition = projectedPlaybackPosition + lyricsOffset`: positive advances lyrics, negative delays lyrics, and zero preserves current behavior.
 
-The shared timing-semantic layer consumes canonical timed lyrics + effective lyrics position and deterministically projects active line/word/progress/boundary facts. These facts are independent of Karaoke enablement and are shared by Normal and future Karaoke presentation.
+The shared timing-semantic layer consumes canonical timed lyrics + effective lyrics position and deterministically projects active line/word/progress/boundary facts. These facts are independent of Karaoke enablement and are shared by Normal presentation and the implemented Phone Karaoke consumer.
 
 Offset scope, persistence, Sync UI, provider/track/device-specific correction, and drift/rate correction remain deferred.
 
@@ -134,7 +134,7 @@ See `docs/TIMING_ARCHITECTURE.md`.
 
 Karaoke does not own the shared active-line/active-word/progress calculation. Those facts come from the timing semantic engine.
 
-Future Karaoke work consumes that projection and maps it into Karaoke-specific presentation/rendering while remaining independent of Compose/Canvas/Span/Android Auto implementation details at the shared semantic boundary.
+The implemented Phone Karaoke path consumes that projection and maps it into Phone-local sweep presentation while remaining independent of Compose/Canvas/Span details at the shared semantic boundary. Android Auto Now Playing deliberately remains line-oriented.
 
 The downstream consumer/rendering ownership contract is defined in `docs/KARAOKE_ARCHITECTURE.md`: Karaoke enablement is not a Timing Semantic Engine input; Normal and Karaoke presentation consume the same projection with different subsets/presentation policy.
 
@@ -143,6 +143,24 @@ The downstream consumer/rendering ownership contract is defined in `docs/KARAOKE
 Presentation assembles independently owned application/capability facts into surface-specific state. Phone and automotive may share semantic facts but are not forced into one universal UI state shape.
 
 See `docs/PRESENTATION_STATE_ARCHITECTURE.md`.
+
+## User-visible latency accounting
+
+`LyricsState.Ready/Degraded` and "lyrics visible on the Phone" are different lifecycle boundaries.
+
+```text
+LOOKUP_START
+    ↓ provider/network/orchestration
+LYRICS_READY
+    ↓ surface mapping/composition/layout
+PHONE_FIRST_PRESENTED
+```
+
+Provider work belongs upstream of `LYRICS_READY`. Phone mapping, row allocation, Compose measurement, and viewport settlement belong downstream. A performance change may improve either segment without changing the other.
+
+PR #86 reduces the Phone presentation segment by lazily composing rows and reusing static canonical/Translation row projection across playback timing ticks. It does not change provider fan-out, provider timeouts/fallbacks, candidate selection, or coordinator completion policy.
+
+Accordingly, future `LyricsPerf` instrumentation should preserve separate lookup and presentation timestamps. A faster Phone visual appearance must not be recorded as evidence that provider/network retrieval improved unless `LOOKUP_START -> LYRICS_READY` also improves.
 
 ## Dependency rules
 
@@ -242,7 +260,7 @@ Phone Translation presentation integration  ✅
   │              Timing Semantic Engine
   │                    ↓
   │              Normal presentation
-  │                    └────> future Karaoke consumer/rendering
+  │                    └────> Phone Karaoke consumer/rendering ✅
   │
   └──────────────> broader Presentation State / Automotive integration
 

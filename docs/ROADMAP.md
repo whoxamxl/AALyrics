@@ -379,6 +379,16 @@ Compose application/domain capability facts into the smallest presentation contr
 
 Must follow `docs/PRESENTATION_STATE_ARCHITECTURE.md`. Do not create one universal giant UI state. Keep shared semantic facts shareable and surface-local state local.
 
+#### Phone LyricsViewport lazy composition — implemented / PR #86 validated
+
+PR #86 replaces eager full-document Phone Compose/layout with lazy row composition without changing retrieval or shared timing semantics.
+
+The implemented slice keeps the full canonical/translated document in memory, virtualizes only visual rows, preserves Follow/Browse and the approximately 45% timed focus target, supports variable-height Translation rows, and confines high-frequency Karaoke presentation updates to the current row. `PhoneRuntimeHost` also memoizes static canonical + Translation row projection outside the 250 ms normal / 33 ms effective-Karaoke timing tick.
+
+Validation on the PR branch includes successful debug APK assembly, repository-wide unit tests, architecture/branch/commit checks, focused lazy-geometry tests, and two independent regression audits against the eager `main` behavior. Preliminary physical-device observation indicates noticeably faster user-visible lyrics appearance. That observation is treated as presentation evidence only; provider/network lookup performance remains a separate optimization track.
+
+The slice does not add lyrics caching, provider optimization, Translation execution changes, timing-semantic changes, or Android Auto behavior. The authoritative interaction/composition contract is `docs/PHONE_LYRICS_VIEWPORT.md`; `TASK.md` records branch validation evidence.
+
 #### Android Auto Now Playing completion — implemented / physical host validated
 
 The `feature/android-auto-now-playing` branch implements the existing legacy `MediaBrowserServiceCompat` + `MediaSessionCompat` Now Playing presentation before the separate Car App Library templated-media work. Physical Android Auto validation is now available, including host rendering and forced process-death recovery without reopening the Phone Activity. DHU previously had a video-focus limitation; that historical tooling limitation no longer means the physical host path is unvalidated. `TASK.md` records the exact evidence and remaining cold-start follow-up.

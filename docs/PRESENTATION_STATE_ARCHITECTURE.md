@@ -42,9 +42,9 @@ Normal presentation   Karaoke presentation
 
 Karaoke ON/OFF is application/presentation state, not an input to the Timing Semantic Engine.
 
-For current Phone presentation, the Normal consumer uses only `activeLineIndex`. Even when WORD timing allows the engine to calculate `activeWordIndex`, `wordProgress`, and `wordBoundary`, those facts remain unused until a Karaoke consumer is separately implemented.
+For current Phone presentation, normal line-oriented rendering consumes `activeLineIndex`. When effective Phone Karaoke is enabled for WORD_SYNC, the Phone mapper also consumes the already-computed word-level timing facts and maps them into Phone-local sweep presentation. Android Auto Now Playing remains line-oriented and consumes `activeLineIndex` only.
 
-Future Karaoke presentation may consume the additional shared facts, but Phone and automotive renderers must not recalculate timing semantics.
+Neither Phone nor automotive renderers may recalculate shared timing semantics. Karaoke enablement changes which already-computed facts the Phone presentation consumes; it does not select a different timing engine or playback clock.
 
 ## Shared facts versus surface state
 
@@ -54,7 +54,7 @@ Shared presentation-ready facts may eventually include semantically common infor
 - current canonical lyrics availability/state;
 - optional translation availability/result;
 - effective lyrics position / calibration facts;
-- shared timing projection facts and, when implemented, Karaoke consumer facts;
+- shared timing projection facts and implemented Phone Karaoke consumer inputs;
 - provider/source attribution needed for display;
 - capability flags derived from domain state.
 
@@ -69,6 +69,29 @@ Surface-specific state may include:
 - Android Auto template sections/actions;
 - host update throttling/invalidation state;
 - transient interaction state that has no application meaning.
+
+## Static versus high-frequency Phone presentation
+
+PR #86 demonstrates a second surface-specific state rule: data with different change cadences should not be forced through one high-frequency allocation path merely because it appears in one screen.
+
+For Phone Lyrics:
+
+```text
+static / infrequent
+- canonical lyric row text
+- optional translated row text
+- stable row identity
+
+dynamic
+- current line
+- playback progress
+- animated focus position
+- current Karaoke line/sweep
+```
+
+The app-owned host memoizes static row projection by playback/lyrics/Translation identity. The normal 250 ms clock tick and effective-Karaoke 33 ms tick update dynamic presentation facts without rebuilding the complete row list. In `:ui:phone`, lazy rows receive the smallest dynamic input required; non-current rows do not consume current Karaoke sweep state.
+
+This optimization does not justify moving timing, Translation, or provider policy into the UI. It is a presentation-shape/cadence decision at the existing app-to-Phone boundary.
 
 ## No universal `UiState`
 
@@ -173,24 +196,21 @@ See `docs/ANDROID_AUTO_NOW_PLAYING.md` for the exact surface contract.
 
 ## Deferred decisions
 
-Do not decide in this foundation slice:
+Still deliberately deferred at this architecture level:
 
-- exact shared presentation-facts type;
-- ViewModel ownership or DI framework;
-- Flow/StateFlow combination implementation;
-- Phone `LyricsUiState` final fields;
-- Automotive screen-state final fields;
-- navigation runtime;
-- transport-control API;
-- scroll/follow behavior;
-- UI refresh/throttling cadence;
-- settings ownership;
-- error copy or visual states;
-- exact capability flags.
+- one exact shared presentation-facts type;
+- ViewModel ownership or DI framework beyond demonstrated need;
+- a universal Flow/StateFlow combination layer;
+- transport-control API changes not already required by implemented surfaces;
+- cross-surface navigation abstractions;
+- promotion of Phone-local scroll/follow or refresh-cadence policy into shared state;
+- speculative shared capability flags or error models.
 
-## Future implementation gate
+Implemented Phone and Automotive state shapes remain surface-local evidence, not a mandate for a universal model.
 
-Before implementing presentation state:
+## Ongoing implementation gate
+
+Before adding or broadening presentation state:
 
 1. inventory the actual data required by the first production Phone and Android Auto screens;
 2. define the smallest shared semantic facts supported by both without surface leakage;

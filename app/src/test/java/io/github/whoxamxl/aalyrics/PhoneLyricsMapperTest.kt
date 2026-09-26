@@ -32,6 +32,7 @@ import io.github.whoxamxl.aalyrics.ui.phone.lyrics.TrackCardTranslationUiState
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
+import kotlin.test.assertSame
 import kotlin.test.assertTrue
 
 class PhoneLyricsMapperTest {
@@ -1069,6 +1070,52 @@ class PhoneLyricsMapperTest {
         assertTrue(state.viewport.lines.isEmpty())
         assertNull(state.trackCard.providerLabel)
     }
+
+    @Test
+    fun `precomputed viewport rows are reused across timing only updates`() {
+        val playback = PlaybackSnapshot(
+            track = track(),
+            status = PlaybackStatus.PLAYING,
+            positionMs = 1_000L,
+            playbackRate = 1f,
+            source = PlaybackSource("com.spotify.music"),
+            positionUpdatedAtMonotonicMs = 1_000L,
+        )
+        val lyrics = ready(
+            playback = playback,
+            lines = listOf(
+                TimedLyricLine("First", 0L),
+                TimedLyricLine("Second", 5_000L),
+            ),
+        )
+        val rows = mapPhoneLyricsViewportLines(
+            playback = playback,
+            lyricsState = lyrics,
+        )
+
+        val first = mapPhoneLyricsState(
+            playback = playback,
+            lyricsState = lyrics,
+            plainLyricsAutoScrollEnabled = true,
+            interactionMode = LyricsViewportInteractionMode.FOLLOW,
+            currentMonotonicTimeMs = 1_500L,
+            precomputedViewportLines = rows,
+        )
+        val second = mapPhoneLyricsState(
+            playback = playback,
+            lyricsState = lyrics,
+            plainLyricsAutoScrollEnabled = true,
+            interactionMode = LyricsViewportInteractionMode.FOLLOW,
+            currentMonotonicTimeMs = 5_500L,
+            precomputedViewportLines = rows,
+        )
+
+        assertSame(rows, first.viewport.lines)
+        assertSame(rows, second.viewport.lines)
+        assertEquals(0, first.viewport.currentLineIndex)
+        assertEquals(1, second.viewport.currentLineIndex)
+    }
+
 
     private fun track() = Track(
         title = "Midnight Signals",

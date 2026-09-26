@@ -4,12 +4,13 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.AnimationVector1D
 import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.animateScrollBy
+import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -20,14 +21,17 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.ScrollState
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
@@ -81,6 +85,7 @@ import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import kotlin.math.abs
 import kotlin.math.ceil
+import kotlin.math.floor
 import kotlin.math.roundToInt
 
 /**
@@ -93,7 +98,7 @@ import kotlin.math.roundToInt
 fun LyricsViewport(
     state: LyricsViewportUiState,
     modifier: Modifier = Modifier,
-    scrollState: ScrollState = rememberScrollState(),
+    listState: LazyListState = rememberLazyListState(),
     onInteractionModeChange: (LyricsViewportInteractionMode) -> Unit = {},
 ) {
     BoxWithConstraints(modifier = modifier.fillMaxSize()) {
@@ -108,28 +113,37 @@ fun LyricsViewport(
         } else {
             0
         }
-        val lineHeights = remember(state.lines) { mutableStateMapOf<Int, Int>() }
-        val canonicalRows = state.lines.map { it.text to it.words }
+
+        // Keep only measurements we have actually materialized. Lazy composition must not
+        // require the whole lyrics document to be measured before it can be presented.
+        // Translation is deliberately excluded from canonical row identity so adding secondary
+        // text remeasures the existing keyed item instead of resetting the viewport geometry.
+        val canonicalRows = remember(state.lines) {
+            state.lines.map { it.text to it.words }
+        }
+        val lineHeights = remember(canonicalRows) { mutableStateMapOf<Int, Int>() }
+        val measuredHeightSignature = lineHeights.entries.sumOf { (index, height) ->
+            (index + 1) * 31 + height
+        }
         val lastLineHeightPx = lineHeights[state.lines.lastIndex] ?: 0
         val openingContentStartPx = (viewportHeightPx * TopEdgeFadeFraction).roundToInt()
         val endingBoundaryStartPx = (
             viewportHeightPx * EndBoundaryStartFraction
             ).roundToInt()
-        val topContentPaddingPx = if (hasOpeningFocusRow) {
-            (
-                openingContentStartPx -
-                    openingFocusRowHeightPx -
-                    rowSpacingPx
-                ).coerceAtLeast(minimumContentPaddingPx)
-        } else {
-            openingContentStartPx.coerceAtLeast(minimumContentPaddingPx)
-        }
-        val bottomContentPaddingPx = (
-            endingBoundaryStartPx - lastLineHeightPx
-            ).coerceAtLeast(minimumContentPaddingPx)
+        val topContentPaddingPx = lazyTopContentPaddingPx(
+            openingContentStartPx = openingContentStartPx,
+            openingFocusRowHeightPx = openingFocusRowHeightPx,
+            rowSpacingPx = rowSpacingPx,
+            minimumContentPaddingPx = minimumContentPaddingPx,
+            hasOpeningFocusRow = hasOpeningFocusRow,
+        )
+        val bottomContentPaddingPx = lazyBottomContentPaddingPx(
+            endingBoundaryStartPx = endingBoundaryStartPx,
+            lastLineHeightPx = lastLineHeightPx,
+            minimumContentPaddingPx = minimumContentPaddingPx,
+        )
         val topContentPadding = with(density) { topContentPaddingPx.toDp() }
         val bottomContentPadding = with(density) { bottomContentPaddingPx.toDp() }
-        val scope = rememberCoroutineScope()
 
         val targetFocusIndex = timedFocusIndex(state)
         val animatedFocusIndex = remember(canonicalRows, state.syncType) {
@@ -156,26 +170,87 @@ fun LyricsViewport(
             }
         }
 
-        val measuredHeightSignature = lineHeights.entries.sumOf { (index, height) ->
-            (index + 1) * 31 + height
-        } + (openingFocusRowHeightPx * 37)
-
-        val syncedPlaybackTargetScrollPx = syncedScrollPxForFocusIndex(
-            focusIndex = targetFocusIndex,
-            lineHeights = lineHeights,
-            openingFocusRowHeightPx = openingFocusRowHeightPx,
+        val scope = rememberCoroutineScope()
+        val timedPlaybackItemIndex = timedPlaybackItemIndex(state)
+        val fallbackPlainRowHeightPx = with(density) {
+            StableLyricsLineHeight.roundToPx()
+        }
+        val plainEstimatedRowHeightPx = if (lineHeights.isEmpty()) {
+            fallbackPlainRowHeightPx
+        } else {
+            lineHeights.values.average().roundToInt()
+        }.coerceAtLeast(1)
+        val plainEstimatedRowStridePx =
+            (plainEstimatedRowHeightPx + rowSpacingPx).coerceAtLeast(1)
+        val plainEstimatedBottomPaddingPx = lazyBottomContentPaddingPx(
+            endingBoundaryStartPx = endingBoundaryStartPx,
+            lastLineHeightPx = plainEstimatedRowHeightPx,
+            minimumContentPaddingPx = minimumContentPaddingPx,
+        )
+        val plainEstimatedMaxScrollPx = estimatedPlainMaxScrollPx(
+            lineCount = state.lines.size,
+            estimatedRowHeightPx = plainEstimatedRowHeightPx,
             rowSpacingPx = rowSpacingPx,
             topContentPaddingPx = topContentPaddingPx,
+            bottomContentPaddingPx = plainEstimatedBottomPaddingPx,
             viewportHeightPx = viewportHeightPx,
-        )?.coerceIn(0, scrollState.maxValue)
-        val plainTargetScrollPx = plainTargetScrollPx(
-            state = state,
-            maxScrollPx = scrollState.maxValue,
         )
-        val playbackTargetScrollPx = when (state.syncType) {
-            LyricsSyncType.PLAIN -> plainTargetScrollPx
-            LyricsSyncType.LINE,
-            LyricsSyncType.WORD -> syncedPlaybackTargetScrollPx
+        val plainTarget = if (
+            state.syncType == LyricsSyncType.PLAIN &&
+            state.plainAutoScrollEnabled
+        ) {
+            plainLazyTarget(
+                lineCount = state.lines.size,
+                playbackProgress = state.playbackProgress,
+                estimatedRowStridePx = plainEstimatedRowStridePx,
+                estimatedMaxScrollPx = plainEstimatedMaxScrollPx,
+            )
+        } else {
+            null
+        }
+        val returnGeometryReady by remember(listState) {
+            derivedStateOf {
+                val geometry = listState.lazyViewportGeometry()
+                lazyViewportGeometryReady(
+                    visibleItems = geometry.items,
+                    viewportStartOffset = geometry.viewportStartOffset,
+                    viewportEndOffset = geometry.viewportEndOffset,
+                )
+            }
+        }
+        val returnDirection by remember(
+            state.interactionMode,
+            state.syncType,
+            timedPlaybackItemIndex,
+            plainTarget,
+            listState,
+        ) {
+            derivedStateOf {
+                if (state.interactionMode != LyricsViewportInteractionMode.BROWSE) {
+                    null
+                } else {
+                    val geometry = listState.lazyViewportGeometry()
+                    when (state.syncType) {
+                        LyricsSyncType.LINE,
+                        LyricsSyncType.WORD -> timedPlaybackItemIndex?.let { targetIndex ->
+                            timedPlaybackRegionDirection(
+                                targetIndex = targetIndex,
+                                visibleItems = geometry.items,
+                                viewportStartOffset = geometry.viewportStartOffset,
+                                viewportEndOffset = geometry.viewportEndOffset,
+                            )
+                        }
+                        LyricsSyncType.PLAIN -> plainTarget?.let { target ->
+                            plainPlaybackRegionDirection(
+                                target = target,
+                                visibleItems = geometry.items,
+                                viewportStartOffset = geometry.viewportStartOffset,
+                                viewportEndOffset = geometry.viewportEndOffset,
+                            )
+                        }
+                    }
+                }
+            }
         }
 
         LaunchedEffect(targetFocusIndex, state.syncType, canonicalRows) {
@@ -197,82 +272,74 @@ fun LyricsViewport(
         LaunchedEffect(
             state.interactionMode,
             state.syncType,
-            measuredHeightSignature,
-            scrollState.maxValue,
-            viewportHeightPx,
+            state.lines.size,
+            hasOpeningFocusRow,
             topContentPaddingPx,
+            bottomContentPaddingPx,
+            lastLineHeightPx,
+            measuredHeightSignature,
         ) {
             if (
                 state.interactionMode != LyricsViewportInteractionMode.FOLLOW ||
-                state.syncType == LyricsSyncType.PLAIN
+                state.syncType == LyricsSyncType.PLAIN ||
+                !hasOpeningFocusRow
             ) {
                 return@LaunchedEffect
             }
 
+            val maxItemIndex = state.lines.size
             snapshotFlow { animatedFocusIndex.value }.collect { focusIndex ->
-                val target = syncedScrollPxForFocusIndex(
+                listState.followTimedLazyFocus(
                     focusIndex = focusIndex,
-                    lineHeights = lineHeights,
-                    openingFocusRowHeightPx = openingFocusRowHeightPx,
-                    rowSpacingPx = rowSpacingPx,
-                    topContentPaddingPx = topContentPaddingPx,
-                    viewportHeightPx = viewportHeightPx,
-                ) ?: return@collect
-                scrollState.scrollTo(target.coerceIn(0, scrollState.maxValue))
+                    maxItemIndex = maxItemIndex,
+                )
             }
         }
 
         LaunchedEffect(
             state.interactionMode,
-            plainTargetScrollPx,
-            scrollState.maxValue,
             state.syncType,
+            plainTarget,
         ) {
             if (
                 state.interactionMode != LyricsViewportInteractionMode.FOLLOW ||
-                state.syncType != LyricsSyncType.PLAIN ||
-                plainTargetScrollPx == null
+                state.syncType != LyricsSyncType.PLAIN
             ) {
                 return@LaunchedEffect
             }
-
-            val target = plainTargetScrollPx.coerceIn(0, scrollState.maxValue)
-            if (abs(scrollState.value - target) > 1) {
-                scrollState.animateScrollTo(
-                    value = target,
-                    animationSpec = tween(
-                        durationMillis = PlainFollowScrollDurationMillis,
-                        easing = LinearEasing,
-                    ),
+            val target = plainTarget ?: return@LaunchedEffect
+            if (
+                listState.firstVisibleItemIndex != target.index ||
+                abs(listState.firstVisibleItemScrollOffset - target.scrollOffsetPx) > 1
+            ) {
+                listState.animateScrollToItem(
+                    index = target.index,
+                    scrollOffset = target.scrollOffsetPx,
                 )
             }
-        }
-
-        val returnDirection = if (
-            state.interactionMode == LyricsViewportInteractionMode.BROWSE &&
-            playbackTargetScrollPx != null
-        ) {
-            playbackRegionDirection(
-                state = state,
-                targetScrollPx = playbackTargetScrollPx,
-                currentScrollPx = scrollState.value,
-                viewportHeightPx = viewportHeightPx,
-            )
-        } else {
-            null
         }
 
         LaunchedEffect(
             state.interactionMode,
             returnDirection,
-            scrollState.isScrollInProgress,
-            playbackTargetScrollPx,
+            returnGeometryReady,
+            listState.isScrollInProgress,
+            timedPlaybackItemIndex,
+            plainTarget,
         ) {
+            val hasPlaybackTarget = when (state.syncType) {
+                LyricsSyncType.LINE,
+                LyricsSyncType.WORD -> timedPlaybackItemIndex != null
+                LyricsSyncType.PLAIN -> plainTarget != null
+            }
             if (
-                state.interactionMode == LyricsViewportInteractionMode.BROWSE &&
-                playbackTargetScrollPx != null &&
-                returnDirection == null &&
-                !scrollState.isScrollInProgress
+                shouldRearmFollow(
+                    interactionMode = state.interactionMode,
+                    hasPlaybackTarget = hasPlaybackTarget,
+                    geometryReady = returnGeometryReady,
+                    returnDirection = returnDirection,
+                    isScrollInProgress = listState.isScrollInProgress,
+                )
             ) {
                 latestModeChange.value(LyricsViewportInteractionMode.FOLLOW)
             }
@@ -298,29 +365,38 @@ fun LyricsViewport(
                     )
                 },
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .verticalScroll(scrollState)
-                    .padding(
-                        start = AALyricsSpacing.Space20,
-                        top = topContentPadding,
-                        end = AALyricsSpacing.Space20,
-                        bottom = bottomContentPadding,
-                    ),
+            LazyColumn(
+                state = listState,
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(
+                    start = AALyricsSpacing.Space20,
+                    top = topContentPadding,
+                    end = AALyricsSpacing.Space20,
+                    bottom = bottomContentPadding,
+                ),
                 verticalArrangement = Arrangement.spacedBy(AALyricsSpacing.Space16),
             ) {
                 if (hasOpeningFocusRow) {
-                    OpeningFocusRow(
-                        focusPosition = animatedFocusIndex,
-                        modifier = Modifier.fillMaxWidth(TimedTextWidthFraction),
-                    )
+                    item(key = OpeningLazyItemKey) {
+                        OpeningFocusRow(
+                            focusPosition = animatedFocusIndex,
+                            modifier = Modifier.fillMaxWidth(TimedTextWidthFraction),
+                        )
+                    }
                 }
 
-                state.lines.forEachIndexed { index, line ->
+                itemsIndexed(
+                    items = state.lines,
+                    key = { index, line -> lyricsLazyItemKey(index, line) },
+                ) { index, line ->
+                    val rowKaraokeLine = state.karaokeLine?.takeIf {
+                        state.syncType != LyricsSyncType.PLAIN &&
+                            index == state.currentLineIndex
+                    }
                     LyricsViewportRow(
-                        state = state,
                         line = line,
+                        syncType = state.syncType,
+                        karaokeLine = rowKaraokeLine,
                         index = index,
                         focusPosition = animatedFocusIndex,
                         rowSpacingPx = rowSpacingPx,
@@ -338,7 +414,8 @@ fun LyricsViewport(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .padding(
-                    bottom = (maxHeight * (BottomEdgeFadeFraction / 3f)) + ReturnControlBottomInset,
+                    bottom = (maxHeight * (BottomEdgeFadeFraction / 3f)) +
+                        ReturnControlBottomInset,
                 ),
             enter = fadeIn(animationSpec = tween(ReturnControlFadeMillis)),
             exit = fadeOut(animationSpec = tween(ReturnControlFadeMillis)),
@@ -347,15 +424,40 @@ fun LyricsViewport(
                 ReturnToPlaybackControl(
                     direction = direction,
                     onClick = {
-                        val target = playbackTargetScrollPx ?: return@ReturnToPlaybackControl
                         scope.launch {
-                            scrollState.animateScrollTo(
-                                value = target.coerceIn(0, scrollState.maxValue),
-                                animationSpec = tween(
-                                    durationMillis = ReturnScrollDurationMillis,
-                                    easing = FastOutSlowInEasing,
-                                ),
-                            )
+                            when (state.syncType) {
+                                LyricsSyncType.LINE,
+                                LyricsSyncType.WORD -> {
+                                    val targetIndex =
+                                        timedPlaybackItemIndex ?: return@launch
+                                    listState.animateScrollToItem(targetIndex)
+                                    val correction = lazyFocusScrollDelta(
+                                        focusIndex = targetIndex.toFloat(),
+                                        visibleItems =
+                                            listState.lazyViewportGeometry().items,
+                                        viewportStartOffset =
+                                            listState.layoutInfo.viewportStartOffset,
+                                        viewportEndOffset =
+                                            listState.layoutInfo.viewportEndOffset,
+                                    )
+                                    if (correction != null && abs(correction) > 0.5f) {
+                                        listState.animateScrollBy(
+                                            value = correction,
+                                            animationSpec = tween(
+                                                durationMillis = ReturnScrollDurationMillis,
+                                                easing = FastOutSlowInEasing,
+                                            ),
+                                        )
+                                    }
+                                }
+                                LyricsSyncType.PLAIN -> {
+                                    val target = plainTarget ?: return@launch
+                                    listState.animateScrollToItem(
+                                        index = target.index,
+                                        scrollOffset = target.scrollOffsetPx,
+                                    )
+                                }
+                            }
                             latestModeChange.value(LyricsViewportInteractionMode.FOLLOW)
                         }
                     },
@@ -367,26 +469,25 @@ fun LyricsViewport(
 
 @Composable
 private fun LyricsViewportRow(
-    state: LyricsViewportUiState,
     line: LyricsViewportLineUiState,
+    syncType: LyricsSyncType,
+    karaokeLine: KaraokeLineUiState?,
     index: Int,
     focusPosition: Animatable<Float, AnimationVector1D>,
     rowSpacingPx: Int,
     modifier: Modifier = Modifier,
     onTextHeightChanged: (Int) -> Unit,
 ) {
-    val isCurrent = state.syncType != LyricsSyncType.PLAIN && index == state.currentLineIndex
     val virtualIndex = index + 1f
-
-    val karaokeLine = state.karaokeLine?.takeIf { karaoke ->
+    val safeKaraokeLine = karaokeLine?.takeIf { karaoke ->
         val sweepValid = karaoke.sweep?.let { sweep ->
             sweep.start >= 0 && sweep.end <= line.text.length &&
                 sweep.start < sweep.end && sweep.progress.isFinite()
         } ?: true
-        isCurrent && karaoke.completedEnd in 0..line.text.length && sweepValid
+        karaoke.completedEnd in 0..line.text.length && sweepValid
     }
 
-    val isTimed = state.syncType != LyricsSyncType.PLAIN
+    val isTimed = syncType != LyricsSyncType.PLAIN
 
     Box(
         modifier = if (isTimed) {
@@ -398,7 +499,7 @@ private fun LyricsViewportRow(
         Column(
             modifier = Modifier
                 .fillMaxWidth(
-                    fraction = if (state.syncType == LyricsSyncType.PLAIN) {
+                    fraction = if (syncType == LyricsSyncType.PLAIN) {
                         1f
                     } else {
                         TimedTextWidthFraction
@@ -418,7 +519,7 @@ private fun LyricsViewportRow(
                     )
                 }
                 .graphicsLayer {
-                    if (state.syncType == LyricsSyncType.PLAIN) {
+                    if (syncType == LyricsSyncType.PLAIN) {
                         scaleX = 1f
                         scaleY = 1f
                         alpha = 1f
@@ -443,27 +544,27 @@ private fun LyricsViewportRow(
             verticalArrangement = Arrangement.spacedBy(TranslationIntraRowGap),
         ) {
             val lyricStyle = AALyricsTypography.LyricsSupporting.copy(
-                    fontSize = if (state.syncType == LyricsSyncType.PLAIN) {
+                    fontSize = if (syncType == LyricsSyncType.PLAIN) {
                         PlainLyricsFontSize
                     } else {
                         StableLyricsFontSize
                     },
                     lineHeight = StableLyricsLineHeight,
-                    fontWeight = if (state.syncType == LyricsSyncType.PLAIN) {
+                    fontWeight = if (syncType == LyricsSyncType.PLAIN) {
                         FontWeight.Medium
                     } else {
                         FontWeight.Bold
                     },
                 )
-            val lyricColor = if (state.syncType == LyricsSyncType.PLAIN) {
+            val lyricColor = if (syncType == LyricsSyncType.PLAIN) {
                     AALyricsColors.TextSecondary
                 } else {
                     AALyricsColors.TextPrimary
                 }
-            if (karaokeLine != null) {
+            if (safeKaraokeLine != null) {
                 KaraokeLineText(
                     text = line.text,
-                    karaoke = karaokeLine,
+                    karaoke = safeKaraokeLine,
                     style = lyricStyle,
                 )
             } else {
@@ -679,12 +780,16 @@ private fun ReturnToPlaybackControl(
             modifier = Modifier
                 .size(ReturnControlVisualSize)
                 .background(
-                    color = AALyricsColors.BackgroundSurfaceStrong.copy(alpha = ReturnControlFillAlpha),
+                    color = AALyricsColors.BackgroundSurfaceStrong.copy(
+                        alpha = ReturnControlFillAlpha,
+                    ),
                     shape = CircleShape,
                 )
                 .border(
                     width = AALyricsStroke.Thin,
-                    color = AALyricsColors.BorderSoft.copy(alpha = ReturnControlBorderAlpha),
+                    color = AALyricsColors.BorderSoft.copy(
+                        alpha = ReturnControlBorderAlpha,
+                    ),
                     shape = CircleShape,
                 ),
             contentAlignment = Alignment.Center,
@@ -705,69 +810,32 @@ private fun ReturnToPlaybackControl(
     }
 }
 
+private const val OpeningLazyItemKey = "lyrics-opening"
+
+internal fun lyricsLazyItemKey(
+    index: Int,
+    line: LyricsViewportLineUiState,
+): String {
+    require(index >= 0) { "Lyrics row index must not be negative" }
+    return buildString {
+        append("lyrics:")
+        append(index)
+        append(':')
+        append(line.text)
+        append(':')
+        line.words.forEach { word ->
+            append(word)
+            append('\u0000')
+        }
+    }
+}
+
 private fun timedFocusIndex(state: LyricsViewportUiState): Float {
     if (state.syncType == LyricsSyncType.PLAIN) return OpeningFocusVirtualIndex
     val currentIndex = state.currentLineIndex
         ?.takeIf { it in state.lines.indices }
         ?: return OpeningFocusVirtualIndex
     return currentIndex + 1f
-}
-
-private fun syncedScrollPxForFocusIndex(
-    focusIndex: Float,
-    lineHeights: Map<Int, Int>,
-    openingFocusRowHeightPx: Int,
-    rowSpacingPx: Int,
-    topContentPaddingPx: Int,
-    viewportHeightPx: Int,
-): Int? {
-    if (openingFocusRowHeightPx <= 0) return null
-    val maxVirtualIndex = lineHeights.keys.maxOrNull()?.plus(1) ?: return null
-    val clamped = focusIndex.coerceIn(OpeningFocusVirtualIndex, maxVirtualIndex.toFloat())
-    val lower = kotlin.math.floor(clamped).toInt()
-    val upper = kotlin.math.ceil(clamped).toInt().coerceAtMost(maxVirtualIndex)
-    val lowerCenter = documentCenterForVirtualRow(
-        virtualIndex = lower,
-        lineHeights = lineHeights,
-        openingFocusRowHeightPx = openingFocusRowHeightPx,
-        rowSpacingPx = rowSpacingPx,
-        topContentPaddingPx = topContentPaddingPx,
-    ) ?: return null
-    val upperCenter = documentCenterForVirtualRow(
-        virtualIndex = upper,
-        lineHeights = lineHeights,
-        openingFocusRowHeightPx = openingFocusRowHeightPx,
-        rowSpacingPx = rowSpacingPx,
-        topContentPaddingPx = topContentPaddingPx,
-    ) ?: return null
-    val fraction = clamped - lower
-    val interpolatedCenter = lowerCenter + ((upperCenter - lowerCenter) * fraction)
-    val viewportFocusCenter = viewportHeightPx * FocusCenterFraction
-    return (interpolatedCenter - viewportFocusCenter).roundToInt()
-}
-
-private fun documentCenterForVirtualRow(
-    virtualIndex: Int,
-    lineHeights: Map<Int, Int>,
-    openingFocusRowHeightPx: Int,
-    rowSpacingPx: Int,
-    topContentPaddingPx: Int,
-): Float? {
-    if (virtualIndex == 0) {
-        return topContentPaddingPx + (openingFocusRowHeightPx / 2f)
-    }
-
-    val lyricIndex = virtualIndex - 1
-    val currentHeight = lineHeights[lyricIndex] ?: return null
-    var topPx = topContentPaddingPx +
-        openingFocusRowHeightPx +
-        rowSpacingPx
-
-    for (index in 0 until lyricIndex) {
-        topPx += (lineHeights[index] ?: return null) + rowSpacingPx
-    }
-
-    return topPx + (currentHeight / 2f)
 }
 
 private fun Modifier.reserveTimedScaleHeight(
@@ -813,42 +881,239 @@ private fun focusAmount(
     return proximity * proximity * (3f - (2f * proximity))
 }
 
-private fun plainTargetScrollPx(
-    state: LyricsViewportUiState,
-    maxScrollPx: Int,
-): Int? {
+internal fun lazyTopContentPaddingPx(
+    openingContentStartPx: Int,
+    openingFocusRowHeightPx: Int,
+    rowSpacingPx: Int,
+    minimumContentPaddingPx: Int,
+    hasOpeningFocusRow: Boolean,
+): Int {
+    require(openingContentStartPx >= 0)
+    require(openingFocusRowHeightPx >= 0)
+    require(rowSpacingPx >= 0)
+    require(minimumContentPaddingPx >= 0)
+
+    return if (hasOpeningFocusRow) {
+        (
+            openingContentStartPx -
+                openingFocusRowHeightPx -
+                rowSpacingPx
+            ).coerceAtLeast(minimumContentPaddingPx)
+    } else {
+        openingContentStartPx.coerceAtLeast(minimumContentPaddingPx)
+    }
+}
+
+internal fun lazyBottomContentPaddingPx(
+    endingBoundaryStartPx: Int,
+    lastLineHeightPx: Int,
+    minimumContentPaddingPx: Int,
+): Int {
+    require(endingBoundaryStartPx >= 0)
+    require(lastLineHeightPx >= 0)
+    require(minimumContentPaddingPx >= 0)
+
+    return (
+        endingBoundaryStartPx - lastLineHeightPx
+        ).coerceAtLeast(minimumContentPaddingPx)
+}
+
+internal data class LazyViewportItemGeometry(
+    val index: Int,
+    val offset: Int,
+    val size: Int,
+)
+
+private data class LazyViewportGeometry(
+    val items: List<LazyViewportItemGeometry>,
+    val viewportStartOffset: Int,
+    val viewportEndOffset: Int,
+)
+
+internal data class PlainLazyTarget(
+    val index: Int,
+    val scrollOffsetPx: Int,
+)
+
+internal enum class PlaybackRegionDirection {
+    ABOVE,
+    BELOW,
+}
+
+private fun LazyListState.lazyViewportGeometry(): LazyViewportGeometry {
+    val info = layoutInfo
+    return LazyViewportGeometry(
+        items = info.visibleItemsInfo.map { item ->
+            LazyViewportItemGeometry(
+                index = item.index,
+                offset = item.offset,
+                size = item.size,
+            )
+        },
+        viewportStartOffset = info.viewportStartOffset,
+        viewportEndOffset = info.viewportEndOffset,
+    )
+}
+
+internal fun lazyFocusScrollDelta(
+    focusIndex: Float,
+    visibleItems: List<LazyViewportItemGeometry>,
+    viewportStartOffset: Int,
+    viewportEndOffset: Int,
+    focusFraction: Float = FocusCenterFraction,
+): Float? {
     if (
-        state.syncType != LyricsSyncType.PLAIN ||
-        !state.plainAutoScrollEnabled ||
-        maxScrollPx <= 0
+        !focusIndex.isFinite() ||
+        focusFraction !in 0f..1f ||
+        viewportEndOffset <= viewportStartOffset
     ) {
         return null
     }
 
-    val playbackProgress = state.playbackProgress ?: return null
+    val lowerIndex = floor(focusIndex).toInt()
+    val upperIndex = ceil(focusIndex).toInt()
+    val lower = visibleItems.firstOrNull { it.index == lowerIndex } ?: return null
+    val upper = visibleItems.firstOrNull { it.index == upperIndex } ?: return null
+    if (lower.size <= 0 || upper.size <= 0) return null
+
+    val lowerCenter = lower.offset + (lower.size / 2f)
+    val upperCenter = upper.offset + (upper.size / 2f)
+    val fraction = focusIndex - lowerIndex
+    val focusCenter = lowerCenter + ((upperCenter - lowerCenter) * fraction)
+    val viewportFocusCenter =
+        viewportStartOffset +
+            ((viewportEndOffset - viewportStartOffset) * focusFraction)
+
+    return focusCenter - viewportFocusCenter
+}
+
+private suspend fun LazyListState.followTimedLazyFocus(
+    focusIndex: Float,
+    maxItemIndex: Int,
+) {
+    if (maxItemIndex < 0 || !focusIndex.isFinite()) return
+    val clampedFocus = focusIndex.coerceIn(0f, maxItemIndex.toFloat())
+
+    var geometry = lazyViewportGeometry()
+    var delta = lazyFocusScrollDelta(
+        focusIndex = clampedFocus,
+        visibleItems = geometry.items,
+        viewportStartOffset = geometry.viewportStartOffset,
+        viewportEndOffset = geometry.viewportEndOffset,
+    )
+
+    if (delta == null) {
+        scrollToItem(clampedFocus.roundToInt().coerceIn(0, maxItemIndex))
+        geometry = lazyViewportGeometry()
+        delta = lazyFocusScrollDelta(
+            focusIndex = clampedFocus,
+            visibleItems = geometry.items,
+            viewportStartOffset = geometry.viewportStartOffset,
+            viewportEndOffset = geometry.viewportEndOffset,
+        )
+    }
+
+    if (delta != null && abs(delta) > 0.5f) {
+        scrollBy(delta)
+    }
+}
+
+private fun timedPlaybackItemIndex(state: LyricsViewportUiState): Int? {
+    if (state.syncType == LyricsSyncType.PLAIN || state.lines.isEmpty()) return null
+    val currentLineIndex = state.currentLineIndex
+        ?.takeIf { it in state.lines.indices }
+    return currentLineIndex?.plus(1) ?: 0
+}
+
+internal fun estimatedPlainMaxScrollPx(
+    lineCount: Int,
+    estimatedRowHeightPx: Int,
+    rowSpacingPx: Int,
+    topContentPaddingPx: Int,
+    bottomContentPaddingPx: Int,
+    viewportHeightPx: Int,
+): Int {
+    if (
+        lineCount <= 0 ||
+        estimatedRowHeightPx <= 0 ||
+        rowSpacingPx < 0 ||
+        topContentPaddingPx < 0 ||
+        bottomContentPaddingPx < 0 ||
+        viewportHeightPx <= 0
+    ) {
+        return 0
+    }
+
+    val contentHeightPx =
+        topContentPaddingPx.toLong() +
+            (lineCount.toLong() * estimatedRowHeightPx.toLong()) +
+            ((lineCount - 1).toLong() * rowSpacingPx.toLong()) +
+            bottomContentPaddingPx.toLong()
+    return (contentHeightPx - viewportHeightPx.toLong())
+        .coerceIn(0L, Int.MAX_VALUE.toLong())
+        .toInt()
+}
+
+internal fun plainLazyTarget(
+    lineCount: Int,
+    playbackProgress: Float?,
+    estimatedRowStridePx: Int,
+    estimatedMaxScrollPx: Int,
+): PlainLazyTarget? {
+    if (
+        lineCount <= 0 ||
+        playbackProgress == null ||
+        !playbackProgress.isFinite() ||
+        estimatedRowStridePx <= 0 ||
+        estimatedMaxScrollPx <= 0
+    ) {
+        return null
+    }
+
     val documentProgress = (
         (playbackProgress.coerceIn(0f, 1f) - PlainLeadInFraction) /
             (1f - PlainLeadInFraction - PlainLeadOutFraction)
         ).coerceIn(0f, 1f)
+    val targetScrollPx = (estimatedMaxScrollPx * documentProgress)
+        .roundToInt()
+        .coerceIn(0, estimatedMaxScrollPx)
+    val index = (targetScrollPx / estimatedRowStridePx)
+        .coerceIn(0, lineCount - 1)
+    val scrollOffsetPx =
+        (targetScrollPx - (index * estimatedRowStridePx)).coerceAtLeast(0)
 
-    return (maxScrollPx * documentProgress).roundToInt()
+    return PlainLazyTarget(
+        index = index,
+        scrollOffsetPx = scrollOffsetPx,
+    )
 }
 
-private fun playbackRegionDirection(
-    state: LyricsViewportUiState,
-    targetScrollPx: Int,
-    currentScrollPx: Int,
-    viewportHeightPx: Int,
+internal fun timedPlaybackRegionDirection(
+    targetIndex: Int,
+    visibleItems: List<LazyViewportItemGeometry>,
+    viewportStartOffset: Int,
+    viewportEndOffset: Int,
+    focusFraction: Float = FocusCenterFraction,
+    toleranceFraction: Float = SyncedFocusToleranceFraction,
 ): PlaybackRegionDirection? {
-    if (viewportHeightPx <= 0) return null
-
-    val delta = targetScrollPx - currentScrollPx
-    val toleranceFraction = if (state.syncType == LyricsSyncType.PLAIN) {
-        PlainFocusToleranceFraction
-    } else {
-        SyncedFocusToleranceFraction
+    if (
+        targetIndex < 0 ||
+        visibleItems.isEmpty() ||
+        viewportEndOffset <= viewportStartOffset
+    ) {
+        return null
     }
-    val tolerance = viewportHeightPx * toleranceFraction
+
+    val sorted = visibleItems.sortedBy { it.index }
+    if (targetIndex < sorted.first().index) return PlaybackRegionDirection.ABOVE
+    if (targetIndex > sorted.last().index) return PlaybackRegionDirection.BELOW
+
+    val target = sorted.firstOrNull { it.index == targetIndex } ?: return null
+    val viewportSize = viewportEndOffset - viewportStartOffset
+    val targetCenter = target.offset + (target.size / 2f)
+    val expectedCenter = viewportStartOffset + (viewportSize * focusFraction)
+    val tolerance = viewportSize * toleranceFraction
+    val delta = targetCenter - expectedCenter
 
     return when {
         delta < -tolerance -> PlaybackRegionDirection.ABOVE
@@ -857,9 +1122,61 @@ private fun playbackRegionDirection(
     }
 }
 
-private enum class PlaybackRegionDirection {
-    ABOVE,
-    BELOW,
+internal fun lazyViewportGeometryReady(
+    visibleItems: List<LazyViewportItemGeometry>,
+    viewportStartOffset: Int,
+    viewportEndOffset: Int,
+): Boolean =
+    visibleItems.isNotEmpty() && viewportEndOffset > viewportStartOffset
+
+internal fun shouldRearmFollow(
+    interactionMode: LyricsViewportInteractionMode,
+    hasPlaybackTarget: Boolean,
+    geometryReady: Boolean,
+    returnDirection: PlaybackRegionDirection?,
+    isScrollInProgress: Boolean,
+): Boolean =
+    interactionMode == LyricsViewportInteractionMode.BROWSE &&
+        hasPlaybackTarget &&
+        geometryReady &&
+        returnDirection == null &&
+        !isScrollInProgress
+
+internal fun plainPlaybackRegionDirection(
+    target: PlainLazyTarget,
+    visibleItems: List<LazyViewportItemGeometry>,
+    viewportStartOffset: Int,
+    viewportEndOffset: Int,
+    toleranceFraction: Float = PlainFocusToleranceFraction,
+): PlaybackRegionDirection? {
+    if (
+        target.index < 0 ||
+        !lazyViewportGeometryReady(
+            visibleItems = visibleItems,
+            viewportStartOffset = viewportStartOffset,
+            viewportEndOffset = viewportEndOffset,
+        )
+    ) {
+        return null
+    }
+
+    val sorted = visibleItems.sortedBy { it.index }
+    if (target.index < sorted.first().index) return PlaybackRegionDirection.ABOVE
+    if (target.index > sorted.last().index) return PlaybackRegionDirection.BELOW
+
+    val targetItem = sorted.firstOrNull { it.index == target.index } ?: return null
+    val viewportSizePx = viewportEndOffset - viewportStartOffset
+    val tolerance = viewportSizePx * toleranceFraction
+    val delta =
+        targetItem.offset -
+            viewportStartOffset +
+            target.scrollOffsetPx
+
+    return when {
+        delta < -tolerance -> PlaybackRegionDirection.ABOVE
+        delta > tolerance -> PlaybackRegionDirection.BELOW
+        else -> null
+    }
 }
 
 private const val FocusCenterFraction = 0.45f
@@ -881,7 +1198,6 @@ private const val CurrentScale = 1.15f
 private const val TimedTextWidthFraction = 1f / CurrentScale
 private const val PastSupportingAlpha = 0.48f
 private const val FutureSupportingAlpha = 0.70f
-private const val PlainFollowScrollDurationMillis = 350
 private const val ReturnScrollDurationMillis = 420
 private const val ReturnControlFadeMillis = 140
 private const val ReturnBounceStartDelayMillis = 90L

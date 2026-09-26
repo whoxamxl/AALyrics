@@ -345,7 +345,7 @@ Still deferred:
 - any translated-word Karaoke timing;
 - broader fullscreen/Performance-mode Karaoke presentation.
 
-The active implementation must continue to consume `LyricsTimingProjection`, keep enablement outside the timing engine, test presentation separately from timing semantics, keep Phone and automotive presentation independent, and stop before merge according to `AGENTS.md`.
+The implemented Phone path consumes `LyricsTimingProjection`, keeps enablement outside the timing engine, tests presentation separately from timing semantics, and keeps Phone and automotive presentation independent. PR #86 further isolates current-row Karaoke updates from static lazy-row content without changing these timing semantics.
 
 
 ## Approved Phone Karaoke policy
@@ -357,6 +357,7 @@ The first production Karaoke surface is intentionally narrow:
 - PLAIN lyrics never enter Karaoke presentation.
 - Phone uses the **continuous current-word sweep** direction from the working fork's normal Phone renderer, not the Performance-mode whole-word pulse renderer.
 - The existing LyricsViewport line focus, Follow/Browse ownership, Translation secondary text, and scroll geometry remain the outer presentation model.
+- The Phone outer viewport uses lazy row composition. Karaoke does not require off-screen lyric rows to stay composed, and the 33 ms sweep/progress update is localized to the current composed row rather than intentionally rebuilding the complete lyric-row presentation.
 
 The activation contract is:
 
@@ -414,6 +415,8 @@ Stable rules:
 Display mapping and display-group progress are presentation policy, not a second timing engine.
 
 ### 11.4c — Phone continuous sweep
+
+When the current line is off-screen during Browse, its semantic timing continues to advance but the viewport does not keep that row composed solely for animation. When it becomes visible again, rendering uses the latest timing projection rather than replaying missed visual frames.
 
 For the current line only:
 

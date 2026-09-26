@@ -127,6 +127,17 @@ internal object PhonePreviewFixtures {
         LyricsViewportLineUiState("Until the daylight finds us here"),
     )
 
+    private val longViewportLines = List(160) { index ->
+        LyricsViewportLineUiState(
+            text = "Lazy lyric row ${index + 1} — only the visible neighborhood should be composed",
+            translatedText = if (index % 7 == 0) {
+                "可視範囲付近だけを描画するための翻訳行 ${index + 1}"
+            } else {
+                null
+            },
+        )
+    }
+
     val viewportLineMiddle = LyricsViewportUiState(
         lines = viewportLines,
         syncType = LyricsSyncType.LINE,
@@ -134,6 +145,16 @@ internal object PhonePreviewFixtures {
     )
     val viewportLineFirst = viewportLineMiddle.copy(currentLineIndex = 0)
     val viewportLineLast = viewportLineMiddle.copy(currentLineIndex = viewportLines.lastIndex)
+
+    val viewportLongMiddle = LyricsViewportUiState(
+        lines = longViewportLines,
+        syncType = LyricsSyncType.LINE,
+        currentLineIndex = 79,
+    )
+    val viewportLongBrowsePlaybackBelow = viewportLongMiddle.copy(
+        currentLineIndex = 130,
+        interactionMode = LyricsViewportInteractionMode.BROWSE,
+    )
 
     val viewportWord = LyricsViewportUiState(
         lines = viewportLines,
