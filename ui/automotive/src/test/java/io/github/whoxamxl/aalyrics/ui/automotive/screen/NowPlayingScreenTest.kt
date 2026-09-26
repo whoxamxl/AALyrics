@@ -2,6 +2,7 @@ package io.github.whoxamxl.aalyrics.ui.automotive.screen
 
 import android.support.v4.media.session.PlaybackStateCompat
 import io.github.whoxamxl.aalyrics.ui.automotive.AutomotiveTransportCapabilities
+import io.github.whoxamxl.aalyrics.core.model.PlaybackStatus
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -32,5 +33,14 @@ class NowPlayingScreenTest {
                 PlaybackStateCompat.ACTION_PLAY_PAUSE,
             actions,
         )
+    }
+
+    @Test
+    fun `playback status maps to its real media session state`() {
+        assertEquals(PlaybackStateCompat.STATE_PLAYING, NowPlayingScreen.frameworkState(PlaybackStatus.PLAYING))
+        assertEquals(PlaybackStateCompat.STATE_PAUSED, NowPlayingScreen.frameworkState(PlaybackStatus.PAUSED))
+        assertEquals(PlaybackStateCompat.STATE_BUFFERING, NowPlayingScreen.frameworkState(PlaybackStatus.BUFFERING))
+        assertEquals(PlaybackStateCompat.STATE_STOPPED, NowPlayingScreen.frameworkState(PlaybackStatus.STOPPED))
+        assertEquals(PlaybackStateCompat.STATE_NONE, NowPlayingScreen.frameworkState(PlaybackStatus.IDLE))
     }
 }

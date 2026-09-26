@@ -13,7 +13,10 @@ internal object NowPlayingScreen {
             state.artist?.let { putString(MediaMetadataCompat.METADATA_KEY_ARTIST, it) }
             state.album?.let { putString(MediaMetadataCompat.METADATA_KEY_ALBUM, it) }
             state.durationMs?.let { putLong(MediaMetadataCompat.METADATA_KEY_DURATION, it) }
-            state.artwork?.let { putBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART, it) }
+            state.artwork?.let {
+                putBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART, it)
+                putBitmap(MediaMetadataCompat.METADATA_KEY_DISPLAY_ICON, it)
+            }
             putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_TITLE, state.displayTitle)
             putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_SUBTITLE, state.subtitle)
             state.lyrics.secondaryText?.let {
@@ -22,19 +25,21 @@ internal object NowPlayingScreen {
         }.build()
 
     fun playbackState(state: AutomotiveLyricsUiState): PlaybackStateCompat {
-        val frameworkState = when (state.playbackStatus) {
-            PlaybackStatus.PLAYING -> PlaybackStateCompat.STATE_PLAYING
-            PlaybackStatus.PAUSED -> PlaybackStateCompat.STATE_PAUSED
-            PlaybackStatus.BUFFERING -> PlaybackStateCompat.STATE_BUFFERING
-            PlaybackStatus.STOPPED -> PlaybackStateCompat.STATE_STOPPED
-            PlaybackStatus.IDLE -> PlaybackStateCompat.STATE_NONE
-        }
+        val frameworkState = frameworkState(state.playbackStatus)
         val speed = if (state.playbackStatus == PlaybackStatus.PLAYING) state.playbackRate else 0f
 
         return PlaybackStateCompat.Builder()
             .setState(frameworkState, state.positionMs, speed)
             .setActions(actionMask(state.capabilities))
             .build()
+    }
+
+    fun frameworkState(status: PlaybackStatus): Int = when (status) {
+            PlaybackStatus.PLAYING -> PlaybackStateCompat.STATE_PLAYING
+            PlaybackStatus.PAUSED -> PlaybackStateCompat.STATE_PAUSED
+            PlaybackStatus.BUFFERING -> PlaybackStateCompat.STATE_BUFFERING
+            PlaybackStatus.STOPPED -> PlaybackStateCompat.STATE_STOPPED
+            PlaybackStatus.IDLE -> PlaybackStateCompat.STATE_NONE
     }
 
     fun actionMask(capabilities: AutomotiveTransportCapabilities): Long {

@@ -262,6 +262,18 @@ class AutomotiveLyricsUiStateMapperTest {
                 assertEquals(true, state.lyrics.isAnimatedLoading)
                 assertEquals(true, shouldRenderProjectionTick(playback, state.lyrics.isAnimatedLoading))
             }
+        val stale = AutomotiveLyricsUiStateMapper.project(
+            playback = playback,
+            lyricsState = ready(track, document),
+            currentMonotonicTimeMs = 0L,
+            translationSettings = TranslationSettings(enabled = true),
+            translationState = TranslationState.Translating(
+                request.copy(canonicalLyrics = identity.copy(ownerId = "old")),
+            ),
+            canonicalLyricsIdentity = identity,
+        )
+        assertEquals(null, stale.lyrics.secondaryText)
+        assertEquals(false, stale.lyrics.isAnimatedLoading)
     }
 
     @Test
