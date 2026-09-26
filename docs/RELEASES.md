@@ -72,6 +72,21 @@ Do not move or reuse a tag after a release has been published. If a published bu
 
 The tag without the leading `v` becomes Android `versionName`. The Release workflow run number is used as Android `versionCode`, providing increasing update ordering across this workflow's releases.
 
+### GitHub Release display title
+
+The Git tag and Android version remain the canonical machine-readable identifiers. The GitHub Release **display title** is intentionally human-readable and may differ from the literal tag.
+
+The Release workflow maps accepted prerelease tags like this:
+
+```text
+v1.0.0-alpha.1 -> AALyrics 1.0.0 Alpha 1
+v1.0.0-beta.1  -> AALyrics 1.0.0 Beta 1
+v1.0.0-rc.1    -> AALyrics 1.0.0 RC 1
+v1.0.0         -> AALyrics 1.0.0
+```
+
+This distinction is presentation-only. Tag matching, update comparison, Android `versionName`, APK filenames, changelog validation, and release-asset identity continue to use the canonical version string.
+
 ## Signing identity
 
 All durable AALyrics release APKs must be signed by the same release key.
