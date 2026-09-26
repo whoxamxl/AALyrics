@@ -93,6 +93,8 @@ data class DetailsDiagnosticsUiState(
     val providerId: String? = null,
     val sourceId: String? = null,
     val trackReferences: List<String> = emptyList(),
+    val lyricsLookupAttempt: Int? = null,
+    val lyricsProviderFailures: List<String> = emptyList(),
 )
 
 @Immutable

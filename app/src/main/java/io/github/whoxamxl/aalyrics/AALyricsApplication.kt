@@ -5,6 +5,7 @@ import android.graphics.Bitmap
 import io.github.whoxamxl.aalyrics.core.lyrics.CandidateSelectionPreferences
 import io.github.whoxamxl.aalyrics.core.lyrics.CandidateSelector
 import io.github.whoxamxl.aalyrics.core.lyrics.LyricsCoordinator
+import io.github.whoxamxl.aalyrics.core.lyrics.LyricsLookupDiagnostics
 import io.github.whoxamxl.aalyrics.core.lyrics.LyricsState
 import io.github.whoxamxl.aalyrics.core.lyrics.PlaybackLyricsController
 import io.github.whoxamxl.aalyrics.core.model.LyricsSyncType
@@ -17,6 +18,7 @@ import io.github.whoxamxl.aalyrics.provider.petitlyrics.PetitLyricsProvider
 import io.github.whoxamxl.aalyrics.provider.selection.CrossProviderCandidateSelector
 import io.github.whoxamxl.aalyrics.provider.synclrc.SyncLrcProvider
 import io.github.whoxamxl.aalyrics.platform.media.MediaBrowserClientTrust
+import io.github.whoxamxl.aalyrics.platform.media.MediaSessionListenerService
 import io.github.whoxamxl.aalyrics.platform.media.MediaSessionRuntimeHost
 import io.github.whoxamxl.aalyrics.platform.media.PlaybackArtworkSink
 import io.github.whoxamxl.aalyrics.platform.media.PlaybackControlState
@@ -26,9 +28,12 @@ import io.github.whoxamxl.aalyrics.platform.media.QueueArtworkBitmapSink
 import io.github.whoxamxl.aalyrics.platform.media.PlaybackSourceRuntimeState
 import io.github.whoxamxl.aalyrics.platform.media.PlaybackSourceRuntimeStateSink
 import io.github.whoxamxl.aalyrics.ui.automotive.AutomotiveBrowserClientTrust
+import io.github.whoxamxl.aalyrics.ui.automotive.AutomotiveHostDemand
+import io.github.whoxamxl.aalyrics.ui.automotive.AutomotiveArtworkState
 import io.github.whoxamxl.aalyrics.ui.automotive.AutomotiveRuntimeBinding
 import io.github.whoxamxl.aalyrics.ui.automotive.AutomotiveRuntimeHost
 import io.github.whoxamxl.aalyrics.ui.automotive.AutomotiveTransport
+import io.github.whoxamxl.aalyrics.ui.automotive.AutomotiveTransportCapabilities
 import io.github.whoxamxl.aalyrics.ui.phone.details.DetailsScreenUiState
 import io.github.whoxamxl.aalyrics.ui.phone.state.PlaybackSurfaceUiState
 import io.github.whoxamxl.aalyrics.translation.api.TranslationModelPhase
@@ -99,12 +104,17 @@ class AALyricsApplication : Application() {
     private lateinit var updateSuccessFeedbackRuntime: UpdateSuccessFeedbackRuntime
     private val installPermissionPromptRuntime = UpdateInstallPermissionPromptRuntime()
     private val mutablePlaybackArtworkState = MutableStateFlow<Bitmap?>(null)
+    private val mutableAutomotiveArtworkState = MutableStateFlow(AutomotiveArtworkState())
     private val mutableQueueArtworkBitmapsState =
         MutableStateFlow<Map<Long, Bitmap>>(emptyMap())
     private val mutableTranslationModelCleanupState =
         MutableStateFlow(TranslationModelCleanupState.IDLE)
     private val playbackArtworkSink = PlaybackArtworkSink { bitmap ->
         mutablePlaybackArtworkState.value = bitmap
+        mutableAutomotiveArtworkState.value = AutomotiveArtworkState(
+            trackIdentity = graph.playbackState.value.trackIdentity,
+            bitmap = bitmap,
+        )
     }
     private val queueArtworkBitmapSink = QueueArtworkBitmapSink { bitmaps ->
         mutableQueueArtworkBitmapsState.value = bitmaps
@@ -473,6 +483,11 @@ class AALyricsApplication : Application() {
         playbackSourceAppInfoResolver = PlaybackSourceAppInfoResolver(this)
         graph = createProductionApplicationGraph(applicationScope)
         playbackSnapshotSink = PlaybackSnapshotSink { snapshot ->
+            if (snapshot.trackIdentity != graph.playbackState.value.trackIdentity) {
+                mutableAutomotiveArtworkState.value = AutomotiveArtworkState(
+                    trackIdentity = snapshot.trackIdentity,
+                )
+            }
             graph.playbackSnapshotSink.onPlaybackSnapshot(snapshot)
             val sourceEligible = playbackSourceEligibility(snapshot) is
                 PlaybackSourceEligibility.Allowed
@@ -577,12 +592,14 @@ class AALyricsApplication : Application() {
         phoneDetailsStateFlow = combine(
             graph.playbackState,
             graph.lyricsState,
+            graph.lyricsLookupDiagnostics,
             phonePresentationSettingsStore.verboseDetailsEnabled,
             translationDetailsFacts,
-        ) { playback, lyrics, verboseDetailsEnabled, translationFacts ->
+        ) { playback, lyrics, lyricsDiagnostics, verboseDetailsEnabled, translationFacts ->
             mapPhoneDetailsState(
                 playback = playback,
                 lyricsState = lyrics,
+                lyricsDiagnostics = lyricsDiagnostics,
                 verboseDetailsEnabled = verboseDetailsEnabled,
                 playbackSourceAppInfo = playbackSourceAppInfoResolver
                     .resolve(playback.source?.id),
@@ -605,6 +622,30 @@ class AALyricsApplication : Application() {
         automotiveBinding = AutomotiveRuntimeBinding(
             playback = graph.playbackState,
             lyrics = graph.lyricsState,
+            artwork = mutableAutomotiveArtworkState.asStateFlow(),
+            capabilities = graph.playbackControlState.map { state ->
+                val source = state.capabilities
+                AutomotiveTransportCapabilities(
+                    canPlay = source.canPlay,
+                    canPause = source.canPause,
+                    canSkipPrevious = source.canSkipPrevious,
+                    canSkipNext = source.canSkipNext,
+                    canSeek = source.canSeek,
+                )
+            }.stateIn(
+                scope = applicationScope,
+                started = SharingStarted.Eagerly,
+                initialValue = AutomotiveTransportCapabilities(),
+            ),
+            translationSettings = translationSettingsStore.settings,
+            translationState = translationCoordinator.state,
+            canonicalLyricsIdentity = { state -> state.canonicalLyricsOrNull()?.identity },
+            hostDemand = AutomotiveHostDemand { active ->
+                graph.lyricsDemandGate.setAutomotiveHostActive(active)
+                if (active) {
+                    MediaSessionListenerService.requestSystemRebind(this)
+                }
+            },
             transport = object : AutomotiveTransport {
                 override fun play() = MediaSessionRuntimeHost.play()
                 override fun pause() = MediaSessionRuntimeHost.pause()
@@ -706,6 +747,7 @@ internal class ApplicationGraph(
     val playbackSourceRuntimeState: StateFlow<PlaybackSourceRuntimeState> =
         mutablePlaybackSourceRuntimeState.asStateFlow()
     val lyricsState: StateFlow<LyricsState> = coordinator.state
+    val lyricsLookupDiagnostics: StateFlow<LyricsLookupDiagnostics> = coordinator.diagnostics
 }
 
 internal fun createProductionApplicationGraph(applicationScope: CoroutineScope): ApplicationGraph {

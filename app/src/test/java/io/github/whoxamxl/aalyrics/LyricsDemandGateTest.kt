@@ -53,6 +53,44 @@ class LyricsDemandGateTest {
     }
 
     @Test
+    fun `automotive host service demand alone activates and suspends on final removal`() {
+        val forwarded = mutableListOf<PlaybackSnapshot>()
+        var suspendCount = 0
+        val gate = LyricsDemandGate(forwarded::add) { suspendCount += 1 }
+        val latest = snapshot("Host")
+        gate.onPlaybackSnapshot(latest, sourceEligible = true)
+
+        gate.setAutomotiveHostActive(true)
+        gate.setAutomotiveHostActive(false)
+
+        assertFalse(gate.isActive())
+        assertEquals(listOf(latest), forwarded)
+        assertEquals(1, suspendCount)
+    }
+
+    @Test
+    fun `projection removal keeps lookup active while automotive host service remains`() {
+        val forwarded = mutableListOf<PlaybackSnapshot>()
+        var suspendCount = 0
+        val gate = LyricsDemandGate(forwarded::add) { suspendCount += 1 }
+        val latest = snapshot("Shared automotive")
+        gate.onPlaybackSnapshot(latest, sourceEligible = true)
+
+        gate.setAutomotiveProjectionConnected(true)
+        gate.setAutomotiveHostActive(true)
+        gate.setAutomotiveProjectionConnected(false)
+
+        assertTrue(gate.isActive())
+        assertEquals(listOf(latest), forwarded)
+        assertEquals(0, suspendCount)
+
+        gate.setAutomotiveHostActive(false)
+
+        assertFalse(gate.isActive())
+        assertEquals(1, suspendCount)
+    }
+
+    @Test
     fun `removing one demand source keeps lookup active while the other remains`() {
         val forwarded = mutableListOf<PlaybackSnapshot>()
         var suspendCount = 0

@@ -2,11 +2,11 @@
 
 ## Status
 
-Phase 11.3a (effective-position foundation), Phase 11.3b (existing current-line integration), and Phase 11.4a (shared Timing Semantic Engine) are implemented and validated. Phase 11.4b/11.4c Phone Karaoke presentation is implemented on top of that shared engine; Android Auto Karaoke remains deferred.
+Phase 11.3a (effective-position foundation), Phase 11.3b (existing current-line integration), and Phase 11.4a (shared Timing Semantic Engine) are implemented and validated. Phase 11.4b/11.4c Phone Karaoke presentation is implemented on top of that shared engine. Android Auto Now Playing intentionally remains line-oriented and does not adopt Karaoke presentation.
 
 The shared **Timing Semantic Engine** consumes canonical timed lyrics + `EffectiveLyricsPosition` and produces deterministic line/word/progress/boundary facts. The engine is mode-agnostic; Karaoke ON/OFF is not an input.
 
-Normal Phone timed presentation consumes the active-line fact. The authorized Phone WORD_SYNC Karaoke consumer may additionally consume the shared word/progress/boundary facts downstream without changing timing semantics. Sync controls, persistence, non-zero production calibration, and Android Auto timing presentation remain outside this scope.
+Normal Phone timed presentation consumes the active-line fact. The authorized Phone WORD_SYNC Karaoke consumer may additionally consume the shared word/progress/boundary facts downstream without changing timing semantics. The authorized Android Auto Now Playing completion consumes the same shared active-line fact for both LINE_SYNC and WORD_SYNC while intentionally ignoring word/progress/boundary facts. Sync controls, persistence, non-zero production calibration, and Android Auto Karaoke remain outside this scope.
 
 The working fork contains `lyrics/KaraokeTiming.kt` and `util/SyncCalibration.kt`. They were re-checked at `v1.13.0` on 2026-09-25. `SyncCalibration.offsetForTap(targetTimeMs, rawPositionMs) = targetTimeMs - rawPositionMs` preserves the approved sign convention. `KaraokeTiming` provides mature active-word boundary evidence that is **PRESERVE / REFACTOR**; Android-specific sweep/layout behaviour remains outside the shared engine.
 
@@ -160,6 +160,37 @@ The semantic engine is not a Karaoke-mode engine. It returns the same facts rega
 Phase 11.3b introduced effective position into the app-local current-line selector. Phase 11.4a replaces that duplicate selector with the shared projection after parity tests established identical line behaviour.
 
 Current Phone presentation continues to consume only the active-line result, so computing additional WORD facts must not by itself change UI behaviour.
+
+## Android Auto Now Playing consumer
+
+The authorized legacy Android Auto Now Playing completion is a normal, line-oriented consumer of the shared timing semantics.
+
+```text
+normalized PlaybackSnapshot
+        ↓
+shared projected playback clock
+        ↓
+effectiveLyricsPosition(..., LyricsTimingOffset.ZERO)
+        ↓
+projectLyricsTiming(...)
+        ↓
+activeLineIndex
+        ↓
+Automotive current-line presentation
+```
+
+Stable rules for this surface:
+
+- LINE_SYNC and WORD_SYNC both use `LyricsTimingProjection.activeLineIndex`;
+- Automotive does not consume `activeWordIndex`, `wordProgress`, or `wordBoundary` for visible Now Playing behavior;
+- PLAIN lyrics are not pseudo-synchronized;
+- Automotive must retire its independent current-line selector rather than keep a parallel `startMs <= position` implementation;
+- Automotive must not create a UI-observation-time fallback clock;
+- a valid source `positionUpdatedAtMonotonicMs` remains authoritative and the existing `positionSampledAtMonotonicMs` is the fallback when the source timestamp is unavailable;
+- production offset remains `LyricsTimingOffset.ZERO` in this slice;
+- this authorization does not add Sync controls, calibration persistence, or Android Auto Karaoke.
+
+The detailed presentation contract is `docs/ANDROID_AUTO_NOW_PLAYING.md`.
 
 ## Playback clock ownership
 

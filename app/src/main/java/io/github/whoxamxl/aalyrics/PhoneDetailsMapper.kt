@@ -1,5 +1,6 @@
 package io.github.whoxamxl.aalyrics
 
+import io.github.whoxamxl.aalyrics.core.lyrics.LyricsLookupDiagnostics
 import io.github.whoxamxl.aalyrics.core.lyrics.LyricsState
 import io.github.whoxamxl.aalyrics.core.model.LyricsDocument
 import io.github.whoxamxl.aalyrics.core.model.LyricsSyncType
@@ -35,6 +36,7 @@ import java.util.Locale
 internal fun mapPhoneDetailsState(
     playback: PlaybackSnapshot,
     lyricsState: LyricsState,
+    lyricsDiagnostics: LyricsLookupDiagnostics = LyricsLookupDiagnostics(),
     verboseDetailsEnabled: Boolean,
     playbackSourceAppInfo: PlaybackSourceAppInfo? = null,
     translationSettings: TranslationSettings = TranslationSettings(enabled = false),
@@ -48,6 +50,9 @@ internal fun mapPhoneDetailsState(
     val lyricsDocument = resolvedLyrics.document
     val sourceAppInfo = playbackSourceAppInfo
         ?.takeIf { appInfo -> appInfo.packageName == playback.source?.id }
+    val currentLookupId = (lyricsState as? LyricsState.ForLookup)?.lookup?.id
+    val currentLyricsDiagnostics = lyricsDiagnostics
+        .takeIf { it.lookupId != null && it.lookupId == currentLookupId }
 
     return DetailsScreenUiState(
         track = track?.let {
@@ -96,6 +101,13 @@ internal fun mapPhoneDetailsState(
                     .orEmpty()
                     .sortedWith(compareBy({ it.namespace }, { it.value }))
                     .map { reference -> "${reference.namespace}:${reference.value}" },
+                lyricsLookupAttempt = currentLyricsDiagnostics
+                    ?.attemptCount
+                    ?.takeIf { it > 0 },
+                lyricsProviderFailures = currentLyricsDiagnostics
+                    ?.providerFailures
+                    .orEmpty()
+                    .map { failure -> "${failure.providerId}: ${failure.errorType}" },
             )
         } else {
             null

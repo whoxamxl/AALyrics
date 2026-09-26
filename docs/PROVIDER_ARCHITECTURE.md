@@ -116,7 +116,7 @@ Concrete providers follow the shared contract consistently:
 - operational/network/service failure: surface an exception,
 - coroutine cancellation: propagate cancellation and cancel underlying work where practical.
 
-Do not convert every operational failure into "not found" inside the provider. `LyricsCoordinator` already owns provider failure isolation.
+Do not convert every operational failure into "not found" inside the provider. `LyricsCoordinator` owns provider failure isolation and the shared bounded transient-recovery policy: when no usable candidate exists and at least one provider attempt failed, it waits 500 ms and retries the fan-out exactly once. A clean all-successful empty result is `NotFound` and is not retried; a usable winner completes immediately (as Ready/Degraded as appropriate) rather than retrying merely because another provider failed.
 
 ## Parsing and timing
 
