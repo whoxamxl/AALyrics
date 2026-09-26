@@ -53,7 +53,7 @@ The display title is presentation only. Update comparison, APK naming, changelog
 ## Checkpoints
 
 - [x] Establish release-prep branch, scope, and Beta product decision.
-- [x] Rewrite README as a product-first landing page.
+- [x] Rewrite README as a product-first, visual-first landing page using the canonical brand master and authentic device screenshots.
 - [x] Align Release policy and workflow with distinct human-readable Release titles.
 - [x] Add the `1.0.0-beta.1` user-facing changelog entry.
 - [x] Review the branch-wide diff for stale alpha/construction wording and release-version mismatches.
@@ -77,10 +77,20 @@ The display title is presentation only. Update comparison, APK naming, changelog
 - No production runtime behavior changes as part of this release-prep slice.
 
 
+## Visual README refinement
+
+- `branding/AALyrics_MASTER.svg` is used directly as the README hero mark, consistent with `docs/BRANDING.md` and without inventing a substitute logo.
+- Three authentic physical-device screenshots were added under `docs/screenshots/`: the synchronized Lyrics surface, Expanded Player, and Queue.
+- The README opening now follows a product-page flow: brand mark -> product name/tagline -> Android/Beta/license badges -> Download APK CTA -> real product screenshot -> concise Highlights.
+- Expanded Player and Queue screenshots provide a second visual showcase before installation and technical documentation.
+- Project structure and architecture links remain available but are collapsed below the user-facing product/install sections rather than dominating the landing surface.
+- Documentation screenshots are stored as lightweight WebP derivatives for repository/README delivery; the supplied originals remain the visual source material.
+- No application runtime, UI implementation, provider, timing, playback, Translation, Karaoke, or Android Auto behavior changed in this refinement.
+
 ## Release-prep validation record
 
 - Baseline alignment: branch is five commits ahead of `main @ ad4ca154604e4846e273b21a098ba0e03c98bc97` and zero commits behind.
-- Branch-wide scope is limited to `.github/workflows/release.yml`, `CHANGELOG.md`, `README.md`, `TASK.md`, and `docs/RELEASES.md`; no production Kotlin/Java/resources or provider/runtime behavior changed.
+- Branch-wide scope is limited to `.github/workflows/release.yml`, `CHANGELOG.md`, `README.md`, `TASK.md`, `docs/RELEASES.md`, and three documentation-only files under `docs/screenshots/`; no production Kotlin/Java/resources or provider/runtime behavior changed.
 - README no longer contains the stale working-branch status or the old "new Android project" construction framing. Installation, Android Auto setup, Beta scope, user-visible capabilities, development entry points, and license are directly discoverable.
 - The newest in-app changelog heading is exactly `1.0.0-beta.1`, matching the intended canonical tag after removing its leading `v`.
 - Release-title mapping was exercised for Beta, Alpha, RC, stable, and non-zero patch examples. The intended tag maps to `AALyrics 1.0 Beta 1`; canonical `versionName`, tag, and APK naming remain `1.0.0-beta.1` / `v1.0.0-beta.1`.
