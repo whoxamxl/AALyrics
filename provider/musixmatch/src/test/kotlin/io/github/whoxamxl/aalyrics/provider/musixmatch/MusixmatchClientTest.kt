@@ -114,6 +114,26 @@ class MusixmatchClientTest {
     }
 
     @Test
+    fun richSyncLineEndBeforeFinalWordIsIgnored() {
+        val lines = MusixmatchClient.parseRichSyncResponse(richSyncResponse(
+            """[{"ts":2.0,"te":2.2,"x":"Hello world","l":[{"c":"Hello","o":0.0},{"c":"world","o":0.4}]}]""",
+        ))
+
+        assertEquals(null, lines.single().endMs)
+        assertEquals(listOf(2_000L, 2_400L), lines.single().words.map { it.startMs })
+    }
+
+    @Test
+    fun richSyncLineEndAtFinalWordStartIsIgnored() {
+        val lines = MusixmatchClient.parseRichSyncResponse(richSyncResponse(
+            """[{"ts":2.0,"te":2.4,"x":"Hello world","l":[{"c":"Hello","o":0.0},{"c":"world","o":0.4}]}]""",
+        ))
+
+        assertEquals(null, lines.single().endMs)
+        assertEquals(listOf(2_000L, 2_400L), lines.single().words.map { it.startMs })
+    }
+
+    @Test
     fun nonFiniteRichSyncLineEndsAreIgnored() {
         val nan = MusixmatchClient.parseRichSyncResponse(richSyncResponse(
             """[{"ts":2.0,"te":"NaN","x":"Hello world","l":[{"c":"Hello","o":0.0},{"c":"world","o":0.4}]}]""",
