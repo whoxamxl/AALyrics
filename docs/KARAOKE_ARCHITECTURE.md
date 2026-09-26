@@ -2,7 +2,7 @@
 
 ## Status
 
-Phone Karaoke presentation mapping and rendering are authorized on `feature/phone-karaoke-rendering`. Android Auto Karaoke remains deferred to documentation-only Phase 11.4d.
+Phone Karaoke presentation mapping and rendering are implemented. Android Auto Now Playing intentionally does not adopt Karaoke presentation: LINE_SYNC and WORD_SYNC are both line-oriented and consume only the shared active-line fact. Any future Android Auto Karaoke proposal requires a new explicit product decision rather than being implied by the Phone implementation.
 
 The shared LINE/WORD timing semantics are no longer owned by a Karaoke-specific engine. They belong to the shared Timing Semantic Engine defined in `docs/TIMING_ARCHITECTURE.md`.
 
@@ -274,27 +274,22 @@ For the common one-token/one-visible-word case, the display group is that token 
 
 ## Rendering boundary
 
-Phone and Android Auto are not required to render Karaoke identically.
+Phone owns the current production Karaoke renderer. Android Auto Now Playing is intentionally a non-Karaoke consumer of the same shared timing semantics.
 
 ```text
 shared TimingProjection
-        ↓
-Karaoke consumer/presenter
-        │
-        ├─ Phone-specific presentation
+        ├─ Phone Karaoke consumer
         │      ↓
-        │   Compose rendering
+        │   Compose continuous sweep
         │
-        └─ Automotive-specific presentation
+        └─ Android Auto normal consumer
                ↓
-            host-supported rendering
+           activeLineIndex only
 ```
 
 Phone 11.4c uses continuous current-line sweep animation.
 
-Automotive surfaces may be constrained to coarser emphasis/update cadence by host APIs.
-
-Both must consume shared timing facts and must not duplicate current-line/current-word algorithms.
+Android Auto Now Playing does not render active-word emphasis or progress. It still consumes shared timing facts so the current line is not recalculated independently.
 
 A dedicated `:core:karaoke` module is not justified by default. The active Phone slice should use the smallest presentation seam supported by implementation evidence; introduce a new shared module only if real reusable framework-neutral policy emerges.
 
@@ -344,7 +339,7 @@ Still deferred:
 
 - a dedicated Karaoke Gradle module unless implementation evidence actually justifies one;
 - LINE-only synthetic intra-line progress;
-- Android Auto Karaoke rendering/update strategy;
+- any future Android Auto Karaoke proposal, which requires a new explicit product decision;
 - any translated-word Karaoke timing;
 - broader fullscreen/Performance-mode Karaoke presentation.
 
@@ -430,18 +425,17 @@ For the current line only:
 
 A continuous sweep may use a presentation-only gradient/clip implementation. The renderer consumes presentation-ready range/progress and must never calculate the active word itself. For ordinary one-token groups that progress is the shared `wordProgress`; multi-token visible groups may receive mapper-derived display-group progress as defined above.
 
-### 11.4d — Android Auto Karaoke — documented, deferred
+### 11.4d — Android Auto Karaoke — not adopted for Now Playing
 
-No Android Auto Karaoke production code is authorized in this slice.
+The current Android Auto Now Playing product contract is deliberately line-oriented.
 
-Future Android Auto work must:
+- LINE_SYNC uses shared `activeLineIndex`.
+- WORD_SYNC also uses shared `activeLineIndex`.
+- Android Auto ignores shared active-word/progress/boundary facts for visible presentation.
+- No `▶` marker, word sweep, word pulse, or synthetic LINE progress is added.
+- This is a product/presentation decision, not a limitation of the shared Timing Semantic Engine.
 
-- consume the same shared `LyricsTimingProjection`;
-- remain WORD_SYNC only unless a later explicit product decision changes that rule;
-- respect host update/throttling constraints;
-- not copy Phone Compose rendering machinery;
-- not duplicate line/word timing semantics;
-- define its own host-appropriate emphasis strategy in a dedicated implementation slice.
+If Android Auto Karaoke is reconsidered later, it requires a new explicitly authorized product/implementation slice. The Phone Karaoke implementation does not create an automatic deferred requirement for Automotive.
 
 
 ## Phone clock invariants
