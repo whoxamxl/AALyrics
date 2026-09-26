@@ -50,27 +50,29 @@ Reasons:
 
 The repository may still contain an older Car App Library dependency until the dedicated implementation slice changes it. Documentation of this decision does not authorize an incidental dependency upgrade in unrelated work.
 
-## Active legacy Now Playing completion
+## Legacy Now Playing completion
 
-The current authorized Android Auto implementation slice completes the existing legacy host-generated Now Playing path before any Car App Library work begins.
+PR #84 implements the existing legacy host-generated Now Playing path before any Car App Library work begins. Physical Android Auto validation is available for the legacy host path, including process-death recreation/recovery while the Phone UI remains closed.
 
 The authoritative behavior contract is `docs/ANDROID_AUTO_NOW_PLAYING.md`.
 
 That slice is intentionally limited to:
 
 - current track metadata + selected-session artwork;
+- compact display identity using album artist when available, otherwise full track artist, without rewriting upstream track metadata;
 - playback state/position and real source-advertised transport capabilities;
 - one synchronized current lyric line for LINE_SYNC and WORD_SYNC;
 - PLAIN lyrics reported as unavailable for synchronized presentation rather than pseudo-synchronized;
 - Lyrics loading/not-found/failed states, including a 250 ms `.` / `..` / `...` loading heartbeat;
 - Translation as a fixed source-first + optional translated-second-line presentation, with a matching translating heartbeat and source-only failure fallback;
-- consumption of the shared timing semantic authority through `LyricsTimingProjection.activeLineIndex` only.
+- consumption of the shared timing semantic authority through `LyricsTimingProjection.activeLineIndex` only;
+- recovery-oriented lifecycle handling: active `LyricsBrowserService` is an independent lyrics-demand source, Notification Listener binding is re-requested on Automotive host activation/disconnect, and transient no-candidate provider failure receives one bounded 500 ms retry while clean NotFound remains terminal.
 
 It explicitly does **not** add Android Auto Karaoke, current-word progress, a `▶` marker, queue, playback-source/package diagnostics, Lyrics Provider attribution, Browse/Expanded Lyrics, Sync controls, or Car App Library templates.
 
 The legacy Now Playing completion must preserve the existing application/platform ownership boundaries: Automotive consumes existing artwork, playback-capability, Lyrics, Translation, and timing facts rather than rediscovering or reimplementing them.
 
-Its lifecycle policy is recovery-oriented rather than keepalive-oriented. Active `LyricsBrowserService` lifetime is an independent lyrics-demand signal alongside CarConnection projection state, and active-session observation re-requests the system Notification Listener binding when Automotive host activity or listener disconnection requires recovery. The app does not keep itself alive with an unconditional started service or foreground-service notification merely for Android Auto.
+Its lifecycle policy is recovery-oriented rather than keepalive-oriented. Active `LyricsBrowserService` lifetime is an independent lyrics-demand signal alongside CarConnection projection state, and active-session observation re-requests the system Notification Listener binding when Automotive host activity or listener disconnection requires recovery. The app does not keep itself alive with an unconditional started service or foreground-service notification merely for Android Auto. A forced process-death device test confirmed Android Auto can recreate AALyrics and restore current playback/lyrics operation without reopening the Phone Activity.
 
 ## Planned templated-media requirements
 

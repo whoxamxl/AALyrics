@@ -189,12 +189,12 @@ The current runtime hardens that original stabilization contract by keeping play
 
 Merged in PR #30.
 
-This background/runtime slice preserves the working fork's proven demand rule while moving ownership into the AALyrics application lifecycle boundary:
+This background/runtime slice originally preserved the working fork's proven Phone/projection demand rule while moving ownership into the AALyrics application lifecycle boundary. PR #84 extends the current production rule with actual legacy Android Auto host-service lifetime:
 
 ```text
-phone process foreground ─────┐
-                              ├──> lyrics demand active
-Android Auto projection ──────┘
+phone process foreground ────────┐
+Android Auto projection ─────────┼──> lyrics demand active
+LyricsBrowserService active ─────┘
 
 MediaSession runtime
         ↓
@@ -294,7 +294,7 @@ Phone presentation now consumes the already-implemented atomic Translation resul
 - read-only Translation Details diagnostics expose current profile/runtime/model evidence without starting new work;
 - canonical timing, current-line ownership, provider attribution, Lyrics Provider selection, and existing Follow/Browse geometry remain unchanged.
 
-Android Auto Translation presentation is now separately authorized only for the line-oriented Now Playing contract. Musixmatch native Translation, persistent Translation Cache, Sync calibration UX, and Karaoke Translation behavior remain separate slices.
+The PR #84 Android Auto Now Playing implementation now consumes the existing atomic Translation lifecycle as a line-oriented downstream presentation: canonical source first, optional exact-identity translated second line, translating heartbeat, and source-only fallback on Translation failure. Musixmatch native Translation, persistent Translation Cache, Sync calibration UX, and Karaoke Translation behavior remain separate slices.
 
 The durable merged contract is recorded in `docs/TRANSLATION_ARCHITECTURE.md`, `docs/PHONE_LYRICS_VIEWPORT.md`, `docs/PHONE_RUNTIME_HOST.md`, and `docs/PHONE_DETAILS.md`.
 
@@ -379,21 +379,24 @@ Compose application/domain capability facts into the smallest presentation contr
 
 Must follow `docs/PRESENTATION_STATE_ARCHITECTURE.md`. Do not create one universal giant UI state. Keep shared semantic facts shareable and surface-local state local.
 
-#### Android Auto Now Playing completion — implemented / host validation pending
+#### Android Auto Now Playing completion — implemented / physical host validated
 
-The `feature/android-auto-now-playing` branch implements the existing legacy `MediaBrowserServiceCompat` + `MediaSessionCompat` Now Playing presentation before the separate Car App Library templated-media work. DHU rendering and physical Android Auto host behavior still require validation; `TASK.md` records the evidence and limits.
+The `feature/android-auto-now-playing` branch implements the existing legacy `MediaBrowserServiceCompat` + `MediaSessionCompat` Now Playing presentation before the separate Car App Library templated-media work. Physical Android Auto validation is now available, including host rendering and forced process-death recovery without reopening the Phone Activity. DHU previously had a video-focus limitation; that historical tooling limitation no longer means the physical host path is unvalidated. `TASK.md` records the exact evidence and remaining cold-start follow-up.
 
 It is authorized to integrate existing application capabilities only:
 
 - selected-session artwork;
+- compact Automotive artist identity using album artist when available and full track artist only as fallback, without rewriting upstream metadata;
 - real playback control capabilities;
 - shared current-line timing through `LyricsTimingProjection.activeLineIndex`;
 - line-oriented LINE_SYNC and WORD_SYNC display;
 - explicit PLAIN unsynchronized fallback;
 - Lyrics loading/not-found/failed presentation with a 250 ms loading heartbeat;
-- identity-gated Translation as canonical source first + optional translated second line, including a translating heartbeat and source-only failure fallback.
+- identity-gated Translation as canonical source first + optional translated second line, including a translating heartbeat and source-only failure fallback;
+- process recovery through independent Automotive host demand plus Notification Listener rebind;
+- one bounded 500 ms retry when the first lookup produces no usable candidate and at least one provider attempt failed; clean NotFound is not retried.
 
-It explicitly excludes Karaoke, Provider/source/queue presentation, Browse/Expanded Lyrics, Sync controls, provider/refetch changes, and Car App Library templates.
+It explicitly excludes Karaoke, Provider/source/queue presentation, Browse/Expanded Lyrics, Sync controls, provider-selection/general refetch changes, unbounded retry, and Car App Library templates.
 
 The authoritative implementation contract is `docs/ANDROID_AUTO_NOW_PLAYING.md`; `TASK.md` owns the execution checklist.
 
@@ -452,7 +455,7 @@ The future Car App Library implementation must remain a dedicated topic branch/P
 
 ## Later phases
 
-Remaining later work includes Sync calibration UX/persistence, Android Auto Karaoke/Translation, the authorized Car App Library implementation described above, capability-specific settings/persistence not yet justified, release-process refinement beyond the established GitHub Release baseline, and continued regression comparison against the previous fork.
+Remaining later work includes Sync calibration UX/persistence, any future explicitly authorized Android Auto Karaoke, the Car App Library implementation described above, capability-specific settings/persistence not yet justified, release-process refinement beyond the established GitHub Release baseline, and continued regression comparison against the previous fork.
 
 Do not use future feature needs as a reason to turn `LyricsCoordinator`, `PlaybackLyricsController`, the media-session runtime, demand gate, production selector, concrete providers, capability services, or the shared design system into god objects.
 

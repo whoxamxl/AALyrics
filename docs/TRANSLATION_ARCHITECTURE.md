@@ -22,7 +22,7 @@ The Translation execution slice implements the approved design through three bou
   ML Kit language evidence, model preparation, and Translation sessions
 ```
 
-`:app` observes completed canonical `LyricsState` plus persisted Translation settings, assigns the exact lookup/content identity, and hands that input to `TranslationCoordinator`. It exposes the coordinator's atomic `TranslationState` to downstream presentation consumers; Phone and the authorized line-oriented Android Auto Now Playing surface both consume that state without changing Translation execution ownership.
+`:app` observes completed canonical `LyricsState` plus persisted Translation settings, assigns the exact lookup/content identity, and hands that input to `TranslationCoordinator`. It exposes the coordinator's atomic `TranslationState` to downstream presentation consumers; Phone and the implemented line-oriented Android Auto Now Playing surface both consume that state without changing Translation execution ownership.
 
 The default `LanguageProfilerPolicy` is named and testable:
 
@@ -77,7 +77,7 @@ Artifact projection rules:
 
 The translated text is additive content inside the same logical Phone lyric row. Canonical timing/current-line ownership remains unchanged. The canonical + translated pair is measured and moved as one viewport row so the existing Follow/Browse geometry remains the only scrolling authority. Translated text does not gain independent WORD progress, current-line calculation, or timing.
 
-That Phone slice intentionally did **not** add Android Auto Translation presentation. The separately authorized Android Auto Now Playing completion now consumes the existing Translation settings/state without changing Translation execution, providers, caching, or algorithms.
+That Phone slice intentionally did **not** add Android Auto Translation presentation. PR #84 subsequently implements the Android Auto Now Playing consumer over the existing Translation settings/state without changing Translation execution, providers, caching, or algorithms.
 
 The executable scope and acceptance criteria are recorded in `TASK.md`; the visual row contract is defined in `docs/PHONE_LYRICS_VIEWPORT.md`.
 
@@ -527,7 +527,7 @@ Stable rules:
 
 ## Android Auto Now Playing presentation
 
-The authorized Android Auto Now Playing integration is a downstream consumer of the existing atomic Translation lifecycle. It must not run LanguageProfiler, open Translation sessions, prepare models, or create another Translation engine path.
+The implemented PR #84 Android Auto Now Playing integration is a downstream consumer of the existing atomic Translation lifecycle. It does not run LanguageProfiler, open Translation sessions, prepare models, or create another Translation engine path.
 
 For an active synchronized canonical lyric line:
 
@@ -579,7 +579,7 @@ It must not prematurely implement:
 - Phone/Android Auto Translation presentation;
 - persistent Translation Cache.
 
-Those exclusions defined Phase 11.2a only. Phase 11.2b subsequently implemented the execution responsibilities described in "Current execution implementation" while preserving the scaffold's settings and model-lifecycle ownership. Phase 11.2c then completed **Phone** Translation presentation integration in PR #79 under the downstream rules above. Android Auto Translation presentation is now separately authorized only for the line-oriented Now Playing contract in `docs/ANDROID_AUTO_NOW_PLAYING.md`.
+Those exclusions defined Phase 11.2a only. Phase 11.2b subsequently implemented the execution responsibilities described in "Current execution implementation" while preserving the scaffold's settings and model-lifecycle ownership. Phase 11.2c then completed **Phone** Translation presentation integration in PR #79 under the downstream rules above. PR #84 now implements Android Auto Translation presentation only for the line-oriented Now Playing contract in `docs/ANDROID_AUTO_NOW_PLAYING.md`; Android Auto Karaoke Translation remains outside that contract.
 
 ## Invariants
 

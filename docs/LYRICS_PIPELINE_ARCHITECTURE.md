@@ -116,7 +116,7 @@ Lyrics Provider selection and Translation Provider selection are independent. Tr
 
 Translation failure is not lyrics lookup failure.
 
-The Translation background scaffold, execution/orchestration, and Phone presentation integration are implemented. Language profiling, contextual block planning, Translation Provider execution, artifact assembly, stale-result rejection, atomic publication, identity-gated translated lyric rows, Track Card runtime feedback, and read-only Phone diagnostics are established dependencies. Android Auto Translation is now separately authorized only as a downstream, identity-gated Now Playing presentation consumer under `docs/ANDROID_AUTO_NOW_PLAYING.md`.
+The Translation background scaffold, execution/orchestration, and Phone presentation integration are implemented. Language profiling, contextual block planning, Translation Provider execution, artifact assembly, stale-result rejection, atomic publication, identity-gated translated lyric rows, Track Card runtime feedback, and read-only Phone diagnostics are established dependencies. PR #84 also implements Android Auto Translation as a downstream, identity-gated, line-oriented Now Playing presentation consumer under `docs/ANDROID_AUTO_NOW_PLAYING.md`.
 
 See `docs/TRANSLATION_ARCHITECTURE.md`.
 
@@ -201,6 +201,7 @@ The stable requirements are:
 
 - obsolete work must not publish as current after track or lyrics supersession;
 - demand gating remains upstream ownership of whether lyrics work should be active;
+- provider operational failures remain distinguishable from clean NotFound; current orchestration may perform the documented single bounded transient retry without involving presentation or playback churn;
 - preference changes must not accidentally reuse incompatible artifacts;
 - translation/calibration changes must not automatically refetch providers unless an explicitly documented future policy requires it;
 - presentation observes capability state and must not become the lifecycle owner of provider work.
@@ -249,7 +250,7 @@ Persistent cache
   -> separate later capability only when explicitly authorized
 ```
 
-Phone Translation presentation is complete and preserves canonical line/timing ownership by adding only identity-aligned text to the existing row. Effective timing, shared semantic projection, and current-line integration are implemented. The authorized Android Auto Now Playing slice now consumes those existing capabilities downstream while remaining line-oriented; Sync UX, Android Auto Karaoke, and broader automotive Browse/templates remain separate work.
+Phone Translation presentation is complete and preserves canonical line/timing ownership by adding only identity-aligned text to the existing row. Effective timing, shared semantic projection, and current-line integration are implemented. The PR #84 Android Auto Now Playing slice consumes those existing capabilities downstream while remaining line-oriented and adds only bounded lookup/process recovery around the existing playback-to-lyrics spine; Sync UX, Android Auto Karaoke, and broader automotive Browse/templates remain separate work.
 
 This sequencing reduces architectural churn while preserving Cache as an independent capability. It does not forbid non-persistent in-memory lifecycle state needed by Translation execution.
 
