@@ -530,6 +530,11 @@ then:
 
 This makes the next timed line an upper boundary rather than the default duration source. A timed `♪` line therefore still prevents a sweep from crossing into an interlude, but a distant interlude no longer stretches the preceding final word.
 
-Enhanced-LRC normalization should preserve an explicit trailing textless timestamp as the preceding visible word's `endMs`. When that canonical end exists, no presentation inference is needed.
+Provider normalization should preserve explicit source end timing before presentation inference is considered:
+
+- Enhanced-LRC normalization preserves a trailing textless timestamp as the preceding visible word's `endMs`;
+- Musixmatch RichSync preserves `te` as canonical `TimedLyricLine.endMs`, not as a synthetic final-word end.
+
+When either canonical boundary exists, Phone presentation uses it before adaptive inference.
 
 The shared timing engine remains unchanged. A genuinely open-ended provider word may still have semantic `wordProgress = null`; only the Phone mapper derives a bounded visual duration from same-line provider evidence, with 650ms retained when that evidence is insufficient.
