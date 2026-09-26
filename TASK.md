@@ -80,11 +80,11 @@ The display title is presentation only. Update comparison, APK naming, changelog
 ## Visual README refinement
 
 - `branding/AALyrics_MASTER.svg` remains authoritative. The README uses `docs/branding/aalyrics-readme-icon-rounded.svg`, a documentation-only derivative that preserves the master artwork and adds only a rounded-corner clip.
-- Three authentic Phone screenshots cover the synchronized Lyrics surface, Expanded Player, and Queue, displayed as one responsive three-column row near the top of the README.
-- Two authentic DHU screenshots cover Android Auto full Now Playing and split view alongside navigation.
-- The README opening follows a product-page flow: rounded brand mark -> product name/tagline -> Android/Beta/license badges -> Download APK CTA -> real product screenshot -> concise Highlights.
-- Phone Expanded Player/Queue and Android Auto full/split presentation provide visual proof of the current product state before installation and developer documentation.
-- Phone screenshots are cropped uniformly by 60 px at the top to remove the Android system status bar while preserving the AALyrics header, resulting in 709×1476 assets. To avoid stale GitHub image caching, README references use new `*-cropped.webp` filenames. Android Auto screenshots are cropped by 120 px on all four edges, resulting in 1296×624 assets. README derivatives use high-quality WebP encoding rather than the earlier over-compressed 5–7 KB assets.
+- Two authentic DHU screenshots cover Android Auto full Now Playing and split view alongside navigation, and appear before the Phone screenshots because Android Auto is AALyrics' primary differentiating surface.
+- Three authentic Phone screenshots cover the synchronized Lyrics surface, Expanded Player, and Queue, displayed as one responsive three-column row immediately after the Android Auto showcase.
+- The README opening follows a product-page flow: rounded brand mark -> product name/tagline -> Android/Beta/license badges -> Download APK CTA -> Android Auto showcase -> Phone showcase -> concise Highlights.
+- Android Auto full/split presentation is the first product visual, followed by Phone Lyrics/Expanded Player/Queue, so the README communicates the automotive value proposition before the companion Phone surface.
+- Phone screenshots are cropped uniformly by 60 px at the top to remove the Android system status bar while preserving the AALyrics header, resulting in 709×1476 assets. Android Auto screenshots are cropped by 120 px only at the top and bottom, preserving the full 1536 px width and resulting in 1536×624 assets. New `*-cropped.webp` / `*-vcrop.webp` filenames avoid stale GitHub image caching.
 - Project structure and architecture links remain available but are collapsed below the user-facing product/install sections rather than dominating the landing surface.
 - No application runtime, UI implementation, provider, timing, playback, Translation, Karaoke, or Android Auto behavior changed in this refinement.
 
@@ -92,7 +92,7 @@ The display title is presentation only. Update comparison, APK naming, changelog
 
 - The `Android 8.0+` README badge is grounded in `app/build.gradle.kts` `minSdk = 26` (Android 8.0 / API 26). It describes the APK installation floor, not a separate Android Auto host compatibility guarantee.
 
-- High-quality README screenshot derivatives retain UI detail. Phone assets are uniformly status-bar-cropped to 709×1476 and remain approximately 64–79 KB. Android Auto assets are cropped by 120 px on all edges to 1296×624 and remain approximately 57–102 KB. The `*-cropped.webp` filenames intentionally bust stale README image caching.
+- High-quality README screenshot derivatives retain UI detail. Phone assets are uniformly status-bar-cropped to 709×1476 and remain approximately 64–79 KB. Android Auto assets preserve the full 1536 px width and are cropped only 120 px from the top and bottom to 1536×624, at approximately 78–112 KB. New filenames intentionally bust stale README image caching.
 - The README hero uses the rounded documentation derivative while `branding/AALyrics_MASTER.svg` remains untouched and authoritative.
 
 - Baseline alignment: the release-prep branch remains zero commits behind the intended `main @ ad4ca154604e4846e273b21a098ba0e03c98bc97` baseline.

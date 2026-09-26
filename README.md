@@ -22,6 +22,24 @@
   <a href="https://github.com/whoxamxl/AALyrics/releases"><img src="https://img.shields.io/badge/Download_APK-GitHub_Releases-181717?style=for-the-badge&logo=github&logoColor=white" height="40" alt="Download AALyrics APK from GitHub Releases" /></a>
 </p>
 
+### Android Auto experience
+
+AALyrics brings the active lyric context into Android Auto Now Playing and stays usable in split view alongside navigation.
+
+<div align="center">
+  <img src="docs/screenshots/android-auto-now-playing-vcrop.webp" width="720" alt="AALyrics Android Auto Now Playing with synchronized lyrics" />
+</div>
+
+<p align="center"><sub>Now Playing with the active synchronized lyric, artwork, seek state, and available transport controls.</sub></p>
+
+<div align="center">
+  <img src="docs/screenshots/android-auto-split-view-vcrop.webp" width="720" alt="AALyrics Android Auto split view alongside navigation" />
+</div>
+
+<p align="center"><sub>AALyrics in Android Auto split view alongside navigation.</sub></p>
+
+### Phone experience
+
 <div align="center">
   <img src="docs/screenshots/phone-lyrics-cropped.webp" width="31%" alt="AALyrics synchronized lyrics screen" />
   <img src="docs/screenshots/phone-expanded-player-cropped.webp" width="31%" alt="AALyrics expanded player" />
@@ -39,22 +57,6 @@ AALyrics observes the active Android media session, matches the current track ag
 - 🎤 **Experimental WORD_SYNC Karaoke** — opt-in Phone presentation for genuine word-timed lyrics.
 - 🎛️ **Phone playback surface** — play/pause, previous/next, seek, relative seek, and Queue support where the active media app exposes them.
 - 🔄 **Built-in updates** — signed GitHub Release APK discovery, SHA-256 verification, package/signing preflight, and Android PackageInstaller handoff.
-
-### Android Auto experience
-
-AALyrics brings the same active lyric context into Android Auto Now Playing, and remains usable in split view alongside navigation.
-
-<div align="center">
-  <img src="docs/screenshots/android-auto-now-playing-cropped.webp" width="720" alt="AALyrics Android Auto Now Playing with synchronized lyrics" />
-</div>
-
-<p align="center"><sub>Now Playing with the active synchronized lyric, artwork, seek state, and available transport controls.</sub></p>
-
-<div align="center">
-  <img src="docs/screenshots/android-auto-split-view-cropped.webp" width="720" alt="AALyrics Android Auto split view alongside navigation" />
-</div>
-
-<p align="center"><sub>AALyrics in Android Auto split view alongside navigation.</sub></p>
 
 ## Get AALyrics
 
