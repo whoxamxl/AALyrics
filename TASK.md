@@ -84,13 +84,15 @@ The display title is presentation only. Update comparison, APK naming, changelog
 - Two authentic DHU screenshots cover Android Auto full Now Playing and split view alongside navigation.
 - The README opening follows a product-page flow: rounded brand mark -> product name/tagline -> Android/Beta/license badges -> Download APK CTA -> real product screenshot -> concise Highlights.
 - Phone Expanded Player/Queue and Android Auto full/split presentation provide visual proof of the current product state before installation and developer documentation.
-- Phone screenshots are cropped uniformly by 60 px at the top to remove the Android system status bar while preserving the AALyrics header, resulting in 709×1476 assets. Android Auto screenshots remain 1536×864. README derivatives use high-quality WebP encoding rather than the earlier over-compressed 5–7 KB assets.
+- Phone screenshots are cropped uniformly by 60 px at the top to remove the Android system status bar while preserving the AALyrics header, resulting in 709×1476 assets. To avoid stale GitHub image caching, README references use new `*-cropped.webp` filenames. Android Auto screenshots are cropped by 120 px on all four edges, resulting in 1296×624 assets. README derivatives use high-quality WebP encoding rather than the earlier over-compressed 5–7 KB assets.
 - Project structure and architecture links remain available but are collapsed below the user-facing product/install sections rather than dominating the landing surface.
 - No application runtime, UI implementation, provider, timing, playback, Translation, Karaoke, or Android Auto behavior changed in this refinement.
 
 ## Release-prep validation record
 
-- High-quality README screenshot derivatives retain full source width and UI detail. Phone assets are uniformly status-bar-cropped to 709×1476 and remain approximately 64–79 KB; Android Auto assets remain 1536×864 at approximately 78–112 KB, replacing the earlier visibly over-compressed 5–7 KB derivatives.
+- The `Android 8.0+` README badge is grounded in `app/build.gradle.kts` `minSdk = 26` (Android 8.0 / API 26). It describes the APK installation floor, not a separate Android Auto host compatibility guarantee.
+
+- High-quality README screenshot derivatives retain UI detail. Phone assets are uniformly status-bar-cropped to 709×1476 and remain approximately 64–79 KB. Android Auto assets are cropped by 120 px on all edges to 1296×624 and remain approximately 57–102 KB. The `*-cropped.webp` filenames intentionally bust stale README image caching.
 - The README hero uses the rounded documentation derivative while `branding/AALyrics_MASTER.svg` remains untouched and authoritative.
 
 - Baseline alignment: the release-prep branch remains zero commits behind the intended `main @ ad4ca154604e4846e273b21a098ba0e03c98bc97` baseline.

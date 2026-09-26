@@ -23,9 +23,9 @@
 </p>
 
 <div align="center">
-  <img src="docs/screenshots/phone-lyrics.webp" width="31%" alt="AALyrics synchronized lyrics screen" />
-  <img src="docs/screenshots/phone-expanded-player.webp" width="31%" alt="AALyrics expanded player" />
-  <img src="docs/screenshots/phone-queue.webp" width="31%" alt="AALyrics playback queue" />
+  <img src="docs/screenshots/phone-lyrics-cropped.webp" width="31%" alt="AALyrics synchronized lyrics screen" />
+  <img src="docs/screenshots/phone-expanded-player-cropped.webp" width="31%" alt="AALyrics expanded player" />
+  <img src="docs/screenshots/phone-queue-cropped.webp" width="31%" alt="AALyrics playback queue" />
 </div>
 
 AALyrics observes the active Android media session, matches the current track against multiple lyrics providers, and presents the best available lyrics in real time. The core experience is already functional on Phone and Android Auto, with on-device Translation, experimental word-synced Karaoke, playback controls, and signed in-app updates built around it.
@@ -45,20 +45,20 @@ AALyrics observes the active Android media session, matches the current track ag
 AALyrics brings the same active lyric context into Android Auto Now Playing, and remains usable in split view alongside navigation.
 
 <div align="center">
-  <img src="docs/screenshots/android-auto-now-playing.webp" width="720" alt="AALyrics Android Auto Now Playing with synchronized lyrics" />
+  <img src="docs/screenshots/android-auto-now-playing-cropped.webp" width="720" alt="AALyrics Android Auto Now Playing with synchronized lyrics" />
 </div>
 
 <p align="center"><sub>Now Playing with the active synchronized lyric, artwork, seek state, and available transport controls.</sub></p>
 
 <div align="center">
-  <img src="docs/screenshots/android-auto-split-view.webp" width="720" alt="AALyrics Android Auto split view alongside navigation" />
+  <img src="docs/screenshots/android-auto-split-view-cropped.webp" width="720" alt="AALyrics Android Auto split view alongside navigation" />
 </div>
 
 <p align="center"><sub>AALyrics in Android Auto split view alongside navigation.</sub></p>
 
 ## Get AALyrics
 
-AALyrics is distributed outside Google Play as a **signed APK through GitHub Releases**.
+AALyrics requires **Android 8.0 (API 26) or later** and is distributed outside Google Play as a **signed APK through GitHub Releases**.
 
 **[Open GitHub Releases →](https://github.com/whoxamxl/AALyrics/releases)**
 
