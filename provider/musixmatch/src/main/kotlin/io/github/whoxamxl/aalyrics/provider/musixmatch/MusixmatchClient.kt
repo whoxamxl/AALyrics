@@ -292,9 +292,13 @@ internal class MusixmatchClient(
                     val line = element.takeIf { it.isJsonObject }?.asJsonObject ?: return@mapNotNull null
                     val startSec = line.doubleOrNull("ts") ?: return@mapNotNull null
                     val startMs = secondsToMs(startSec).takeIf { it >= 0L } ?: return@mapNotNull null
+                    val endMs = line.doubleOrNull("te")
+                        ?.let(::secondsToMs)
+                        ?.takeIf { it >= startMs }
                     val words = parseRichSyncWords(line, startSec) ?: return@mapNotNull null
                     TimedLyricLine(
                         startMs = startMs,
+                        endMs = endMs,
                         text = line.string("x").ifBlank { "♪" },
                         words = words,
                     )
