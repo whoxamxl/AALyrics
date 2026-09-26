@@ -2,7 +2,7 @@
 
 ## Status
 
-Phase 11.3a (effective-position foundation), Phase 11.3b (existing current-line integration), and Phase 11.4a (shared Timing Semantic Engine) are implemented and validated. Phase 11.4b/11.4c Phone Karaoke presentation is implemented on top of that shared engine; Android Auto Karaoke remains deferred.
+Phase 11.3a (effective-position foundation), Phase 11.3b (existing current-line integration), and Phase 11.4a (shared Timing Semantic Engine) are implemented and validated. Phase 11.4b/11.4c Phone Karaoke presentation is implemented on top of that shared engine. Android Auto Now Playing intentionally remains line-oriented and does not adopt Karaoke presentation.
 
 The shared **Timing Semantic Engine** consumes canonical timed lyrics + `EffectiveLyricsPosition` and produces deterministic line/word/progress/boundary facts. The engine is mode-agnostic; Karaoke ON/OFF is not an input.
 
