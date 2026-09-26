@@ -1,3 +1,30 @@
+## [0.2.0-alpha.3] - 2026-09-26
+
+### Added
+
+- End-to-end Phone Translation presentation with translated lyric rows, Track Card status/retry feedback, and Translation diagnostics/model inventory in Details.
+- Shared framework-neutral timing semantics for synchronized lyrics, including line, word, progress, and boundary projection.
+- Experimental Phone Karaoke for genuine WORD_SYNC lyrics behind the Advanced feature gate and Expanded Player Quick-controls toggle.
+
+### Changed
+
+- Translation language profiling and model routing are more conservative, with unsupported routes rejected before execution.
+- Phone Lyrics, Details, and the Playback Surface now share one stable projected playback clock when MediaSession source timing is unavailable or inconsistent.
+- Karaoke presentation preserves canonical lyric text/timestamps while applying display-only grouping, boundary states, and final-word completion behavior.
+- MediaSession track transitions keep playback identity and timeline coherent during metadata stabilization.
+
+### Fixed
+
+- Fixed playback/lyrics timing that could jump ahead or lag after mid-track app attachment, pause/resume, source timestamp inconsistencies, or track transitions.
+- Fixed Karaoke sweep behavior around BEFORE_FIRST/GAP/AFTER_LAST boundaries, open-ended final words, interludes, line-wide pseudo-word timing, multi-word timing ranges, and bidirectional text.
+- Fixed Translation secondary-language activation and unsupported-model routing cases that could produce incorrect or unavailable translation paths.
+
+### Known limitations
+
+- Sync timing / calibration controls and persistence are still in development.
+- Phone Karaoke remains experimental, defaults OFF, and requires genuine WORD_SYNC lyrics.
+- Android Auto Karaoke and broader Android Auto feature parity remain planned work.
+
 ## [0.2.0-alpha.2] - 2026-09-24
 
 ### Added
