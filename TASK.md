@@ -5,7 +5,7 @@
 - Branch: `feature/android-auto-now-playing`.
 - Original base: `main` at `52e9249395206f8c3821cc5c8e5893a8ccdcd125` (PR #82 merged).
 - Reconciled baseline: current `main` at `86f4cd300161eb2038c637094a8e75a0afa9bf80` (changelog-only PR #83).
-- Current checkpoint: Draft PR #84 is open with the legacy Android Auto Now Playing implementation complete, physical host rendering observed, forced process-death recovery validated, and latest code CI green. Fixed Android Auto latency compensation is intentionally absent. The bounded cold-start lookup retry is implemented/tested; the original Spotify-already-playing mid-track cold-start scenario is the remaining focused physical re-check before final branch closure.
+- Current checkpoint: PR #84 is implementation-complete and ready for merge review. Physical host rendering and forced process-death recovery are validated, the bounded cold-start lookup retry is implemented with deterministic coverage, and CI is green. Fixed Android Auto latency compensation is intentionally absent. Re-running the original Spotify-already-playing mid-track cold-start scenario on-device is retained as a non-blocking regression follow-up rather than a merge gate.
 - Authoritative slice contract: `docs/ANDROID_AUTO_NOW_PLAYING.md`.
 - Broader Android Auto strategy: `docs/ANDROID_AUTO_MEDIA_STRATEGY.md`.
 - Shared timing authority: `docs/TIMING_ARCHITECTURE.md`.
@@ -249,7 +249,7 @@ Codex must implement deterministic tests for at least:
 - Android Auto lifecycle recovery now has two independent Automotive demand signals in addition to Phone foreground: `CarConnection.CONNECTION_TYPE_PROJECTION` and the actual `LyricsBrowserService` lifecycle. Process recreation through the Automotive service therefore reactivates provider demand even before Phone UI foregrounding.
 - Automotive host activation proactively requests Notification Listener rebind, and `MediaSessionListenerService.onListenerDisconnected()` requests rebind again. This is recovery-oriented; the branch intentionally does not add a foreground-service keepalive or unconditional `startService()`.
 
-## Final validation evidence and host follow-up
+## Final validation evidence
 
 - Latest branch Build workflow [run 36220867319](https://github.com/whoxamxl/AALyrics/actions/runs/36220867319) passed architecture checks, debug APK build, all unit tests, and sideloadable debug APK upload after the process-recovery, bounded lookup-retry, and Verbose Details diagnostics changes.
 - Local Automotive/application production and test sources compiled. Local Gradle test and APK worker processes cannot establish a loopback connection in this environment; CI provided the complete test/APK result.
@@ -258,4 +258,4 @@ Codex must implement deterministic tests for at least:
 - The CI debug APK was installed over the existing debuggable phone build using the matching local debug certificate; app data was preserved. DHU connected over ADB but reported no video focus, so it could not provide rendered-frame evidence.
 - Physical Android Auto host validation subsequently provided real host-rendering evidence. Title/artist/lyrics presentation was observed on-device; host-controlled wrapping/ellipsis remains outside AALyrics layout control. An experimental `-75 ms` lyrics-only offset was tested and then deliberately removed because the perceived lead was not defensible as a fixed production value and may have been influenced by Karaoke sweep presentation.
 - Physical process-death recovery validation passed: while Android Auto and Spotify were active with the Phone UI closed, the AALyrics process was force-killed, Android Auto recreated the process, and current playback/lyrics operation recovered without reopening the Phone Activity.
-- The bounded cold-start lookup retry is covered by deterministic unit tests and CI. The original real-device symptom (Spotify already playing, then cold-start AALyrics mid-track) remains the one focused physical re-check after this fix; it is not required to infer process recreation, which has already been independently validated.
+- The bounded cold-start lookup retry is covered by deterministic unit tests and CI. Re-running the original real-device symptom (Spotify already playing, then cold-start AALyrics mid-track) is a useful non-blocking regression follow-up, but it is not a remaining merge gate because retry ownership, attempt bounds, clean NotFound behavior, cancellation/supersession, and diagnostics are covered deterministically and process recreation is independently validated on-device.

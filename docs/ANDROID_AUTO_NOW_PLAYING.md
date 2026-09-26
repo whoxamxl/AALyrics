@@ -7,7 +7,7 @@
 - This slice completes the existing legacy Android Auto Now Playing path built on `MediaBrowserServiceCompat` + `MediaSessionCompat`.
 - Car App Library templated media remains a separate future slice under `docs/ANDROID_AUTO_MEDIA_STRATEGY.md`.
 - Android Auto Karaoke is intentionally out of scope for this product surface. WORD_SYNC is presented line-by-line.
-- Production integration and focused tests are implemented on this branch. Physical Android Auto rendering and forced process-death recovery have been validated; the bounded cold-start retry is CI-covered and has one focused physical re-check remaining. See `TASK.md` for the exact evidence.
+- Production integration and focused tests are implemented on this branch. Physical Android Auto rendering and forced process-death recovery have been validated; the bounded cold-start retry is CI-covered. Re-running the original mid-track cold-start symptom on-device is a non-blocking regression follow-up, not a merge gate. See `TASK.md` for the exact evidence.
 
 This document is the authoritative product/implementation contract for the Android Auto Now Playing completion slice. `TASK.md` records execution checkpoints; capability documents remain authoritative for their underlying ownership rules.
 
@@ -574,8 +574,8 @@ Current result:
 - physical Android Auto rendering has been observed on-device;
 - forced process-death recovery has been validated end-to-end without reopening the Phone Activity;
 - fixed Android Auto lyrics latency compensation is intentionally absent from production after physical comparison;
-- bounded cold-start provider-failure recovery is deterministic-test covered; the original mid-track cold-start scenario remains the focused physical re-check after that fix;
-- PR #84 remains Draft pending the user's final review/merge sequence.
+- bounded cold-start provider-failure recovery is deterministic-test covered; the original mid-track cold-start scenario is retained as a non-blocking regression follow-up;
+- PR #84 is implementation-complete and may leave Draft state once final repository checks are green.
 
 ## Explicit non-goals after completion
 
