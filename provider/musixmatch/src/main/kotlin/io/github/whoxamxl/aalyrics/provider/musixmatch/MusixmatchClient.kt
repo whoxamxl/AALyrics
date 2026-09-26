@@ -293,6 +293,7 @@ internal class MusixmatchClient(
                     val startSec = line.doubleOrNull("ts") ?: return@mapNotNull null
                     val startMs = secondsToMs(startSec).takeIf { it >= 0L } ?: return@mapNotNull null
                     val endMs = line.doubleOrNull("te")
+                        ?.takeIf { it.isFinite() }
                         ?.let(::secondsToMs)
                         ?.takeIf { it >= startMs }
                     val words = parseRichSyncWords(line, startSec) ?: return@mapNotNull null
