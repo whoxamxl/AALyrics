@@ -82,7 +82,7 @@ Preserve the current Phone contract unless a device regression forces a separate
 
 - [x] Align durable viewport/Translation/Karaoke/roadmap documentation and establish this task.
 - [x] Replace eager Phone lyric-row composition with a stable lazy list foundation while preserving static rendering and manual scroll.
-- [ ] Port timed Follow/Browse, opening/final boundaries, return-to-playback direction/action, and PLAIN auto-scroll to lazy-list geometry.
+- [x] Port timed Follow/Browse, opening/final boundaries, return-to-playback direction/action, and PLAIN auto-scroll to lazy-list geometry.
 - [ ] Isolate immutable row content from high-frequency current-line/Karaoke updates and verify Translation remeasurement behavior.
 - [ ] Add/update focused unit/Compose/Preview coverage for lazy composition, variable-height rows, Translation, Karaoke, Follow/Browse, seeks, and document boundaries.
 - [ ] Run final validation, inspect branch-wide regression/scope alignment, update this task with evidence, then open a Draft PR and STOP per `AGENTS.md`.
@@ -97,6 +97,18 @@ Preserve the current Phone contract unless a device regression forces a separate
 - Removed the obsolete absolute-`ScrollState` Follow/PLAIN geometry instead of pretending it remains valid against a lazy list.
 - Timed Follow positioning, return-to-playback, PLAIN auto-scroll, and final-boundary settlement are intentionally pending Checkpoint 2.
 - No provider, Translation execution, shared timing, Android Auto, persistence, or cache behavior changed.
+
+## Checkpoint 2 record
+
+- Timed LINE/WORD Follow now derives scroll correction from visible lazy-item centers and the shared animated focus coordinate; it no longer needs a complete row-height map.
+- The timed virtual index maps directly to lazy item indices (`♪ = 0`, canonical lyric `n = n + 1`), preserving the opening focus model.
+- When a timed playback item is not materialized, Follow first brings that item into the lazy window, then refines its measured center toward the established 45% viewport target.
+- Start-of-document clamping preserves the opening region; end-of-document clamping plus the measured last-row bottom padding preserves the final-row boundary behavior.
+- Browse return direction uses visible item indices for off-screen targets and measured geometry for visible targets.
+- Return-to-playback supports both timed and PLAIN targets and restores Follow only after the return action.
+- Manual scrolling that settles back inside the accepted playback region re-arms Follow.
+- PLAIN auto-scroll now maps continuous playback progress (with the existing lead-in/lead-out policy) into a lazy item + local estimated stride rather than requiring the full document pixel extent.
+- No current-row/Karaoke recomposition isolation was attempted here; that remains Checkpoint 3.
 
 ## Acceptance criteria
 

@@ -99,4 +99,129 @@ class LyricsViewportGeometryTest {
         }
     }
 
+    @Test
+    fun `lazy focus delta centers a visible timed row at 45 percent`() {
+        assertEquals(
+            35f,
+            lazyFocusScrollDelta(
+                focusIndex = 2f,
+                visibleItems = listOf(
+                    LazyViewportItemGeometry(index = 2, offset = 200, size = 120),
+                ),
+                viewportStartOffset = 0,
+                viewportEndOffset = 500,
+            ),
+        )
+    }
+
+    @Test
+    fun `lazy focus delta interpolates between adjacent row centers`() {
+        assertEquals(
+            25f,
+            lazyFocusScrollDelta(
+                focusIndex = 2.5f,
+                visibleItems = listOf(
+                    LazyViewportItemGeometry(index = 2, offset = 160, size = 80),
+                    LazyViewportItemGeometry(index = 3, offset = 260, size = 80),
+                ),
+                viewportStartOffset = 0,
+                viewportEndOffset = 500,
+            ),
+        )
+    }
+
+    @Test
+    fun `timed playback direction identifies offscreen rows by item index`() {
+        val visible = listOf(
+            LazyViewportItemGeometry(index = 4, offset = 0, size = 80),
+            LazyViewportItemGeometry(index = 5, offset = 96, size = 80),
+        )
+
+        assertEquals(
+            PlaybackRegionDirection.ABOVE,
+            timedPlaybackRegionDirection(
+                targetIndex = 2,
+                visibleItems = visible,
+                viewportStartOffset = 0,
+                viewportEndOffset = 500,
+            ),
+        )
+        assertEquals(
+            PlaybackRegionDirection.BELOW,
+            timedPlaybackRegionDirection(
+                targetIndex = 8,
+                visibleItems = visible,
+                viewportStartOffset = 0,
+                viewportEndOffset = 500,
+            ),
+        )
+    }
+
+    @Test
+    fun `plain lazy target preserves lead in and reaches final row`() {
+        assertEquals(
+            PlainLazyTarget(index = 0, scrollOffsetPx = 0),
+            plainLazyTarget(
+                lineCount = 10,
+                playbackProgress = 0.03f,
+                estimatedRowStridePx = 100,
+            ),
+        )
+        assertEquals(
+            PlainLazyTarget(index = 9, scrollOffsetPx = 0),
+            plainLazyTarget(
+                lineCount = 10,
+                playbackProgress = 0.98f,
+                estimatedRowStridePx = 100,
+            ),
+        )
+    }
+
+    @Test
+    fun `plain lazy target advances within an estimated row stride`() {
+        assertEquals(
+            PlainLazyTarget(index = 4, scrollOffsetPx = 50),
+            plainLazyTarget(
+                lineCount = 10,
+                playbackProgress = 0.50f,
+                estimatedRowStridePx = 100,
+            ),
+        )
+    }
+
+
+    @Test
+    fun `plain playback direction follows lazy scroll target`() {
+        val target = PlainLazyTarget(index = 4, scrollOffsetPx = 50)
+
+        assertEquals(
+            PlaybackRegionDirection.BELOW,
+            plainPlaybackRegionDirection(
+                target = target,
+                firstVisibleItemIndex = 3,
+                firstVisibleItemScrollOffset = 0,
+                viewportSizePx = 500,
+            ),
+        )
+        assertEquals(
+            PlaybackRegionDirection.ABOVE,
+            plainPlaybackRegionDirection(
+                target = target,
+                firstVisibleItemIndex = 5,
+                firstVisibleItemScrollOffset = 0,
+                viewportSizePx = 500,
+            ),
+        )
+        assertEquals(
+            null,
+            plainPlaybackRegionDirection(
+                target = target,
+                firstVisibleItemIndex = 4,
+                firstVisibleItemScrollOffset = 40,
+                viewportSizePx = 500,
+            ),
+        )
+    }
+
+
 }
