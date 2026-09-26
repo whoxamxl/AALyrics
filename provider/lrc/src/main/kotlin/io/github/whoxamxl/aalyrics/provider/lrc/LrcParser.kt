@@ -64,25 +64,29 @@ object LrcParser {
         }
 
         val wordMatches = WORD_TIMESTAMP.findAll(remaining).toList()
+        val wordStarts = wordMatches.map(::parseTimestamp)
+        if (wordStarts.zipWithNext().any { (left, right) -> left > right }) return emptyList()
+
         val fullText = WORD_TIMESTAMP.replace(remaining, "")
         val words = wordMatches.mapIndexedNotNull { index, match ->
             val textStart = match.range.last + 1
             val textEnd = wordMatches.getOrNull(index + 1)?.range?.first ?: remaining.length
             if (textStart > textEnd) return@mapIndexedNotNull null
 
-            // Enhanced LRC often leaves the separating space attached to the
-            // preceding timed token. Preserve it exactly so the full source line
-            // can be reconstructed and display grouping can operate independently
-            // from provider token granularity.
+            // Enhanced LRC timestamps delimit the preceding visible token as well
+            // as starting the next one. Preserve a trailing textless timestamp as
+            // the previous token's explicit end instead of inventing an invisible
+            // word. Non-final tokens therefore retain the same natural next-start
+            // boundary that the timing engine already inferred at presentation time.
             val tokenText = remaining.substring(textStart, textEnd)
             if (tokenText.isEmpty()) return@mapIndexedNotNull null
+            val startMs = wordStarts[index]
             TimedWord(
-                startMs = parseTimestamp(match),
-                text = tokenText
+                startMs = startMs,
+                text = tokenText,
+                endMs = wordStarts.getOrNull(index + 1)?.takeIf { it >= startMs },
             )
         }
-
-        if (words.zipWithNext().any { (left, right) -> left.startMs > right.startMs }) return emptyList()
 
         return timestamps.map { ts ->
             if (words.isNotEmpty() && fullText.isNotBlank()) {
