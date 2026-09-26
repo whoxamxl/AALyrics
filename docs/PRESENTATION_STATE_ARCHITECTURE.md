@@ -150,6 +150,27 @@ surface presentation mapping
 
 This composition must preserve each capability's failure and lifecycle semantics. For example, translation failure must not convert valid lyrics into a lyrics failure screen.
 
+## Current authorized Automotive slice
+
+The Android Auto Now Playing completion now provides concrete evidence for one surface-specific state contract without changing the general rule against a universal UI state.
+
+For this slice, Automotive presentation may compose:
+
+- normalized track/playback facts;
+- selected-session artwork;
+- `PlaybackControlState.capabilities`;
+- canonical `LyricsState`;
+- existing Translation settings/state;
+- shared timing projection, consuming `activeLineIndex` only.
+
+The resulting Automotive-local state should distinguish primary lyric text from optional secondary Translation/status text instead of continuing to hide the entire presentation in one ambiguous subtitle string.
+
+Surface-local presentation policy includes the 250 ms loading heartbeat and MediaSession metadata invalidation. Those facts must not be promoted into Lyrics, Translation, or timing domain state.
+
+This authorization does not justify a shared Phone/Automotive `UiState`, Automotive provider access, Android framework objects in core state, or Karaoke word presentation.
+
+See `docs/ANDROID_AUTO_NOW_PLAYING.md` for the exact surface contract.
+
 ## Deferred decisions
 
 Do not decide in this foundation slice:
