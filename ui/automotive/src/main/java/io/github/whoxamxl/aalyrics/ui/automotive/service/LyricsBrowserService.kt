@@ -1,5 +1,6 @@
 package io.github.whoxamxl.aalyrics.ui.automotive.service
 
+import android.graphics.Bitmap
 import android.os.Bundle
 import android.os.SystemClock
 import android.support.v4.media.MediaBrowserCompat
@@ -13,6 +14,8 @@ import io.github.whoxamxl.aalyrics.ui.automotive.AutomotiveArtworkState
 import io.github.whoxamxl.aalyrics.ui.automotive.AutomotiveTransportCapabilities
 import io.github.whoxamxl.aalyrics.ui.automotive.screen.NowPlayingScreen
 import io.github.whoxamxl.aalyrics.ui.automotive.state.AutomotiveLyricsUiStateMapper
+import io.github.whoxamxl.aalyrics.ui.automotive.state.AutomotiveMetadataSignature
+import io.github.whoxamxl.aalyrics.ui.automotive.state.metadataSignature
 import io.github.whoxamxl.aalyrics.ui.automotive.state.shouldRenderProjectionTick
 import io.github.whoxamxl.aalyrics.translation.api.TranslationSettings
 import io.github.whoxamxl.aalyrics.translation.core.TranslationState
@@ -44,7 +47,7 @@ class LyricsBrowserService : MediaBrowserServiceCompat() {
     private var latestTranslationSettings = TranslationSettings(enabled = false)
     private var latestTranslationState: TranslationState = TranslationState.Idle
     private var latestProjectionIsAnimatedLoading = false
-    private var lastMetadataSignature: MetadataSignature? = null
+    private var lastMetadataSignature: AutomotiveMetadataSignature<Bitmap>? = null
 
     override fun onCreate() {
         super.onCreate()
@@ -103,7 +106,7 @@ class LyricsBrowserService : MediaBrowserServiceCompat() {
 
     private fun bindState(runtimeBinding: AutomotiveRuntimeBinding?) {
         if (runtimeBinding == null) {
-            render(forceMetadata = true)
+            render()
             return
         }
 
@@ -117,19 +120,19 @@ class LyricsBrowserService : MediaBrowserServiceCompat() {
         playbackCollection = scope.launch {
             runtimeBinding.playback.collectLatest { snapshot ->
                 latestPlayback = snapshot
-                render(forceMetadata = true)
+                render()
             }
         }
         lyricsCollection = scope.launch {
             runtimeBinding.lyrics.collectLatest { state ->
                 latestLyrics = state
-                render(forceMetadata = true)
+                render()
             }
         }
         artworkCollection = scope.launch {
             runtimeBinding.artwork.collectLatest { state ->
                 latestArtwork = state
-                render(forceMetadata = true)
+                render()
             }
         }
         capabilitiesCollection = scope.launch {
@@ -141,18 +144,18 @@ class LyricsBrowserService : MediaBrowserServiceCompat() {
         translationSettingsCollection = scope.launch {
             runtimeBinding.translationSettings.collectLatest { settings ->
                 latestTranslationSettings = settings
-                render(forceMetadata = true)
+                render()
             }
         }
         translationStateCollection = scope.launch {
             runtimeBinding.translationState.collectLatest { state ->
                 latestTranslationState = state
-                render(forceMetadata = true)
+                render()
             }
         }
     }
 
-    private fun render(forceMetadata: Boolean = false) {
+    private fun render() {
         val now = SystemClock.elapsedRealtime()
         val state = AutomotiveLyricsUiStateMapper.project(
             playback = latestPlayback,
@@ -166,13 +169,8 @@ class LyricsBrowserService : MediaBrowserServiceCompat() {
         )
         latestProjectionIsAnimatedLoading = state.lyrics.isAnimatedLoading
 
-        val signature = MetadataSignature(
-            displayTitle = state.displayTitle,
-            subtitle = state.subtitle,
-            album = state.album,
-            durationMs = state.durationMs,
-        )
-        if (forceMetadata || signature != lastMetadataSignature) {
+        val signature = state.metadataSignature()
+        if (signature != lastMetadataSignature) {
             lastMetadataSignature = signature
             mediaSession.setMetadata(NowPlayingScreen.metadata(state))
         }
@@ -201,13 +199,6 @@ class LyricsBrowserService : MediaBrowserServiceCompat() {
             if (pos >= 0L) binding?.transport?.seekTo(pos)
         }
     }
-
-    private data class MetadataSignature(
-        val displayTitle: String,
-        val subtitle: String,
-        val album: String?,
-        val durationMs: Long?,
-    )
 
     private companion object {
         const val ROOT_ID = "root"
