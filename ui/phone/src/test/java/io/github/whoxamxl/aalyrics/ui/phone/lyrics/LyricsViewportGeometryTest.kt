@@ -158,33 +158,73 @@ class LyricsViewportGeometryTest {
     }
 
     @Test
-    fun `plain lazy target preserves lead in and reaches final row`() {
+    fun `plain estimated max scroll accounts for viewport and boundary padding`() {
+        assertEquals(
+            725,
+            estimatedPlainMaxScrollPx(
+                lineCount = 10,
+                estimatedRowHeightPx = 84,
+                rowSpacingPx = 16,
+                topContentPaddingPx = 75,
+                bottomContentPaddingPx = 166,
+                viewportHeightPx = 500,
+            ),
+        )
+    }
+
+    @Test
+    fun `plain lazy target preserves lead in and reaches estimated max at lead out`() {
         assertEquals(
             PlainLazyTarget(index = 0, scrollOffsetPx = 0),
             plainLazyTarget(
                 lineCount = 10,
                 playbackProgress = 0.03f,
                 estimatedRowStridePx = 100,
+                estimatedMaxScrollPx = 725,
             ),
         )
         assertEquals(
-            PlainLazyTarget(index = 9, scrollOffsetPx = 0),
+            PlainLazyTarget(index = 7, scrollOffsetPx = 25),
+            plainLazyTarget(
+                lineCount = 10,
+                playbackProgress = 0.95f,
+                estimatedRowStridePx = 100,
+                estimatedMaxScrollPx = 725,
+            ),
+        )
+        assertEquals(
+            PlainLazyTarget(index = 7, scrollOffsetPx = 25),
             plainLazyTarget(
                 lineCount = 10,
                 playbackProgress = 0.98f,
                 estimatedRowStridePx = 100,
+                estimatedMaxScrollPx = 725,
             ),
         )
     }
 
     @Test
-    fun `plain lazy target advances within an estimated row stride`() {
+    fun `plain lazy target does not reach end early on medium documents`() {
         assertEquals(
-            PlainLazyTarget(index = 4, scrollOffsetPx = 50),
+            PlainLazyTarget(index = 5, scrollOffsetPx = 88),
+            plainLazyTarget(
+                lineCount = 10,
+                playbackProgress = 0.78f,
+                estimatedRowStridePx = 100,
+                estimatedMaxScrollPx = 725,
+            ),
+        )
+    }
+
+    @Test
+    fun `plain lazy target advances within estimated scroll extent`() {
+        assertEquals(
+            PlainLazyTarget(index = 3, scrollOffsetPx = 63),
             plainLazyTarget(
                 lineCount = 10,
                 playbackProgress = 0.50f,
                 estimatedRowStridePx = 100,
+                estimatedMaxScrollPx = 725,
             ),
         )
     }
@@ -316,10 +356,11 @@ class LyricsViewportGeometryTest {
 
     @Test
     fun `plain target rejects unusable document inputs`() {
-        assertEquals(null, plainLazyTarget(0, 0.5f, 100))
-        assertEquals(null, plainLazyTarget(10, null, 100))
-        assertEquals(null, plainLazyTarget(10, Float.NaN, 100))
-        assertEquals(null, plainLazyTarget(10, 0.5f, 0))
+        assertEquals(null, plainLazyTarget(0, 0.5f, 100, 725))
+        assertEquals(null, plainLazyTarget(10, null, 100, 725))
+        assertEquals(null, plainLazyTarget(10, Float.NaN, 100, 725))
+        assertEquals(null, plainLazyTarget(10, 0.5f, 0, 725))
+        assertEquals(null, plainLazyTarget(10, 0.5f, 100, 0))
     }
 
 
