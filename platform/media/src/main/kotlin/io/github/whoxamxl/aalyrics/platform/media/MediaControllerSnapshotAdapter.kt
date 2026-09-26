@@ -4,6 +4,7 @@ import android.media.MediaMetadata
 import android.media.session.MediaController
 import android.media.session.PlaybackState
 import android.os.SystemClock
+import android.util.Log
 import io.github.whoxamxl.aalyrics.core.model.PlaybackSnapshot
 import io.github.whoxamxl.aalyrics.core.model.PlaybackStatus
 
@@ -16,6 +17,26 @@ object MediaControllerSnapshotAdapter {
         val metadata = controller.metadata
         val description = metadata?.description
         val playbackState = controller.playbackState
+        val title = metadata?.getString(MediaMetadata.METADATA_KEY_TITLE)
+        val displayTitle = metadata?.getString(MediaMetadata.METADATA_KEY_DISPLAY_TITLE)
+        val artist = metadata?.getString(MediaMetadata.METADATA_KEY_ARTIST)
+        val albumArtist = metadata?.getString(MediaMetadata.METADATA_KEY_ALBUM_ARTIST)
+        val displaySubtitle = metadata?.getString(MediaMetadata.METADATA_KEY_DISPLAY_SUBTITLE)
+        val album = metadata?.getString(MediaMetadata.METADATA_KEY_ALBUM)
+
+        Log.d(
+            METADATA_LOG_TAG,
+            "package=${controller.packageName} | " +
+                "TITLE=$title | " +
+                "ARTIST=$artist | " +
+                "ALBUM_ARTIST=$albumArtist | " +
+                "DISPLAY_TITLE=$displayTitle | " +
+                "DISPLAY_SUBTITLE=$displaySubtitle | " +
+                "ALBUM=$album | " +
+                "DESCRIPTION_TITLE=${description?.title} | " +
+                "DESCRIPTION_SUBTITLE=${description?.subtitle} | " +
+                "DESCRIPTION_DESCRIPTION=${description?.description}",
+        )
 
         val mediaId = metadata?.getString(MediaMetadata.METADATA_KEY_MEDIA_ID)
             ?: description?.mediaId
@@ -25,11 +46,11 @@ object MediaControllerSnapshotAdapter {
         return MediaSessionSnapshotNormalizer.normalize(
             MediaSessionSnapshotInput(
                 sourceId = controller.packageName,
-                title = metadata?.getString(MediaMetadata.METADATA_KEY_TITLE),
-                displayTitle = metadata?.getString(MediaMetadata.METADATA_KEY_DISPLAY_TITLE),
-                artist = metadata?.getString(MediaMetadata.METADATA_KEY_ARTIST),
-                albumArtist = metadata?.getString(MediaMetadata.METADATA_KEY_ALBUM_ARTIST),
-                album = metadata?.getString(MediaMetadata.METADATA_KEY_ALBUM),
+                title = title,
+                displayTitle = displayTitle,
+                artist = artist,
+                albumArtist = albumArtist,
+                album = album,
                 durationMs = metadata?.getLong(MediaMetadata.METADATA_KEY_DURATION),
                 mediaId = mediaId,
                 mediaUri = mediaUri,
@@ -51,4 +72,6 @@ object MediaControllerSnapshotAdapter {
         PlaybackState.STATE_STOPPED -> PlaybackStatus.STOPPED
         else -> PlaybackStatus.IDLE
     }
+
+    private const val METADATA_LOG_TAG = "AALyricsMetadata"
 }
