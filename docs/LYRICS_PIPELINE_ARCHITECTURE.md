@@ -116,7 +116,7 @@ Lyrics Provider selection and Translation Provider selection are independent. Tr
 
 Translation failure is not lyrics lookup failure.
 
-The Translation background scaffold, execution/orchestration, and Phone presentation integration are implemented. Language profiling, contextual block planning, Translation Provider execution, artifact assembly, stale-result rejection, atomic publication, identity-gated translated lyric rows, Track Card runtime feedback, and read-only Phone diagnostics are established dependencies. Android Auto Translation remains a separate later surface integration.
+The Translation background scaffold, execution/orchestration, and Phone presentation integration are implemented. Language profiling, contextual block planning, Translation Provider execution, artifact assembly, stale-result rejection, atomic publication, identity-gated translated lyric rows, Track Card runtime feedback, and read-only Phone diagnostics are established dependencies. Android Auto Translation is now separately authorized only as a downstream, identity-gated Now Playing presentation consumer under `docs/ANDROID_AUTO_NOW_PLAYING.md`.
 
 See `docs/TRANSLATION_ARCHITECTURE.md`.
 
@@ -249,7 +249,7 @@ Persistent cache
   -> separate later capability only when explicitly authorized
 ```
 
-Phone Translation presentation is complete and preserves canonical line/timing ownership by adding only identity-aligned text to the existing row. Effective timing, shared semantic projection, and current-line integration are implemented while preserving current presentation. Sync UX, Karaoke consumer/rendering, and Android Auto Translation remain separate later work.
+Phone Translation presentation is complete and preserves canonical line/timing ownership by adding only identity-aligned text to the existing row. Effective timing, shared semantic projection, and current-line integration are implemented. The authorized Android Auto Now Playing slice now consumes those existing capabilities downstream while remaining line-oriented; Sync UX, Android Auto Karaoke, and broader automotive Browse/templates remain separate work.
 
 This sequencing reduces architectural churn while preserving Cache as an independent capability. It does not forbid non-persistent in-memory lifecycle state needed by Translation execution.
 
