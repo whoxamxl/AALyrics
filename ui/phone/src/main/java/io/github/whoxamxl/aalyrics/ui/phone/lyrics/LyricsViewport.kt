@@ -130,18 +130,18 @@ fun LyricsViewport(
         val endingBoundaryStartPx = (
             viewportHeightPx * EndBoundaryStartFraction
             ).roundToInt()
-        val topContentPaddingPx = if (hasOpeningFocusRow) {
-            (
-                openingContentStartPx -
-                    openingFocusRowHeightPx -
-                    rowSpacingPx
-                ).coerceAtLeast(minimumContentPaddingPx)
-        } else {
-            openingContentStartPx.coerceAtLeast(minimumContentPaddingPx)
-        }
-        val bottomContentPaddingPx = (
-            endingBoundaryStartPx - lastLineHeightPx
-            ).coerceAtLeast(minimumContentPaddingPx)
+        val topContentPaddingPx = lazyTopContentPaddingPx(
+            openingContentStartPx = openingContentStartPx,
+            openingFocusRowHeightPx = openingFocusRowHeightPx,
+            rowSpacingPx = rowSpacingPx,
+            minimumContentPaddingPx = minimumContentPaddingPx,
+            hasOpeningFocusRow = hasOpeningFocusRow,
+        )
+        val bottomContentPaddingPx = lazyBottomContentPaddingPx(
+            endingBoundaryStartPx = endingBoundaryStartPx,
+            lastLineHeightPx = lastLineHeightPx,
+            minimumContentPaddingPx = minimumContentPaddingPx,
+        )
         val topContentPadding = with(density) { topContentPaddingPx.toDp() }
         val bottomContentPadding = with(density) { bottomContentPaddingPx.toDp() }
 
@@ -707,6 +707,43 @@ internal fun karaokeVisualSweepClipRects(
             remaining -= width
         }
     }
+}
+
+internal fun lazyTopContentPaddingPx(
+    openingContentStartPx: Int,
+    openingFocusRowHeightPx: Int,
+    rowSpacingPx: Int,
+    minimumContentPaddingPx: Int,
+    hasOpeningFocusRow: Boolean,
+): Int {
+    require(openingContentStartPx >= 0)
+    require(openingFocusRowHeightPx >= 0)
+    require(rowSpacingPx >= 0)
+    require(minimumContentPaddingPx >= 0)
+
+    return if (hasOpeningFocusRow) {
+        (
+            openingContentStartPx -
+                openingFocusRowHeightPx -
+                rowSpacingPx
+            ).coerceAtLeast(minimumContentPaddingPx)
+    } else {
+        openingContentStartPx.coerceAtLeast(minimumContentPaddingPx)
+    }
+}
+
+internal fun lazyBottomContentPaddingPx(
+    endingBoundaryStartPx: Int,
+    lastLineHeightPx: Int,
+    minimumContentPaddingPx: Int,
+): Int {
+    require(endingBoundaryStartPx >= 0)
+    require(lastLineHeightPx >= 0)
+    require(minimumContentPaddingPx >= 0)
+
+    return (
+        endingBoundaryStartPx - lastLineHeightPx
+        ).coerceAtLeast(minimumContentPaddingPx)
 }
 
 internal data class LazyViewportItemGeometry(

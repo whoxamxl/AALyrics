@@ -139,6 +139,61 @@ private fun LyricsViewportLineTransitionPreview() {
     }
 }
 
+@Preview(name = "LINE · 160 rows lazy middle", group = "LyricsViewport", widthDp = 412, heightDp = 520)
+@Composable
+private fun LyricsViewportLongDocumentPreview() {
+    LyricsViewportPreview(PhonePreviewFixtures.viewportLongMiddle)
+}
+
+@Preview(name = "Browse · long document playback below", group = "LyricsViewport", widthDp = 412, heightDp = 520)
+@Composable
+private fun LyricsViewportLongBrowsePreview() {
+    LyricsViewportPreview(
+        initialState = PhonePreviewFixtures.viewportLongBrowsePlaybackBelow,
+        startAtIndex = 20,
+    )
+}
+
+@Preview(
+    name = "LINE · large seek demo (Interactive)",
+    group = "LyricsViewport",
+    widthDp = 412,
+    heightDp = 520,
+)
+@Composable
+private fun LyricsViewportLargeSeekPreview() {
+    AALyricsTheme {
+        var state by remember {
+            mutableStateOf(
+                PhonePreviewFixtures.viewportLongMiddle.copy(currentLineIndex = 8),
+            )
+        }
+        val listState = rememberLazyListState()
+
+        LaunchedEffect(Unit) {
+            delay(1500)
+            state = state.copy(currentLineIndex = 120)
+            delay(2500)
+            state = state.copy(currentLineIndex = 24)
+        }
+
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(AALyricsColors.BackgroundBase),
+        ) {
+            LyricsViewport(
+                state = state,
+                modifier = Modifier.fillMaxSize(),
+                listState = listState,
+                onInteractionModeChange = { mode ->
+                    state = state.copy(interactionMode = mode)
+                },
+            )
+        }
+    }
+}
+
 @Preview(name = "PLAIN · estimated follow", group = "LyricsViewport", widthDp = 412, heightDp = 520)
 @Composable
 private fun LyricsViewportPlainPreview() {
@@ -200,16 +255,31 @@ private fun LyricsViewportPlainAutoScrollOffPreview() {
 private fun LyricsViewportPreview(
     initialState: LyricsViewportUiState,
     startAtEnd: Boolean = false,
+    startAtIndex: Int? = null,
 ) {
     AALyricsTheme {
         var state by remember(initialState) { mutableStateOf(initialState) }
         val listState = rememberLazyListState()
 
-        if (startAtEnd) {
-            LaunchedEffect(state.lines.size, state.syncType) {
-                if (state.lines.isNotEmpty()) {
-                    val openingItemOffset =
-                        if (state.syncType == LyricsSyncType.PLAIN) 0 else 1
+        LaunchedEffect(
+            startAtEnd,
+            startAtIndex,
+            state.lines.size,
+            state.syncType,
+        ) {
+            if (state.lines.isEmpty()) return@LaunchedEffect
+            val openingItemOffset =
+                if (state.syncType == LyricsSyncType.PLAIN) 0 else 1
+            when {
+                startAtIndex != null -> {
+                    listState.scrollToItem(
+                        (startAtIndex + openingItemOffset).coerceIn(
+                            0,
+                            state.lines.lastIndex + openingItemOffset,
+                        ),
+                    )
+                }
+                startAtEnd -> {
                     listState.scrollToItem(
                         state.lines.lastIndex + openingItemOffset,
                     )

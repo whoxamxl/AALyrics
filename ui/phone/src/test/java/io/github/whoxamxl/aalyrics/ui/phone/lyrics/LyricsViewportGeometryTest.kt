@@ -224,4 +224,103 @@ class LyricsViewportGeometryTest {
     }
 
 
+    @Test
+    fun `opening padding keeps virtual focus row before the top fade boundary`() {
+        assertEquals(
+            30,
+            lazyTopContentPaddingPx(
+                openingContentStartPx = 100,
+                openingFocusRowHeightPx = 50,
+                rowSpacingPx = 20,
+                minimumContentPaddingPx = 16,
+                hasOpeningFocusRow = true,
+            ),
+        )
+        assertEquals(
+            100,
+            lazyTopContentPaddingPx(
+                openingContentStartPx = 100,
+                openingFocusRowHeightPx = 0,
+                rowSpacingPx = 20,
+                minimumContentPaddingPx = 16,
+                hasOpeningFocusRow = false,
+            ),
+        )
+    }
+
+    @Test
+    fun `final row bottom padding preserves the 50 percent boundary with a floor`() {
+        assertEquals(
+            170,
+            lazyBottomContentPaddingPx(
+                endingBoundaryStartPx = 250,
+                lastLineHeightPx = 80,
+                minimumContentPaddingPx = 20,
+            ),
+        )
+        assertEquals(
+            20,
+            lazyBottomContentPaddingPx(
+                endingBoundaryStartPx = 250,
+                lastLineHeightPx = 300,
+                minimumContentPaddingPx = 20,
+            ),
+        )
+    }
+
+    @Test
+    fun `lazy focus uses measured variable row heights instead of uniform estimates`() {
+        assertEquals(
+            -47f,
+            lazyFocusScrollDelta(
+                focusIndex = 4.5f,
+                visibleItems = listOf(
+                    LazyViewportItemGeometry(index = 4, offset = 80, size = 60),
+                    LazyViewportItemGeometry(index = 5, offset = 156, size = 180),
+                ),
+                viewportStartOffset = 0,
+                viewportEndOffset = 500,
+            ),
+        )
+    }
+
+    @Test
+    fun `fractional lazy focus waits until both adjacent items are materialized`() {
+        assertEquals(
+            null,
+            lazyFocusScrollDelta(
+                focusIndex = 20.5f,
+                visibleItems = listOf(
+                    LazyViewportItemGeometry(index = 20, offset = 120, size = 80),
+                ),
+                viewportStartOffset = 0,
+                viewportEndOffset = 500,
+            ),
+        )
+    }
+
+    @Test
+    fun `timed playback direction accepts a visible row inside focus tolerance`() {
+        assertEquals(
+            null,
+            timedPlaybackRegionDirection(
+                targetIndex = 6,
+                visibleItems = listOf(
+                    LazyViewportItemGeometry(index = 6, offset = 185, size = 80),
+                ),
+                viewportStartOffset = 0,
+                viewportEndOffset = 500,
+            ),
+        )
+    }
+
+    @Test
+    fun `plain target rejects unusable document inputs`() {
+        assertEquals(null, plainLazyTarget(0, 0.5f, 100))
+        assertEquals(null, plainLazyTarget(10, null, 100))
+        assertEquals(null, plainLazyTarget(10, Float.NaN, 100))
+        assertEquals(null, plainLazyTarget(10, 0.5f, 0))
+    }
+
+
 }

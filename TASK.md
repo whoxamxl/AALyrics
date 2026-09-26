@@ -84,7 +84,7 @@ Preserve the current Phone contract unless a device regression forces a separate
 - [x] Replace eager Phone lyric-row composition with a stable lazy list foundation while preserving static rendering and manual scroll.
 - [x] Port timed Follow/Browse, opening/final boundaries, return-to-playback direction/action, and PLAIN auto-scroll to lazy-list geometry.
 - [x] Isolate immutable row content from high-frequency current-line/Karaoke updates and verify Translation remeasurement behavior.
-- [ ] Add/update focused unit/Compose/Preview coverage for lazy composition, variable-height rows, Translation, Karaoke, Follow/Browse, seeks, and document boundaries.
+- [x] Add/update focused unit/Compose/Preview coverage for lazy composition, variable-height rows, Translation, Karaoke, Follow/Browse, seeks, and document boundaries.
 - [ ] Run final validation, inspect branch-wide regression/scope alignment, update this task with evidence, then open a Draft PR and STOP per `AGENTS.md`.
 
 ## Checkpoint 1 record
@@ -121,6 +121,15 @@ Preserve the current Phone contract unless a device regression forces a separate
 - Stable lazy item keys remain unchanged across Translation-only updates, allowing LazyColumn to preserve its keyed browse anchor instead of treating translated rows as new items.
 - Off-screen Karaoke rows are still not retained solely for animation; when composed again they receive the latest current timing state.
 - No Translation execution, Karaoke timing semantics, provider behavior, Android Auto behavior, or persistence changed.
+
+## Checkpoint 4 record
+
+- Added a deterministic 160-row Phone preview fixture to exercise lazy composition with mixed Translation rows.
+- Added a long-document Follow preview centered deep in the document, a long-document Browse preview with playback far below the visible window, and an interactive large-seek preview that jumps across distant lazy regions.
+- Existing Previews continue to cover Karaoke + Translation, narrow/large-font Translation reflow, opening `♪`, final row, Browse above/below, PLAIN follow, PLAIN no-duration, PLAIN auto-scroll off, and long wrapped canonical rows.
+- Added direct geometry tests for opening padding, final-row boundary padding, measured variable-height interpolation, fractional focus with an unmaterialized neighbor, visible playback focus tolerance, and invalid PLAIN lazy targets.
+- Existing tests continue to cover stable lazy keys across Translation-only changes, off-screen timed direction, PLAIN target progression/return direction, Karaoke timing semantics, Translation matching, stale identity rejection, and reuse of precomputed row lists across timing-only updates.
+- This checkpoint adds validation surfaces only; it does not change provider, Translation, timing, Android Auto, persistence, or caching behavior.
 
 ## Acceptance criteria
 
