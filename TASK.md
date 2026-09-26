@@ -50,11 +50,11 @@ The GitHub Social Preview should communicate the real Android Auto product witho
 ## Alignment targets
 
 - [x] Replace stale release-preparation `TASK.md` with the current documentation slice.
-- [ ] Align `docs/RELEASES.md` with the published 1.0 Beta state and GitHub Release-label exception.
-- [ ] Align `docs/ROADMAP.md` with the completed 1.0 Beta milestone and merged Android Auto work.
-- [ ] Document the public MediaSession player-compatibility meaning in `docs/MEDIA_SESSION_RUNTIME.md`.
-- [ ] Align `docs/ANDROID_AUTO_NOW_PLAYING.md` with that player-source contract.
-- [ ] Record the GitHub Social Preview design/brand contract in `docs/BRANDING.md`.
+- [x] Align `docs/RELEASES.md` with the published 1.0 Beta state and GitHub Release-label exception.
+- [x] Align `docs/ROADMAP.md` with the completed 1.0 Beta milestone and merged Android Auto work.
+- [x] Document the public MediaSession player-compatibility meaning in `docs/MEDIA_SESSION_RUNTIME.md`.
+- [x] Align `docs/ANDROID_AUTO_NOW_PLAYING.md` with that player-source contract.
+- [x] Record the GitHub Social Preview design/brand contract in `docs/BRANDING.md`.
 - [ ] Run a branch-wide documentation regression/staleness review and normal repository validation.
 
 ## Acceptance criteria

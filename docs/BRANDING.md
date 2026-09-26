@@ -30,3 +30,53 @@ Production composables and Compose Previews that show AALyrics identity should u
 - `branding/AALyrics_MASTER.svg` remains the source of truth.
 - The README derivative must not become the source for launcher, Compose, or future branding assets.
 - Changes to the README derivative should be regenerated from the current master rather than edited as an independent logo.
+
+
+## GitHub Social Preview
+
+The repository Social Preview is product marketing artwork, but it must remain grounded in the canonical AALyrics brand and authentic product behavior.
+
+### Brand source
+
+- Use `branding/AALyrics_MASTER.svg` as the source for the AALyrics mark.
+- Do not redraw, approximate, or AI-reinvent the logo geometry for Social Preview artwork.
+- A raster/vector derivative may be created for composition, but it must preserve the master silhouette, waveform, proportions, and color treatment.
+- Small AALyrics marks shown inside an Android Auto composition should use the same canonical derivative rather than a visually similar substitute.
+
+### Product-image source
+
+- Use authentic AALyrics Phone / Android Auto captures as the factual UI reference. The maintained README captures live under `docs/screenshots/`.
+- Marketing composition may crop, scale, blur, frame, shadow, perspective-transform, or place authentic UI into a stylized environment.
+- Do not fabricate an unsupported AALyrics control, playback capability, lyric state, metadata field, or product surface merely to make the artwork more dramatic.
+- If a stylized vehicle/display frame is used, the AALyrics UI shown inside it must remain recognizably grounded in the current product rather than becoming a fictional replacement UI.
+
+### Current visual direction
+
+The preferred GitHub Social Preview direction is:
+
+- **1280×640** output, under **1 MB**;
+- dark automotive / navy environment with cyan-blue accents;
+- a blurred Android Auto context as the background layer;
+- the authentic AALyrics Android Auto experience as the foreground focal display;
+- restrained glassmorphism, depth, edge light, and shadow to make the foreground surface appear elevated without obscuring the real UI;
+- no giant glass cards that replace the original automotive promotional composition.
+
+Approved primary copy:
+
+```text
+Synchronized lyrics for Android Auto
+Multi-provider lyrics matching for your music player of choice.
+```
+
+Approved feature labels:
+
+```text
+Multi-provider matching
+Intelligent provider selection
+Synchronized lyrics
+Built for Android Auto
+```
+
+The provider row may identify Musixmatch, LRCLIB, PetitLyrics, and SyncLRC.
+
+Social Preview artwork is not a new source of truth for application UI or branding. Future edits must flow back to the master brand assets and current product captures described above.

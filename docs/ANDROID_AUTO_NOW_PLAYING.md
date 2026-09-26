@@ -26,6 +26,14 @@ The surface should expose:
 
 It deliberately does not expose unrelated diagnostics or browse/detail information.
 
+### Playback-source compatibility
+
+Android Auto presentation is fed from the same selected Android MediaSession observed by the phone-side runtime. The automotive surface does not integrate directly with Spotify, YouTube Music, Apple Music, or another music service.
+
+Public player examples therefore inherit the MediaSession compatibility contract in `docs/MEDIA_SESSION_RUNTIME.md`: when a supported media app exposes an eligible active session, AALyrics can follow its normalized track/playback state and present the resulting lyrics on Android Auto.
+
+The automotive host must continue to respect source capabilities. Artwork, metadata, seek state, queue availability, and transport actions are published only when the selected media session/application boundary provides them; the Android Auto layer must not invent controls or metadata to make one player look like another.
+
 ## Baseline context
 
 At the original branch baseline:
