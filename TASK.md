@@ -83,7 +83,7 @@ Preserve the current Phone contract unless a device regression forces a separate
 - [x] Align durable viewport/Translation/Karaoke/roadmap documentation and establish this task.
 - [x] Replace eager Phone lyric-row composition with a stable lazy list foundation while preserving static rendering and manual scroll.
 - [x] Port timed Follow/Browse, opening/final boundaries, return-to-playback direction/action, and PLAIN auto-scroll to lazy-list geometry.
-- [ ] Isolate immutable row content from high-frequency current-line/Karaoke updates and verify Translation remeasurement behavior.
+- [x] Isolate immutable row content from high-frequency current-line/Karaoke updates and verify Translation remeasurement behavior.
 - [ ] Add/update focused unit/Compose/Preview coverage for lazy composition, variable-height rows, Translation, Karaoke, Follow/Browse, seeks, and document boundaries.
 - [ ] Run final validation, inspect branch-wide regression/scope alignment, update this task with evidence, then open a Draft PR and STOP per `AGENTS.md`.
 
@@ -109,6 +109,18 @@ Preserve the current Phone contract unless a device regression forces a separate
 - Manual scrolling that settles back inside the accepted playback region re-arms Follow.
 - PLAIN auto-scroll now maps continuous playback progress (with the existing lead-in/lead-out policy) into a lazy item + local estimated stride rather than requiring the full document pixel extent.
 - No current-row/Karaoke recomposition isolation was attempted here; that remains Checkpoint 3.
+
+## Checkpoint 3 record
+
+- PhoneRuntimeHost now memoizes canonical + optional Translation row presentation independently of the 250 ms / 33 ms playback clock tick.
+- `mapPhoneLyricsState` can consume that precomputed row list, so timing/Karaoke projection updates no longer allocate the complete lyric-row presentation on every tick.
+- `LyricsViewportRow` no longer receives the complete `LyricsViewportUiState`; each lazy item receives only its immutable row content, sync mode, shared focus object, and an optional Karaoke line for the current row.
+- Karaoke sweep/progress changes therefore alter the current row's dynamic parameter while non-current row parameters remain unchanged and eligible for Compose skipping.
+- Canonical row identity and cached lazy measurements intentionally ignore Translation-only changes.
+- When Translation adds/removes secondary text on a materialized row, `onSizeChanged` updates that row's measurement. Follow re-aligns from the new measured geometry; Browse does not run the Follow effect and remains user-owned.
+- Stable lazy item keys remain unchanged across Translation-only updates, allowing LazyColumn to preserve its keyed browse anchor instead of treating translated rows as new items.
+- Off-screen Karaoke rows are still not retained solely for animation; when composed again they receive the latest current timing state.
+- No Translation execution, Karaoke timing semantics, provider behavior, Android Auto behavior, or persistence changed.
 
 ## Acceptance criteria
 

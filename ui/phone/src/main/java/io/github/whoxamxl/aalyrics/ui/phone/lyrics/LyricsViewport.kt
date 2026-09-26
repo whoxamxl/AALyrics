@@ -116,8 +116,15 @@ fun LyricsViewport(
 
         // Keep only measurements we have actually materialized. Lazy composition must not
         // require the whole lyrics document to be measured before it can be presented.
-        val lineHeights = remember(state.lines) { mutableStateMapOf<Int, Int>() }
-        val canonicalRows = state.lines.map { it.text to it.words }
+        // Translation is deliberately excluded from canonical row identity so adding secondary
+        // text remeasures the existing keyed item instead of resetting the viewport geometry.
+        val canonicalRows = remember(state.lines) {
+            state.lines.map { it.text to it.words }
+        }
+        val lineHeights = remember(canonicalRows) { mutableStateMapOf<Int, Int>() }
+        val measuredHeightSignature = lineHeights.entries.sumOf { (index, height) ->
+            (index + 1) * 31 + height
+        }
         val lastLineHeightPx = lineHeights[state.lines.lastIndex] ?: 0
         val openingContentStartPx = (viewportHeightPx * TopEdgeFadeFraction).roundToInt()
         val endingBoundaryStartPx = (
@@ -249,6 +256,7 @@ fun LyricsViewport(
             topContentPaddingPx,
             bottomContentPaddingPx,
             lastLineHeightPx,
+            measuredHeightSignature,
         ) {
             if (
                 state.interactionMode != LyricsViewportInteractionMode.FOLLOW ||
@@ -356,9 +364,14 @@ fun LyricsViewport(
                     items = state.lines,
                     key = { index, line -> lyricsLazyItemKey(index, line) },
                 ) { index, line ->
+                    val rowKaraokeLine = state.karaokeLine?.takeIf {
+                        state.syncType != LyricsSyncType.PLAIN &&
+                            index == state.currentLineIndex
+                    }
                     LyricsViewportRow(
-                        state = state,
                         line = line,
+                        syncType = state.syncType,
+                        karaokeLine = rowKaraokeLine,
                         index = index,
                         focusPosition = animatedFocusIndex,
                         rowSpacingPx = rowSpacingPx,
@@ -431,26 +444,25 @@ fun LyricsViewport(
 
 @Composable
 private fun LyricsViewportRow(
-    state: LyricsViewportUiState,
     line: LyricsViewportLineUiState,
+    syncType: LyricsSyncType,
+    karaokeLine: KaraokeLineUiState?,
     index: Int,
     focusPosition: Animatable<Float, AnimationVector1D>,
     rowSpacingPx: Int,
     modifier: Modifier = Modifier,
     onTextHeightChanged: (Int) -> Unit,
 ) {
-    val isCurrent = state.syncType != LyricsSyncType.PLAIN && index == state.currentLineIndex
     val virtualIndex = index + 1f
-
-    val karaokeLine = state.karaokeLine?.takeIf { karaoke ->
+    val safeKaraokeLine = karaokeLine?.takeIf { karaoke ->
         val sweepValid = karaoke.sweep?.let { sweep ->
             sweep.start >= 0 && sweep.end <= line.text.length &&
                 sweep.start < sweep.end && sweep.progress.isFinite()
         } ?: true
-        isCurrent && karaoke.completedEnd in 0..line.text.length && sweepValid
+        karaoke.completedEnd in 0..line.text.length && sweepValid
     }
 
-    val isTimed = state.syncType != LyricsSyncType.PLAIN
+    val isTimed = syncType != LyricsSyncType.PLAIN
 
     Box(
         modifier = if (isTimed) {
@@ -462,7 +474,7 @@ private fun LyricsViewportRow(
         Column(
             modifier = Modifier
                 .fillMaxWidth(
-                    fraction = if (state.syncType == LyricsSyncType.PLAIN) {
+                    fraction = if (syncType == LyricsSyncType.PLAIN) {
                         1f
                     } else {
                         TimedTextWidthFraction
@@ -482,7 +494,7 @@ private fun LyricsViewportRow(
                     )
                 }
                 .graphicsLayer {
-                    if (state.syncType == LyricsSyncType.PLAIN) {
+                    if (syncType == LyricsSyncType.PLAIN) {
                         scaleX = 1f
                         scaleY = 1f
                         alpha = 1f
@@ -507,27 +519,27 @@ private fun LyricsViewportRow(
             verticalArrangement = Arrangement.spacedBy(TranslationIntraRowGap),
         ) {
             val lyricStyle = AALyricsTypography.LyricsSupporting.copy(
-                    fontSize = if (state.syncType == LyricsSyncType.PLAIN) {
+                    fontSize = if (syncType == LyricsSyncType.PLAIN) {
                         PlainLyricsFontSize
                     } else {
                         StableLyricsFontSize
                     },
                     lineHeight = StableLyricsLineHeight,
-                    fontWeight = if (state.syncType == LyricsSyncType.PLAIN) {
+                    fontWeight = if (syncType == LyricsSyncType.PLAIN) {
                         FontWeight.Medium
                     } else {
                         FontWeight.Bold
                     },
                 )
-            val lyricColor = if (state.syncType == LyricsSyncType.PLAIN) {
+            val lyricColor = if (syncType == LyricsSyncType.PLAIN) {
                     AALyricsColors.TextSecondary
                 } else {
                     AALyricsColors.TextPrimary
                 }
-            if (karaokeLine != null) {
+            if (safeKaraokeLine != null) {
                 KaraokeLineText(
                     text = line.text,
-                    karaoke = karaokeLine,
+                    karaoke = safeKaraokeLine,
                     style = lyricStyle,
                 )
             } else {

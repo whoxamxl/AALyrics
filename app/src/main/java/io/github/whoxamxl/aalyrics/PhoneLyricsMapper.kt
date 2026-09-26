@@ -37,6 +37,7 @@ internal fun mapPhoneLyricsState(
     lyricsTimingOffset: LyricsTimingOffset = LyricsTimingOffset.ZERO,
     karaokeFeatureEnabled: Boolean = false,
     karaokeModeEnabled: Boolean = false,
+    precomputedViewportLines: List<LyricsViewportLineUiState>? = null,
 ): LyricsScreenUiState {
     val track = playback.track
     val matchingLyricsState = lyricsState
@@ -52,17 +53,6 @@ internal fun mapPhoneLyricsState(
     val currentCanonicalIdentity = matchingLyricsState
         ?.canonicalLyricsOrNull()
         ?.identity
-    val normalizedTargetLanguage =
-        TranslationLanguages.normalizeTargetLanguage(translationSettings.targetLanguage)
-    val translatedLines = (translationState as? TranslationState.Ready)
-        ?.artifact
-        ?.takeIf { artifact ->
-            translationSettings.enabled &&
-                artifact.request.targetLanguage == normalizedTargetLanguage &&
-                artifact.request.canonicalLyrics == currentCanonicalIdentity &&
-                artifact.lines.size == document?.lines?.size
-        }
-        ?.lines
     val trackCardTranslationState = mapTrackCardTranslationState(
         settings = translationSettings,
         state = translationState,
@@ -129,18 +119,12 @@ internal fun mapPhoneLyricsState(
             translation = trackCardTranslationState,
         ),
         viewport = LyricsViewportUiState(
-            lines = document
-                ?.lines
-                .orEmpty()
-                .mapIndexed { index, line ->
-                    LyricsViewportLineUiState(
-                        text = line.text,
-                        translatedText = translatedLines
-                            ?.get(index)
-                            ?.takeIf { it.translated && it.text.isNotBlank() }
-                            ?.text,
-                    )
-                },
+            lines = precomputedViewportLines ?: mapPhoneLyricsViewportLines(
+                playback = playback,
+                lyricsState = lyricsState,
+                translationState = translationState,
+                translationSettings = translationSettings,
+            ),
             syncType = displaySyncType,
             currentLineIndex = timingProjection?.activeLineIndex,
             currentWordIndex = if (karaokeActive) timingProjection?.activeWordIndex else null,
@@ -158,6 +142,48 @@ internal fun mapPhoneLyricsState(
             interactionMode = interactionMode,
         ),
     )
+}
+
+internal fun mapPhoneLyricsViewportLines(
+    playback: PlaybackSnapshot,
+    lyricsState: LyricsState,
+    translationState: TranslationState = TranslationState.Idle,
+    translationSettings: TranslationSettings = TranslationSettings(enabled = false),
+): List<LyricsViewportLineUiState> {
+    val matchingLyricsState = lyricsState
+        .takeIf { state ->
+            state !is LyricsState.ForLookup ||
+                state.lookup.playbackIdentity == playback.trackIdentity
+        }
+    val document = when (matchingLyricsState) {
+        is LyricsState.Ready -> matchingLyricsState.lyrics
+        is LyricsState.Degraded -> matchingLyricsState.lyrics
+        else -> null
+    } ?: return emptyList()
+    val currentCanonicalIdentity = matchingLyricsState
+        ?.canonicalLyricsOrNull()
+        ?.identity
+    val normalizedTargetLanguage =
+        TranslationLanguages.normalizeTargetLanguage(translationSettings.targetLanguage)
+    val translatedLines = (translationState as? TranslationState.Ready)
+        ?.artifact
+        ?.takeIf { artifact ->
+            translationSettings.enabled &&
+                artifact.request.targetLanguage == normalizedTargetLanguage &&
+                artifact.request.canonicalLyrics == currentCanonicalIdentity &&
+                artifact.lines.size == document.lines.size
+        }
+        ?.lines
+
+    return document.lines.mapIndexed { index, line ->
+        LyricsViewportLineUiState(
+            text = line.text,
+            translatedText = translatedLines
+                ?.get(index)
+                ?.takeIf { it.translated && it.text.isNotBlank() }
+                ?.text,
+        )
+    }
 }
 
 private fun mapTrackCardTranslationState(

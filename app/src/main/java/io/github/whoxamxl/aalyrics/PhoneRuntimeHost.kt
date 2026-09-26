@@ -175,6 +175,20 @@ internal fun PhoneRuntimeHost(
         }
     }
 
+    val lyricsViewportLines = remember(
+        playback.trackIdentity,
+        lyricsState,
+        translationState,
+        translationSettings,
+    ) {
+        mapPhoneLyricsViewportLines(
+            playback = playback,
+            lyricsState = lyricsState,
+            translationState = translationState,
+            translationSettings = translationSettings,
+        )
+    }
+
     val lyricsUiState = mapPhoneLyricsState(
         playback = playback,
         lyricsState = lyricsState,
@@ -186,6 +200,7 @@ internal fun PhoneRuntimeHost(
         currentMonotonicTimeMs = monotonicTimeMs,
         karaokeFeatureEnabled = karaokeFeatureEnabled,
         karaokeModeEnabled = karaokeModeEnabled,
+        precomputedViewportLines = lyricsViewportLines,
     )
     val playbackArtworkImage = remember(playbackArtwork) {
         playbackArtwork?.asImageBitmap()
