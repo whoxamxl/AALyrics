@@ -7,7 +7,7 @@
 - This slice completes the existing legacy Android Auto Now Playing path built on `MediaBrowserServiceCompat` + `MediaSessionCompat`.
 - Car App Library templated media remains a separate future slice under `docs/ANDROID_AUTO_MEDIA_STRATEGY.md`.
 - Android Auto Karaoke is intentionally out of scope for this product surface. WORD_SYNC is presented line-by-line.
-- Documentation is the current checkpoint. Production implementation has not started on this branch.
+- Production integration and focused tests are implemented on this branch. See `TASK.md` for validation evidence and the remaining host checks.
 
 This document is the authoritative product/implementation contract for the Android Auto Now Playing completion slice. `TASK.md` records execution checkpoints; capability documents remain authoritative for their underlying ownership rules.
 

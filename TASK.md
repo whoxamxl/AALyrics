@@ -3,8 +3,8 @@
 ## Branch and baseline
 
 - Branch: `feature/android-auto-now-playing`.
-- Base: `main` at `52e9249395206f8c3821cc5c8e5893a8ccdcd125` (PR #82 merged).
-- Current checkpoint: implementation in progress. Focused matrix coverage is complete; final validation is next.
+- Original base: `main` at `52e9249395206f8c3821cc5c8e5893a8ccdcd125` (PR #82 merged).
+- Current checkpoint: implementation and software validation complete. Current `main` has one later changelog-only commit; reconcile it before the Draft PR.
 - Authoritative slice contract: `docs/ANDROID_AUTO_NOW_PLAYING.md`.
 - Broader Android Auto strategy: `docs/ANDROID_AUTO_MEDIA_STRATEGY.md`.
 - Shared timing authority: `docs/TIMING_ARCHITECTURE.md`.
@@ -142,7 +142,7 @@ Do not implement:
 7. [x] Translation: wire exact-identity Translation state, two-line Ready presentation, translating heartbeat, and Failed source-only fallback.
 8. [x] MediaSession invalidation: ensure visible metadata changes update while position-only movement within one lyric line does not rebuild metadata.
 9. [x] Focused tests: cover the matrix in `docs/ANDROID_AUTO_NOW_PLAYING.md`.
-10. [ ] Final validation: architecture checks, relevant unit tests, debug APK, regression/scope audit, docs alignment, DHU/physical-host validation where available.
+10. [x] Final validation: architecture checks, relevant unit tests, debug APK, regression/scope audit, docs alignment, DHU/physical-host validation where available. Host rendering remains explicitly unverified below.
 11. [ ] Open a Draft PR only after final validation and stop per `AGENTS.md`.
 
 ## Expected implementation surface
@@ -229,4 +229,12 @@ Codex must implement deterministic tests for at least:
 - Branch Build workflow [run 36210491667](https://github.com/whoxamxl/AALyrics/actions/runs/36210491667) passed through artwork/controls, including unit tests and debug APK build.
 - Translation presentation now consumes application-owned settings/state and canonical identity. Current synchronized source stays first; exact matching Translating adds animated second-line status, matching Ready adds a genuinely translated nonblank second line, and Failed/NotRequired/stale states remain source-only. Focused test sources compiled with the app.
 - MediaSession metadata publication now keys on all serialized track, lyric, Translation, and artwork facts. Playback position/rate are excluded from this key, so same-line position ticks update PlaybackState without reconstructing metadata. Focused invalidation tests compiled with the app.
-- Focused tests cover Lyrics lifecycle and loading frames, LINE/WORD and PLAIN behavior, shared timing boundaries and clock anchors, stale lyrics/Translation identity, Translation state and artifact gating, selected artwork identity/clearing, action masks, playback status mapping, paused heartbeat, and metadata invalidation. Test sources compile; branch CI execution is pending for the latest checkpoints.
+- Focused tests cover Lyrics lifecycle and loading frames, LINE/WORD and PLAIN behavior, shared timing boundaries and clock anchors, stale lyrics/Translation identity, Translation state and artifact gating, selected artwork identity/clearing, action masks, playback status mapping, paused heartbeat, and metadata invalidation.
+
+## Final validation evidence and host follow-up
+
+- Branch Build workflow [run 36210991011](https://github.com/whoxamxl/AALyrics/actions/runs/36210991011) passed architecture checks, `:app:assembleDebug`, and `./gradlew test` across all modules, including timing, Translation, platform/media, application, Phone, and Automotive tests.
+- Local Automotive/application production and test sources compiled. Local Gradle test and APK worker processes cannot establish a loopback connection in this environment; CI provided the complete test/APK result.
+- The branch-wide diff contains the approved documentation, application boundary, shared clock extraction, Automotive runtime/state/metadata wiring, and focused tests. No provider, Translation engine, Karaoke, queue, Browse, Sync, Car App Library, or persisted-state change is present. Reset behavior needs no change.
+- The CI debug APK was installed over the existing debuggable phone build using the matching local debug certificate; app data was preserved. DHU connected over ADB, but reported no video focus and could not capture a rendered host frame. Thus actual host artwork display, source/Translation line layout and ellipsis, refresh cadence, and control rendering remain **unverified**.
+- A physical Android Auto host was not available. Repeat DHU with an active video session and validate the same host behaviors on physical Android Auto before treating host presentation as verified.

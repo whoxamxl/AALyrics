@@ -379,9 +379,9 @@ Compose application/domain capability facts into the smallest presentation contr
 
 Must follow `docs/PRESENTATION_STATE_ARCHITECTURE.md`. Do not create one universal giant UI state. Keep shared semantic facts shareable and surface-local state local.
 
-#### Android Auto Now Playing completion — authorized / documentation gate complete
+#### Android Auto Now Playing completion — implemented / host validation pending
 
-The active `feature/android-auto-now-playing` slice completes the existing legacy `MediaBrowserServiceCompat` + `MediaSessionCompat` Now Playing presentation before the separate Car App Library templated-media work.
+The `feature/android-auto-now-playing` branch implements the existing legacy `MediaBrowserServiceCompat` + `MediaSessionCompat` Now Playing presentation before the separate Car App Library templated-media work. DHU rendering and physical Android Auto host behavior still require validation; `TASK.md` records the evidence and limits.
 
 It is authorized to integrate existing application capabilities only:
 
