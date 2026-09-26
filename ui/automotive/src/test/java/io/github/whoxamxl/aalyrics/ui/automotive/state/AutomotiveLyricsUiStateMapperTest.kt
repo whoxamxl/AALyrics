@@ -8,6 +8,7 @@ import io.github.whoxamxl.aalyrics.core.model.PlainLyricLine
 import io.github.whoxamxl.aalyrics.core.model.PlaybackSnapshot
 import io.github.whoxamxl.aalyrics.core.model.PlaybackStatus
 import io.github.whoxamxl.aalyrics.core.model.TimedLyricLine
+import io.github.whoxamxl.aalyrics.core.model.TimedWord
 import io.github.whoxamxl.aalyrics.core.model.Track
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -89,7 +90,7 @@ class AutomotiveLyricsUiStateMapperTest {
             currentMonotonicTimeMs = 5_000L,
         )
 
-        assertEquals("Unsynced lyrics", state.subtitle)
+        assertEquals("Synced lyrics unavailable", state.subtitle)
     }
 
     @Test
@@ -111,7 +112,7 @@ class AutomotiveLyricsUiStateMapperTest {
         )
 
         assertEquals("New — Artist", state.displayTitle)
-        assertEquals("Loading lyrics…", state.subtitle)
+        assertEquals("Loading lyrics.", state.subtitle)
     }
 
     @Test
@@ -130,7 +131,89 @@ class AutomotiveLyricsUiStateMapperTest {
         )
 
         assertEquals(12_345L, state.positionMs)
-        assertEquals("Loading lyrics…", state.subtitle)
+        assertEquals("Loading lyrics..", state.subtitle)
+        assertEquals(true, state.lyrics.isAnimatedLoading)
+    }
+
+    @Test
+    fun `no media and waiting have distinct stable copy`() {
+        val track = Track(title = "Song", artists = listOf("Artist"))
+        assertEquals(
+            AutomotiveLyricsUiState.NO_MEDIA_MESSAGE,
+            AutomotiveLyricsUiStateMapper.project(
+                PlaybackSnapshot(), LyricsState.Idle, currentMonotonicTimeMs = 0L,
+            ).subtitle,
+        )
+        assertEquals(
+            "Waiting for lyrics…",
+            AutomotiveLyricsUiStateMapper.project(
+                PlaybackSnapshot(track = track), LyricsState.Idle, currentMonotonicTimeMs = 0L,
+            ).subtitle,
+        )
+    }
+
+    @Test
+    fun `lyrics loading cycles all three frames while paused`() {
+        val track = Track(title = "Song", artists = listOf("Artist"))
+        val paused = PlaybackSnapshot(track = track, status = PlaybackStatus.PAUSED)
+        val loading = LyricsState.Loading(LyricsLookup(LyricsLookupId(1L), track))
+
+        assertEquals("Loading lyrics.", AutomotiveLyricsUiStateMapper.project(
+            paused, loading, currentMonotonicTimeMs = 0L,
+        ).subtitle)
+        assertEquals("Loading lyrics..", AutomotiveLyricsUiStateMapper.project(
+            paused, loading, currentMonotonicTimeMs = 250L,
+        ).subtitle)
+        assertEquals("Loading lyrics...", AutomotiveLyricsUiStateMapper.project(
+            paused, loading, currentMonotonicTimeMs = 500L,
+        ).subtitle)
+        assertEquals("Loading lyrics.", AutomotiveLyricsUiStateMapper.project(
+            paused, loading, currentMonotonicTimeMs = 750L,
+        ).subtitle)
+        assertEquals(true, shouldRenderProjectionTick(paused, isAnimatedLoading = true))
+        assertEquals(false, shouldRenderProjectionTick(paused, isAnimatedLoading = false))
+    }
+
+    @Test
+    fun `not found and failed have distinct copy`() {
+        val track = Track(title = "Song", artists = listOf("Artist"))
+        val playback = PlaybackSnapshot(track = track)
+        val lookup = LyricsLookup(LyricsLookupId(1L), track)
+
+        assertEquals("No synced lyrics found", AutomotiveLyricsUiStateMapper.project(
+            playback, LyricsState.NotFound(lookup), currentMonotonicTimeMs = 0L,
+        ).subtitle)
+        assertEquals("Unable to load lyrics", AutomotiveLyricsUiStateMapper.project(
+            playback, LyricsState.Failed(lookup, failedAttempts = 1), currentMonotonicTimeMs = 0L,
+        ).subtitle)
+    }
+
+    @Test
+    fun `line and word documents show current line only and interlude note`() {
+        val track = Track(title = "Song", artists = listOf("Artist"))
+        val lineDocument = LyricsDocument(lines = listOf(
+            TimedLyricLine("First", startMs = 1_000L),
+            TimedLyricLine("", startMs = 2_000L),
+            TimedLyricLine("Third", startMs = 3_000L),
+        ))
+        val wordDocument = LyricsDocument(lines = listOf(
+            TimedLyricLine(
+                "Current words", startMs = 1_000L,
+                words = listOf(TimedWord("Current", startMs = 1_000L)),
+            ),
+        ))
+        fun textAt(document: LyricsDocument, positionMs: Long): String =
+            AutomotiveLyricsUiStateMapper.project(
+                PlaybackSnapshot(track = track, positionMs = positionMs),
+                ready(track, document),
+                currentMonotonicTimeMs = 0L,
+            ).subtitle
+
+        assertEquals("♪", textAt(lineDocument, 500L))
+        assertEquals("First", textAt(lineDocument, 1_500L))
+        assertEquals("♪", textAt(lineDocument, 2_500L))
+        assertEquals("Third", textAt(lineDocument, 3_500L))
+        assertEquals("Current words", textAt(wordDocument, 1_500L))
     }
 
     private fun ready(track: Track, lyrics: LyricsDocument): LyricsState.Ready =

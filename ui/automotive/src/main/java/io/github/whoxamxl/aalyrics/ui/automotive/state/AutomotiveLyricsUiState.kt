@@ -2,6 +2,7 @@ package io.github.whoxamxl.aalyrics.ui.automotive.state
 
 import android.graphics.Bitmap
 import io.github.whoxamxl.aalyrics.core.lyrics.LyricsState
+import io.github.whoxamxl.aalyrics.core.model.LyricsSyncType
 import io.github.whoxamxl.aalyrics.core.model.PlaybackSnapshot
 import io.github.whoxamxl.aalyrics.core.model.PlaybackStatus
 import io.github.whoxamxl.aalyrics.core.model.TimedLyricLine
@@ -44,6 +45,11 @@ data class AutomotiveLyricPresentation(
     val isAnimatedLoading: Boolean = false,
 )
 
+internal fun shouldRenderProjectionTick(
+    playback: PlaybackSnapshot,
+    isAnimatedLoading: Boolean,
+): Boolean = playback.isPlaying || isAnimatedLoading
+
 internal object AutomotiveLyricsUiStateMapper {
     fun project(
         playback: PlaybackSnapshot,
@@ -76,20 +82,23 @@ internal object AutomotiveLyricsUiStateMapper {
         }
         val currentLine = activeLineIndex?.let { document?.lines?.getOrNull(it) as? TimedLyricLine }
 
-        val subtitle = when (matchingState) {
-            null -> "Loading lyrics…"
-            LyricsState.Idle -> "Waiting for lyrics…"
-            is LyricsState.Loading -> "Loading lyrics…"
-            is LyricsState.NotFound -> "No lyrics found"
-            is LyricsState.Failed -> "Unable to load lyrics"
+        val presentation = when (matchingState) {
+            null,
+            is LyricsState.Loading,
+            -> AutomotiveLyricPresentation(
+                primaryText = "Loading lyrics${loadingDots(currentMonotonicTimeMs)}",
+                isAnimatedLoading = true,
+            )
+            LyricsState.Idle -> AutomotiveLyricPresentation("Waiting for lyrics…")
+            is LyricsState.NotFound -> AutomotiveLyricPresentation("No synced lyrics found")
+            is LyricsState.Failed -> AutomotiveLyricPresentation("Unable to load lyrics")
             is LyricsState.Ready,
             is LyricsState.Degraded,
-            -> when {
+            -> AutomotiveLyricPresentation(when {
+                document?.syncType == LyricsSyncType.PLAIN -> "Synced lyrics unavailable"
                 currentLine != null -> currentLine.text.ifBlank { "♪" }
-                document?.lines?.any { it is TimedLyricLine } == true -> "♪"
-                document?.lines?.isNotEmpty() == true -> "Unsynced lyrics"
-                else -> "No lyrics found"
-            }
+                else -> "♪"
+            })
         }
 
         return AutomotiveLyricsUiState(
@@ -100,8 +109,10 @@ internal object AutomotiveLyricsUiStateMapper {
             positionMs = positionMs,
             playbackStatus = playback.status,
             playbackRate = playback.playbackRate,
-            lyrics = AutomotiveLyricPresentation(subtitle),
+            lyrics = presentation,
         )
     }
 
+    internal fun loadingDots(currentMonotonicTimeMs: Long): String =
+        ".".repeat(((currentMonotonicTimeMs.coerceAtLeast(0L) / 250L) % 3L).toInt() + 1)
 }

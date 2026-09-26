@@ -11,6 +11,7 @@ import io.github.whoxamxl.aalyrics.ui.automotive.AutomotiveRuntimeBinding
 import io.github.whoxamxl.aalyrics.ui.automotive.AutomotiveRuntimeHost
 import io.github.whoxamxl.aalyrics.ui.automotive.screen.NowPlayingScreen
 import io.github.whoxamxl.aalyrics.ui.automotive.state.AutomotiveLyricsUiStateMapper
+import io.github.whoxamxl.aalyrics.ui.automotive.state.shouldRenderProjectionTick
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -30,6 +31,7 @@ class LyricsBrowserService : MediaBrowserServiceCompat() {
 
     private var latestPlayback = PlaybackSnapshot()
     private var latestLyrics: LyricsState = LyricsState.Idle
+    private var latestProjectionIsAnimatedLoading = false
     private var lastMetadataSignature: MetadataSignature? = null
 
     override fun onCreate() {
@@ -51,7 +53,7 @@ class LyricsBrowserService : MediaBrowserServiceCompat() {
         scope.launch {
             while (isActive) {
                 delay(PROJECTION_TICK_MS)
-                if (latestPlayback.isPlaying) render()
+                if (shouldRenderProjectionTick(latestPlayback, latestProjectionIsAnimatedLoading)) render()
             }
         }
     }
@@ -113,6 +115,7 @@ class LyricsBrowserService : MediaBrowserServiceCompat() {
             lyricsState = latestLyrics,
             currentMonotonicTimeMs = now,
         )
+        latestProjectionIsAnimatedLoading = state.lyrics.isAnimatedLoading
 
         val signature = MetadataSignature(
             displayTitle = state.displayTitle,
