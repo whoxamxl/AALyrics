@@ -155,7 +155,7 @@ Presentation uses `:ui:designsystem` for shared tokens/components, `:ui:phone` f
 
 PR #49 implements the approved read-only Details destination plus the Settings-owned Advanced surface with a persisted presentation-only Verbose Details preference and an intentionally disabled/unwired Karaoke affordance. Sync remains the only primary Phone destination that is both a placeholder and interaction-model-deferred pending timing/calibration redesign.
 
-PR #50 established the **Phone runtime host / device-test enablement** boundary documented in `docs/PHONE_RUNTIME_HOST.md`. Subsequent merged Phone work completed the Settings legal/help surfaces, playback-source eligibility and diagnostics, storage/reset controls, queue/artwork refinements, and the verified in-app update flow. `MainActivity` continues to preserve onboarding while hosting live application-owned Lyrics/Playback/Details/Settings state. Sync remains a deliberate non-functional placeholder and Karaoke remains disabled/unwired.
+PR #50 established the **Phone runtime host / device-test enablement** boundary documented in `docs/PHONE_RUNTIME_HOST.md`. Subsequent merged Phone work completed the Settings legal/help surfaces, playback-source eligibility and diagnostics, storage/reset controls, queue/artwork refinements, and the verified in-app update flow. `MainActivity` continues to preserve onboarding while hosting live application-owned Lyrics/Playback/Details/Settings state. Sync remains a deliberate non-functional placeholder. The separately authorized Phase 11.4b/11.4c Phone slice adds gated WORD_SYNC Karaoke presentation; Android Auto Karaoke remains deferred.
 
 The production Settings information architecture is now merged on `main`: Version/Changelog/Source code and automatic/manual update controls live under `APP`; Privacy Policy, Terms of Use, License/third-party licenses, Help & Feedback, and Support AALyrics live under `ABOUT & SUPPORT`; Advanced remains a separate application-owned settings surface. External browser/payment handoffs remain app-owned and do not move runtime capability ownership into `:ui:phone`.
 
@@ -182,6 +182,8 @@ LyricsState
 ```
 
 The runtime preserves/refactors the mature working-fork session-selection behavior while keeping Android framework ownership in `:platform:media` and avoiding the old `MediaTracker` monolith. It retains token-based ownership and the platform-owned 600 ms track-metadata stabilization, and hands normalized snapshots to the existing application graph through a narrow host/sink boundary.
+
+The current runtime hardens that original stabilization contract by keeping playback identity and timeline atomic: same-identity playback updates remain live, while a different track's position/status/rate/timestamps are held until its stabilized identity is committed. The runtime must never emit an old track identity paired with a new track timeline.
 
 ### Phase 10 — Lyrics demand gating ✅
 
@@ -353,11 +355,21 @@ Only after shared timing semantics and behaviour-preserving wiring are proven, d
 
 Do not infer these choices from the legacy app or from the current placeholder.
 
-### Phase 11.4b — Karaoke consumer/rendering — deferred
+### Phase 11.4b — Karaoke presentation mapping — implemented on Phone topic branch
 
-Karaoke presentation will consume the already-computed shared timing projection rather than own current-line/current-word/progress calculations.
+Map shared WORD timing facts plus canonical token text into conservative Phone presentation-ready character ranges. Karaoke remains WORD_SYNC only; LINE_SYNC and PLAIN do not synthesize Karaoke timing.
 
-The Karaoke consumer/rendering contract is now documented in `docs/KARAOKE_ARCHITECTURE.md`: Karaoke enablement is presentation/application state, the shared Timing Semantic Engine is mode-agnostic, Normal presentation consumes line facts, and future Karaoke presentation may consume additional word/progress/boundary facts. Phone Compose and Android Auto may render differently, but neither may duplicate timing semantics.
+### Phase 11.4c — Phone Karaoke rendering — implemented on Phone topic branch
+
+Implement current-line continuous sweep inside the existing LyricsViewport. Activation requires both the Advanced Experimental feature gate and the Expanded Player Quick-controls Karaoke toggle. Both default OFF.
+
+Preserve/refactor the working fork's `LyricWordLayout`, same-visible-range grouping, and continuous-sweep behavior rather than independently rebuilding them. The final open-ended display group may retain the working fork's 650ms duration strictly as Phone visual policy; shared timing semantics remain unchanged.
+
+The existing line focus, Follow/Browse behaviour, Translation layout, and timing engine ownership remain unchanged.
+
+### Phase 11.4d — Android Auto Karaoke — documented / deferred
+
+Android Auto will eventually consume the same shared timing projection through its own host-appropriate presentation. No Android Auto Karaoke production code belongs to the Phone implementation branch.
 
 ### Phase 11.5 — Presentation state integration
 
@@ -420,7 +432,7 @@ The future Car App Library implementation must remain a dedicated topic branch/P
 
 ## Later phases
 
-Remaining later work includes Sync calibration UX/persistence, Karaoke consumer/rendering, Android Auto Translation and the authorized Car App Library implementation described above, capability-specific settings/persistence not yet justified, release-process refinement beyond the established GitHub Release baseline, and continued regression comparison against the previous fork.
+Remaining later work includes Sync calibration UX/persistence, Android Auto Karaoke/Translation, the authorized Car App Library implementation described above, capability-specific settings/persistence not yet justified, release-process refinement beyond the established GitHub Release baseline, and continued regression comparison against the previous fork.
 
 Do not use future feature needs as a reason to turn `LyricsCoordinator`, `PlaybackLyricsController`, the media-session runtime, demand gate, production selector, concrete providers, capability services, or the shared design system into god objects.
 

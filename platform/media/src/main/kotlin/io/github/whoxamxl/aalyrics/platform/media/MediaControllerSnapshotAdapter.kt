@@ -3,6 +3,7 @@ package io.github.whoxamxl.aalyrics.platform.media
 import android.media.MediaMetadata
 import android.media.session.MediaController
 import android.media.session.PlaybackState
+import android.os.SystemClock
 import io.github.whoxamxl.aalyrics.core.model.PlaybackSnapshot
 import io.github.whoxamxl.aalyrics.core.model.PlaybackStatus
 
@@ -38,6 +39,7 @@ object MediaControllerSnapshotAdapter {
                 positionUpdatedAtMonotonicMs = playbackState
                     ?.lastPositionUpdateTime
                     ?.takeIf { it > 0L },
+                positionSampledAtMonotonicMs = SystemClock.elapsedRealtime(),
             ),
         )
     }

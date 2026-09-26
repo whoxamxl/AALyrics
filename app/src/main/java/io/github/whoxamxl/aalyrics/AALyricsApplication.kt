@@ -187,6 +187,12 @@ class AALyricsApplication : Application() {
     val verboseDetailsEnabled: StateFlow<Boolean>
         get() = phonePresentationSettingsStore.verboseDetailsEnabled
 
+    val karaokeFeatureEnabled: StateFlow<Boolean>
+        get() = phonePresentationSettingsStore.karaokeFeatureEnabled
+
+    val karaokeModeEnabled: StateFlow<Boolean>
+        get() = phonePresentationSettingsStore.karaokeModeEnabled
+
     internal val ignoreNonAudioApps: StateFlow<Boolean>
         get() = phonePresentationSettingsStore.ignoreNonAudioApps
 
@@ -319,6 +325,14 @@ class AALyricsApplication : Application() {
 
     fun setVerboseDetailsEnabled(enabled: Boolean) {
         phonePresentationSettingsStore.setVerboseDetailsEnabled(enabled)
+    }
+
+    fun setKaraokeFeatureEnabled(enabled: Boolean) {
+        phonePresentationSettingsStore.setKaraokeFeatureEnabled(enabled)
+    }
+
+    fun setKaraokeModeEnabled(enabled: Boolean) {
+        phonePresentationSettingsStore.setKaraokeModeEnabled(enabled)
     }
 
     internal fun setIgnoreNonAudioApps(enabled: Boolean) {

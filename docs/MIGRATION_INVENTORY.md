@@ -103,14 +103,14 @@ Provider migration is not a clean-room exercise. Mature provider implementation 
 
 ## Timing, karaoke, and calibration
 
-Phase 11 established the ownership seam in `docs/TIMING_ARCHITECTURE.md` and `docs/KARAOKE_ARCHITECTURE.md`. The effective-timing foundation, zero-offset Phone integration, and shared LINE/WORD Timing Semantic Engine are now implemented on `feature/effective-timing-foundation`. Sync calibration UX and Karaoke consumer/rendering remain separate later work.
+Phase 11 established the ownership seam in `docs/TIMING_ARCHITECTURE.md` and `docs/KARAOKE_ARCHITECTURE.md`. The effective-timing foundation, zero-offset Phone integration, and shared LINE/WORD Timing Semantic Engine are merged. The active `feature/phone-karaoke-rendering` slice now preserves/refactors the working fork's mature Phone display mapping/grouping behavior while keeping Sync calibration UX and Android Auto Karaoke separate.
 
 | Fork implementation | Classification | AALyrics destination / rule | Notes |
 | --- | --- | --- | --- |
 | `lyrics/KaraokeTiming.kt` | **PRESERVE / REFACTOR** | implemented shared WORD timing semantics in `:core:timing` | Re-checked at working-fork `v1.13.0` on 2026-09-25. Its latest-started-word, explicit-end gap, no-reactivation, and backward-seek semantics were preserved/refactored into the mode-agnostic Timing Semantic Engine. Future Karaoke consumes that projection and must not recalculate timing or reapply calibration. |
 | `util/SyncCalibration.kt` | **PRESERVE / REFACTOR** | timing/calibration capability in `:core:timing`; Sync UX still deferred | Re-checked at working-fork `v1.13.0` on 2026-09-25. The proven sign behavior `offsetForTap = targetTime - rawPosition` matches AALyrics `effectivePosition = projectedPosition + offset` and is preserved. The legacy three-tap/upcoming-line workflow remains later Sync UX/policy. |
-| `util/LyricWordLayout.kt` | **PRESERVE / REFACTOR** | future Karaoke display-mapping/presentation support | Valuable tested behavior may survive, but shared timing projection and surface text layout are separate responsibilities. Do not move lexical/display-range mapping into `:core:timing`. |
-| `ui/KaraokeSweepSpan.kt` | **REWRITE / REFACTOR** | future Phone Karaoke rendering downstream of shared timing projection | Rendering is Android-specific. Preserve useful visual behavior where desired, but do not migrate it as timing/domain logic or make Android Auto share Android span primitives. |
+| `util/LyricWordLayout.kt` | **PRESERVE / REFACTOR** | active Phone Karaoke display mapping | Preserve/adapt its source-text preservation, separator reconstruction, sequential/case-insensitive/Unicode-normalized alignment, readable lexical grouping, Japanese grouping, credibility checks, and conservative fallback. Adapt the relevant `LyricWordLayoutTest` cases rather than re-inventing this algorithm. Keep all of it downstream of `:core:timing`. |
+| `ui/KaraokeSweepSpan.kt` (`PhoneKaraokeSweep`) | **PRESERVE / REFACTOR + REWRITE renderer** | active Phone Karaoke mapping/rendering downstream of shared timing projection | Preserve/adapt same-visible-range grouping and the continuous sweep behavior, including relevant `PhoneKaraokeSweepTest` cases. Do not migrate its active-word selection because `:core:timing` already owns that semantic decision. Preserve `LAST_GROUP_MS = 650L` only as the Phone renderer's final open-ended display-group fallback. Do not move it into shared timing semantics or canonical timestamps. Rewrite the Android `ReplacementSpan` drawing mechanism for Compose. |
 
 ## Translation, cache, artwork, and other later features
 
@@ -184,7 +184,7 @@ Do not bulk-port the old application. Each provider or subsystem remains a separ
 - Translation background scaffold: merged in PR #41 as Phase 11.2a.
 - Translation execution/orchestration: merged in PR #43 as Phase 11.2b.
 - Phone Translation presentation/diagnostics: merged in PR #79 as Phase 11.2c; Android Auto Translation and persistent Translation Cache remain deferred.
-- Timing capability: Phase 11.3a effective-position foundation, Phase 11.3b Phone line integration, and Phase 11.4a shared LINE/WORD semantic engine are implemented and validated on `feature/effective-timing-foundation`; Sync UX, persistence, and Karaoke consumer/rendering remain deferred.
+- Timing capability: Phase 11.3a effective-position foundation, Phase 11.3b Phone line integration, and Phase 11.4a shared LINE/WORD semantic engine are merged; Phone Karaoke 11.4b/11.4c is active on `feature/phone-karaoke-rendering`, while Sync UX/persistence and Android Auto Karaoke remain deferred.
 
 
 ### Translation scaffold implementation re-check
@@ -231,4 +231,4 @@ Preserved: request execution only when karaoke/WORD timing is preferred; require
 
 Structural adaptation: a `WORD`-only `LyricsProvider` gates transport with normalized `LyricsRequest.preferredSyncType`, reuses shared `:provider:lrc` parsing, normalizes duration seconds to domain milliseconds, uses cancellable HTTP, and surfaces operational failures according to the provider contract. Final metadata scoring, source confidence, karaoke preference, and winner selection remain unchanged in `:provider:selection`.
 
-Each later implementation slice still requires explicit authorization. Translation is implemented through Phone presentation, and the timing foundation plus shared Timing Semantic Engine are implemented on the current timing topic branch. Persistent cache, Sync calibration UX/persistence, Karaoke consumer/rendering, Android Auto Translation, and broader presentation-state integration remain separate future slices until explicitly authorized.
+Each later implementation slice still requires explicit authorization. Translation is implemented through Phone presentation, and the timing foundation plus shared Timing Semantic Engine are implemented on the current timing topic branch. Persistent cache, Sync calibration UX/persistence, Android Auto Karaoke/Translation, and broader presentation-state integration remain separate future slices until explicitly authorized.

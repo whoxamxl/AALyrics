@@ -95,6 +95,8 @@ internal fun PhoneRuntimeHost(
     val translationModelCleanupState by
         application.translationModelCleanupState.collectAsStateWithLifecycle()
     val verboseDetailsEnabled by application.verboseDetailsEnabled.collectAsStateWithLifecycle()
+    val karaokeFeatureEnabled by application.karaokeFeatureEnabled.collectAsStateWithLifecycle()
+    val karaokeModeEnabled by application.karaokeModeEnabled.collectAsStateWithLifecycle()
     val ignoreNonAudioApps by application.ignoreNonAudioApps.collectAsStateWithLifecycle()
     val allowUnclassifiedApps by application.allowUnclassifiedApps.collectAsStateWithLifecycle()
     val automaticallyCheckForUpdates by
@@ -143,12 +145,18 @@ internal fun PhoneRuntimeHost(
     var monotonicTimeMs by rememberSaveable(playback.trackIdentity) {
         mutableStateOf(SystemClock.elapsedRealtime())
     }
+    val karaokeHighFrequencyUpdatesEnabled =
+        karaokeFeatureEnabled &&
+            karaokeModeEnabled &&
+            selectedDestination == PhoneDestination.Lyrics &&
+            hasCurrentWordSyncedLyrics(playback, lyricsState)
 
     LaunchedEffect(
         playback.isPlaying,
         playback.trackIdentity,
         selectedDestination,
         verboseDetailsEnabled,
+        karaokeHighFrequencyUpdatesEnabled,
     ) {
         monotonicTimeMs = SystemClock.elapsedRealtime()
         while (
@@ -162,7 +170,7 @@ internal fun PhoneRuntimeHost(
                     )
                 )
         ) {
-            delay(250L)
+            delay(if (karaokeHighFrequencyUpdatesEnabled) 33L else 250L)
             monotonicTimeMs = SystemClock.elapsedRealtime()
         }
     }
@@ -176,6 +184,8 @@ internal fun PhoneRuntimeHost(
         plainLyricsAutoScrollEnabled = plainLyricsAutoScrollEnabled,
         interactionMode = lyricsInteractionMode,
         currentMonotonicTimeMs = monotonicTimeMs,
+        karaokeFeatureEnabled = karaokeFeatureEnabled,
+        karaokeModeEnabled = karaokeModeEnabled,
     )
     val playbackArtworkImage = remember(playbackArtwork) {
         playbackArtwork?.asImageBitmap()
@@ -198,6 +208,7 @@ internal fun PhoneRuntimeHost(
         translationSettings = translationSettings,
         translationModelStates = translationModelStates,
         verboseDetailsEnabled = verboseDetailsEnabled,
+        karaokeFeatureEnabled = karaokeFeatureEnabled,
         plainLyricsAutoScrollEnabled = plainLyricsAutoScrollEnabled,
         ignoreNonAudioApps = ignoreNonAudioApps,
         allowUnclassifiedApps = allowUnclassifiedApps,
@@ -256,6 +267,9 @@ internal fun PhoneRuntimeHost(
         onQueueItemSelected = application::skipToQueueItem,
         onOpenPlaybackApp = { application.openSelectedPlaybackApp() },
         onTranslationEnabledChanged = application::setTranslationEnabled,
+        karaokeFeatureEnabled = karaokeFeatureEnabled,
+        karaokeModeEnabled = karaokeModeEnabled,
+        onKaraokeModeEnabledChanged = application::setKaraokeModeEnabled,
         mediaSourceIconPainter = playbackSourceIconPainter,
         playbackArtwork = {
             AlbumArtwork(image = playbackArtworkImage)
@@ -310,6 +324,7 @@ internal fun PhoneRuntimeHost(
                 onAutomaticallyCheckForUpdatesChanged =
                     application::setAutomaticallyCheckForUpdates,
                 onVerboseDetailsChanged = application::setVerboseDetailsEnabled,
+                onKaraokeFeatureEnabledChanged = application::setKaraokeFeatureEnabled,
                 onTranslationEnabledChanged = application::setTranslationEnabled,
                 onTranslationTargetSelected = application::setTranslationTargetLanguage,
                 onTranslationModelDownloadRequested = application::requestTranslationModel,

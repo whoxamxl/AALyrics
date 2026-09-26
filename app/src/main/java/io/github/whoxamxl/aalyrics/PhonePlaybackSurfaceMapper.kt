@@ -29,6 +29,7 @@ internal fun mapPhonePlaybackSurfaceState(
         durationMs = track.durationMs,
         playbackRate = playback.playbackRate,
         positionUpdatedAtMonotonicMs = playback.positionUpdatedAtMonotonicMs,
+        positionSampledAtMonotonicMs = playback.positionSampledAtMonotonicMs,
         canPlay = capabilities?.canPlay == true,
         canPause = capabilities?.canPause == true,
         canSkipPrevious = capabilities?.canSkipPrevious == true,

@@ -102,16 +102,60 @@ When ownership changes, the runtime:
 - registers the callback on the new controller;
 - immediately normalizes and forwards the new controller's current snapshot;
 - forwards relevant metadata/playback-state changes through `MediaControllerSnapshotAdapter`;
+- keeps same-identity playback updates live while a metadata candidate is pending;
+- never rewrites a different track's timeline onto the stable track identity;
+- commits a different track identity and its timeline together after the 600 ms stabilization window;
 - re-evaluates active sessions when the selected session is destroyed;
 - unregisters callbacks/listeners when the notification listener disconnects or the service is destroyed.
 
-Normal callback churn relies on the existing `PlaybackLyricsController` identity rules: position, status, rate, and duration changes alone do not start a new lyrics lookup, while a real track-identity change does.
+Normal callback churn relies on the existing `PlaybackLyricsController` identity rules only after `:platform:media` has produced an internally coherent snapshot. Position, status, rate, and duration changes alone do not start a new lyrics lookup when they belong to the current stable identity; a real track-identity change is committed as one coherent playback snapshot and then starts fresh ownership.
+
+## Playback position clock
+
+`MediaControllerSnapshotAdapter` preserves two monotonic anchors for playback position:
+
+- `PlaybackState.lastPositionUpdateTime` becomes `PlaybackSnapshot.positionUpdatedAtMonotonicMs` when the source supplies a valid timestamp. This is authoritative.
+- AALyrics also records `SystemClock.elapsedRealtime()` as `PlaybackSnapshot.positionSampledAtMonotonicMs` at the moment the controller snapshot is sampled.
+
+The local sample timestamp is a fallback only for media sessions that publish a position without a usable `lastPositionUpdateTime`. It stays attached to the immutable snapshot as it crosses the application boundary, so opening/recreating the Phone UI later cannot reinterpret an old `positionMs` value as newly sampled.
+
+A source timestamp is not rejected merely because it is old. Old anchors are normal Android playback-state semantics. `PlaybackClockReconciler` rejects a source timestamp only when the published clock values contradict each other:
+
+- the same source timestamp is observed again while raw `positionMs`, playback status, or playback rate changes;
+- the source timestamp moves backwards on the same track;
+- the source timestamp is later than the AALyrics local sample time.
+
+Once a source timestamp is rejected, that rejected sample does not become the next comparison baseline. The reconciler retains the last accepted source snapshot and advances that baseline only when a source timestamp is accepted. A temporary snapshot with no source timestamp does not clear quarantine. Recovery requires a new valid non-null timestamp that is consistent with the last accepted source clock, or a track/session identity change.
+
+A newly selected playing session that exposes both timestamps receives one 250ms validation re-sample. This catches the mid-track attach case where a player returns a current-looking raw position while retaining an older `lastPositionUpdateTime`. A valid Android anchor remains stationary at the raw position during that re-sample and is preserved.
+
+Phone presentation projects playing position from the source timestamp when valid, otherwise from the stable local sample timestamp. The fallback clock is presentation-independent: LINE/WORD timing, PLAIN playback progress, Details progress, and the Playback Surface do not create separate anchors, and Karaoke enablement does not affect playback-time projection.
 
 ## Metadata stabilization
 
-The runtime retains the working fork's 600 ms delay for track-changing metadata because some media apps publish transient/intermediate metadata while changing tracks. The delay is owned by `SelectedMediaSessionRuntime` in `:platform:media`; playback status and position continue to update immediately against the last stable track identity.
+The runtime retains the working fork's 600 ms delay for track-changing metadata because some media apps publish transient/intermediate metadata while changing tracks. The delay is owned by `SelectedMediaSessionRuntime` in `:platform:media`.
 
-Deterministic regressions verify the delay, replacement of older pending metadata, and callback ordering where playback-state notification arrives before metadata notification. The stabilization remains outside `PlaybackLyricsController` and does not redefine core lookup identity semantics.
+Playback identity and timeline are atomic across this window:
+
+- playback updates whose identity still matches the stable track continue to flow immediately;
+- a snapshot whose identity differs from the stable track is never rewritten with the old track/source;
+- cross-identity position/status/rate/timestamps are held until the metadata stabilization task commits the new track snapshot as one coherent unit.
+
+This deliberately permits up to the stabilization window of visual staleness during a real track transition rather than fabricating an impossible snapshot such as Track A identity with Track B position.
+
+The invariant at the `:platform:media -> PlaybackSnapshot` boundary is:
+
+```text
+emitted track/source identity
+        +
+emitted position/status/rate/timestamps
+        =
+one logical playback sample for the same track
+```
+
+Downstream application, timing, Karaoke, Details, and playback-surface code may project this sample, but must not repair or reinterpret cross-track identity/timeline mismatches because such mismatches must not cross the platform boundary.
+
+Deterministic regressions verify the delay, replacement of older pending metadata, playback-first callback ordering, same-identity live updates during a pending candidate, and atomic commit of a different track timeline. The stabilization remains outside `PlaybackLyricsController` and does not redefine core lookup identity semantics. Clock hardening also covers the overlap between the 250ms initial clock validation and the 600ms metadata-stabilization task so clock reconciliation cannot leak a pending track timeline into the stable identity.
 
 Artwork, current-line timing, transport controls, cache, translation, and legacy `MediaTracker` state are intentionally not part of this stabilization logic.
 

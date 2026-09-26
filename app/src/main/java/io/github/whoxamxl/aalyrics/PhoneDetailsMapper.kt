@@ -2,6 +2,7 @@ package io.github.whoxamxl.aalyrics
 
 import io.github.whoxamxl.aalyrics.core.lyrics.LyricsState
 import io.github.whoxamxl.aalyrics.core.model.LyricsDocument
+import io.github.whoxamxl.aalyrics.core.model.LyricsSyncType
 import io.github.whoxamxl.aalyrics.core.model.PlaybackSnapshot
 import io.github.whoxamxl.aalyrics.core.timing.LyricsTimingOffset
 import io.github.whoxamxl.aalyrics.core.timing.effectiveLyricsPosition
@@ -398,11 +399,11 @@ internal fun mapPhoneDetailsVerboseProgress(
     lyricsState: LyricsState,
     currentMonotonicTimeMs: Long,
 ): DetailsVerboseProgressUiState {
+    val lyricsDocument = currentLyrics(playback, lyricsState).document
     val positionMs = projectedPlaybackPosition(
         playback = playback,
         currentMonotonicTimeMs = currentMonotonicTimeMs,
     )
-    val lyricsDocument = currentLyrics(playback, lyricsState).document
     val lyricsPosition = effectiveLyricsPosition(positionMs, LyricsTimingOffset.ZERO)
 
     return DetailsVerboseProgressUiState(

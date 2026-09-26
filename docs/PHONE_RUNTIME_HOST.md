@@ -82,6 +82,8 @@ presentation callbacks
 app-owned actions/runtime
 ```
 
+The READY host consumes the normalized playback snapshot produced upstream; it does not splice metadata from one track onto timing from another. The MediaSession runtime must commit track identity and timeline atomically across its 600 ms metadata-stabilization window. Phone mapping may project time from that coherent snapshot, but neither `:app` nor `:ui:phone` owns cross-track repair.
+
 The host may own ephemeral presentation navigation such as the selected primary Phone destination. Durable user preferences remain application/capability owned.
 
 ## Entry-state preservation
@@ -219,7 +221,7 @@ The runtime now forwards selected-session artwork from `METADATA_KEY_ALBUM_ART`,
 
 ## Sync destination
 
-Sync remains a deliberate non-functional placeholder. The timing architecture now fixes the downstream clock semantics (`effectiveLyricsPosition = projectedPlaybackPosition + lyricsOffset`, positive = advance lyrics, negative = delay lyrics), but this runtime-host slice still does not own a user offset, persistence, or calibration controls.
+Sync remains a deliberate non-functional placeholder. The timing architecture now fixes the downstream clock semantics (`effectiveLyricsPosition = projectedPlaybackPosition + lyricsOffset`, positive = advance lyrics, negative = delay lyrics), but this runtime-host slice still does not own a user offset, persistence, or calibration controls. The projected playback position begins from the identity/timeline-coherent `PlaybackSnapshot` emitted by `:platform:media`; the host does not correct MediaSession timestamp contradictions or metadata-transition mismatches.
 
 For device navigation testing, the runtime host may render a deliberate non-functional placeholder that clearly indicates Sync is not available yet.
 

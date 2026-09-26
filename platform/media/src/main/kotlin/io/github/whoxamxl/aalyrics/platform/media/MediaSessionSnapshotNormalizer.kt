@@ -20,6 +20,7 @@ internal data class MediaSessionSnapshotInput(
     val positionMs: Long = 0L,
     val playbackRate: Float = 1.0f,
     val positionUpdatedAtMonotonicMs: Long? = null,
+    val positionSampledAtMonotonicMs: Long? = null,
 )
 
 /**
@@ -75,6 +76,8 @@ internal object MediaSessionSnapshotNormalizer {
             playbackRate = playbackRate,
             source = source,
             positionUpdatedAtMonotonicMs = input.positionUpdatedAtMonotonicMs
+                ?.takeIf { it >= 0L },
+            positionSampledAtMonotonicMs = input.positionSampledAtMonotonicMs
                 ?.takeIf { it >= 0L },
         )
     }

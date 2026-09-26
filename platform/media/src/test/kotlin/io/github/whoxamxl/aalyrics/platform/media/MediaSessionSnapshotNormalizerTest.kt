@@ -23,6 +23,7 @@ class MediaSessionSnapshotNormalizerTest {
                 status = PlaybackStatus.PLAYING,
                 positionMs = 12_000L,
                 positionUpdatedAtMonotonicMs = 345_678L,
+                positionSampledAtMonotonicMs = 345_999L,
             ),
         )
 
@@ -37,6 +38,7 @@ class MediaSessionSnapshotNormalizerTest {
         assertEquals(PlaybackStatus.PLAYING, snapshot.status)
         assertEquals(12_000L, snapshot.positionMs)
         assertEquals(345_678L, snapshot.positionUpdatedAtMonotonicMs)
+        assertEquals(345_999L, snapshot.positionSampledAtMonotonicMs)
     }
 
     @Test

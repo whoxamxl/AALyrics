@@ -775,6 +775,57 @@ class PhoneDetailsMapperTest {
     }
 
     @Test
+    fun `Verbose Details shares local sample anchor when source timestamp is unavailable`() {
+        val track = currentTrack()
+        val playback = PlaybackSnapshot(
+            track = track,
+            status = PlaybackStatus.PLAYING,
+            positionMs = 1_000L,
+            playbackRate = 1.0f,
+            source = PlaybackSource(id = "com.spotify.music"),
+            positionUpdatedAtMonotonicMs = null,
+            positionSampledAtMonotonicMs = 2_000L,
+        )
+        val identity = requireNotNull(playback.trackIdentity)
+        val lyrics = LyricsState.Ready(
+            lookup = LyricsLookup(
+                id = LyricsLookupId(12L),
+                track = track,
+                playbackIdentity = identity,
+            ),
+            lyrics = LyricsDocument(
+                lines = listOf(
+                    TimedLyricLine(
+                        text = "First word",
+                        startMs = 0L,
+                        words = listOf(
+                            io.github.whoxamxl.aalyrics.core.model.TimedWord("First", 0L, 1_000L),
+                            io.github.whoxamxl.aalyrics.core.model.TimedWord("word", 1_000L, 2_000L),
+                        ),
+                    ),
+                    TimedLyricLine(
+                        text = "Second word",
+                        startMs = 4_000L,
+                        words = listOf(
+                            io.github.whoxamxl.aalyrics.core.model.TimedWord("Second", 4_000L, 5_000L),
+                            io.github.whoxamxl.aalyrics.core.model.TimedWord("word", 5_000L, 6_000L),
+                        ),
+                    ),
+                ),
+            ),
+        )
+
+        val progress = mapPhoneDetailsVerboseProgress(
+            playback = playback,
+            lyricsState = lyrics,
+            currentMonotonicTimeMs = 5_500L,
+        )
+
+        assertEquals("0:04", progress.playbackPositionLabel)
+        assertEquals(2, progress.currentLineNumber)
+    }
+
+    @Test
     fun `Verbose Details progress projects playback time and current synced line`() {
         val track = currentTrack()
         val playback = PlaybackSnapshot(

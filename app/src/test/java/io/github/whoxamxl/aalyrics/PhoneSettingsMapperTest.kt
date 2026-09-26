@@ -289,6 +289,7 @@ class PhoneSettingsMapperTest {
                 ),
             ),
             verboseDetailsEnabled = true,
+            karaokeFeatureEnabled = true,
             plainLyricsAutoScrollEnabled = false,
             ignoreNonAudioApps = false,
             allowUnclassifiedApps = true,
@@ -313,6 +314,7 @@ class PhoneSettingsMapperTest {
             state.translationTargets.first { it.id == "fr" }.modelFailureReason,
         )
         assertEquals(true, state.verboseDetailsEnabled)
+        assertEquals(true, state.karaokeFeatureEnabled)
         assertEquals(false, state.plainLyricsAutoScrollEnabled)
         assertEquals(false, state.ignoreNonAudioApps)
         assertEquals(true, state.allowUnclassifiedApps)

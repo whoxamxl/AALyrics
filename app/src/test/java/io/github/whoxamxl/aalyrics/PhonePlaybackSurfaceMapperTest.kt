@@ -50,6 +50,7 @@ class PhonePlaybackSurfaceMapperTest {
 
         assertEquals("Current Track", state.title)
         assertEquals("Artist One, Artist Two", state.artist)
+        assertEquals(1_250L, state.positionSampledAtMonotonicMs)
         assertTrue(state.canSeek)
         assertTrue(state.queueAvailable)
         assertEquals(listOf(7L), state.queue.map { it.id })
@@ -126,5 +127,6 @@ class PhonePlaybackSurfaceMapperTest {
         playbackRate = 1.0f,
         source = PlaybackSource(id = "com.example.player"),
         positionUpdatedAtMonotonicMs = 1_000L,
+        positionSampledAtMonotonicMs = 1_250L,
     )
 }

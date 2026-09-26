@@ -626,3 +626,40 @@ PR #46 implemented this contract in the following bounded layers:
 10. run CI and bounded Codex review before merge.
 
 No implementation step should move Android framework types into `:ui:phone`.
+
+
+## Karaoke Quick control
+
+When the persisted Experimental Karaoke feature gate is ON, Expanded Player > Quick controls includes a Karaoke switch next to the existing Translation control.
+
+Contract:
+
+- the Quick-controls Karaoke row is hidden while the Experimental gate is OFF;
+- the live Karaoke toggle defaults to OFF;
+- toggling it does not trigger provider lookup or mutate lyrics;
+- effective rendering additionally requires a WORD_SYNC source;
+- LINE_SYNC and PLAIN sources ignore the live Karaoke toggle;
+- disabling the Experimental gate clears the live Karaoke toggle.
+
+Quick controls owns only the user interaction. Application-owned persisted state remains outside `:ui:phone`.
+
+
+## Playback clock continuity
+
+The playback surface must not reset its live position merely because unrelated metadata changes while a source omits `lastPositionUpdateTime`.
+
+For missing source timestamps:
+
+- the AALyrics-side monotonic timestamp captured when the MediaController snapshot is sampled is the Phone fallback anchor;
+- source timestamps remain authoritative whenever present and internally consistent;
+- Activity/Compose recreation must not create a new anchor for an existing snapshot;
+- the collapsed/expanded playback surface and Phone lyrics projection consume the same stable snapshot anchor;
+- title/artist/late-duration metadata changes must not rewind the displayed playback position;
+- pause must stop projection;
+- seek reconciliation remains authoritative when a new position sample arrives.
+
+A source timestamp is not considered invalid only because it is old. The source clock is rejected when the same timestamp is paired with changed position/status/rate, when the timestamp moves backwards on the same track, or when it is later than the local sample time. A null timestamp does not clear an existing quarantine; recovery requires a new valid non-null timestamp or a track/session identity change. A newly selected playing session is re-sampled once after 250ms so these contradictions can be detected even when AALyrics attaches in the middle of a track.
+
+Track transitions obey the same platform invariant. During the 600 ms metadata-stabilization window, the Playback Surface may temporarily continue displaying the last coherent stable track snapshot. It must not receive or construct a hybrid such as old title/artist identity with the pending track's position/status/rate/timestamps. Once the new identity is committed, its timeline replaces the old snapshot atomically.
+
+This keeps the player clock aligned with LINE/WORD Phone lyrics timing and PLAIN playback progress without making Karaoke enablement part of playback timing. The Playback Surface consumes the coherent snapshot supplied by `:platform:media`; it does not own metadata-stabilization or cross-track clock repair.

@@ -5,14 +5,17 @@ internal data class PhonePresentationSettingsSnapshot(
     val ignoreNonAudioApps: Boolean = true,
     val allowUnclassifiedApps: Boolean = false,
     val automaticallyCheckForUpdates: Boolean = true,
+    val karaokeFeatureEnabled: Boolean = false,
+    val karaokeModeEnabled: Boolean = false,
 )
 
 internal class PhonePresentationSettingsPersistence(
     private val readBoolean: (key: String, defaultValue: Boolean) -> Boolean,
     private val writeBooleans: (Map<String, Boolean>) -> Unit,
 ) {
-    fun read(): PhonePresentationSettingsSnapshot =
-        PhonePresentationSettingsSnapshot(
+    fun read(): PhonePresentationSettingsSnapshot {
+        val featureEnabled = readBoolean(KARAOKE_FEATURE_ENABLED_KEY, false)
+        return PhonePresentationSettingsSnapshot(
             verboseDetailsEnabled = readBoolean(
                 VERBOSE_DETAILS_ENABLED_KEY,
                 DEFAULT_VERBOSE_DETAILS_ENABLED,
@@ -29,7 +32,24 @@ internal class PhonePresentationSettingsPersistence(
                 AUTOMATICALLY_CHECK_FOR_UPDATES_KEY,
                 DEFAULT_AUTOMATICALLY_CHECK_FOR_UPDATES,
             ),
+            karaokeFeatureEnabled = featureEnabled,
+            karaokeModeEnabled = featureEnabled && readBoolean(KARAOKE_MODE_ENABLED_KEY, false),
         )
+    }
+
+    fun setKaraokeFeatureEnabled(enabled: Boolean) {
+        writeBooleans(if (enabled) {
+            mapOf(KARAOKE_FEATURE_ENABLED_KEY to true)
+        } else {
+            mapOf(KARAOKE_FEATURE_ENABLED_KEY to false, KARAOKE_MODE_ENABLED_KEY to false)
+        })
+    }
+
+    fun setKaraokeModeEnabled(enabled: Boolean) {
+        writeBooleans(mapOf(
+            KARAOKE_MODE_ENABLED_KEY to (enabled && read().karaokeFeatureEnabled),
+        ))
+    }
 
     fun setVerboseDetailsEnabled(enabled: Boolean) {
         writeBooleans(mapOf(VERBOSE_DETAILS_ENABLED_KEY to enabled))
@@ -55,6 +75,8 @@ internal class PhonePresentationSettingsPersistence(
                 ALLOW_UNCLASSIFIED_APPS_KEY to DEFAULT_ALLOW_UNCLASSIFIED_APPS,
                 AUTOMATICALLY_CHECK_FOR_UPDATES_KEY to
                     DEFAULT_AUTOMATICALLY_CHECK_FOR_UPDATES,
+                KARAOKE_FEATURE_ENABLED_KEY to false,
+                KARAOKE_MODE_ENABLED_KEY to false,
             ),
         )
     }
@@ -65,6 +87,8 @@ internal class PhonePresentationSettingsPersistence(
         const val ALLOW_UNCLASSIFIED_APPS_KEY = "phone_allow_unclassified_apps"
         const val AUTOMATICALLY_CHECK_FOR_UPDATES_KEY =
             "phone_automatically_check_for_updates"
+        const val KARAOKE_FEATURE_ENABLED_KEY = "phone_karaoke_feature_enabled"
+        const val KARAOKE_MODE_ENABLED_KEY = "phone_karaoke_mode_enabled"
 
         const val DEFAULT_VERBOSE_DETAILS_ENABLED = false
         const val DEFAULT_IGNORE_NON_AUDIO_APPS = true

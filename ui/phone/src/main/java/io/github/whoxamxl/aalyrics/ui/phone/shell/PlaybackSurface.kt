@@ -54,6 +54,9 @@ fun PlaybackSurface(
     onQueueItemSelected: (Long) -> Unit,
     onOpenPlaybackApp: () -> Unit,
     onTranslationEnabledChanged: (Boolean) -> Unit,
+    karaokeFeatureEnabled: Boolean = false,
+    karaokeModeEnabled: Boolean = false,
+    onKaraokeModeEnabledChanged: (Boolean) -> Unit = {},
     modifier: Modifier = Modifier,
     artwork: (@Composable BoxScope.() -> Unit)? = null,
     queueArtwork: (@Composable BoxScope.(PlaybackQueueItemUiState) -> Unit)? = null,
@@ -261,6 +264,9 @@ fun PlaybackSurface(
                 onQueueItemSelected = onQueueItemSelected,
                 onOpenPlaybackApp = onOpenPlaybackApp,
                 onTranslationEnabledChanged = onTranslationEnabledChanged,
+                karaokeFeatureEnabled = karaokeFeatureEnabled,
+                karaokeModeEnabled = karaokeModeEnabled,
+                onKaraokeModeEnabledChanged = onKaraokeModeEnabledChanged,
                 transformationDragModifier = expandedTransformDragModifier,
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
@@ -281,30 +287,23 @@ private fun rememberLivePlaybackPositionMs(
     state: PlaybackSurfaceUiState,
 ): Long {
     var positionMs by remember { mutableLongStateOf(state.positionMs) }
-
     LaunchedEffect(
+        state.playbackIdentityKey,
         state.positionMs,
         state.playbackRate,
         state.isPlaying,
         state.durationMs,
         state.positionUpdatedAtMonotonicMs,
-        state.title,
-        state.artist,
+        state.positionSampledAtMonotonicMs,
     ) {
-        val callbackAgeMs = if (
-            state.isPlaying &&
-            state.positionUpdatedAtMonotonicMs != null
-        ) {
-            (SystemClock.elapsedRealtime() - state.positionUpdatedAtMonotonicMs)
-                .coerceAtLeast(0L)
-        } else {
-            0L
-        }
-
-        val initialAdvanceMs = (callbackAgeMs * state.playbackRate).toLong()
-        positionMs = clampPlaybackPosition(
-            positionMs = state.positionMs + initialAdvanceMs,
+        positionMs = projectedLivePlaybackPositionMs(
+            positionMs = state.positionMs,
+            playbackRate = state.playbackRate,
+            isPlaying = state.isPlaying,
             durationMs = state.durationMs,
+            currentMonotonicTimeMs = SystemClock.elapsedRealtime(),
+            sourceUpdatedAtMonotonicMs = state.positionUpdatedAtMonotonicMs,
+            sampledAtMonotonicMs = state.positionSampledAtMonotonicMs,
         )
 
         if (!state.isPlaying || state.playbackRate <= 0f) return@LaunchedEffect
@@ -323,6 +322,29 @@ private fun rememberLivePlaybackPositionMs(
     }
 
     return positionMs
+}
+
+internal fun projectedLivePlaybackPositionMs(
+    positionMs: Long,
+    playbackRate: Float,
+    isPlaying: Boolean,
+    durationMs: Long?,
+    currentMonotonicTimeMs: Long,
+    sourceUpdatedAtMonotonicMs: Long?,
+    sampledAtMonotonicMs: Long?,
+): Long {
+    val updatedAtMonotonicMs = sourceUpdatedAtMonotonicMs
+        ?: sampledAtMonotonicMs
+    val callbackAgeMs = if (isPlaying && updatedAtMonotonicMs != null) {
+        (currentMonotonicTimeMs - updatedAtMonotonicMs).coerceAtLeast(0L)
+    } else {
+        0L
+    }
+    val initialAdvanceMs = (callbackAgeMs * playbackRate).toLong()
+    return clampPlaybackPosition(
+        positionMs = positionMs + initialAdvanceMs,
+        durationMs = durationMs,
+    )
 }
 
 private fun clampPlaybackPosition(

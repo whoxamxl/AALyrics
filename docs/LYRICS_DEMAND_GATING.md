@@ -91,6 +91,8 @@ PlaybackLyricsController      (:core:lyrics)
 
 The gate may depend on normalized `PlaybackSnapshot` and the existing playback-controller boundary. It must not call concrete providers, candidate selection, or `LyricsCoordinator` directly.
 
+"Normalized" includes identity/timeline coherence from `:platform:media`: a retained snapshot must describe one logical track sample. The gate stores and replays that snapshot as-is; it must not combine a stable identity with timing from a pending different track or attempt to repair MediaSession timestamp contradictions.
+
 ## Snapshot and transition behavior
 
 The gate must retain the latest normalized `PlaybackSnapshot` even while demand is inactive.

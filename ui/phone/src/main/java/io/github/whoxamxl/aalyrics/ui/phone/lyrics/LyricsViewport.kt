@@ -29,6 +29,9 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -39,13 +42,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -54,9 +59,11 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextAlign
@@ -371,18 +378,12 @@ private fun LyricsViewportRow(
     val isCurrent = state.syncType != LyricsSyncType.PLAIN && index == state.currentLineIndex
     val virtualIndex = index + 1f
 
-    val text = if (
-        isCurrent &&
-        state.syncType == LyricsSyncType.WORD &&
-        line.words.isNotEmpty()
-    ) {
-        buildWordProgressText(
-            words = line.words,
-            currentWordIndex = state.currentWordIndex,
-            currentWordProgress = state.currentWordProgress,
-        )
-    } else {
-        buildAnnotatedString { append(line.text) }
+    val karaokeLine = state.karaokeLine?.takeIf { karaoke ->
+        val sweepValid = karaoke.sweep?.let { sweep ->
+            sweep.start >= 0 && sweep.end <= line.text.length &&
+                sweep.start < sweep.end && sweep.progress.isFinite()
+        } ?: true
+        isCurrent && karaoke.completedEnd in 0..line.text.length && sweepValid
     }
 
     val isTimed = state.syncType != LyricsSyncType.PLAIN
@@ -441,9 +442,7 @@ private fun LyricsViewportRow(
                 },
             verticalArrangement = Arrangement.spacedBy(TranslationIntraRowGap),
         ) {
-            Text(
-                text = text,
-                style = AALyricsTypography.LyricsSupporting.copy(
+            val lyricStyle = AALyricsTypography.LyricsSupporting.copy(
                     fontSize = if (state.syncType == LyricsSyncType.PLAIN) {
                         PlainLyricsFontSize
                     } else {
@@ -455,14 +454,26 @@ private fun LyricsViewportRow(
                     } else {
                         FontWeight.Bold
                     },
-                ),
-                color = if (state.syncType == LyricsSyncType.PLAIN) {
+                )
+            val lyricColor = if (state.syncType == LyricsSyncType.PLAIN) {
                     AALyricsColors.TextSecondary
                 } else {
                     AALyricsColors.TextPrimary
-                },
-                textAlign = TextAlign.Start,
-            )
+                }
+            if (karaokeLine != null) {
+                KaraokeLineText(
+                    text = line.text,
+                    karaoke = karaokeLine,
+                    style = lyricStyle,
+                )
+            } else {
+                Text(
+                    text = line.text,
+                    style = lyricStyle,
+                    color = lyricColor,
+                    textAlign = TextAlign.Start,
+                )
+            }
             line.translatedText?.let { translatedText ->
                 Text(
                     text = translatedText,
@@ -507,27 +518,117 @@ private fun OpeningFocusRow(
     )
 }
 
-private fun buildWordProgressText(
-    words: List<String>,
-    currentWordIndex: Int?,
-    currentWordProgress: Float,
-) = buildAnnotatedString {
-    val activeIndex = currentWordIndex ?: -1
-    val activeProgress = currentWordProgress.coerceIn(0f, 1f)
-    val activeColor = lerp(
-        AALyricsColors.TextPrimary,
-        AALyricsColors.AccentCyan,
-        0.55f + (activeProgress * 0.45f),
-    )
+@Composable
+private fun KaraokeLineText(
+    text: String,
+    karaoke: KaraokeLineUiState,
+    style: androidx.compose.ui.text.TextStyle,
+) {
+    val primary = AALyricsColors.TextPrimary
+    val secondary = AALyricsColors.TextSecondary.copy(alpha = 0.72f)
+    val base = buildAnnotatedString {
+        withStyle(SpanStyle(color = primary)) { append(text, 0, karaoke.completedEnd) }
+        withStyle(SpanStyle(color = secondary)) { append(text, karaoke.completedEnd, text.length) }
+    }
+    val sweep = karaoke.sweep
+    var layout by remember(text) { mutableStateOf<TextLayoutResult?>(null) }
 
-    words.forEachIndexed { index, word ->
-        val color = when {
-            index < activeIndex -> AALyricsColors.TextPrimary
-            index == activeIndex -> activeColor
-            else -> AALyricsColors.TextSecondary.copy(alpha = 0.72f)
+    Box(Modifier.fillMaxWidth()) {
+        Text(text = base, style = style, textAlign = TextAlign.Start)
+        if (sweep != null) {
+            val overlay = buildAnnotatedString {
+                withStyle(SpanStyle(color = Color.Transparent)) { append(text, 0, sweep.start) }
+                withStyle(SpanStyle(color = primary)) { append(text, sweep.start, sweep.end) }
+                withStyle(SpanStyle(color = Color.Transparent)) {
+                    append(text, sweep.end, text.length)
+                }
+            }
+            Text(
+                text = overlay,
+                style = style,
+                textAlign = TextAlign.Start,
+                onTextLayout = { layout = it },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clearAndSetSemantics {}
+                    .drawWithContent {
+                        val textLayout = layout ?: return@drawWithContent
+                        val visualBoxes = (sweep.start until sweep.end).map { index ->
+                            KaraokeVisualBox(
+                                line = textLayout.getLineForOffset(index),
+                                bounds = textLayout.getBoundingBox(index),
+                            )
+                        }
+                        val clip = Path()
+                        karaokeVisualSweepClipRects(
+                            boxes = visualBoxes,
+                            progress = sweep.progress,
+                        ).forEach(clip::addRect)
+                        val contentScope = this
+                        clipPath(clip) { contentScope.drawContent() }
+                    },
+            )
         }
-        withStyle(SpanStyle(color = color)) {
-            append(word)
+    }
+}
+
+internal data class KaraokeVisualBox(
+    val line: Int,
+    val bounds: Rect,
+)
+
+internal fun karaokeVisualSweepClipRects(
+    boxes: List<KaraokeVisualBox>,
+    progress: Float,
+): List<Rect> {
+    val segments = boxes
+        .filter { it.bounds.width > 0f && it.bounds.height > 0f }
+        .groupBy(KaraokeVisualBox::line)
+        .toSortedMap()
+        .values
+        .flatMap { lineBoxes ->
+            val sorted = lineBoxes
+                .map(KaraokeVisualBox::bounds)
+                .sortedWith(compareBy<Rect> { it.left }.thenBy { it.right })
+            if (sorted.isEmpty()) {
+                emptyList()
+            } else {
+                buildList {
+                    var current = sorted.first()
+                    sorted.drop(1).forEach { next ->
+                        current = if (next.left <= current.right) {
+                            Rect(
+                                left = current.left,
+                                top = minOf(current.top, next.top),
+                                right = maxOf(current.right, next.right),
+                                bottom = maxOf(current.bottom, next.bottom),
+                            )
+                        } else {
+                            add(current)
+                            next
+                        }
+                    }
+                    add(current)
+                }
+            }
+        }
+
+    val totalWidth = segments.sumOf { it.width.toDouble() }.toFloat()
+    var remaining = totalWidth * progress.coerceIn(0f, 1f)
+
+    return buildList {
+        for (segment in segments) {
+            if (remaining <= 0f) break
+            val width = remaining.coerceAtMost(segment.width)
+            add(
+                Rect(
+                    left = segment.left,
+                    top = segment.top,
+                    right = segment.left + width,
+                    bottom = segment.bottom,
+                ),
+            )
+            remaining -= width
         }
     }
 }

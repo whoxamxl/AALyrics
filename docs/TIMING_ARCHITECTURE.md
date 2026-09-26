@@ -2,11 +2,11 @@
 
 ## Status
 
-Phase 11.3a (effective-position foundation), Phase 11.3b (existing current-line integration), and Phase 11.4a (shared Timing Semantic Engine) are implemented and validated on `feature/effective-timing-foundation`.
+Phase 11.3a (effective-position foundation), Phase 11.3b (existing current-line integration), and Phase 11.4a (shared Timing Semantic Engine) are implemented and validated. Phase 11.4b/11.4c Phone Karaoke presentation is implemented on top of that shared engine; Android Auto Karaoke remains deferred.
 
 The shared **Timing Semantic Engine** consumes canonical timed lyrics + `EffectiveLyricsPosition` and produces deterministic line/word/progress/boundary facts. The engine is mode-agnostic; Karaoke ON/OFF is not an input.
 
-The current Phone production consumer uses only the engine's active-line fact, preserving current UI behaviour. Sync controls, persistence, non-zero production calibration, Karaoke consumer/rendering, and Android Auto timing presentation remain outside this scope.
+Normal Phone timed presentation consumes the active-line fact. The authorized Phone WORD_SYNC Karaoke consumer may additionally consume the shared word/progress/boundary facts downstream without changing timing semantics. Sync controls, persistence, non-zero production calibration, and Android Auto timing presentation remain outside this scope.
 
 The working fork contains `lyrics/KaraokeTiming.kt` and `util/SyncCalibration.kt`. They were re-checked at `v1.13.0` on 2026-09-25. `SyncCalibration.offsetForTap(targetTimeMs, rawPositionMs) = targetTimeMs - rawPositionMs` preserves the approved sign convention. `KaraokeTiming` provides mature active-word boundary evidence that is **PRESERVE / REFACTOR**; Android-specific sweep/layout behaviour remains outside the shared engine.
 
@@ -163,7 +163,13 @@ Current Phone presentation continues to consume only the active-line result, so 
 
 ## Playback clock ownership
 
-The existing playback projection remains upstream.
+Playback projection remains upstream. Before timing sees a playback sample, `:platform:media` is responsible for making the snapshot internally coherent:
+
+- source timestamp contradictions are reconciled at the MediaSession boundary;
+- a fallback sample timestamp is captured when the platform snapshot is sampled, not when UI later observes it;
+- during track-metadata stabilization, track/source identity and position/status/rate/timestamps are committed as one logical sample rather than cross-spliced between tracks.
+
+The timing layer therefore accepts projected playback position as an already-normalized fact. It does not carry MediaSession drift state, metadata-stabilization state, or a second identity/timeline repair mechanism.
 
 Timing calibration must not:
 
@@ -347,8 +353,8 @@ Phase 11.4a — Shared Timing Semantic Engine              implemented
 Phase 11.3c — Sync calibration UX                        deferred
     controls + scope + persistence
             ↓
-Phase 11.4b — Karaoke consumer/rendering                 deferred
-    consume shared semantic facts; do not recompute them
+Phase 11.4b/11.4c — Phone Karaoke consumer/rendering     ✅
+    consumes shared WORD semantic facts; does not recompute them
 ```
 
 Phase numbering groups capabilities; implementation order follows dependency and regression safety.
@@ -367,6 +373,6 @@ The implementation must preserve these invariants:
 - the timing capability remains framework-independent;
 - `:core:timing` may depend on `:core:model` for semantic projection, but not Android/UI/provider/Translation/runtime infrastructure;
 - the shared semantic engine does not accept Karaoke enablement/mode as input;
-- current Phone presentation may consume only the active-line fact while preserving existing behaviour;
+- normal Phone timed presentation consumes the active-line fact, while the authorized Phone WORD_SYNC Karaoke path may consume the shared word/progress/boundary facts downstream;
 - Sync UI and persistence remain out of scope until separately authorized;
-- future Karaoke consumers use shared semantic output and never reapply the offset or duplicate line/word timing semantics.
+- Karaoke consumers use shared semantic output and never reapply the offset or duplicate line/word timing semantics.

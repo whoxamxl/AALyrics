@@ -174,6 +174,12 @@ WORD timing provides karaoke-level progress.
   - active word: AccentCyan/progress treatment,
   - upcoming words: secondary/dim treatment.
 - If timing data supports a stable continuous in-word sweep, it may be used without changing layout geometry.
+- Treat Karaoke line state and sweep animation as separate presentation facts. A valid Karaoke line may have no active sweep.
+- Before the first word starts, keep the complete current line pending/secondary rather than showing it all as completed.
+- During an explicit inter-word gap, preserve the completed primary prefix and pending secondary suffix. Do not flash the whole row back to normal all-primary current-line styling.
+- When a gap occurs inside one visible display group made from multiple timing fragments, keep the partial visible-group sweep frozen at the last completed fragment boundary.
+- After the final explicitly-ended word, keep the complete line primary/completed until the next line transition.
+- Fall back to normal current-line styling only when the token-to-canonical-text mapping is not safe enough to render Karaoke.
 - The viewport follows the timed line while Follow mode is active.
 
 ### LINE
@@ -360,3 +366,72 @@ The following details are intentionally not frozen until the first interactive P
 - exact PLAIN lead-in/lead-out weighting.
 
 These are visual/behavioral tuning parameters, not reasons to change the ownership model above.
+
+
+## WORD_SYNC Karaoke sweep
+
+Phone Karaoke is authorized only for genuine WORD_SYNC lyrics and only when both application-owned Karaoke toggles resolve to active.
+
+The existing LyricsViewport remains the owner of row geometry, Follow/Browse behaviour, line focus, scale, alpha, edge fades, and Translation placement.
+
+Karaoke changes only the canonical text rendering of the current line:
+
+```text
+completed text | active timed token | pending text
+primary        | continuous sweep    | secondary
+```
+
+Rules:
+
+- preserve the canonical source line as the rendered text;
+- token-to-character mapping is supplied as presentation-ready state;
+- consecutive timing tokens mapped to the same visible range are presented as one display group and sweep that visible word only once;
+- the viewport does not inspect `TimedWord` or timing-engine types directly;
+- the viewport does not choose the active word or calculate word boundaries;
+- ordinary one-token groups consume shared semantic `wordProgress` directly;
+- multi-token display groups consume presentation-ready group progress produced by the mapper from the already-authoritative active token plus the canonical group timing interval;
+- if the active token cannot be mapped safely or the mapping is not credible, fall back to normal current-line styling;
+- ordinary one-token/multi-token groups require a defensible semantic/group end;
+- the final open-ended display group may use the working fork's 650ms **Phone-only visual fallback** so the last readable word can complete one sweep;
+- that 650ms fallback never modifies `:core:timing`, canonical timestamps, or semantic `wordProgress`;
+- translated text remains secondary and receives no independent word progress;
+- LINE_SYNC never receives synthetic Karaoke rendering.
+
+The mature working-fork `LyricWordLayout` and `PhoneKaraokeSweep` grouping behavior are implementation references to preserve/refactor. The Compose renderer should reuse their proven mapping/grouping behavior where compatible rather than inventing a new algorithm, while leaving timing selection in the shared Timing Semantic Engine.
+
+
+### Karaoke clock stability
+
+Karaoke ON/OFF changes only word-level rendering. It must not shift the current line or playback position.
+
+When a MediaSession omits or publishes an unusable source position timestamp, `:platform:media` supplies the stable AALyrics-side `positionSampledAtMonotonicMs` captured when the controller snapshot was sampled. Phone presentation projects from that immutable snapshot anchor; it does not create a receipt-time/Compose-time anchor. The same reconciled playback clock is used whether Karaoke is OFF or ON. Entering/leaving the Lyrics destination, changing Karaoke update cadence, or toggling the feature must not reset the timing sample or move the lyrics clock. Metadata-only playback updates must not re-anchor the clock, and a pending different track timeline must not be spliced onto the stable identity.
+
+
+### Line-wide timing tokens
+
+A WORD_SYNC document may still contain a line whose only timing token represents the entire line. If that canonical line contains multiple readable lexical units, the token is not considered renderable word granularity.
+
+For such a line:
+
+- do not sweep only the first lexical range;
+- do not apply the 650ms final-group fallback;
+- render the normal current-line style;
+- keep the underlying document/timing semantics unchanged.
+
+This check is language-independent. Japanese lexical grouping remains a display heuristic only and must not decide whether timing is semantically word-level.
+
+
+### Multi-word provider chunks
+
+Karaoke rendering must not assume that a provider timing token is a lexical word. When one aligned token spans multiple readable lexical ranges, sweep the complete visible span covered by those ranges. Do not map only the first overlapped word.
+
+This avoids abrupt completed-color jumps for chunked timing payloads such as `Just a boy, ` followed by `just a boy,`, while retaining same-range grouping for sub-word fragments.
+
+
+### Open-ended final group timing
+
+When the last visible timed group in a line has no provider `endMs`, the viewport must not immediately apply the 650ms fallback if later canonical timing is available.
+
+Use, in order, the word end, next word start, line end, or next timed line start. A `♪` timed line is a valid next-line boundary. Use the 650ms visual fallback only when the document provides no later timing boundary.
+
+This prevents an artificial completed-line hold between the end of a sweep and the next lyric/interlude line while preserving canonical source timing.

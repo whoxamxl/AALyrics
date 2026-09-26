@@ -73,8 +73,9 @@ internal object MediaSessionSelectionPolicy {
  * Owns one selected session callback and forwards normalized snapshots.
  *
  * Track-changing metadata is stabilized for the working fork's 600 ms window.
- * Playback status/timeline updates remain immediate, but retain the last stable
- * track identity while a metadata change is pending.
+ * Same-identity playback updates remain live. When a different track identity is
+ * pending, its timeline is held until stabilization commits that identity and
+ * timeline together, so downstream never receives a synthetic cross-track snapshot.
  */
 internal class SelectedMediaSessionRuntime<Token>(
     private val selfPackageName: String,
@@ -90,6 +91,8 @@ internal class SelectedMediaSessionRuntime<Token>(
     private var selectedCallback: RuntimeMediaControllerCallback? = null
     private var stableSnapshot: PlaybackSnapshot? = null
     private var pendingMetadataTask: ScheduledMetadataTask? = null
+    private var pendingClockValidationTask: ScheduledMetadataTask? = null
+    private val playbackClockReconciler = PlaybackClockReconciler()
 
     fun updateSessions(
         controllers: List<RuntimeMediaController<Token>>,
@@ -159,6 +162,9 @@ internal class SelectedMediaSessionRuntime<Token>(
     private fun switchTo(next: RuntimeMediaController<Token>?) {
         pendingMetadataTask?.cancel()
         pendingMetadataTask = null
+        pendingClockValidationTask?.cancel()
+        pendingClockValidationTask = null
+        playbackClockReconciler.reset()
 
         val previous = selectedController
         val previousCallback = selectedCallback
@@ -186,9 +192,10 @@ internal class SelectedMediaSessionRuntime<Token>(
         selectedCallback = callback
         try {
             next.attach(callback)
-            val snapshot = next.snapshot()
+            val snapshot = playbackClockReconciler.reconcile(next.snapshot())
             stableSnapshot = snapshot
             sink.onPlaybackSnapshot(snapshot)
+            scheduleClockValidation(next.token, snapshot)
             controlStateSink.onPlaybackControlState(next.controlState())
             artworkSink.onPlaybackArtwork(next.artwork())
             queueArtworkBitmapSink.onQueueArtworkBitmaps(next.queueArtworkBitmaps())
@@ -213,7 +220,7 @@ internal class SelectedMediaSessionRuntime<Token>(
         object : RuntimeMediaControllerCallback {
             override fun onMetadataChanged() {
                 if (!owns(token)) return
-                val latest = selectedController?.snapshot() ?: return
+                val latest = playbackClockReconciler.reconcile(selectedController?.snapshot() ?: return)
                 if (latest.trackIdentity == stableSnapshot?.trackIdentity) {
                     stableSnapshot = latest
                     sink.onPlaybackSnapshot(latest)
@@ -225,7 +232,7 @@ internal class SelectedMediaSessionRuntime<Token>(
 
             override fun onPlaybackStateChanged() {
                 val current = selectedController?.takeIf { it.token == token } ?: return
-                val latest = current.snapshot()
+                val latest = playbackClockReconciler.reconcile(current.snapshot())
                 controlStateSink.onPlaybackControlState(current.controlState())
                 if (
                     pendingMetadataTask == null &&
@@ -233,15 +240,7 @@ internal class SelectedMediaSessionRuntime<Token>(
                 ) {
                     scheduleMetadata(token)
                 }
-                val forwarded = if (pendingMetadataTask != null) {
-                    stableSnapshot?.let { stable ->
-                        latest.copy(track = stable.track, source = stable.source)
-                    } ?: latest
-                } else {
-                    stableSnapshot = latest
-                    latest
-                }
-                sink.onPlaybackSnapshot(forwarded)
+                forwardIfIdentityCoherent(latest)
                 if (!current.isPlaying) {
                     refreshSessions()
                 }
@@ -260,12 +259,60 @@ internal class SelectedMediaSessionRuntime<Token>(
             }
         }
 
+    private fun scheduleClockValidation(
+        token: Token,
+        initialSnapshot: PlaybackSnapshot,
+    ) {
+        if (!initialSnapshot.isPlaying ||
+            initialSnapshot.positionUpdatedAtMonotonicMs == null ||
+            initialSnapshot.positionSampledAtMonotonicMs == null
+        ) {
+            return
+        }
+
+        pendingClockValidationTask?.cancel()
+        pendingClockValidationTask = scheduler.schedule(CLOCK_VALIDATION_DELAY_MS) {
+            pendingClockValidationTask = null
+            val current = selectedController?.takeIf { it.token == token }
+                ?: return@schedule
+            val raw = current.snapshot()
+            val reconciled = playbackClockReconciler.reconcile(raw)
+            val sourceTimestampRejected =
+                raw.positionUpdatedAtMonotonicMs != null &&
+                    reconciled.positionUpdatedAtMonotonicMs == null
+            if (!sourceTimestampRejected) return@schedule
+
+            forwardIfIdentityCoherent(reconciled)
+        }
+    }
+
+    /**
+     * Keeps track identity and playback timeline atomic while metadata identity is
+     * being stabilized. Same-identity playback updates remain live, but a timeline
+     * sampled from a different track is held until the metadata task commits that
+     * track as the new stable snapshot.
+     */
+    private fun forwardIfIdentityCoherent(snapshot: PlaybackSnapshot): Boolean {
+        val stable = stableSnapshot
+        if (
+            pendingMetadataTask != null &&
+            stable != null &&
+            snapshot.trackIdentity != stable.trackIdentity
+        ) {
+            return false
+        }
+
+        stableSnapshot = snapshot
+        sink.onPlaybackSnapshot(snapshot)
+        return true
+    }
+
     private fun scheduleMetadata(token: Token) {
         pendingMetadataTask?.cancel()
         pendingMetadataTask = scheduler.schedule(metadataStabilizationMs) {
             pendingMetadataTask = null
             val current = selectedController?.takeIf { it.token == token } ?: return@schedule
-            val snapshot = current.snapshot()
+            val snapshot = playbackClockReconciler.reconcile(current.snapshot())
             stableSnapshot = snapshot
             sink.onPlaybackSnapshot(snapshot)
             artworkSink.onPlaybackArtwork(current.artwork())
@@ -276,5 +323,6 @@ internal class SelectedMediaSessionRuntime<Token>(
 
     private companion object {
         const val DEFAULT_METADATA_STABILIZATION_MS = 600L
+        const val CLOCK_VALIDATION_DELAY_MS = 250L
     }
 }

@@ -3,6 +3,7 @@ package io.github.whoxamxl.aalyrics
 import io.github.whoxamxl.aalyrics.core.lyrics.LyricsState
 import io.github.whoxamxl.aalyrics.core.model.LyricsSyncType
 import io.github.whoxamxl.aalyrics.core.model.PlaybackSnapshot
+import io.github.whoxamxl.aalyrics.core.model.TimedLyricLine
 import io.github.whoxamxl.aalyrics.core.timing.LyricsTimingOffset
 import io.github.whoxamxl.aalyrics.core.timing.effectiveLyricsPosition
 import io.github.whoxamxl.aalyrics.core.timing.projectLyricsTiming
@@ -34,6 +35,8 @@ internal fun mapPhoneLyricsState(
     translationSettings: TranslationSettings = TranslationSettings(enabled = false),
     translationModelStates: Map<String, TranslationModelState> = emptyMap(),
     lyricsTimingOffset: LyricsTimingOffset = LyricsTimingOffset.ZERO,
+    karaokeFeatureEnabled: Boolean = false,
+    karaokeModeEnabled: Boolean = false,
 ): LyricsScreenUiState {
     val track = playback.track
     val matchingLyricsState = lyricsState
@@ -67,18 +70,44 @@ internal fun mapPhoneLyricsState(
         currentCanonicalIdentity = currentCanonicalIdentity,
         fallbackSourceLanguage = document?.languageTag,
     )
-    val projectedPlaybackPositionMs = projectedPlaybackPosition(playback, currentMonotonicTimeMs)
+    val sourceSyncType = document?.syncType ?: LyricsSyncType.PLAIN
+    val karaokeActive = karaokeFeatureEnabled && karaokeModeEnabled &&
+        sourceSyncType == LyricsSyncType.WORD
+    val projectedPlaybackPositionMs = projectedPlaybackPosition(
+        playback = playback,
+        currentMonotonicTimeMs = currentMonotonicTimeMs,
+    )
     val lyricsPosition = effectiveLyricsPosition(
         projectedPlaybackPositionMs = projectedPlaybackPositionMs,
         offset = lyricsTimingOffset,
     )
     val timingProjection = document?.let { projectLyricsTiming(it, lyricsPosition) }
-    val sourceSyncType = document?.syncType ?: LyricsSyncType.PLAIN
     val displaySyncType = if (sourceSyncType == LyricsSyncType.WORD) {
         LyricsSyncType.LINE
     } else {
         sourceSyncType
     }
+    val karaokeLine = if (karaokeActive) {
+        val activeLineIndex = timingProjection?.activeLineIndex
+        val activeLine = activeLineIndex
+            ?.let { document?.lines?.getOrNull(it) as? TimedLyricLine }
+        val nextTimedLineStartMs = activeLineIndex
+            ?.let { currentIndex ->
+                document?.lines
+                    ?.drop(currentIndex + 1)
+                    ?.firstNotNullOfOrNull { nextLine ->
+                        (nextLine as? TimedLyricLine)?.startMs
+                    }
+            }
+        activeLine?.let { line ->
+            mapPhoneKaraokeLine(
+                line = line,
+                timing = timingProjection,
+                effectivePositionMs = lyricsPosition.milliseconds,
+                nextTimedLineStartMs = nextTimedLineStartMs,
+            )
+        }
+    } else null
 
     return LyricsScreenUiState(
         trackCard = TrackCardUiState(
@@ -114,6 +143,9 @@ internal fun mapPhoneLyricsState(
                 },
             syncType = displaySyncType,
             currentLineIndex = timingProjection?.activeLineIndex,
+            currentWordIndex = if (karaokeActive) timingProjection?.activeWordIndex else null,
+            currentWordProgress = if (karaokeActive) timingProjection?.wordProgress ?: 0f else 0f,
+            karaokeLine = karaokeLine,
             playbackProgress = track
                 ?.durationMs
                 ?.takeIf { it > 0L }
@@ -246,6 +278,20 @@ private fun shortLanguageLabel(languageTag: String?): String =
         ?.uppercase(Locale.US)
         ?: "AUTO"
 
+
+internal fun hasCurrentWordSyncedLyrics(
+    playback: PlaybackSnapshot,
+    lyricsState: LyricsState,
+): Boolean = when (lyricsState) {
+    is LyricsState.Ready ->
+        lyricsState.lookup.playbackIdentity == playback.trackIdentity &&
+            lyricsState.lyrics.syncType == LyricsSyncType.WORD
+    is LyricsState.Degraded ->
+        lyricsState.lookup.playbackIdentity == playback.trackIdentity &&
+            lyricsState.lyrics.syncType == LyricsSyncType.WORD
+    else -> false
+}
+
 internal fun projectedPlaybackPosition(
     playback: PlaybackSnapshot,
     currentMonotonicTimeMs: Long,
@@ -255,7 +301,9 @@ internal fun projectedPlaybackPosition(
         return playback.track?.durationMs?.let { base.coerceIn(0L, it) } ?: base
     }
 
-    val elapsedMs = playback.positionUpdatedAtMonotonicMs
+    val updatedAtMonotonicMs = playback.positionUpdatedAtMonotonicMs
+        ?: playback.positionSampledAtMonotonicMs
+    val elapsedMs = updatedAtMonotonicMs
         ?.let { updatedAt -> (currentMonotonicTimeMs - updatedAt).coerceAtLeast(0L) }
         ?: 0L
     val projected = base + (elapsedMs * playback.playbackRate)
