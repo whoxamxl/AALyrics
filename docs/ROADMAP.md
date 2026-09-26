@@ -391,7 +391,7 @@ The slice does not add lyrics caching, provider optimization, Translation execut
 
 #### Android Auto Now Playing completion — implemented / physical host validated
 
-The `feature/android-auto-now-playing` branch implements the existing legacy `MediaBrowserServiceCompat` + `MediaSessionCompat` Now Playing presentation before the separate Car App Library templated-media work. Physical Android Auto validation is now available, including host rendering and forced process-death recovery without reopening the Phone Activity. DHU previously had a video-focus limitation; that historical tooling limitation no longer means the physical host path is unvalidated. `TASK.md` records the exact evidence and remaining cold-start follow-up.
+The merged Android Auto Now Playing work completes the current legacy `MediaBrowserServiceCompat` + `MediaSessionCompat` Now Playing presentation before the separate Car App Library templated-media work. Physical Android Auto validation is available, including host rendering and process/lifecycle recovery without requiring the Phone Activity to remain open. DHU's earlier video-focus limitation is historical and does not describe the current validation state. The durable behavior contract is `docs/ANDROID_AUTO_NOW_PLAYING.md`; branch-local execution evidence is not treated as the current roadmap source of truth.
 
 It is authorized to integrate existing application capabilities only:
 
@@ -420,12 +420,12 @@ The durable distribution policy is defined in `docs/RELEASES.md`:
 
 - Google Play is not a distribution channel for AALyrics;
 - durable builds are release-signed APKs published through GitHub Releases;
-- prerelease version tags such as `v0.1.0-alpha.1` are GitHub Pre-releases and may intentionally represent incomplete development milestones;
+- prerelease version tags such as `v1.0.0-beta.1` identify alpha/beta/RC product channels; the Release workflow marks them GitHub Pre-releases by default, while an explicit post-publication label change may be used for repository presentation without changing the semantic channel;
 - suffix-free tags such as `v0.1.0` are reserved for stable releases;
 - release tags must point to commits contained in `main`;
 - one persistent release signing identity is required for update compatibility.
 
-Signed prereleases have been published successfully through `v0.2.0-alpha.2`; later tags continue to follow the same documented release policy.
+`v1.0.0-beta.1` has been published successfully through the signed Release workflow and represents the current 1.0 Beta milestone. Its GitHub Release label is currently set to None so GitHub surfaces it as Latest; the tag/version and product status remain Beta. Later tags continue to follow the canonical release/version policy in `docs/RELEASES.md`.
 
 ## Android Auto media presentation track
 
