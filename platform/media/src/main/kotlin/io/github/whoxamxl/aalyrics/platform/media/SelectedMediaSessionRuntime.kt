@@ -239,15 +239,7 @@ internal class SelectedMediaSessionRuntime<Token>(
                 ) {
                     scheduleMetadata(token)
                 }
-                val forwarded = if (pendingMetadataTask != null) {
-                    stableSnapshot?.let { stable ->
-                        latest.copy(track = stable.track, source = stable.source)
-                    } ?: latest
-                } else {
-                    stableSnapshot = latest
-                    latest
-                }
-                sink.onPlaybackSnapshot(forwarded)
+                forwardIfIdentityCoherent(latest)
                 if (!current.isPlaying) {
                     refreshSessions()
                 }
@@ -289,16 +281,29 @@ internal class SelectedMediaSessionRuntime<Token>(
                     reconciled.positionUpdatedAtMonotonicMs == null
             if (!sourceTimestampRejected) return@schedule
 
-            val forwarded = if (pendingMetadataTask != null) {
-                stableSnapshot?.let { stable ->
-                    reconciled.copy(track = stable.track, source = stable.source)
-                } ?: reconciled
-            } else {
-                stableSnapshot = reconciled
-                reconciled
-            }
-            sink.onPlaybackSnapshot(forwarded)
+            forwardIfIdentityCoherent(reconciled)
         }
+    }
+
+    /**
+     * Keeps track identity and playback timeline atomic while metadata identity is
+     * being stabilized. Same-identity playback updates remain live, but a timeline
+     * sampled from a different track is held until the metadata task commits that
+     * track as the new stable snapshot.
+     */
+    private fun forwardIfIdentityCoherent(snapshot: PlaybackSnapshot): Boolean {
+        val stable = stableSnapshot
+        if (
+            pendingMetadataTask != null &&
+            stable != null &&
+            snapshot.trackIdentity != stable.trackIdentity
+        ) {
+            return false
+        }
+
+        stableSnapshot = snapshot
+        sink.onPlaybackSnapshot(snapshot)
+        return true
     }
 
     private fun scheduleMetadata(token: Token) {
