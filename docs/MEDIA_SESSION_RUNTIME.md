@@ -130,9 +130,17 @@ Phone presentation projects playing position from the source timestamp when vali
 
 ## Metadata stabilization
 
-The runtime retains the working fork's 600 ms delay for track-changing metadata because some media apps publish transient/intermediate metadata while changing tracks. The delay is owned by `SelectedMediaSessionRuntime` in `:platform:media`; playback status and position continue to update immediately against the last stable track identity.
+The runtime retains the working fork's 600 ms delay for track-changing metadata because some media apps publish transient/intermediate metadata while changing tracks. The delay is owned by `SelectedMediaSessionRuntime` in `:platform:media`.
 
-Deterministic regressions verify the delay, replacement of older pending metadata, and callback ordering where playback-state notification arrives before metadata notification. The stabilization remains outside `PlaybackLyricsController` and does not redefine core lookup identity semantics. Clock hardening also covers the overlap between the 250ms initial clock validation and the 600ms metadata-stabilization task so a rejected source timestamp remains rejected while track identity is still being stabilized.
+Playback identity and timeline are atomic across this window:
+
+- playback updates whose identity still matches the stable track continue to flow immediately;
+- a snapshot whose identity differs from the stable track is never rewritten with the old track/source;
+- cross-identity position/status/rate/timestamps are held until the metadata stabilization task commits the new track snapshot as one coherent unit.
+
+This deliberately permits up to the stabilization window of visual staleness during a real track transition rather than fabricating an impossible snapshot such as Track A identity with Track B position.
+
+Deterministic regressions verify the delay, replacement of older pending metadata, playback-first callback ordering, same-identity live updates during a pending candidate, and atomic commit of a different track timeline. The stabilization remains outside `PlaybackLyricsController` and does not redefine core lookup identity semantics. Clock hardening also covers the overlap between the 250ms initial clock validation and the 600ms metadata-stabilization task so clock reconciliation cannot leak a pending track timeline into the stable identity.
 
 Artwork, current-line timing, transport controls, cache, translation, and legacy `MediaTracker` state are intentionally not part of this stabilization logic.
 

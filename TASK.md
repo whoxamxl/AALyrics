@@ -154,6 +154,7 @@ Do not:
 - Canonical line text and Translation remain intact.
 - Reset AALyrics restores both Karaoke settings to OFF.
 - Android Auto production code is unchanged.
+- During the 600ms metadata-stabilization window, every emitted playback snapshot is internally coherent: no old track identity is paired with a new track timeline.
 
 ## Playback clock correction
 
@@ -165,6 +166,7 @@ Do not:
 - MediaSession source timestamps are sanity-checked before reaching Phone projection. An old timestamp remains valid by itself; AALyrics rejects it only when the snapshot values are internally contradictory: the same timestamp accompanies a changed raw position, playback status, or playback rate; the timestamp moves backwards on the same track; or it is later than the local sample time.
 - A newly selected playing session with both source and local sample timestamps is re-sampled once after 250ms. If the raw position moves while the source timestamp stays unchanged, that source timestamp is quarantined until the source publishes a new timestamp and Phone falls back to the stable local sample clock.
 - A missing/null source timestamp does not clear an existing quarantine. Recovery requires a new valid non-null source timestamp or a track/session identity change.
+- Track metadata stabilization and playback timeline are atomic: while a different track identity is pending, AALyrics keeps the last coherent stable snapshot instead of combining the stable track/source with the pending track's position/status/rate/timestamps. Same-identity playback updates remain live.
 
 ## Validation record
 
