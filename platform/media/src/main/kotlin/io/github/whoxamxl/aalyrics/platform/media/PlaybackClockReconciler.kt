@@ -31,7 +31,7 @@ internal class PlaybackClockReconciler {
         )
         if (identity != currentIdentity) {
             identity = currentIdentity
-            previousSourceSnapshot = null
+            lastAcceptedSourceSnapshot = null
             rejectedSourceTimestampMs = null
         }
 
