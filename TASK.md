@@ -109,7 +109,7 @@ The display title is presentation only. Update comparison, APK naming, changelog
 
 ## Result
 
-The branch returns to Merge Ready only after the Codex release-notes fix passes the normal PR Build workflow. This task does **not** create the tag, publish the Release, or merge into `main`. Those remain separate explicit gates.
+The Codex release-notes fix has passed the normal PR Build workflow, so the branch is Merge Ready again. This task does **not** create the tag, publish the Release, or merge into `main`. Those remain separate explicit gates.
 
 
 ## Codex review follow-up
@@ -118,3 +118,4 @@ The branch returns to Merge Ready only after the Codex release-notes fix passes 
 - The workflow now extracts only the changelog section matching `AALYRICS_VERSION_NAME`, fails closed if that section is empty, and passes the extracted text through `--notes` together with `--generate-notes`.
 - Expected Release body order is now: curated changelog milestone summary first, GitHub-generated change ledger second.
 - This follow-up changes release publication composition only; application runtime and signed-APK build behavior remain unchanged.
+- The normal PR Build workflow passed on the corrected release-notes implementation (`90899ce2db0b606fccd6b867416966a5390fc076`).
