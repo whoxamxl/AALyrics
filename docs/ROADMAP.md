@@ -264,7 +264,7 @@ Prepare Translation without changing unfinished foreground presentation:
 - refactor mature ML Kit model availability/download/retry/thermal behavior into an Android adapter;
 - allow background preparation of the persisted target language model;
 - define only the smallest contracts required by that background work;
-- at Phase 11.2a, do not wire translated lyrics into Phone or Android Auto yet; Phone presentation is now explicitly authorized by Phase 11.2c below, while Android Auto remains deferred.
+- at Phase 11.2a, do not wire translated lyrics into Phone or Android Auto yet; Phone presentation was later completed by Phase 11.2c, and Android Auto is now separately authorized only for the line-oriented Now Playing contract.
 
 The scaffold must not implement speculative LanguageProfiler thresholds, contextual block algorithms, Musixmatch Translation alignment, Translation Provider selection, or persistent Translation Cache.
 
@@ -294,7 +294,7 @@ Phone presentation now consumes the already-implemented atomic Translation resul
 - read-only Translation Details diagnostics expose current profile/runtime/model evidence without starting new work;
 - canonical timing, current-line ownership, provider attribution, Lyrics Provider selection, and existing Follow/Browse geometry remain unchanged.
 
-Android Auto Translation presentation, Musixmatch native Translation, persistent Translation Cache, timing/calibration, and Karaoke Translation behavior remain deferred to separate slices.
+Android Auto Translation presentation is now separately authorized only for the line-oriented Now Playing contract. Musixmatch native Translation, persistent Translation Cache, Sync calibration UX, and Karaoke Translation behavior remain separate slices.
 
 The durable merged contract is recorded in `docs/TRANSLATION_ARCHITECTURE.md`, `docs/PHONE_LYRICS_VIEWPORT.md`, `docs/PHONE_RUNTIME_HOST.md`, and `docs/PHONE_DETAILS.md`.
 
