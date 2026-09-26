@@ -5,7 +5,7 @@
 - Branch: `feature/android-auto-now-playing`.
 - Original base: `main` at `52e9249395206f8c3821cc5c8e5893a8ccdcd125` (PR #82 merged).
 - Reconciled baseline: current `main` at `86f4cd300161eb2038c637094a8e75a0afa9bf80` (changelog-only PR #83).
-- Current checkpoint: Draft PR #84 is open. Physical-host validation identified a small Android Auto audio-path lead, and a fixed `-75 ms` Automotive lyrics presentation compensation is now under device validation.
+- Current checkpoint: Draft PR #84 is open. Physical-host validation identified a small Android Auto audio-path lead; a fixed `-75 ms` connection-scoped lyrics compensation is now under device validation on both Phone and Automotive presentation while Android Auto projection is active.
 - Authoritative slice contract: `docs/ANDROID_AUTO_NOW_PLAYING.md`.
 - Broader Android Auto strategy: `docs/ANDROID_AUTO_MEDIA_STRATEGY.md`.
 - Shared timing authority: `docs/TIMING_ARCHITECTURE.md`.
@@ -82,12 +82,12 @@ The product contract is intentionally narrow:
 ### Timing
 
 - Reuse the current normalized playback clock.
-- During the current physical-host validation checkpoint, use a fixed Automotive-only `LyricsTimingOffset(-75L)` compensation.
+- During the current physical-host validation checkpoint, use a fixed `LyricsTimingOffset(-75L)` while Android Auto projection is connected and `LyricsTimingOffset.ZERO` otherwise.
 - Use `effectiveLyricsPosition(...)` + `projectLyricsTiming(...)`.
 - Automotive consumes `LyricsTimingProjection.activeLineIndex` only.
 - Remove/deprecate automotive-local current-line selection and avoid a second UI-owned playback clock.
 - Respect `positionUpdatedAtMonotonicMs` when valid and the existing `positionSampledAtMonotonicMs` fallback when source time is unavailable.
-- Keep the `-75 ms` compensation presentation-only: do not shift MediaSession playback position, canonical timestamps, Phone timing, or add Sync UX/persistence.
+- Feed the same connection-scoped offset to Phone and Automotive lyrics projection so both stay aligned to the delayed AA audio path; do not shift MediaSession playback position, canonical timestamps, or add Sync UX/persistence.
 
 ### Loading heartbeat
 
@@ -186,7 +186,7 @@ Implementation evidence may justify a small new Automotive presentation type/fil
 - Provider/source/queue facts remain absent from Now Playing.
 - Position-only advancement inside the same lyric line does not require metadata reconstruction.
 - Lyric line, loading frame, Translation state/result, artwork, and track metadata changes invalidate visible metadata.
-- Existing Phone Lyrics/Translation/Karaoke behavior remains unchanged.
+- Phone Lyrics/Translation/Karaoke timing remains unchanged outside Android Auto projection and consumes the same `-75 ms` session compensation while projection is active.
 - No provider, Translation-engine, timing-engine, or Car App Library ownership is moved into `:ui:automotive`.
 
 ## Validation matrix
