@@ -709,6 +709,153 @@ internal fun karaokeVisualSweepClipRects(
     }
 }
 
+@Composable
+private fun ReturnToPlaybackControl(
+    direction: PlaybackRegionDirection,
+    onClick: () -> Unit,
+) {
+    val bounceOffset = remember { Animatable(0f) }
+
+    LaunchedEffect(direction) {
+        bounceOffset.snapTo(0f)
+        delay(ReturnBounceStartDelayMillis)
+        val target = if (direction == PlaybackRegionDirection.ABOVE) {
+            -ReturnBounceDistanceDp
+        } else {
+            ReturnBounceDistanceDp
+        }
+        bounceOffset.animateTo(
+            targetValue = target,
+            animationSpec = tween(
+                durationMillis = ReturnBounceHalfCycleMillis,
+                easing = FastOutSlowInEasing,
+            ),
+        )
+        bounceOffset.animateTo(
+            targetValue = 0f,
+            animationSpec = tween(
+                durationMillis = ReturnBounceHalfCycleMillis,
+                easing = FastOutSlowInEasing,
+            ),
+        )
+    }
+
+    Box(
+        modifier = Modifier
+            .size(AALyricsSpacing.Space48)
+            .clip(CircleShape)
+            .semantics {
+                contentDescription = "Return to current playback position"
+                role = Role.Button
+            }
+            .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        Box(
+            modifier = Modifier
+                .size(ReturnControlVisualSize)
+                .background(
+                    color = AALyricsColors.BackgroundSurfaceStrong.copy(
+                        alpha = ReturnControlFillAlpha,
+                    ),
+                    shape = CircleShape,
+                )
+                .border(
+                    width = AALyricsStroke.Thin,
+                    color = AALyricsColors.BorderSoft.copy(
+                        alpha = ReturnControlBorderAlpha,
+                    ),
+                    shape = CircleShape,
+                ),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                imageVector = if (direction == PlaybackRegionDirection.ABOVE) {
+                    AALyricsIcons.PlaybackAbove
+                } else {
+                    AALyricsIcons.PlaybackBelow
+                },
+                contentDescription = null,
+                modifier = Modifier
+                    .size(ReturnChevronSize)
+                    .offset(y = bounceOffset.value.dp),
+                tint = AALyricsColors.AccentCyan.copy(alpha = ReturnChevronAlpha),
+            )
+        }
+    }
+}
+
+private const val OpeningLazyItemKey = "lyrics-opening"
+
+internal fun lyricsLazyItemKey(
+    index: Int,
+    line: LyricsViewportLineUiState,
+): String {
+    require(index >= 0) { "Lyrics row index must not be negative" }
+    return buildString {
+        append("lyrics:")
+        append(index)
+        append(':')
+        append(line.text)
+        append(':')
+        line.words.forEach { word ->
+            append(word)
+            append('\u0000')
+        }
+    }
+}
+
+private fun timedFocusIndex(state: LyricsViewportUiState): Float {
+    if (state.syncType == LyricsSyncType.PLAIN) return OpeningFocusVirtualIndex
+    val currentIndex = state.currentLineIndex
+        ?.takeIf { it in state.lines.indices }
+        ?: return OpeningFocusVirtualIndex
+    return currentIndex + 1f
+}
+
+private fun Modifier.reserveTimedScaleHeight(
+    rowSpacingPx: Int,
+): Modifier = layout { measurable, constraints ->
+    val placeable = measurable.measure(constraints)
+    val reservedHeight = reservedTimedRowHeightPx(
+        unscaledHeightPx = placeable.height,
+        rowSpacingPx = rowSpacingPx,
+        maxScale = CurrentScale,
+    )
+    layout(placeable.width, reservedHeight) {
+        placeable.placeRelative(
+            x = 0,
+            y = (reservedHeight - placeable.height) / 2,
+        )
+    }
+}
+
+internal fun reservedTimedRowHeightPx(
+    unscaledHeightPx: Int,
+    rowSpacingPx: Int,
+    maxScale: Float,
+): Int {
+    require(unscaledHeightPx >= 0) { "Unscaled row height must not be negative" }
+    require(rowSpacingPx >= 0) { "Row spacing must not be negative" }
+    require(maxScale >= 1f && maxScale.isFinite()) {
+        "Maximum row scale must be finite and at least 1"
+    }
+
+    val scaledHeightPx = ceil(unscaledHeightPx * maxScale).toInt()
+    return maxOf(
+        unscaledHeightPx,
+        scaledHeightPx - rowSpacingPx,
+    )
+}
+
+private fun focusAmount(
+    rowIndex: Float,
+    focusIndex: Float,
+): Float {
+    val proximity = (1f - abs(rowIndex - focusIndex)).coerceIn(0f, 1f)
+    return proximity * proximity * (3f - (2f * proximity))
+}
+
 internal fun lazyTopContentPaddingPx(
     openingContentStartPx: Int,
     openingFocusRowHeightPx: Int,
