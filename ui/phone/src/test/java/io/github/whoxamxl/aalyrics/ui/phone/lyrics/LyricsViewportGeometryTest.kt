@@ -231,34 +231,89 @@ class LyricsViewportGeometryTest {
 
 
     @Test
-    fun `plain playback direction follows lazy scroll target`() {
+    fun `plain playback direction uses continuous visible item geometry`() {
         val target = PlainLazyTarget(index = 4, scrollOffsetPx = 50)
 
         assertEquals(
             PlaybackRegionDirection.BELOW,
             plainPlaybackRegionDirection(
                 target = target,
-                firstVisibleItemIndex = 3,
-                firstVisibleItemScrollOffset = 0,
-                viewportSizePx = 500,
+                visibleItems = listOf(
+                    LazyViewportItemGeometry(index = 3, offset = -80, size = 80),
+                    LazyViewportItemGeometry(index = 4, offset = 100, size = 80),
+                ),
+                viewportStartOffset = 0,
+                viewportEndOffset = 500,
             ),
         )
         assertEquals(
             PlaybackRegionDirection.ABOVE,
             plainPlaybackRegionDirection(
                 target = target,
-                firstVisibleItemIndex = 5,
-                firstVisibleItemScrollOffset = 0,
-                viewportSizePx = 500,
+                visibleItems = listOf(
+                    LazyViewportItemGeometry(index = 4, offset = -130, size = 80),
+                    LazyViewportItemGeometry(index = 5, offset = -34, size = 80),
+                ),
+                viewportStartOffset = 0,
+                viewportEndOffset = 500,
             ),
         )
         assertEquals(
             null,
             plainPlaybackRegionDirection(
                 target = target,
-                firstVisibleItemIndex = 4,
-                firstVisibleItemScrollOffset = 40,
-                viewportSizePx = 500,
+                visibleItems = listOf(
+                    LazyViewportItemGeometry(index = 3, offset = -76, size = 80),
+                    LazyViewportItemGeometry(index = 4, offset = 20, size = 80),
+                ),
+                viewportStartOffset = 0,
+                viewportEndOffset = 500,
+            ),
+        )
+    }
+
+    @Test
+    fun `browse does not rearm follow before lazy geometry exists`() {
+        assertEquals(
+            false,
+            lazyViewportGeometryReady(
+                visibleItems = emptyList(),
+                viewportStartOffset = 0,
+                viewportEndOffset = 0,
+            ),
+        )
+        assertEquals(
+            false,
+            shouldRearmFollow(
+                interactionMode = LyricsViewportInteractionMode.BROWSE,
+                hasPlaybackTarget = true,
+                geometryReady = false,
+                returnDirection = null,
+                isScrollInProgress = false,
+            ),
+        )
+    }
+
+    @Test
+    fun `browse rearms follow after valid geometry settles inside playback region`() {
+        assertEquals(
+            true,
+            lazyViewportGeometryReady(
+                visibleItems = listOf(
+                    LazyViewportItemGeometry(index = 4, offset = 20, size = 80),
+                ),
+                viewportStartOffset = 0,
+                viewportEndOffset = 500,
+            ),
+        )
+        assertEquals(
+            true,
+            shouldRearmFollow(
+                interactionMode = LyricsViewportInteractionMode.BROWSE,
+                hasPlaybackTarget = true,
+                geometryReady = true,
+                returnDirection = null,
+                isScrollInProgress = false,
             ),
         )
     }
