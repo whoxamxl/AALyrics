@@ -357,6 +357,7 @@ The first production Karaoke surface is intentionally narrow:
 - PLAIN lyrics never enter Karaoke presentation.
 - Phone uses the **continuous current-word sweep** direction from the working fork's normal Phone renderer, not the Performance-mode whole-word pulse renderer.
 - The existing LyricsViewport line focus, Follow/Browse ownership, Translation secondary text, and scroll geometry remain the outer presentation model.
+- The outer viewport may use lazy row composition. Karaoke does not require off-screen lyric rows to stay composed, and high-frequency sweep/progress updates should be localized to the current composed row rather than invalidating the entire lyric list.
 
 The activation contract is:
 
@@ -414,6 +415,8 @@ Stable rules:
 Display mapping and display-group progress are presentation policy, not a second timing engine.
 
 ### 11.4c — Phone continuous sweep
+
+When the current line is off-screen during Browse, its semantic timing continues to advance but the viewport does not keep that row composed solely for animation. When it becomes visible again, rendering uses the latest timing projection rather than replaying missed visual frames.
 
 For the current line only:
 

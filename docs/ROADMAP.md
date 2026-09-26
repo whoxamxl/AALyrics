@@ -379,6 +379,14 @@ Compose application/domain capability facts into the smallest presentation contr
 
 Must follow `docs/PRESENTATION_STATE_ARCHITECTURE.md`. Do not create one universal giant UI state. Keep shared semantic facts shareable and surface-local state local.
 
+#### Phone LyricsViewport lazy composition — active
+
+The Phone lyrics presentation is being refactored from eager full-document Compose/layout to lazy row composition without changing retrieval or timing semantics.
+
+The slice keeps the full canonical/translated document in memory, virtualizes only visual rows, preserves Follow/Browse and the approximately 45% timed focus target, supports variable-height Translation rows, and confines high-frequency Karaoke presentation updates to the smallest necessary composed scope. It does not add lyrics caching, provider optimization, Translation execution changes, timing-semantic changes, or Android Auto behavior.
+
+The authoritative interaction/composition contract is `docs/PHONE_LYRICS_VIEWPORT.md`; `TASK.md` owns the active implementation checklist.
+
 #### Android Auto Now Playing completion — implemented / physical host validated
 
 The `feature/android-auto-now-playing` branch implements the existing legacy `MediaBrowserServiceCompat` + `MediaSessionCompat` Now Playing presentation before the separate Car App Library templated-media work. Physical Android Auto validation is now available, including host rendering and forced process-death recovery without reopening the Phone Activity. DHU previously had a video-focus limitation; that historical tooling limitation no longer means the physical host path is unvalidated. `TASK.md` records the exact evidence and remaining cold-start follow-up.

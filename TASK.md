@@ -1,61 +1,100 @@
-# Open-ended Final-Word Karaoke Sweep
+# Phone LyricsViewport Lazy Composition
 
 ## Branch and baseline
 
-- Branch: `fix/synclrc-final-word-sweep`.
-- Base: `main` at `c710981525bbcf3d383fed1c702ec3216b2475ec` (latest main reconciled before Ready for review).
-- Scope is limited to preserving explicit provider end timing for Enhanced-LRC/SyncLRC and Musixmatch RichSync, plus Phone presentation of an otherwise genuinely open-ended final display group.
+- Branch: `feature/phone-lyrics-lazy-viewport`.
+- Base: `main` at `0a02474f26bee3cb462f227a4293b9e9d3c52e3d`.
+- This slice is a Phone presentation/performance refactor only. It does not change Lyrics Provider lookup, provider selection, canonical lyrics, Translation execution, shared timing semantics, Android Auto presentation, or persistent state.
 
 ## Problem
 
-SyncLRC karaoke payloads are parsed as Enhanced LRC, while Musixmatch RichSync carries an explicit line end (`te`). The current normalization loses some of that provider timing before Phone Karaoke sees it. This creates related final-word cases:
+Android Auto Now Playing can present a resolved lyric almost immediately because it projects only the current line into its subtitle surface. The Phone `LyricsViewport` currently keeps the complete lyrics document in a non-lazy `Column + verticalScroll` tree, so a newly resolved document composes and measures every lyric row before/while it becomes visible.
 
-1. an explicit trailing timestamp such as `<00:02.10>` is dropped because it has no following text, so the preceding word loses a defensible end;
-2. Musixmatch RichSync `te` is currently discarded instead of being retained as canonical `TimedLyricLine.endMs`;
-3. when the source truly has no usable explicit end, the final Phone Karaoke group can sweep all the way to the next timed line, stretching a short final word across a long inter-line pause.
+The Phone runtime also updates presentation timing every 250 ms during ordinary timed playback and every 33 ms while effective Karaoke is active. Immutable lyric-row content should not be forced through the same high-frequency presentation path as current-line/Karaoke progress.
 
-Non-final words generally look correct because the next word start naturally bounds their progress.
+The goal is to reduce Phone presentation work after `LyricsState.Ready/Degraded` without changing lyrics retrieval behavior or the established viewport UX.
 
-## Intended fix
+## Approved design
 
-### Provider timing normalization
+### Full document data, lazy visual composition
 
-- Preserve canonical Enhanced-LRC token starts.
-- Use the next Enhanced-LRC timestamp as the current token's `endMs`.
-- A trailing textless timestamp therefore becomes the previous visible token's explicit end rather than an invisible word.
-- Preserve Musixmatch RichSync `te` as canonical `TimedLyricLine.endMs`; do not reinterpret it as a word end.
-- Ignore malformed RichSync line ends that precede the line start without rewriting word timing.
-- Reject descending Enhanced-LRC timestamp sequences without fabricating timing.
+- Keep the complete canonical lyrics document and any matching Translation artifact available in memory.
+- Lazy loading here means lazy **Compose/layout of lyric rows**, not incremental network fetching and not partial lyrics data.
+- Replace the eager scrolling row container with a lazy list model so only visible and nearby prefetched rows are composed/measured.
+- Use stable per-document row identity; do not use mutable timing/focus state as item identity.
+- Treat the timed opening `♪` as a stable virtual lazy item before lyric index 0.
+- Do not require global upfront measurement of every lyric row in order to enter Follow mode.
 
-### Phone final-group fallback
+### Follow / Browse ownership
 
-When the final display group remains genuinely open-ended after parsing:
+Preserve the existing product contract:
 
-1. infer one terminal timing interval from provider evidence in the same line;
-2. for a fragmented final display group, prefer its own positive intra-group start intervals;
-3. otherwise use the median of recent positive visible-group onset intervals;
-4. if no local cadence exists, retain the existing 650 ms Phone-only visual fallback;
-5. cap the inferred visual end at `nextTimedLineStartMs` when a later line exists.
+- deliberate user scrolling enters Browse and playback must not fight the gesture;
+- Browse has no timeout;
+- manual scrolling can reach any row even when it was never composed before;
+- the return indicator points toward the playback region;
+- tapping it returns to playback and restores Follow;
+- manually returning to the accepted playback region may re-arm Follow after scrolling settles.
 
-This is presentation-only inference. It must not mutate canonical timestamps or change `:core:timing` rules.
+The lazy implementation may use `LazyListState` and visible-item geometry instead of a global absolute pixel scroll model. The approximately 45% current-row target remains authoritative for LINE/WORD once scrolling is available.
 
-## Guardrails
+### Variable row height and Translation
 
-- Do not alter MediaSession/playback-clock logic.
-- Do not alter provider selection.
-- Do not synthesize LINE_SYNC progress.
-- Do not change Android Auto production code.
-- Do not add persisted state.
-- Keep the existing 650 ms value only as the no-evidence fallback.
+- Canonical text plus optional translated text remain one logical row and one lazy item.
+- Translation may change an item's measured height when an exact-identity `TranslationState.Ready` artifact arrives.
+- In Follow, remeasure/re-align the current row as needed to keep the approximately 45% target.
+- In Browse, Translation updates must not forcibly restore Follow or deliberately jump the user back to playback; stable item identity should preserve the browsing anchor as far as Compose permits.
+- Translation remains secondary text only and receives no independent scrolling/timing model.
+
+### Karaoke and high-frequency state
+
+- Karaoke remains current-line-only presentation.
+- The 33 ms Karaoke cadence must not require every lyric row to recompose.
+- Keep static row presentation (canonical text, translated text, stable typography/layout inputs) separable from dynamic facts (current line, focus, current Karaoke sweep/progress).
+- Non-current rows must not consume current-line Karaoke state merely because the viewport state changed.
+- If the playback/current row is off-screen during Browse, it does not need to remain composed solely to advance Karaoke visually; timing state remains authoritative and rendering catches up when the row becomes visible again.
+
+### Existing visual geometry
+
+Preserve the current Phone contract unless a device regression forces a separately documented adjustment:
+
+- continuous responsive document rather than a fixed visible-line count;
+- 15% top/bottom edge fades;
+- timed current-row center near 45% when Follow scrolling is available;
+- opening `♪` behavior before the first timed lyric;
+- final lyric row top edge at approximately the 50% viewport boundary;
+- timed 1.15x focus hierarchy and stable wrapping/overflow reservation;
+- manual scrolling for WORD, LINE, and PLAIN;
+- existing PLAIN auto-scroll semantics, adapted so they do not depend on eagerly measuring the full document.
+
+## Non-goals
+
+- no Lyrics Provider/network timeout or query changes;
+- no lyrics cache or track cache;
+- no Translation algorithm/model changes;
+- no Karaoke timing-semantic changes;
+- no Android Auto changes;
+- no Sync calibration work;
+- no new persisted settings;
+- no visual redesign of lyric typography, focus colors, or return control.
+
+## Implementation checkpoints
+
+- [x] Align durable viewport/Translation/Karaoke/roadmap documentation and establish this task.
+- [ ] Replace eager Phone lyric-row composition with a stable lazy list foundation while preserving static rendering and manual scroll.
+- [ ] Port timed Follow/Browse, opening/final boundaries, return-to-playback direction/action, and PLAIN auto-scroll to lazy-list geometry.
+- [ ] Isolate immutable row content from high-frequency current-line/Karaoke updates and verify Translation remeasurement behavior.
+- [ ] Add/update focused unit/Compose/Preview coverage for lazy composition, variable-height rows, Translation, Karaoke, Follow/Browse, seeks, and document boundaries.
+- [ ] Run final validation, inspect branch-wide regression/scope alignment, update this task with evidence, then open a Draft PR and STOP per `AGENTS.md`.
 
 ## Acceptance criteria
 
-- Enhanced LRC `<start>A<next>B<trailing>` yields A.end=next and B.end=trailing.
-- Enhanced LRC without a trailing timestamp keeps the final canonical word open-ended.
-- Musixmatch RichSync `te` is retained as canonical line `endMs` when valid, while missing/invalid `te` leaves the line open-ended.
-- Non-final Karaoke behavior remains unchanged.
-- A final open-ended fragmented display group gets one terminal interval inferred from its own cadence.
-- A final open-ended single-token display group uses recent visible-group cadence rather than the full inter-line pause.
-- Inferred presentation never runs beyond the next timed line.
-- With no timing evidence beyond the final start, the 650 ms visual fallback remains.
-- `:core:timing` semantics and canonical source timing ownership remain unchanged.
+- A resolved long lyrics document is not eagerly composed/measured in full merely to show the Phone viewport.
+- Scrolling to previously uncomposed lyrics works naturally in all sync modes.
+- LINE/WORD Follow keeps the active row near the established 45% target after the opening region and across ordinary row-height variation.
+- The opening `♪`, top fade, final-row boundary, focus scale/alpha hierarchy, and return control retain their current visible behavior.
+- User scroll reliably enters Browse; playback does not pull the viewport back; return-to-playback works even when the current row is outside the composed window.
+- Translation stays inside the same logical row, supports variable height, and does not create a second scroll/timing owner.
+- Karaoke continues to render the current WORD_SYNC line correctly while high-frequency sweep updates are localized to the smallest necessary presentation scope.
+- PLAIN manual scroll and optional auto-scroll remain usable without requiring full-document eager measurement.
+- Canonical lyrics/timestamps, timing projection semantics, Translation execution, provider selection/retrieval, and Android Auto behavior are unchanged.

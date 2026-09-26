@@ -2,7 +2,7 @@
 
 ## Status
 
-This document defines the implemented interaction and visual contract for the Phone `LyricsViewport`, including the merged additive Translation-row extension.
+This document defines the interaction, visual, and composition contract for the Phone `LyricsViewport`, including the merged additive Translation-row extension. The current performance slice migrates row composition from an eager scrolling column to a lazy list while preserving the established viewport behavior.
 
 The viewport is the primary reading surface of the Lyrics destination. It must remain responsive to available height, width, text wrapping, and system font scale rather than targeting a fixed visible-line count.
 
@@ -32,6 +32,28 @@ Rules:
 - Keep scroll at the document origin while the focused row remains above the 45% center target. As successive current rows progress downward and their measured center would pass 45%, begin Follow scrolling so later current rows remain centered near 45%.
 - At the document end, place the final lyric row so its **top edge** begins at the 50% viewport boundary.
 - All focus/boundary positions are responsive viewport fractions, not fixed dp offsets.
+
+## Lazy composition and item identity
+
+The lyrics document remains complete in memory. Lazy composition is strictly a rendering optimization: it must not turn lyrics retrieval into paged/incremental fetching, discard off-screen canonical rows, or create a second source of truth.
+
+The production viewport should use lazy row composition so that visible and nearby prefetched items are composed/measured on demand rather than eagerly composing every lyric row when a document becomes ready.
+
+Rules:
+
+- represent each canonical lyric row as one stable lazy-list item;
+- use stable per-document row identity so Translation/recomposition does not make Compose treat an existing row as a different item;
+- represent the timed opening `♪` as a stable virtual item before lyric index 0;
+- allow arbitrary user scrolling to materialize previously uncomposed rows naturally;
+- do not keep off-screen rows composed solely for playback timing or Karaoke animation;
+- do not require a complete map of all row heights before the viewport can present resolved lyrics;
+- derive Follow/Browse direction and positioning from lazy-list item/viewport geometry rather than rebuilding a global absolute-height model.
+
+For LINE/WORD Follow, the approximately 45% target remains the visible contract. The implementation may first bring a distant current item into the composed window and then use its measured lazy-item geometry to settle the row center at the target. Large seeks may still snap according to the existing discontinuity policy.
+
+For Browse, visible-item indices and offsets may replace the previous absolute `ScrollState` displacement calculation. The user still owns scrolling until the playback region is intentionally restored or manually re-entered according to the existing contract.
+
+PLAIN auto-scroll remains an estimate rather than authoritative timing. Its lazy implementation may estimate an item/offset from playback progress and refine from measured visible geometry; it must not force eager full-document measurement merely to recover an exact total pixel extent.
 
 ## Edge fading
 
@@ -258,13 +280,13 @@ The numeric values above are the initial production tuning target for Preview/de
 
 ### Geometry and focus
 
-Canonical text plus optional translated text form **one logical measured lyric row**.
+Canonical text plus optional translated text form **one logical measured lyric row and one stable lazy-list item**.
 
 For LINE/WORD presentation:
 
-- measure the complete canonical + translated block as the row height;
+- measure the complete canonical + translated block as the row height when that lazy item is composed;
 - apply the existing row focus scale/alpha transform to the complete block as one unit;
-- calculate the row center and approximately 45% Follow target from that complete measured block;
+- calculate the row center and approximately 45% Follow target from that complete measured block when it is visible/composed; do not require all other rows to be measured first;
 - keep `currentLineIndex` derived solely from canonical source timing;
 - keep the opening `♪` virtual row and all existing focus interpolation unchanged.
 

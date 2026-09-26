@@ -77,6 +77,8 @@ Artifact projection rules:
 
 The translated text is additive content inside the same logical Phone lyric row. Canonical timing/current-line ownership remains unchanged. The canonical + translated pair is measured and moved as one viewport row so the existing Follow/Browse geometry remains the only scrolling authority. Translated text does not gain independent WORD progress, current-line calculation, or timing.
 
+The Phone viewport may virtualize that row with lazy composition. Virtualization does not change Translation ownership or atomicity: the complete matching artifact remains available, while only visible/near-visible row composables are materialized. A late `Ready` artifact may remeasure a visible row; Follow may re-align the current row, while Browse must not be cancelled merely because Translation changed row height. Stable per-document item identity should preserve the browsing anchor as far as the UI framework permits.
+
 That Phone slice intentionally did **not** add Android Auto Translation presentation. PR #84 subsequently implements the Android Auto Now Playing consumer over the existing Translation settings/state without changing Translation execution, providers, caching, or algorithms.
 
 The executable scope and acceptance criteria are recorded in `TASK.md`; the visual row contract is defined in `docs/PHONE_LYRICS_VIEWPORT.md`.
