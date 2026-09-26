@@ -2,6 +2,8 @@ package io.github.whoxamxl.aalyrics
 
 import android.app.Application
 import android.graphics.Bitmap
+import androidx.car.app.connection.CarConnection
+import androidx.lifecycle.Observer
 import io.github.whoxamxl.aalyrics.core.lyrics.CandidateSelectionPreferences
 import io.github.whoxamxl.aalyrics.core.lyrics.CandidateSelector
 import io.github.whoxamxl.aalyrics.core.lyrics.LyricsCoordinator
@@ -9,6 +11,7 @@ import io.github.whoxamxl.aalyrics.core.lyrics.LyricsState
 import io.github.whoxamxl.aalyrics.core.lyrics.PlaybackLyricsController
 import io.github.whoxamxl.aalyrics.core.model.LyricsSyncType
 import io.github.whoxamxl.aalyrics.core.model.PlaybackSnapshot
+import io.github.whoxamxl.aalyrics.core.timing.LyricsTimingOffset
 import io.github.whoxamxl.aalyrics.provider.api.LyricsProvider
 import io.github.whoxamxl.aalyrics.provider.lrclib.LrcLibProvider
 import io.github.whoxamxl.aalyrics.provider.musixmatch.MusixmatchProvider
@@ -74,6 +77,13 @@ private data class TranslationDetailsFacts(
 /** Process-level owner of the first production lyrics object graph. */
 class AALyricsApplication : Application() {
     private val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    private val mutableLyricsTimingOffset = MutableStateFlow(LyricsTimingOffset.ZERO)
+    private lateinit var carConnection: CarConnection
+    private val carConnectionTypeObserver = Observer<Int> { connectionType ->
+        mutableLyricsTimingOffset.value = lyricsTimingOffsetForProjection(
+            connectionType == CarConnection.CONNECTION_TYPE_PROJECTION,
+        )
+    }
     private lateinit var graph: ApplicationGraph
     private lateinit var demandLifecycle: LyricsDemandLifecycle
     private lateinit var automotiveBinding: AutomotiveRuntimeBinding
@@ -137,6 +147,9 @@ class AALyricsApplication : Application() {
 
     val translationSettings: StateFlow<TranslationSettings>
         get() = translationSettingsStore.settings
+
+    internal val lyricsTimingOffset: StateFlow<LyricsTimingOffset> =
+        mutableLyricsTimingOffset.asStateFlow()
 
     val phonePlaybackSurfaceState: StateFlow<PlaybackSurfaceUiState?>
         get() = phonePlaybackSurfaceStateFlow
@@ -403,6 +416,9 @@ class AALyricsApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        carConnection = CarConnection(this)
+        carConnection.type.observeForever(carConnectionTypeObserver)
+
         val updateUserAgent = "AALyrics/${BuildConfig.VERSION_NAME}"
         updateRecoveryStore = SharedPreferencesUpdateRecoveryStore(this)
         updateCheckCadenceStore = SharedPreferencesUpdateCheckCadenceStore(this)
@@ -634,6 +650,7 @@ class AALyricsApplication : Application() {
             ),
             translationSettings = translationSettingsStore.settings,
             translationState = translationCoordinator.state,
+            lyricsTimingOffset = lyricsTimingOffset,
             canonicalLyricsIdentity = { state -> state.canonicalLyricsOrNull()?.identity },
             transport = object : AutomotiveTransport {
                 override fun play() = MediaSessionRuntimeHost.play()
@@ -667,6 +684,9 @@ class AALyricsApplication : Application() {
         MediaSessionRuntimeHost.detachArtwork(playbackArtworkSink)
         MediaSessionRuntimeHost.detachControlState(graph.playbackControlStateSink)
         MediaSessionRuntimeHost.detach(playbackSnapshotSink)
+        if (::carConnection.isInitialized) {
+            carConnection.type.removeObserver(carConnectionTypeObserver)
+        }
         applicationScope.cancel()
         super.onTerminate()
     }

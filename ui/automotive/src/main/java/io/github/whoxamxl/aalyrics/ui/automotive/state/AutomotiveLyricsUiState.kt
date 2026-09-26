@@ -62,8 +62,6 @@ internal fun <T> artworkForTrack(
     artwork: T?,
 ): T? = artwork.takeIf { playbackIdentity != null && playbackIdentity == artworkIdentity }
 
-internal val ANDROID_AUTO_AUDIO_LATENCY_COMPENSATION = LyricsTimingOffset(-75L)
-
 internal object AutomotiveLyricsUiStateMapper {
     fun project(
         playback: PlaybackSnapshot,
@@ -74,6 +72,7 @@ internal object AutomotiveLyricsUiStateMapper {
         translationSettings: TranslationSettings = TranslationSettings(enabled = false),
         translationState: TranslationState = TranslationState.Idle,
         canonicalLyricsIdentity: CanonicalLyricsIdentity? = null,
+        lyricsTimingOffset: LyricsTimingOffset = LyricsTimingOffset.ZERO,
     ): AutomotiveLyricsUiState {
         val track = playback.track
         if (track == null) {
@@ -96,7 +95,7 @@ internal object AutomotiveLyricsUiStateMapper {
         val activeLineIndex = document?.let { lyrics ->
             projectLyricsTiming(
                 lyrics,
-                effectiveLyricsPosition(positionMs, ANDROID_AUTO_AUDIO_LATENCY_COMPENSATION),
+                effectiveLyricsPosition(positionMs, lyricsTimingOffset),
             ).activeLineIndex
         }
         val currentLine = activeLineIndex?.let { document?.lines?.getOrNull(it) as? TimedLyricLine }

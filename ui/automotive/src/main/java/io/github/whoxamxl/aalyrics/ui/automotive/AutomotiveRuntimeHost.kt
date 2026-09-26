@@ -4,6 +4,7 @@ import android.graphics.Bitmap
 import io.github.whoxamxl.aalyrics.core.lyrics.LyricsState
 import io.github.whoxamxl.aalyrics.core.model.PlaybackSnapshot
 import io.github.whoxamxl.aalyrics.core.model.PlaybackTrackIdentity
+import io.github.whoxamxl.aalyrics.core.timing.LyricsTimingOffset
 import io.github.whoxamxl.aalyrics.translation.api.TranslationSettings
 import io.github.whoxamxl.aalyrics.translation.core.CanonicalLyricsIdentity
 import io.github.whoxamxl.aalyrics.translation.core.TranslationState
@@ -41,6 +42,7 @@ class AutomotiveRuntimeBinding(
     val capabilities: StateFlow<AutomotiveTransportCapabilities>,
     val translationSettings: StateFlow<TranslationSettings>,
     val translationState: StateFlow<TranslationState>,
+    val lyricsTimingOffset: StateFlow<LyricsTimingOffset>,
     val canonicalLyricsIdentity: (LyricsState) -> CanonicalLyricsIdentity?,
     val transport: AutomotiveTransport,
     val browserClientTrust: AutomotiveBrowserClientTrust,

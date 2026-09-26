@@ -11,6 +11,7 @@ import io.github.whoxamxl.aalyrics.core.model.PlaybackTrackIdentity
 import io.github.whoxamxl.aalyrics.core.model.TimedLyricLine
 import io.github.whoxamxl.aalyrics.core.model.TimedWord
 import io.github.whoxamxl.aalyrics.core.model.Track
+import io.github.whoxamxl.aalyrics.core.timing.LyricsTimingOffset
 import io.github.whoxamxl.aalyrics.translation.api.TranslationProviderId
 import io.github.whoxamxl.aalyrics.translation.api.TranslationSettings
 import io.github.whoxamxl.aalyrics.translation.core.CanonicalLyrics
@@ -59,7 +60,7 @@ class AutomotiveLyricsUiStateMapperTest {
     }
 
     @Test
-    fun `Android Auto lyrics apply fixed 75ms audio latency compensation without shifting playback position`() {
+    fun `supplied 75ms audio latency compensation shifts lyrics only and not playback position`() {
         val track = Track(title = "Song", artists = listOf("Artist"))
         val lyrics = ready(
             track,
@@ -75,11 +76,13 @@ class AutomotiveLyricsUiStateMapperTest {
             playback = PlaybackSnapshot(track = track, positionMs = 10_050L),
             lyricsState = lyrics,
             currentMonotonicTimeMs = 0L,
+            lyricsTimingOffset = LyricsTimingOffset(-75L),
         )
         val atCompensatedBoundary = AutomotiveLyricsUiStateMapper.project(
             playback = PlaybackSnapshot(track = track, positionMs = 10_075L),
             lyricsState = lyrics,
             currentMonotonicTimeMs = 0L,
+            lyricsTimingOffset = LyricsTimingOffset(-75L),
         )
 
         assertEquals(10_050L, beforeBoundary.positionMs)

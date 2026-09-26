@@ -8,6 +8,7 @@ import android.support.v4.media.session.MediaSessionCompat
 import androidx.media.MediaBrowserServiceCompat
 import io.github.whoxamxl.aalyrics.core.lyrics.LyricsState
 import io.github.whoxamxl.aalyrics.core.model.PlaybackSnapshot
+import io.github.whoxamxl.aalyrics.core.timing.LyricsTimingOffset
 import io.github.whoxamxl.aalyrics.ui.automotive.AutomotiveRuntimeBinding
 import io.github.whoxamxl.aalyrics.ui.automotive.AutomotiveRuntimeHost
 import io.github.whoxamxl.aalyrics.ui.automotive.AutomotiveArtworkState
@@ -40,6 +41,7 @@ class LyricsBrowserService : MediaBrowserServiceCompat() {
     private var capabilitiesCollection: Job? = null
     private var translationSettingsCollection: Job? = null
     private var translationStateCollection: Job? = null
+    private var lyricsTimingOffsetCollection: Job? = null
 
     private var latestPlayback = PlaybackSnapshot()
     private var latestLyrics: LyricsState = LyricsState.Idle
@@ -47,6 +49,7 @@ class LyricsBrowserService : MediaBrowserServiceCompat() {
     private var latestCapabilities = AutomotiveTransportCapabilities()
     private var latestTranslationSettings = TranslationSettings(enabled = false)
     private var latestTranslationState: TranslationState = TranslationState.Idle
+    private var latestLyricsTimingOffset = LyricsTimingOffset.ZERO
     private var latestCanonicalLyricsIdentity: CanonicalLyricsIdentity? = null
     private var latestProjectionIsAnimatedLoading = false
     private var lastMetadataSignature: AutomotiveMetadataSignature<Bitmap>? = null
@@ -82,6 +85,7 @@ class LyricsBrowserService : MediaBrowserServiceCompat() {
         capabilitiesCollection?.cancel()
         translationSettingsCollection?.cancel()
         translationStateCollection?.cancel()
+        lyricsTimingOffsetCollection?.cancel()
         scope.cancel()
         mediaSession.isActive = false
         mediaSession.release()
@@ -118,6 +122,7 @@ class LyricsBrowserService : MediaBrowserServiceCompat() {
         latestCapabilities = runtimeBinding.capabilities.value
         latestTranslationSettings = runtimeBinding.translationSettings.value
         latestTranslationState = runtimeBinding.translationState.value
+        latestLyricsTimingOffset = runtimeBinding.lyricsTimingOffset.value
         latestCanonicalLyricsIdentity = runtimeBinding.canonicalLyricsIdentity(latestLyrics)
 
         playbackCollection = scope.launch {
@@ -157,6 +162,12 @@ class LyricsBrowserService : MediaBrowserServiceCompat() {
                 render()
             }
         }
+        lyricsTimingOffsetCollection = scope.launch {
+            runtimeBinding.lyricsTimingOffset.collectLatest { offset ->
+                latestLyricsTimingOffset = offset
+                render()
+            }
+        }
     }
 
     private fun render() {
@@ -170,6 +181,7 @@ class LyricsBrowserService : MediaBrowserServiceCompat() {
             translationSettings = latestTranslationSettings,
             translationState = latestTranslationState,
             canonicalLyricsIdentity = latestCanonicalLyricsIdentity,
+            lyricsTimingOffset = latestLyricsTimingOffset,
         )
         latestProjectionIsAnimatedLoading = state.lyrics.isAnimatedLoading
 
