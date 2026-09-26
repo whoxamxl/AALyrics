@@ -316,6 +316,24 @@ fun DetailsScreen(
                     )
                 }
 
+                diagnostics.lyricsLookupAttempt?.let {
+                    if (hasValue) DetailsDivider()
+                    hasValue = true
+                    DetailsValueRow(
+                        label = stringResource(R.string.details_lyrics_lookup_attempt),
+                        value = it.toString(),
+                    )
+                }
+
+                if (diagnostics.lyricsProviderFailures.isNotEmpty()) {
+                    if (hasValue) DetailsDivider()
+                    hasValue = true
+                    DetailsValueRow(
+                        label = stringResource(R.string.details_lyrics_provider_failures),
+                        value = diagnostics.lyricsProviderFailures.joinToString(separator = "\n"),
+                    )
+                }
+
                 if (!hasValue) {
                     DetailsStatusRow(
                         stringResource(R.string.details_no_diagnostics),

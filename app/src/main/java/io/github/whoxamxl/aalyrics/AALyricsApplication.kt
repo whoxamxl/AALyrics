@@ -5,6 +5,7 @@ import android.graphics.Bitmap
 import io.github.whoxamxl.aalyrics.core.lyrics.CandidateSelectionPreferences
 import io.github.whoxamxl.aalyrics.core.lyrics.CandidateSelector
 import io.github.whoxamxl.aalyrics.core.lyrics.LyricsCoordinator
+import io.github.whoxamxl.aalyrics.core.lyrics.LyricsLookupDiagnostics
 import io.github.whoxamxl.aalyrics.core.lyrics.LyricsState
 import io.github.whoxamxl.aalyrics.core.lyrics.PlaybackLyricsController
 import io.github.whoxamxl.aalyrics.core.model.LyricsSyncType
@@ -591,12 +592,14 @@ class AALyricsApplication : Application() {
         phoneDetailsStateFlow = combine(
             graph.playbackState,
             graph.lyricsState,
+            graph.lyricsLookupDiagnostics,
             phonePresentationSettingsStore.verboseDetailsEnabled,
             translationDetailsFacts,
-        ) { playback, lyrics, verboseDetailsEnabled, translationFacts ->
+        ) { playback, lyrics, lyricsDiagnostics, verboseDetailsEnabled, translationFacts ->
             mapPhoneDetailsState(
                 playback = playback,
                 lyricsState = lyrics,
+                lyricsDiagnostics = lyricsDiagnostics,
                 verboseDetailsEnabled = verboseDetailsEnabled,
                 playbackSourceAppInfo = playbackSourceAppInfoResolver
                     .resolve(playback.source?.id),
@@ -744,6 +747,7 @@ internal class ApplicationGraph(
     val playbackSourceRuntimeState: StateFlow<PlaybackSourceRuntimeState> =
         mutablePlaybackSourceRuntimeState.asStateFlow()
     val lyricsState: StateFlow<LyricsState> = coordinator.state
+    val lyricsLookupDiagnostics: StateFlow<LyricsLookupDiagnostics> = coordinator.diagnostics
 }
 
 internal fun createProductionApplicationGraph(applicationScope: CoroutineScope): ApplicationGraph {

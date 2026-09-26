@@ -1,7 +1,9 @@
 package io.github.whoxamxl.aalyrics
 
 import io.github.whoxamxl.aalyrics.core.lyrics.LyricsLookup
+import io.github.whoxamxl.aalyrics.core.lyrics.LyricsLookupDiagnostics
 import io.github.whoxamxl.aalyrics.core.lyrics.LyricsLookupId
+import io.github.whoxamxl.aalyrics.core.lyrics.LyricsProviderFailureDiagnostic
 import io.github.whoxamxl.aalyrics.core.lyrics.LyricsState
 import io.github.whoxamxl.aalyrics.core.model.LyricsAttribution
 import io.github.whoxamxl.aalyrics.core.model.LyricsDocument
@@ -772,6 +774,42 @@ class PhoneDetailsMapperTest {
             state.translation?.sourceModel?.secondary?.phase,
         )
         assertNull(state.translation?.sourceModel?.secondary?.failureReason)
+    }
+
+    @Test
+    fun `Verbose Details exposes matching lyrics lookup retry diagnostics only`() {
+        val track = currentTrack()
+        val playback = playback(track)
+        val lyrics = readyLyrics(track, requireNotNull(playback.trackIdentity))
+        val matching = LyricsLookupDiagnostics(
+            lookupId = lyrics.lookup.id,
+            attemptCount = 2,
+            providerFailures = listOf(
+                LyricsProviderFailureDiagnostic("petitlyrics", "SocketTimeoutException"),
+            ),
+        )
+
+        val state = mapPhoneDetailsState(
+            playback = playback,
+            lyricsState = lyrics,
+            lyricsDiagnostics = matching,
+            verboseDetailsEnabled = true,
+        )
+
+        assertEquals(2, state.diagnostics?.lyricsLookupAttempt)
+        assertEquals(
+            listOf("petitlyrics: SocketTimeoutException"),
+            state.diagnostics?.lyricsProviderFailures,
+        )
+
+        val stale = mapPhoneDetailsState(
+            playback = playback,
+            lyricsState = lyrics,
+            lyricsDiagnostics = matching.copy(lookupId = LyricsLookupId(999L)),
+            verboseDetailsEnabled = true,
+        )
+        assertNull(stale.diagnostics?.lyricsLookupAttempt)
+        assertTrue(stale.diagnostics?.lyricsProviderFailures.orEmpty().isEmpty())
     }
 
     @Test
