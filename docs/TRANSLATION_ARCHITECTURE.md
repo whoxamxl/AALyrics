@@ -22,7 +22,7 @@ The Translation execution slice implements the approved design through three bou
   ML Kit language evidence, model preparation, and Translation sessions
 ```
 
-`:app` observes completed canonical `LyricsState` plus persisted Translation settings, assigns the exact lookup/content identity, and hands that input to `TranslationCoordinator`. It exposes the coordinator's atomic `TranslationState` for Phone presentation without changing Android Auto UI.
+`:app` observes completed canonical `LyricsState` plus persisted Translation settings, assigns the exact lookup/content identity, and hands that input to `TranslationCoordinator`. It exposes the coordinator's atomic `TranslationState` to downstream presentation consumers; Phone and the authorized line-oriented Android Auto Now Playing surface both consume that state without changing Translation execution ownership.
 
 The default `LanguageProfilerPolicy` is named and testable:
 
