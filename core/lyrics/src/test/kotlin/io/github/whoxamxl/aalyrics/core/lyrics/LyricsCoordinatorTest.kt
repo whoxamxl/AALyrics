@@ -112,6 +112,75 @@ class LyricsCoordinatorTest {
     }
 
     @Test
+    fun `transient provider failure retries once and can recover same lookup`() = runTest {
+        var callCount = 0
+        val winner = candidate("provider", "Recovered")
+        val provider = FakeProvider("provider") {
+            callCount += 1
+            if (callCount == 1) error("temporary")
+            listOf(winner)
+        }
+        val coordinator = LyricsCoordinator(
+            providers = listOf(provider),
+            selector = RecordingSelector { _, candidates, _ -> candidates.firstOrNull() },
+            scope = this,
+            transientRetryDelayMs = 500L,
+        )
+
+        val lookup = coordinator.startLookup(track)
+        advanceUntilIdle()
+
+        assertEquals(2, callCount)
+        val ready = assertIs<LyricsState.Ready>(coordinator.state.value)
+        assertEquals(lookup.id, ready.lookup.id)
+        assertEquals(winner.lyrics, ready.lyrics)
+        assertEquals(2, coordinator.diagnostics.value.attemptCount)
+        assertTrue(coordinator.diagnostics.value.providerFailures.isEmpty())
+    }
+
+    @Test
+    fun `persistent provider failure retries only once then becomes terminal failed`() = runTest {
+        val provider = FakeProvider("failing") { error("still unavailable") }
+        val coordinator = LyricsCoordinator(
+            providers = listOf(provider),
+            selector = RecordingSelector { _, _, _ -> null },
+            scope = this,
+            transientRetryDelayMs = 500L,
+        )
+
+        coordinator.startLookup(track)
+        advanceUntilIdle()
+
+        assertEquals(2, provider.requests.size)
+        val failed = assertIs<LyricsState.Failed>(coordinator.state.value)
+        assertEquals(1, failed.failedAttempts)
+        assertEquals(2, coordinator.diagnostics.value.attemptCount)
+        assertEquals(
+            listOf(LyricsProviderFailureDiagnostic("failing", "IllegalStateException")),
+            coordinator.diagnostics.value.providerFailures,
+        )
+    }
+
+    @Test
+    fun `not found does not retry successful empty provider attempts`() = runTest {
+        val provider = FakeProvider("empty") { emptyList() }
+        val coordinator = LyricsCoordinator(
+            providers = listOf(provider),
+            selector = RecordingSelector { _, _, _ -> null },
+            scope = this,
+            transientRetryDelayMs = 500L,
+        )
+
+        coordinator.startLookup(track)
+        advanceUntilIdle()
+
+        assertEquals(1, provider.requests.size)
+        assertIs<LyricsState.NotFound>(coordinator.state.value)
+        assertEquals(1, coordinator.diagnostics.value.attemptCount)
+        assertTrue(coordinator.diagnostics.value.providerFailures.isEmpty())
+    }
+
+    @Test
     fun `providers are started concurrently`() = runTest {
         val firstStarted = CompletableDeferred<Unit>()
         val secondStarted = CompletableDeferred<Unit>()

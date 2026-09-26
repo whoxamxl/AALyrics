@@ -9,6 +9,7 @@ import java.util.concurrent.atomic.AtomicLong
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -29,16 +30,31 @@ import kotlinx.coroutines.supervisorScope
  * [scope] is supplied by the composition root so process/feature lifecycle
  * ownership remains outside the pure lyrics core.
  */
+data class LyricsProviderFailureDiagnostic(
+    val providerId: String,
+    val errorType: String,
+)
+
+data class LyricsLookupDiagnostics(
+    val lookupId: LyricsLookupId? = null,
+    val attemptCount: Int = 0,
+    val providerFailures: List<LyricsProviderFailureDiagnostic> = emptyList(),
+)
+
 class LyricsCoordinator(
     providers: List<LyricsProvider>,
     private val selector: CandidateSelector,
     private val scope: CoroutineScope,
+    private val transientRetryDelayMs: Long = DEFAULT_TRANSIENT_RETRY_DELAY_MS,
 ) : LyricsLookupLifecycle {
     private val providers = providers.toList()
     private val lookupIds = AtomicLong(0L)
 
     private val _state = MutableStateFlow<LyricsState>(LyricsState.Idle)
     val state: StateFlow<LyricsState> = _state.asStateFlow()
+
+    private val _diagnostics = MutableStateFlow(LyricsLookupDiagnostics())
+    val diagnostics: StateFlow<LyricsLookupDiagnostics> = _diagnostics.asStateFlow()
 
     private var activeJob: Job? = null
 
@@ -70,54 +86,75 @@ class LyricsCoordinator(
 
         activeJob?.cancel()
         _state.update { current -> current.reduce(LyricsStateEvent.Started(lookup)) }
+        _diagnostics.value = LyricsLookupDiagnostics(lookupId = lookup.id)
 
         activeJob = scope.launch {
-            val attempts = searchProviders(
-                LyricsRequest(
+            var attemptNumber = 0
+
+            while (true) {
+                attemptNumber += 1
+                val attempts = searchProviders(
+                    LyricsRequest(
+                        track = track,
+                        preferredSyncType = preferences.preferredSyncType,
+                    ),
+                )
+
+                val failures = attempts.filterIsInstance<ProviderAttempt.Failed>()
+                val failedAttempts = failures.size
+                val candidates = attempts
+                    .filterIsInstance<ProviderAttempt.Succeeded>()
+                    .flatMap { it.candidates }
+
+                publishDiagnostics(
+                    lookupId = lookup.id,
+                    attemptCount = attemptNumber,
+                    failures = failures,
+                )
+
+                val selected = selector.select(
                     track = track,
-                    preferredSyncType = preferences.preferredSyncType,
-                ),
-            )
+                    candidates = candidates,
+                    preferences = preferences,
+                )
+                require(selected == null || selected in candidates) {
+                    "CandidateSelector must return one of the supplied candidates"
+                }
 
-            val failedAttempts = attempts.count { it is ProviderAttempt.Failed }
-            val candidates = attempts
-                .filterIsInstance<ProviderAttempt.Succeeded>()
-                .flatMap { it.candidates }
+                val completion = when {
+                    selected != null && failedAttempts == 0 -> LyricsStateEvent.Resolved(
+                        lookupId = lookup.id,
+                        lyrics = selected.lyrics,
+                    )
 
-            val selected = selector.select(
-                track = track,
-                candidates = candidates,
-                preferences = preferences,
-            )
-            require(selected == null || selected in candidates) {
-                "CandidateSelector must return one of the supplied candidates"
+                    selected != null -> LyricsStateEvent.ResolvedDegraded(
+                        lookupId = lookup.id,
+                        lyrics = selected.lyrics,
+                        failedAttempts = failedAttempts,
+                    )
+
+                    failedAttempts == 0 -> LyricsStateEvent.NoLyrics(lookup.id)
+
+                    attemptNumber <= MAX_TRANSIENT_RETRIES -> null
+
+                    else -> LyricsStateEvent.Failed(
+                        lookupId = lookup.id,
+                        failedAttempts = failedAttempts,
+                    )
+                }
+
+                if (completion == null) {
+                    delay(transientRetryDelayMs)
+                    continue
+                }
+
+                // StateFlow.update makes the stale-result guard atomic with respect to
+                // a concurrent Started/Cleared event. If ownership changes while the
+                // reducer is running, the transform is retried against the new state
+                // and the obsolete lookup id is rejected.
+                _state.update { current -> current.reduce(completion) }
+                break
             }
-
-            val completion = when {
-                selected != null && failedAttempts == 0 -> LyricsStateEvent.Resolved(
-                    lookupId = lookup.id,
-                    lyrics = selected.lyrics,
-                )
-
-                selected != null -> LyricsStateEvent.ResolvedDegraded(
-                    lookupId = lookup.id,
-                    lyrics = selected.lyrics,
-                    failedAttempts = failedAttempts,
-                )
-
-                failedAttempts == 0 -> LyricsStateEvent.NoLyrics(lookup.id)
-
-                else -> LyricsStateEvent.Failed(
-                    lookupId = lookup.id,
-                    failedAttempts = failedAttempts,
-                )
-            }
-
-            // StateFlow.update makes the stale-result guard atomic with respect to
-            // a concurrent Started/Cleared event. If ownership changes while the
-            // reducer is running, the transform is retried against the new state
-            // and the obsolete lookup id is rejected.
-            _state.update { current -> current.reduce(completion) }
         }
 
         return lookup
@@ -140,6 +177,7 @@ class LyricsCoordinator(
 
             else -> {
                 _state.update { current -> current.reduce(LyricsStateEvent.Cleared) }
+                _diagnostics.value = LyricsLookupDiagnostics()
                 false
             }
         }
@@ -150,6 +188,25 @@ class LyricsCoordinator(
         activeJob?.cancel()
         activeJob = null
         _state.update { current -> current.reduce(LyricsStateEvent.Cleared) }
+        _diagnostics.value = LyricsLookupDiagnostics()
+    }
+
+    private fun publishDiagnostics(
+        lookupId: LyricsLookupId,
+        attemptCount: Int,
+        failures: List<ProviderAttempt.Failed>,
+    ) {
+        if ((_state.value as? LyricsState.ForLookup)?.lookup?.id != lookupId) return
+        _diagnostics.value = LyricsLookupDiagnostics(
+            lookupId = lookupId,
+            attemptCount = attemptCount,
+            providerFailures = failures.map { failure ->
+                LyricsProviderFailureDiagnostic(
+                    providerId = failure.providerId,
+                    errorType = failure.errorType,
+                )
+            },
+        )
     }
 
     private suspend fun searchProviders(request: LyricsRequest): List<ProviderAttempt> = supervisorScope {
@@ -161,8 +218,11 @@ class LyricsCoordinator(
                     // Cancellation represents supersession/lifecycle shutdown, not
                     // provider failure. Preserve structured concurrency semantics.
                     throw cancellation
-                } catch (_: Exception) {
-                    ProviderAttempt.Failed
+                } catch (failure: Exception) {
+                    ProviderAttempt.Failed(
+                        providerId = provider.descriptor.id.value,
+                        errorType = failure.javaClass.simpleName.ifBlank { "Exception" },
+                    )
                 }
             }
         }.awaitAll()
@@ -173,6 +233,14 @@ class LyricsCoordinator(
             val candidates: List<LyricsCandidate>,
         ) : ProviderAttempt
 
-        data object Failed : ProviderAttempt
+        data class Failed(
+            val providerId: String,
+            val errorType: String,
+        ) : ProviderAttempt
+    }
+
+    private companion object {
+        const val MAX_TRANSIENT_RETRIES = 1
+        const val DEFAULT_TRANSIENT_RETRY_DELAY_MS = 500L
     }
 }
