@@ -449,3 +449,10 @@ For an early Pre-release, feature completeness is not required. At minimum, the 
 Product-specific behavior, including Android Auto rendering and playback/lyrics behavior, should be documented in release notes with known limitations rather than hidden behind an implication that an alpha release is complete.
 
 Stable releases should use a stricter product-readiness decision appropriate to the functionality present at that time.
+
+
+### Release body composition
+
+The GitHub Release body must present the curated user-facing changelog section first and GitHub's generated PR-level change ledger below it.
+
+The Release workflow extracts the matching newest `CHANGELOG.md` section for the tag version and passes it as explicit release notes alongside `--generate-notes`. This keeps the curated milestone summary authoritative while retaining generated notes underneath it.
