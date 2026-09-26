@@ -18,6 +18,7 @@ import io.github.whoxamxl.aalyrics.ui.automotive.state.AutomotiveMetadataSignatu
 import io.github.whoxamxl.aalyrics.ui.automotive.state.metadataSignature
 import io.github.whoxamxl.aalyrics.ui.automotive.state.shouldRenderProjectionTick
 import io.github.whoxamxl.aalyrics.translation.api.TranslationSettings
+import io.github.whoxamxl.aalyrics.translation.core.CanonicalLyricsIdentity
 import io.github.whoxamxl.aalyrics.translation.core.TranslationState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -46,6 +47,7 @@ class LyricsBrowserService : MediaBrowserServiceCompat() {
     private var latestCapabilities = AutomotiveTransportCapabilities()
     private var latestTranslationSettings = TranslationSettings(enabled = false)
     private var latestTranslationState: TranslationState = TranslationState.Idle
+    private var latestCanonicalLyricsIdentity: CanonicalLyricsIdentity? = null
     private var latestProjectionIsAnimatedLoading = false
     private var lastMetadataSignature: AutomotiveMetadataSignature<Bitmap>? = null
 
@@ -116,6 +118,7 @@ class LyricsBrowserService : MediaBrowserServiceCompat() {
         latestCapabilities = runtimeBinding.capabilities.value
         latestTranslationSettings = runtimeBinding.translationSettings.value
         latestTranslationState = runtimeBinding.translationState.value
+        latestCanonicalLyricsIdentity = runtimeBinding.canonicalLyricsIdentity(latestLyrics)
 
         playbackCollection = scope.launch {
             runtimeBinding.playback.collectLatest { snapshot ->
@@ -126,6 +129,7 @@ class LyricsBrowserService : MediaBrowserServiceCompat() {
         lyricsCollection = scope.launch {
             runtimeBinding.lyrics.collectLatest { state ->
                 latestLyrics = state
+                latestCanonicalLyricsIdentity = runtimeBinding.canonicalLyricsIdentity(state)
                 render()
             }
         }
@@ -165,7 +169,7 @@ class LyricsBrowserService : MediaBrowserServiceCompat() {
             capabilities = latestCapabilities,
             translationSettings = latestTranslationSettings,
             translationState = latestTranslationState,
-            canonicalLyricsIdentity = binding?.canonicalLyricsIdentity?.invoke(latestLyrics),
+            canonicalLyricsIdentity = latestCanonicalLyricsIdentity,
         )
         latestProjectionIsAnimatedLoading = state.lyrics.isAnimatedLoading
 
