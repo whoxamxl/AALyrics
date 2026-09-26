@@ -5,7 +5,7 @@
 - Branch: `feature/android-auto-now-playing`.
 - Original base: `main` at `52e9249395206f8c3821cc5c8e5893a8ccdcd125` (PR #82 merged).
 - Reconciled baseline: current `main` at `86f4cd300161eb2038c637094a8e75a0afa9bf80` (changelog-only PR #83).
-- Current checkpoint: implementation and software validation complete. Final CI rerun on the reconciled branch is pending before the Draft PR.
+- Current checkpoint: implementation and final software validation complete. Open the Draft PR and stop.
 - Authoritative slice contract: `docs/ANDROID_AUTO_NOW_PLAYING.md`.
 - Broader Android Auto strategy: `docs/ANDROID_AUTO_MEDIA_STRATEGY.md`.
 - Shared timing authority: `docs/TIMING_ARCHITECTURE.md`.
@@ -144,7 +144,7 @@ Do not implement:
 8. [x] MediaSession invalidation: ensure visible metadata changes update while position-only movement within one lyric line does not rebuild metadata.
 9. [x] Focused tests: cover the matrix in `docs/ANDROID_AUTO_NOW_PLAYING.md`.
 10. [x] Final validation: architecture checks, relevant unit tests, debug APK, regression/scope audit, docs alignment, DHU/physical-host validation where available. Host rendering remains explicitly unverified below.
-11. [ ] Open a Draft PR only after final validation and stop per `AGENTS.md`.
+11. [x] Open a Draft PR only after final validation and stop per `AGENTS.md`.
 
 ## Expected implementation surface
 
@@ -234,7 +234,7 @@ Codex must implement deterministic tests for at least:
 
 ## Final validation evidence and host follow-up
 
-- Branch Build workflow [run 36210991011](https://github.com/whoxamxl/AALyrics/actions/runs/36210991011) passed architecture checks, `:app:assembleDebug`, and `./gradlew test` across all modules, including timing, Translation, platform/media, application, Phone, and Automotive tests.
+- Final reconciled-branch Build workflow [run 36211723428](https://github.com/whoxamxl/AALyrics/actions/runs/36211723428) passed architecture checks, `:app:assembleDebug`, and `./gradlew test` across all modules, including timing, Translation, platform/media, application, Phone, and Automotive tests.
 - Local Automotive/application production and test sources compiled. Local Gradle test and APK worker processes cannot establish a loopback connection in this environment; CI provided the complete test/APK result.
 - The branch-wide diff contains the approved documentation, application boundary, shared clock extraction, Automotive runtime/state/metadata wiring, and focused tests. No provider, Translation engine, Karaoke, queue, Browse, Sync, Car App Library, or persisted-state change is present. Reset behavior needs no change.
 - The branch was reconciled with current `main` after the scope audit. Its only intervening change was `CHANGELOG.md`, with no implementation conflict.
