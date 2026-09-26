@@ -105,8 +105,8 @@ The display title is presentation only. Update comparison, APK naming, changelog
 - Release-title mapping was exercised for Beta, Alpha, RC, stable, and non-zero patch examples. The intended tag maps to `AALyrics 1.0 Beta 1`; canonical `versionName`, tag, and APK naming remain `1.0.0-beta.1` / `v1.0.0-beta.1`.
 - Release policy documents that zero patch components may be omitted only from the human-facing GitHub Release title.
 - The first title implementation produced `AALyrics 1.0.0 Beta 1`, which conflicted with the approved human-facing contract. This was caught during validation and corrected before PR creation.
-- Full Gradle, unit-test, branch-policy, and architecture validation is delegated to the normal pull-request Build workflow. The visual-only asset/refinement commits continue to change no production implementation code.
+- Pull-request Build workflow completed successfully on the finalized release-prep head, covering the normal Gradle/unit-test/branch-policy/architecture validation path. The visual-only asset/refinement commits change no production implementation code.
 
 ## Result
 
-The branch is ready for Draft PR review as a release-preparation-only change. It does **not** create the tag, publish the Release, or merge into `main`. Those remain separate explicit gates.
+The branch is Merge Ready as a release-preparation-only change. PR #87 may leave Draft state, but this task does **not** create the tag, publish the Release, or merge into `main`. Those remain separate explicit gates.
