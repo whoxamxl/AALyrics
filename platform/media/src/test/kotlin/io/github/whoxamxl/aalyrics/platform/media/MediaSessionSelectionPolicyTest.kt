@@ -14,7 +14,7 @@ class MediaSessionSelectionPolicyTest {
         val selected = MediaSessionSelectionPolicy.select(
             currentToken = current.token,
             controllers = listOf(first, current),
-            selfPackageName = SELF_PACKAGE,
+            excludedPackageNames = setOf(SELF_PACKAGE),
         )
 
         assertEquals(current.token, selected?.token)
@@ -28,7 +28,7 @@ class MediaSessionSelectionPolicyTest {
         val selected = MediaSessionSelectionPolicy.select(
             currentToken = current.token,
             controllers = listOf(current, playing),
-            selfPackageName = SELF_PACKAGE,
+            excludedPackageNames = setOf(SELF_PACKAGE),
         )
 
         assertEquals(playing.token, selected?.token)
@@ -42,7 +42,7 @@ class MediaSessionSelectionPolicyTest {
         val selected = MediaSessionSelectionPolicy.select(
             currentToken = null,
             controllers = listOf(first, second),
-            selfPackageName = SELF_PACKAGE,
+            excludedPackageNames = setOf(SELF_PACKAGE),
         )
 
         assertEquals(first.token, selected?.token)
@@ -55,7 +55,62 @@ class MediaSessionSelectionPolicyTest {
         val selected = MediaSessionSelectionPolicy.select(
             currentToken = self.token,
             controllers = listOf(self),
-            selfPackageName = SELF_PACKAGE,
+            excludedPackageNames = setOf(SELF_PACKAGE),
+        )
+
+        assertNull(selected)
+    }
+
+    @Test
+    fun `release and debug AALyrics sessions are excluded from playback selection`() {
+        val release = controller(
+            token = "release",
+            playing = true,
+            packageName = RELEASE_PACKAGE,
+        )
+        val debug = controller(
+            token = "debug",
+            playing = true,
+            packageName = DEBUG_PACKAGE,
+        )
+        val player = controller(
+            token = "player",
+            playing = true,
+            packageName = "com.example.player",
+        )
+
+        val selectedFromRelease = MediaSessionSelectionPolicy.select(
+            currentToken = null,
+            controllers = listOf(release, debug, player),
+            excludedPackageNames = aalyricsOwnedMediaSessionPackageNames(RELEASE_PACKAGE),
+        )
+        val selectedFromDebug = MediaSessionSelectionPolicy.select(
+            currentToken = null,
+            controllers = listOf(debug, release, player),
+            excludedPackageNames = aalyricsOwnedMediaSessionPackageNames(DEBUG_PACKAGE),
+        )
+
+        assertEquals(player.token, selectedFromRelease?.token)
+        assertEquals(player.token, selectedFromDebug?.token)
+    }
+
+    @Test
+    fun `only AALyrics-owned sessions leave no eligible playback source`() {
+        val release = controller(
+            token = "release",
+            playing = true,
+            packageName = RELEASE_PACKAGE,
+        )
+        val debug = controller(
+            token = "debug",
+            playing = true,
+            packageName = DEBUG_PACKAGE,
+        )
+
+        val selected = MediaSessionSelectionPolicy.select(
+            currentToken = null,
+            controllers = listOf(release, debug),
+            excludedPackageNames = aalyricsOwnedMediaSessionPackageNames(RELEASE_PACKAGE),
         )
 
         assertNull(selected)
@@ -83,6 +138,8 @@ class MediaSessionSelectionPolicyTest {
     }
 
     private companion object {
-        const val SELF_PACKAGE = "io.github.whoxamxl.aalyrics"
+        const val RELEASE_PACKAGE = "io.github.whoxamxl.aalyrics"
+        const val DEBUG_PACKAGE = "$RELEASE_PACKAGE.debug"
+        const val SELF_PACKAGE = RELEASE_PACKAGE
     }
 }
