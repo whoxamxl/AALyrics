@@ -207,7 +207,7 @@ class MediaSessionObservationTest {
     ): MediaSessionObservation<String> {
         lateinit var observation: MediaSessionObservation<String>
         val runtime = SelectedMediaSessionRuntime<String>(
-            selfPackageName = SELF_PACKAGE,
+            excludedPackageNames = setOf(SELF_PACKAGE),
             sink = PlaybackSnapshotSink { snapshots += it },
             controlStateSink = PlaybackControlStateSink {},
             scheduler = MetadataTaskScheduler { _, _ -> ScheduledMetadataTask {} },

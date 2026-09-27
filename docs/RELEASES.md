@@ -393,7 +393,7 @@ The Settings `Changelog` entry remains independent of the update-network path. I
 
 ## Installation and updates
 
-Debug and release APKs use different signing identities. If a debug AALyrics build is installed, uninstall it before installing the first release-signed APK.
+Current debug and release builds use separate application IDs and can coexist. Debug builds installed before this split used `io.github.whoxamxl.aalyrics` with the debug signing identity and must be uninstalled before the first release-signed installation.
 
 After the first release-signed installation, later APKs signed with the same release key and a higher `versionCode` can update it normally.
 

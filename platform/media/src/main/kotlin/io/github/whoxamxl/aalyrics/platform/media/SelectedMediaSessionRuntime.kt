@@ -56,9 +56,9 @@ internal object MediaSessionSelectionPolicy {
     fun <Token> select(
         currentToken: Token?,
         controllers: List<RuntimeMediaController<Token>>,
-        selfPackageName: String,
+        excludedPackageNames: Set<String>,
     ): RuntimeMediaController<Token>? {
-        val eligible = controllers.filter { it.packageName != selfPackageName }
+        val eligible = controllers.filterNot { it.packageName in excludedPackageNames }
         val current = currentToken?.let { token ->
             eligible.firstOrNull { it.token == token }
         }
@@ -69,6 +69,18 @@ internal object MediaSessionSelectionPolicy {
     }
 }
 
+internal fun aalyricsOwnedMediaSessionPackageNames(
+    runtimePackageName: String,
+): Set<String> {
+    val releasePackageName = runtimePackageName.removeSuffix(AALYRICS_DEBUG_PACKAGE_SUFFIX)
+    return setOf(
+        releasePackageName,
+        "$releasePackageName$AALYRICS_DEBUG_PACKAGE_SUFFIX",
+    )
+}
+
+private const val AALYRICS_DEBUG_PACKAGE_SUFFIX = ".debug"
+
 /**
  * Owns one selected session callback and forwards normalized snapshots.
  *
@@ -78,7 +90,7 @@ internal object MediaSessionSelectionPolicy {
  * timeline together, so downstream never receives a synthetic cross-track snapshot.
  */
 internal class SelectedMediaSessionRuntime<Token>(
-    private val selfPackageName: String,
+    private val excludedPackageNames: Set<String>,
     private val sink: PlaybackSnapshotSink,
     private val controlStateSink: PlaybackControlStateSink,
     private val artworkSink: PlaybackArtworkSink = PlaybackArtworkSink {},
@@ -100,7 +112,7 @@ internal class SelectedMediaSessionRuntime<Token>(
         val next = MediaSessionSelectionPolicy.select(
             currentToken = selectedController?.token,
             controllers = controllers,
-            selfPackageName = selfPackageName,
+            excludedPackageNames = excludedPackageNames,
         )
 
         if (next != null && next.token == selectedController?.token) {
@@ -114,7 +126,7 @@ internal class SelectedMediaSessionRuntime<Token>(
             controllers.isEmpty() -> MediaSessionSelectionResult.Disconnected
             else -> MediaSessionSelectionResult.Unavailable(
                 packageName = controllers
-                    .firstOrNull { it.packageName != selfPackageName }
+                    .firstOrNull { it.packageName !in excludedPackageNames }
                     ?.packageName,
                 reason = PlaybackSourceUnavailableReason.UNKNOWN,
             )

@@ -25,7 +25,7 @@ class MediaSessionListenerService : NotificationListenerService() {
             handler = handler,
         )
         runtime = SelectedMediaSessionRuntime(
-            selfPackageName = packageName,
+            excludedPackageNames = aalyricsOwnedMediaSessionPackageNames(packageName),
             sink = PlaybackSnapshotSink(MediaSessionRuntimeHost::forward),
             controlStateSink = PlaybackControlStateSink(MediaSessionRuntimeHost::forwardControlState),
             artworkSink = PlaybackArtworkSink(MediaSessionRuntimeHost::forwardArtwork),

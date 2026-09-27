@@ -449,7 +449,7 @@ class SelectedMediaSessionRuntimeTest {
         controlStates: MutableList<PlaybackControlState> = mutableListOf(),
         refresh: () -> Unit = {},
     ): SelectedMediaSessionRuntime<String> = SelectedMediaSessionRuntime(
-        selfPackageName = SELF_PACKAGE,
+        excludedPackageNames = setOf(SELF_PACKAGE),
         sink = PlaybackSnapshotSink { snapshots += it },
         controlStateSink = PlaybackControlStateSink { controlStates += it },
         scheduler = scheduler,
