@@ -75,7 +75,7 @@ Each Release also includes a matching `.sha256` file for APK integrity verificat
 After the first release-signed installation, later AALyrics releases signed with the same key can update the installed app normally. AALyrics can also discover, verify, and hand off newer releases through its in-app update flow.
 
 > [!NOTE]
-> If a debug build is already installed, uninstall it before installing the first signed Release APK. Debug and Release builds use different signing identities.
+> Current Debug and Release builds use separate application IDs and can coexist. If you installed a Debug build from before this split, uninstall that legacy Debug build before installing the first signed Release APK because it used the Release application ID with a different signing identity.
 
 ## Android Auto
 
