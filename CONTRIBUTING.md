@@ -23,6 +23,17 @@ Use lowercase, descriptive names after the prefix, for example `feature/provider
 
 `main` is the integration branch. Changes are merged only after the pull request checks pass.
 
+## Build identities
+
+Debug and release builds intentionally use separate Android application IDs so they can coexist on the same device:
+
+- Debug: `io.github.whoxamxl.aalyrics.debug`
+- Release: `io.github.whoxamxl.aalyrics`
+
+The Kotlin/Android namespace remains `io.github.whoxamxl.aalyrics`; only the install-time application ID differs. Debug builds are also labeled `AALyrics Debug` in the launcher and Android Auto so they are distinguishable from an installed release build.
+
+Do not use a normal debug build to validate the production self-update path. Published releases target the release application ID and durable release signing identity; use the dedicated release-signed update-test workflow when production update compatibility must be exercised.
+
 ## Pull request review discipline
 
 Keep the pull request's stated scope and acceptance criteria fixed during review. Review feedback should block the current PR when it identifies a current defect, regression, CI failure, security/safety issue, or direct violation of those criteria. Theoretical bypasses, hypothetical future configurations, speculative hardening, and intentionally adversarial ways to evade a best-effort guardrail should normally be deferred rather than expanding the PR indefinitely.
