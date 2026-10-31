@@ -9,6 +9,7 @@ import androidx.compose.material.icons.rounded.Block
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.ErrorOutline
+import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.LinkOff
 import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.Download
@@ -40,6 +41,7 @@ object AALyricsIcons {
 
     val Back: ImageVector = Icons.Rounded.ChevronLeft
     val Info: ImageVector = Icons.Rounded.Info
+    val Edit: ImageVector = Icons.Rounded.Edit
     val NavigateNext: ImageVector = Icons.Rounded.ChevronRight
     val Check: ImageVector = Icons.Rounded.Check
     val Close: ImageVector = Icons.Rounded.Close

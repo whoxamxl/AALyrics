@@ -134,7 +134,7 @@ normalized PlaybackSnapshot
         ↓
 shared projected playback clock
         ↓
-effectiveLyricsPosition(projectedPlaybackPosition, LyricsTimingOffset.ZERO)
+effectiveLyricsPosition(projectedPlaybackPosition, applicationOwnedLyricsOffset)
         ↓
 projectLyricsTiming(canonicalLyrics, effectivePosition)
         ↓
@@ -146,8 +146,8 @@ Automotive one-line presentation
 Rules:
 
 - canonical provider timestamps remain unchanged;
-- the production lyrics offset remains zero in this slice;
-- Android Auto does not implement Sync UX or calibration persistence;
+- the global offset is supplied by the application and observed live, including during pause;
+- Android Auto consumes the same persisted offset adjusted in Phone Sync; it does not own a second setting or clock;
 - LINE_SYNC and WORD_SYNC both use `activeLineIndex`;
 - WORD_SYNC ignores `activeWordIndex`, `wordProgress`, and `wordBoundary` for automotive presentation;
 - PLAIN lyrics do not enter timing projection for visible current-line text;

@@ -97,7 +97,7 @@ AALyrics has moved beyond the construction-only stage. Its primary purpose — f
 
 The **1.0 Beta** line means the intended product identity and core experience are established, while some advanced functionality is still evolving:
 
-- Sync calibration controls and persistence are still in development.
+- Manual Sync calibration is available in this fork: three-tap calibration, ±50/500 ms, exact millisecond entry, live preview, and a saved global offset shared by Phone and Android Auto. Per-song and automatic calibration remain future work.
 - Phone WORD_SYNC Karaoke remains experimental and opt-in.
 - Android Auto is currently line-oriented Now Playing rather than full Phone feature parity or Karaoke presentation.
 
@@ -112,6 +112,16 @@ Phone lyrics automatically follow playback while still allowing manual browsing.
 Translation uses the established AALyrics Translation pipeline and on-device language models where supported. Translated text is secondary presentation only: it remains tied to the identity and timing of the canonical lyrics.
 
 Actual lyric availability and timing quality depend on the metadata exposed by the active media app and on matching lyric data available from the providers.
+
+### Manual lyrics sync (this fork)
+
+While a song with timed lyrics is playing, open **Sync → Start 3-tap sync**. The app shows three upcoming lyric lines and highlights the first one. Tap **Tap at line start** when you hear the highlighted line begin; repeat for the next two lines. After three taps, their average offset is saved automatically. **Cancel calibration** keeps the old offset. Pause, a track/lyrics change, a detected seek, leaving Sync, or manual adjustment ends an unfinished calibration; start again when ready. If fewer than three lines remain, seek to an earlier part of the song first.
+
+While playing a song with timed lyrics, open **Sync**. If lyrics are late, use **Advance (+50/+500 ms)**; if they are early, use **Delay (−50/−500 ms)**. The four compact controls are ordered **−500 / −50 / +50 / +500 ms**, with Delay and Advance labels. The live preview follows the same timing as the Lyrics page. **Reset** beside the current value restores the original timing.
+
+For an exact value, tap the number under **LYRICS OFFSET** (or its pencil icon). Enter a whole number of milliseconds, such as `125` to advance or `-275` to delay. Use **±** if your keyboard has no minus key. **Save** or keyboard **Done** applies it; **Cancel**, Back, or dismissing the dialog keeps the previous value. Opening the editor cancels unfinished three-tap calibration. Exact entry is available even without timed lyrics.
+
+The offset is global, saved across songs and app restarts, and shared with Android Auto. It is limited to ±30 seconds and never seeks the music or rewrites source timestamps. Plain lyrics cannot be calibrated. **Settings → Advanced → Reset AALyrics** also clears the saved offset.
 
 ## Support AALyrics
 

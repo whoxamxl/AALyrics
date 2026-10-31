@@ -1,3 +1,14 @@
+## [Unreleased] — Fork changes
+
+### Added
+
+- Three-tap Sync calibration: listen for three highlighted lyric starts, tap once for each, and save their average offset. Supports cancellation and preserves the existing manual fine-tuning controls.
+- Phone Sync controls to advance or delay lyrics by 50 ms or 500 ms, with a live original/translated lyric preview and Reset.
+- A compact Lyrics Offset card with one row of adjustment controls, an inline Reset action, and adaptive grouping for large fonts.
+- Tap the current lyrics offset to enter an exact signed millisecond value, with a numeric keyboard, sign toggle, validation, and Save/Cancel.
+- A saved global offset (±30 seconds) shared by Phone, Karaoke, verbose Details, and Android Auto. Playback position and provider timestamps remain unchanged.
+- Reset AALyrics also restores the lyrics offset to zero.
+
 ## [1.0.0-beta.1] - 2026-09-26
 
 ### Beta milestone

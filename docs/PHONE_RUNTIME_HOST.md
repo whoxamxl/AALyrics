@@ -19,7 +19,7 @@ The current production branch state now has:
 - production Lyrics and Settings presentation mapping, including memoized static Phone lyric-row projection outside the playback clock tick;
 - in-app License navigation backed by build-synchronized repository `NOTICE` + `LICENSE`, rendered through the shared Phone Markdown wrapper;
 - adopted Phone-local popup and second-level Settings-header primitives;
-- an explicit non-functional Sync placeholder;
+- manual global Sync controls and a live calibrated lyric preview;
 - a complete application-owned verified update runtime (manual/automatic discovery, download/integrity, install permission, PackageInstaller, recovery, and post-update feedback), while Changelog remains supplied offline from the bundled repository `CHANGELOG.md`.
 
 The debug APK builds with the real Phone shell reachable after onboarding prerequisites are satisfied. Physical-device smoke testing has been exercised for the production Phone shell and, for the Translation follow-up, the refined Secondary/Details behavior; CI/build results and device observations remain separate validation evidence.
@@ -43,7 +43,7 @@ AppEntryState
           └─ AALyricsTheme
                └─ PhoneAppShell
                     ├─ Lyrics
-                    ├─ Sync placeholder
+                    ├─ Sync
                     ├─ Details
                     └─ Settings
 ```
@@ -242,20 +242,11 @@ The runtime now forwards selected-session artwork from `METADATA_KEY_ALBUM_ART`,
 
 ## Sync destination
 
-Sync remains a deliberate non-functional placeholder. The timing architecture now fixes the downstream clock semantics (`effectiveLyricsPosition = projectedPlaybackPosition + lyricsOffset`, positive = advance lyrics, negative = delay lyrics), but this runtime-host slice still does not own a user offset, persistence, or calibration controls. The projected playback position begins from the identity/timeline-coherent `PlaybackSnapshot` emitted by `:platform:media`; the host does not correct MediaSession timestamp contradictions or metadata-transition mismatches.
+Sync collects the application-owned persisted lyrics offset. It maps existing calibrated Phone lyric state to `SyncScreenUiState`, forwards semantic ±50/500 ms actions, exact-value submissions, and Reset to the application, and runs the normal 250 ms line tick while visible and playing. The preview includes previous/current/next original lines and an eligible current translation.
 
-For device navigation testing, the runtime host may render a deliberate non-functional placeholder that clearly indicates Sync is not available yet.
+The tap panel also collects the application-owned `TapSyncState`, displays three frozen upcoming lines and the next target, and forwards Start/Tap/Cancel. Sampling uses a fresh source snapshot and monotonic time inside the application, not the Compose tick. Three taps replace the global offset with their average; incomplete sessions never persist. Leaving the destination or disposing the Activity cancels an unfinished session. Source changes, pause, and seeks are handled by the application. Existing fixed controls remain usable and cancel any unfinished tap calibration. Tapping the current offset opens a numeric editor and also cancels calibration. The host supplies the application-owned range; only a valid Save or keyboard Done calls `setLyricsTimingOffset`. Editor drafts stay local to Compose and dismissing them preserves the saved value.
 
-That placeholder must not introduce:
-
-- offset controls;
-- latency calibration;
-- per-provider timing correction;
-- automatic calibration;
-- persistence;
-- playback mutation.
-
-A placeholder is presentation only and does not freeze the future Sync design.
+The same offset feeds Phone lyrics/Karaoke, verbose Details, and Android Auto. Sync never seeks playback or mutates provider timestamps. Fixed-step controls are disabled for unavailable or untimed lyrics; the global value can still be edited directly, and a saved non-zero offset can still be reset. The global value survives song changes and process recreation, with a ±30-second range. See `TIMING_ARCHITECTURE.md` for ownership and reset semantics.
 
 ## Details destination
 
@@ -341,7 +332,7 @@ Persistent settings must not be moved into `MainActivity` or `:ui:phone`.
 After implementation, a debug APK with prerequisites satisfied should allow a user to:
 
 1. launch into the real Phone shell rather than the foundation build message;
-2. switch among Lyrics, Sync placeholder, Details, and Settings;
+2. switch among Lyrics, Sync, Details, and Settings;
 3. observe live current-track/playback changes;
 4. open and interact with the Playback Surface according to real media-session capabilities;
 5. inspect live Details metadata;
@@ -368,7 +359,7 @@ A physical-device smoke test remains useful evidence in addition to CI/build che
 
 This slice does not implement:
 
-- Sync timing/calibration behavior;
+- per-track/device-specific and automatic calibration;
 - functional Karaoke mode;
 - Karaoke WORD highlighting;
 - provider ordering/preferences;

@@ -937,6 +937,8 @@ After confirmation, reset restores:
 - Verbose details -> OFF;
 - Karaoke experimental feature gate -> OFF;
 - Karaoke live mode -> OFF;
+- Global lyrics timing offset -> 0 ms (shared Phone/Android Auto calibration);
+- Any unfinished three-tap calibration -> cancelled (transient samples are never persisted);
 - Plain lyrics auto-scroll -> its Phone default;
 - Ignore non-audio apps -> ON;
 - Allow unclassified apps -> OFF;
@@ -1101,7 +1103,7 @@ The first Settings slice does not define or implement:
 - notification-access management;
 - Translation Provider selection UI;
 - Android Auto runtime/projection settings;
-- Sync/calibration settings;
+- additional Sync settings beyond the global offset owned by the separate Sync destination;
 - Android Auto Karaoke runtime wiring (Phone Karaoke is authorized separately by Phase 11.4b/11.4c);
 - embedded donation/payment WebViews, in-app payment handling, or undocumented Buy Me a Coffee prefill behavior;
 - additional developer/experimental controls beyond the approved Advanced contract, including playback-source overrides other than `Allow unclassified apps`.

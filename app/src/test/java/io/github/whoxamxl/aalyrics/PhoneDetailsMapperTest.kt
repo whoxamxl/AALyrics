@@ -41,6 +41,22 @@ import kotlin.test.assertTrue
 
 class PhoneDetailsMapperTest {
     @Test
+    fun `verbose line follows calibration while playback label stays on real clock`() {
+        val track = currentTrack()
+        val playback = PlaybackSnapshot(track = track, status = PlaybackStatus.PAUSED, positionMs = 3_500L)
+        val lyrics = readyLyrics(track, requireNotNull(playback.trackIdentity))
+        val advanced = mapPhoneDetailsVerboseProgress(
+            playback, lyrics, currentMonotonicTimeMs = 10_000L,
+            lyricsTimingOffset = io.github.whoxamxl.aalyrics.core.timing.LyricsTimingOffset(500L),
+        )
+        val reset = mapPhoneDetailsVerboseProgress(playback, lyrics, currentMonotonicTimeMs = 10_000L)
+
+        assertEquals(2, advanced.currentLineNumber)
+        assertEquals(1, reset.currentLineNumber)
+        assertEquals(reset.playbackPositionLabel, advanced.playbackPositionLabel)
+    }
+
+    @Test
     fun `normal Details maps user-facing current track and lyrics fields`() {
         val track = currentTrack()
         val state = mapPhoneDetailsState(

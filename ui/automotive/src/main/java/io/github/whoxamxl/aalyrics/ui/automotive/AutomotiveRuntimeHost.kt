@@ -1,6 +1,7 @@
 package io.github.whoxamxl.aalyrics.ui.automotive
 
 import android.graphics.Bitmap
+import io.github.whoxamxl.aalyrics.core.timing.LyricsTimingOffset
 import io.github.whoxamxl.aalyrics.core.lyrics.LyricsState
 import io.github.whoxamxl.aalyrics.core.model.PlaybackSnapshot
 import io.github.whoxamxl.aalyrics.core.model.PlaybackTrackIdentity
@@ -41,6 +42,7 @@ fun interface AutomotiveHostDemand {
 class AutomotiveRuntimeBinding(
     val playback: StateFlow<PlaybackSnapshot>,
     val lyrics: StateFlow<LyricsState>,
+    val lyricsTimingOffset: StateFlow<LyricsTimingOffset>,
     val artwork: StateFlow<AutomotiveArtworkState>,
     val capabilities: StateFlow<AutomotiveTransportCapabilities>,
     val translationSettings: StateFlow<TranslationSettings>,

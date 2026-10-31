@@ -72,6 +72,7 @@ internal object AutomotiveLyricsUiStateMapper {
         translationSettings: TranslationSettings = TranslationSettings(enabled = false),
         translationState: TranslationState = TranslationState.Idle,
         canonicalLyricsIdentity: CanonicalLyricsIdentity? = null,
+        lyricsTimingOffset: LyricsTimingOffset = LyricsTimingOffset.ZERO,
     ): AutomotiveLyricsUiState {
         val track = playback.track
         if (track == null) {
@@ -94,7 +95,7 @@ internal object AutomotiveLyricsUiStateMapper {
         val activeLineIndex = document?.let { lyrics ->
             projectLyricsTiming(
                 lyrics,
-                effectiveLyricsPosition(positionMs, LyricsTimingOffset.ZERO),
+                effectiveLyricsPosition(positionMs, lyricsTimingOffset),
             ).activeLineIndex
         }
         val currentLine = activeLineIndex?.let { document?.lines?.getOrNull(it) as? TimedLyricLine }

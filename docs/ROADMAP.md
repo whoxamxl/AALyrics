@@ -153,9 +153,9 @@ Subsequent Phone presentation work has substantially advanced the production sur
 
 Presentation uses `:ui:designsystem` for shared tokens/components, `:ui:phone` for phone-specific composition, and `:ui:automotive` for automotive-specific composition. Production UI lives in `src/main`; deterministic Preview/development fixtures live in `src/debug` and render the production composables. Phone and automotive remain separate presentation surfaces rather than one universal UI model.
 
-PR #49 implements the approved read-only Details destination plus the Settings-owned Advanced surface with a persisted presentation-only Verbose Details preference and an intentionally disabled/unwired Karaoke affordance. Sync remains the only primary Phone destination that is both a placeholder and interaction-model-deferred pending timing/calibration redesign.
+PR #49 implements the approved read-only Details destination plus the Settings-owned Advanced surface with a persisted presentation-only Verbose Details preference and an intentionally disabled/unwired Karaoke affordance. The original Sync placeholder is superseded by manual global calibration in this fork.
 
-PR #50 established the **Phone runtime host / device-test enablement** boundary documented in `docs/PHONE_RUNTIME_HOST.md`. Subsequent merged Phone work completed the Settings legal/help surfaces, playback-source eligibility and diagnostics, storage/reset controls, queue/artwork refinements, and the verified in-app update flow. `MainActivity` continues to preserve onboarding while hosting live application-owned Lyrics/Playback/Details/Settings state. Sync remains a deliberate non-functional placeholder. The separately authorized Phase 11.4b/11.4c Phone slice adds gated WORD_SYNC Karaoke presentation. Android Auto Now Playing intentionally remains line-oriented and does not adopt Karaoke presentation.
+PR #50 established the **Phone runtime host / device-test enablement** boundary documented in `docs/PHONE_RUNTIME_HOST.md`. Subsequent merged Phone work completed the Settings legal/help surfaces, playback-source eligibility and diagnostics, storage/reset controls, queue/artwork refinements, and the verified in-app update flow. `MainActivity` continues to preserve onboarding while hosting live application-owned Lyrics/Playback/Details/Settings state. This fork adds the manual global Sync destination described below. The separately authorized Phase 11.4b/11.4c Phone slice adds gated WORD_SYNC Karaoke presentation. Android Auto Now Playing intentionally remains line-oriented and does not adopt Karaoke presentation.
 
 The production Settings information architecture is now merged on `main`: Version/Changelog/Source code and automatic/manual update controls live under `APP`; Privacy Policy, Terms of Use, License/third-party licenses, Help & Feedback, and Support AALyrics live under `ABOUT & SUPPORT`; Advanced remains a separate application-owned settings surface. External browser/payment handoffs remain app-owned and do not move runtime capability ownership into `:ui:phone`.
 
@@ -294,7 +294,7 @@ Phone presentation now consumes the already-implemented atomic Translation resul
 - read-only Translation Details diagnostics expose current profile/runtime/model evidence without starting new work;
 - canonical timing, current-line ownership, provider attribution, Lyrics Provider selection, and existing Follow/Browse geometry remain unchanged.
 
-The PR #84 Android Auto Now Playing implementation now consumes the existing atomic Translation lifecycle as a line-oriented downstream presentation: canonical source first, optional exact-identity translated second line, translating heartbeat, and source-only fallback on Translation failure. Musixmatch native Translation, persistent Translation Cache, Sync calibration UX, and Karaoke Translation behavior remain separate slices.
+The PR #84 Android Auto Now Playing implementation now consumes the existing atomic Translation lifecycle as a line-oriented downstream presentation: canonical source first, optional exact-identity translated second line, translating heartbeat, and source-only fallback on Translation failure. Musixmatch native Translation, persistent Translation Cache, advanced calibration, and Karaoke Translation behavior remain separate slices.
 
 The durable merged contract is recorded in `docs/TRANSLATION_ARCHITECTURE.md`, `docs/PHONE_LYRICS_VIEWPORT.md`, `docs/PHONE_RUNTIME_HOST.md`, and `docs/PHONE_DETAILS.md`.
 
@@ -313,7 +313,7 @@ Approved first-slice semantics:
 - do not integrate the new engine into Phone/Android Auto presentation yet;
 - do not add persistence, calibration controls, drift correction, or Karaoke semantics.
 
-The working-fork `SyncCalibration.offsetForTap(target, raw) = target - raw` sign behavior was re-checked at `v1.13.0` and is compatible with this contract. The old tap workflow itself remains deferred.
+The working-fork `SyncCalibration.offsetForTap(target, raw) = target - raw` sign behavior was re-checked at `v1.13.0` and is compatible with this contract. The three-tap workflow is now implemented in this fork's Phase 11.3c.
 
 The implementation contract and validation record are `TASK.md` plus `docs/TIMING_ARCHITECTURE.md`.
 
@@ -340,20 +340,11 @@ The current Phone production path consumes only `activeLineIndex` after semantic
 
 The existing timing topic branch continues for this work. Draft PR #80 was closed before review because it represented only the earlier 11.3a/11.3b checkpoint.
 
-### Phase 11.3c — Sync calibration UX — deferred
+### Phase 11.3c — Manual global Sync calibration — implemented in this fork
 
-UX deliberately follows the semantic engine.
+Phone Sync now offers three-tap calibration alongside ±50/500 ms and Reset, a tappable signed millisecond value with exact numeric entry, and a live original/translated preview. Three taps at the starts of three fixed upcoming lyric lines replace the saved offset with their average. One app-owned offset is saved across songs/restarts and consumed by Phone lyrics/Karaoke, verbose Details, and Android Auto. The range is ±30 seconds; Reset AALyrics also cancels unfinished calibration and restores zero. No-media/untimed lyrics disable tap and fixed-step calibration; exact global entry remains available with validation and Save/Cancel. Playback progress/source timestamps remain unchanged.
 
-Only after shared timing semantics and behaviour-preserving wiring are proven, define:
-
-- adjustment controls and step sizes;
-- scope (session/global/track/provider/presentation-specific);
-- persistence;
-- reset semantics;
-- Phone/Android Auto compensation policy;
-- any later manual/automatic calibration workflow.
-
-Do not infer these choices from the legacy app or from the current placeholder.
+Per-track/provider-specific offsets, separate Phone/Auto compensation, and automatic calibration remain deferred. See `TIMING_ARCHITECTURE.md`.
 
 ### Phase 11.4b — Karaoke presentation mapping — implemented on Phone topic branch
 
@@ -465,7 +456,7 @@ The future Car App Library implementation must remain a dedicated topic branch/P
 
 ## Later phases
 
-Remaining later work includes Sync calibration UX/persistence, any future explicitly authorized Android Auto Karaoke, the Car App Library implementation described above, capability-specific settings/persistence not yet justified, release-process refinement beyond the established GitHub Release baseline, and continued regression comparison against the previous fork.
+Remaining later work includes advanced/per-track calibration, any future explicitly authorized Android Auto Karaoke, the Car App Library implementation described above, capability-specific settings/persistence not yet justified, release-process refinement beyond the established GitHub Release baseline, and continued regression comparison against the previous fork.
 
 Do not use future feature needs as a reason to turn `LyricsCoordinator`, `PlaybackLyricsController`, the media-session runtime, demand gate, production selector, concrete providers, capability services, or the shared design system into god objects.
 

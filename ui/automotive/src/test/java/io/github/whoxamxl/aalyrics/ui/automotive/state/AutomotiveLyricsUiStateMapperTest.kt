@@ -23,8 +23,32 @@ import io.github.whoxamxl.aalyrics.translation.core.TranslationState
 import io.github.whoxamxl.aalyrics.translation.core.SecondaryActivation
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import io.github.whoxamxl.aalyrics.core.timing.LyricsTimingOffset
 
 class AutomotiveLyricsUiStateMapperTest {
+    @Test
+    fun `global offset shifts paused car lyrics immediately without changing media position`() {
+        val track = Track(title = "Song", artists = listOf("Artist"))
+        val playback = PlaybackSnapshot(track = track, status = PlaybackStatus.PAUSED, positionMs = 9_800L)
+        val document = LyricsDocument(lines = listOf(
+            TimedLyricLine("First", startMs = 0L),
+            TimedLyricLine("Second", startMs = 10_000L),
+        ))
+        val lyrics = ready(track, document)
+        fun project(offset: Long) = AutomotiveLyricsUiStateMapper.project(
+            playback, lyrics, currentMonotonicTimeMs = 5_000L,
+            lyricsTimingOffset = LyricsTimingOffset(offset),
+        )
+
+        assertEquals("First", project(0).subtitle)
+        assertEquals("Second", project(500).subtitle)
+        assertEquals("First", project(-500).subtitle)
+        assertEquals("First", project(0).subtitle)
+        assertEquals(9_800L, project(500).positionMs)
+        assertEquals(9_800L, project(-500).positionMs)
+        assertEquals(10_000L, (document.lines[1] as TimedLyricLine).startMs)
+    }
+
     @Test
     fun `playing snapshot advances current line using elapsed playback time`() {
         val track = Track(

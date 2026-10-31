@@ -126,7 +126,9 @@ Timing/calibration preserves canonical source timing and derives a lyrics-only v
 
 The shared timing-semantic layer consumes canonical timed lyrics + effective lyrics position and deterministically projects active line/word/progress/boundary facts. These facts are independent of Karaoke enablement and are shared by Normal presentation and the implemented Phone Karaoke consumer.
 
-Offset scope, persistence, Sync UI, provider/track/device-specific correction, and drift/rate correction remain deferred.
+This fork implements one persisted global offset in application-owned `LyricsTimingSettings`, shared by Phone lyrics/Karaoke, Sync preview, verbose Details line selection, and Android Auto. Phone Sync emits manual adjustment, exact-entry, three-tap, and reset actions; transient tap sampling belongs to `TapSyncCalibration`, not UI or `LyricsCoordinator`. Offset changes neither refetch providers nor restart Translation. Sync Reset and `Reset AALyrics` cancel unfinished calibration and restore zero.
+
+Per-track/provider offsets, separate Phone/Auto compensation, automatic audio calibration, and drift/rate correction remain deferred.
 
 See `docs/TIMING_ARCHITECTURE.md`.
 

@@ -410,13 +410,14 @@ internal fun mapPhoneDetailsVerboseProgress(
     playback: PlaybackSnapshot,
     lyricsState: LyricsState,
     currentMonotonicTimeMs: Long,
+    lyricsTimingOffset: LyricsTimingOffset = LyricsTimingOffset.ZERO,
 ): DetailsVerboseProgressUiState {
     val lyricsDocument = currentLyrics(playback, lyricsState).document
     val positionMs = projectedPlaybackPosition(
         playback = playback,
         currentMonotonicTimeMs = currentMonotonicTimeMs,
     )
-    val lyricsPosition = effectiveLyricsPosition(positionMs, LyricsTimingOffset.ZERO)
+    val lyricsPosition = effectiveLyricsPosition(positionMs, lyricsTimingOffset)
 
     return DetailsVerboseProgressUiState(
         playbackPositionLabel = playback.track

@@ -27,7 +27,7 @@ Duration (verbose)      1:32 / 3:41
 Lines (verbose)         28 / 64
 ```
 
-Duration uses projected current playback position over total track duration. Lines uses a one-based current synchronized lyric line over total resolved line count. PLAIN lyrics have no authoritative current line, so the verbose current-line value is shown as unavailable (`— / <total>`) rather than inventing a timed line.
+Duration uses projected current playback position over total track duration and is unaffected by calibration. Lines uses a one-based current synchronized lyric line over total resolved line count, selected using the same persisted global offset as Phone lyrics and Android Auto. Details consumes this effective-position projection without applying the offset a second time or owning calibration controls. PLAIN lyrics have no authoritative current line, so the verbose current-line value is shown as unavailable (`— / <total>`) rather than inventing a timed line.
 
 Enabling Verbose Details changes presentation only. It must not alter lyrics lookup, provider ordering, candidate selection, timing, Translation, playback control, or rendering behavior.
 

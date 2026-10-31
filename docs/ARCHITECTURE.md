@@ -72,7 +72,11 @@ The demand-gating slice adds an application-lifecycle boundary in front of `Play
 
 The Translation background scaffold also lets `:app` compose persisted Translation settings with a process-level ML Kit target-model preparation runtime. That runtime does not observe canonical lyrics, execute lyric Translation, or publish foreground state.
 
-Translation execution and Phone presentation are composed through their dedicated capability/application boundaries. The PR #84 legacy Android Auto Now Playing path also consumes the existing Translation state downstream without moving Translation execution into `:app` or `:ui:automotive`. Future persistent cache, Sync/calibration UX, Android Auto Karaoke, and Car App Library presentation may be wired from appropriate composition roots, but the composition root must not become the owner of their feature logic.
+Translation execution and Phone presentation are composed through their dedicated capability/application boundaries. The PR #84 legacy Android Auto Now Playing path also consumes the existing Translation state downstream without moving Translation execution into `:app` or `:ui:automotive`.
+
+This fork's manual Sync implementation uses application-owned `LyricsTimingSettings` for the persisted global offset and `TapSyncCalibration` for the transient three-tap session. `AALyricsApplication` wires these owners, exposes semantic actions, and supplies the offset to Phone and Automotive consumers; `:core:timing` still owns the effective-position transform and shared timing projection. Phone Compose renders mapped state without owning persistence or calibration sampling. Sync Reset and `Reset AALyrics` cancel unfinished calibration and restore zero. The detailed contract is `docs/TIMING_ARCHITECTURE.md`.
+
+Future persistent cache, advanced calibration, Android Auto Karaoke, and Car App Library presentation may be wired from appropriate composition roots, but the composition root must not become the owner of their feature logic.
 
 ### `:core:model`
 
@@ -432,7 +436,7 @@ Stable rules:
 - optional capability failure must not erase valid lower-level lyrics state;
 - providers, MediaSession runtime, `LyricsCoordinator`, and UI must not absorb unrelated capability ownership.
 
-This foundation generally avoids speculative concrete modules and APIs. Translation introduced concrete modules only when implementation justified them; timing extends the existing `:core:timing` module with shared semantic projection over `:core:model`, and the Phone WORD_SYNC Karaoke consumer/rendering contract is now implemented downstream of that engine. Cache storage, timing persistence/scope, Sync UX, dedicated calibration/drift-offset algorithms, Android Auto Karaoke, ViewModels, and additional final UI-state shapes remain deferred until their own evidence-bearing slices.
+This foundation generally avoids speculative concrete modules and APIs. Translation introduced concrete modules only when implementation justified them; timing extends the existing `:core:timing` module with shared semantic projection over `:core:model`, and the Phone WORD_SYNC Karaoke consumer/rendering contract is now implemented downstream of that engine. This fork adds manual global Sync controls, persistence, and three-tap calibration through dedicated application owners and Phone presentation. Cache storage, per-track/provider offsets, separate Phone/Auto compensation, automatic calibration, drift correction, Android Auto Karaoke, speculative ViewModels, and additional final UI-state shapes remain deferred until their own evidence-bearing slices.
 
 ## Core responsibilities
 

@@ -9,6 +9,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import io.github.whoxamxl.aalyrics.ui.phone.R
 import androidx.compose.ui.tooling.preview.Preview
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsColors
 import io.github.whoxamxl.aalyrics.ui.designsystem.theme.AALyricsTheme
@@ -121,7 +123,7 @@ private fun AdvancedResetDialogPreview() {
     AALyricsTheme {
         SettingsConfirmationDialog(
             title = "Reset AALyrics?",
-            text = "AALyrics settings, including both Karaoke switches, and onboarding state will be restored to their defaults. Downloaded translation models and system settings will not be changed.",
+            text = stringResource(R.string.settings_reset_aalyrics_dialog_body),
             confirmLabel = "Reset",
             dismissLabel = "Cancel",
             confirmColor = AALyricsColors.Error,

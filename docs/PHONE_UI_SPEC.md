@@ -4,9 +4,9 @@
 
 The Phone information architecture and persistent Compose shell are established. Lyrics, Settings, and the shell-owned Playback Surface are implemented in production Compose. PR #46 replaced the legacy fixed three-button playback bar with the compact collapsed Playback Bar plus on-demand Expanded Player defined in `docs/PHONE_PLAYBACK_SURFACE.md`.
 
-PR #49 implements the approved Details contract from `docs/PHONE_DETAILS.md` together with the narrow `Settings > Advanced` extension from `docs/PHONE_SETTINGS.md`. Details remains read-only and Verbose Details is presentation-only. The later Phone Karaoke slice makes the Advanced Karaoke row a persisted experimental gate and adds a separate live switch in Expanded Player Quick controls. Sync remains intentionally deferred while its timing/calibration interaction model is reconsidered.
+PR #49 implements the approved Details contract from `docs/PHONE_DETAILS.md` together with the narrow `Settings > Advanced` extension from `docs/PHONE_SETTINGS.md`. Details remains read-only and Verbose Details is presentation-only. The later Phone Karaoke slice makes the Advanced Karaoke row a persisted experimental gate and adds a separate live switch in Expanded Player Quick controls. This fork implements manual global Sync calibration, including fixed-step adjustment, exact millisecond entry, three-tap calibration, and live preview under `docs/TIMING_ARCHITECTURE.md`.
 
-PR #50 implements the application-composition slice defined in `docs/PHONE_RUNTIME_HOST.md`. `MainActivity` preserves the existing entry gates and now hosts the production `PhoneAppShell` for READY. Live app-owned state drives Lyrics, Playback Surface, Details, and Settings; Sync remains an explicit non-functional placeholder. Physical-device iteration on this branch also established selected-session artwork with branded fallback, Translation opt-in defaults, human-readable playback-source labeling with package fallback, in-app License presentation, and shared Phone popup/subscreen/Markdown primitives. The playback-source metadata contract now extends that application-owned package resolution to the selected app icon for the persistent Top Bar and Android application category plus min/target SDK levels for Verbose Details diagnostics. The generated debug APK is suitable for continued physical-device Phone UI validation.
+PR #50 implements the application-composition slice defined in `docs/PHONE_RUNTIME_HOST.md`. `MainActivity` preserves the existing entry gates and now hosts the production `PhoneAppShell` for READY. Live app-owned state drives Lyrics, Playback Surface, Details, and Settings; this fork also wires the Sync destination to the shared timing offset and transient calibration state. Physical-device iteration also established selected-session artwork with branded fallback, Translation opt-in defaults, human-readable playback-source labeling with package fallback, in-app License presentation, and shared Phone popup/subscreen/Markdown primitives. The playback-source metadata contract now extends that application-owned package resolution to the selected app icon for the persistent Top Bar and Android application category plus min/target SDK levels for Verbose Details diagnostics. The generated debug APK is suitable for continued physical-device Phone UI validation.
 
 ## Product intent
 
@@ -79,7 +79,18 @@ Before provider lookup starts, the application layer evaluates the selected sour
 
 ### Sync
 
-Reserved for synchronization-focused controls and status. The underlying timing foundation now fixes one semantic rule before any controls exist: `effectiveLyricsPosition = projectedPlaybackPosition + lyricsOffset`, where positive advances lyrics and negative delays them. The Sync destination itself remains a non-functional placeholder; control layout, step sizes, scope, persistence, and calibration workflow are still intentionally deferred.
+Manual calibration uses the shared rule `effectiveLyricsPosition = projectedPlaybackPosition + lyricsOffset`: positive advances lyrics and negative delays them. One application-owned offset, bounded to ±30,000 ms, persists across tracks and process restarts and is shared by Phone lyrics/Karaoke, Sync preview, verbose Details line selection, and Android Auto. Actual playback progress and canonical timestamps remain unchanged.
+
+The scrollable destination contains:
+
+- a three-tap card showing three fixed upcoming lyric lines; Start/Tap/Cancel emit application actions, and only three completed valid taps replace the saved offset;
+- a compact Lyrics Offset card with the tappable signed value and Reset in one header, followed by −500 / −50 / +50 / +500 ms actions; the two direction groups stack on very narrow screens or at large font scales;
+- an exact-value editor with numeric keyboard, sign toggle, validation, and Save/Cancel; typing or dismissal never writes the preference;
+- a live previous/current/next original-line preview, with the current translation when eligible and explicit no-media/loading/PLAIN/unavailable states.
+
+Fixed-step adjustment requires timed lyrics and works while paused. Three-tap calibration requires playing timed lyrics and at least three upcoming distinct line starts. Exact global entry remains available without timed lyrics, and a nonzero saved offset can always be reset. Opening the editor, leaving Sync, playback/lyrics invalidation, and manual adjustment cancel unfinished tap calibration. Sync Reset and `Reset AALyrics` cancel it and restore zero.
+
+The UI consumes presentation state and emits semantic actions; persistence, tap sampling, and timing projection stay outside Compose. Content respects the shell playback-overlay inset, and adjustment controls retain at least 48 dp touch heights and full accessibility descriptions. Per-track/provider offsets, separate Phone/Auto compensation, automatic calibration, and drift correction remain deferred. See `docs/TIMING_ARCHITECTURE.md` for the complete lifecycle and validation contract.
 
 ### Details
 
@@ -289,7 +300,7 @@ The navigation bar distinguishes first selection from reselection. Tapping a dif
 Current reselection behavior:
 
 - Lyrics: return the lyrics viewport from manual browse to FOLLOW;
-- Sync: no visible change while the destination remains a root-only placeholder;
+- Sync: remain on the current calibration surface; reselection does not reset the saved offset or restart calibration;
 - Details: return the read-only Details surface to its top scroll position;
 - Settings: dismiss modal/draft UI, discard uncommitted Target-language selection, leave Advanced/Changelog/License, return to Settings home, and restore the main Settings scroll position to the top.
 
@@ -404,7 +415,12 @@ ui/phone/src/main/java/io/github/whoxamxl/aalyrics/ui/phone/
 │  ├─ TrackCard.kt
 │  └─ LyricsViewport.kt
 ├─ sync/
-│  └─ SyncScreen.kt
+│  ├─ SyncScreen.kt
+│  ├─ SyncUiState.kt
+│  ├─ SyncOffsetCard.kt
+│  ├─ SyncOffsetEditor.kt
+│  ├─ SyncOffsetInput.kt
+│  └─ TapSyncCard.kt
 ├─ details/
 │  ├─ DetailsScreen.kt
 │  └─ DetailsUiState.kt
@@ -422,7 +438,7 @@ ui/phone/src/main/java/io/github/whoxamxl/aalyrics/ui/phone/
 
 The persistent shell, navigation identity, and shell-level state files contain production Compose behavior. PR #46 completed the `PlaybackSurface` replacement of the legacy `PlaybackControlsBar`. `LyricsScreen` is the production Lyrics destination composition, and Settings follows `docs/PHONE_SETTINGS.md`.
 
-PR #49 replaces the Details placeholder with the approved read-only production surface and adds the Settings-owned Advanced sub-surface. `SyncScreen.kt` remains a placeholder and its interaction model remains deferred; do not invent Sync behavior merely to complete the tree.
+PR #49 replaces the Details placeholder with the approved read-only production surface and adds the Settings-owned Advanced sub-surface. This fork replaces the Sync placeholder with the production calibration components above. `PhoneSyncMapper`, `LyricsTimingSettings`, and `TapSyncCalibration` remain application-owned rather than moving their responsibilities into the UI tree.
 
 ## Preview and validation direction
 
@@ -449,6 +465,8 @@ Preview coverage should eventually exercise at least:
 - follow vs manual browse
 - collapsed/expanded playback-surface states and capability combinations
 - Details normal and Verbose modes
+- Sync timed/paused/no-media/loading/PLAIN/unavailable states, signed offset limits, three-tap progress, and exact-entry validation
+- compact Sync controls at normal/narrow widths and enlarged fonts, with scroll access to the preview and Reset
 - Advanced Settings with Verbose details and disabled Karaoke mode
 - in-app Changelog subscreen with long scrollable bundled release history
 - in-app Privacy Policy subscreen with long scrollable bundled policy text
@@ -469,9 +487,9 @@ The persistent shell implementation intentionally still does not decide or imple
 - speculative ViewModel layers; the approved runtime-host slice may add minimal application-owned presentation mappers
 - media-session ownership
 - provider behavior
-- final Sync interaction model
+- Sync policies beyond the implemented global manual/tap workflow, including per-track/provider offsets, separate Phone/Auto compensation, and automatic calibration
 - Details capabilities beyond the approved `PHONE_DETAILS` contract
 - functional Karaoke mode or Karaoke runtime wiring
 - Settings features outside the approved Settings + Advanced taxonomy
 - Settings application/runtime wiring
-- Sync destination implementation or its destination-specific Compose API
+- drift correction or changes to the shared timing equation

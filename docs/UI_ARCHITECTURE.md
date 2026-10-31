@@ -6,7 +6,7 @@ This document defines the UI module layout, source-set rules, Compose design-sys
 
 The project uses Jetpack Compose itself as the executable design specification for Compose surfaces. Static design artifacts may inform visual decisions, but production UI code is the source of truth for behavior and appearance. Android Auto host-rendered templates are a distinct presentation technology and adapt the same semantic design intent through automotive-local builders/components.
 
-Surface-specific product structure is documented separately when useful. The current Phone information architecture is defined in `docs/PHONE_UI_SPEC.md`, with Settings/Advanced behavior in `docs/PHONE_SETTINGS.md`, Details behavior in `docs/PHONE_DETAILS.md`, and the shell playback contract in `docs/PHONE_PLAYBACK_SURFACE.md`.
+Surface-specific product structure is documented separately when useful. The current Phone information architecture is defined in `docs/PHONE_UI_SPEC.md`, with Settings/Advanced behavior in `docs/PHONE_SETTINGS.md`, Details behavior in `docs/PHONE_DETAILS.md`, manual Sync behavior and ownership in `docs/TIMING_ARCHITECTURE.md`, and the shell playback contract in `docs/PHONE_PLAYBACK_SURFACE.md`.
 
 Branding authority and derivative rules are defined in `docs/BRANDING.md`; `branding/AALyrics_MASTER.svg` is the canonical AALyrics master icon.
 

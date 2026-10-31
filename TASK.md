@@ -1,79 +1,39 @@
-# Documentation Alignment — 1.0 Beta / README / Social Preview
+# Manual global lyrics sync
 
-## Branch and baseline
+## Scope
 
-- Branch: `docs/post-beta-alignment`.
-- Base: `main @ 6f0ff14f9afe2daaa4262af1df37f6d73a593ce0`.
-- This slice aligns durable documentation after the `v1.0.0-beta.1` release and the product-facing README compatibility update.
-- No application runtime, provider, playback, timing, Translation, Karaoke, Android Auto, persistence, signing, or update behavior changes are in scope.
+- Branch: `feature/lyrics-sync-offset`; implementation baseline: `e85c21c`.
+- Implement Phone Sync with ±50/500 ms, exact signed millisecond entry, three-tap calibration, live preview, and one persisted global offset shared by Phone and Android Auto; align architecture and Phone UI documentation with that behavior.
+- Record the user's physical-phone testing separately from automated and emulator evidence.
+- Restore tracked `AGENTS.md` to the upstream version; retain workstation resource limits and previous personal handoff details in ignored local files.
+- Preserve canonical timestamps, actual playback progress, provider/Translation ownership, user-owned Gradle/SDK files, and upstream contribution policy. The final preparation checkpoint changes documentation only.
 
-## Current public state
+## Checkpoints
 
-- `v1.0.0-beta.1` is published as **AALyrics 1.0 Beta 1**.
-- The canonical tag / Android version identity remains `v1.0.0-beta.1` / `1.0.0-beta.1`.
-- The GitHub Release is currently a normal Release with no explicit Pre-release label, so GitHub exposes it as the repository's current **Latest** release.
-- This GitHub presentation choice does not change the product channel: the release is still **1.0 Beta** and is not a stable `1.0.0` product release.
-- The Release workflow still defaults prerelease-suffixed tags to GitHub Pre-release; the current Beta's label is a deliberate post-publication presentation exception.
+- [x] Persist the global offset, connect existing timing consumers, and extend the explicit Reset path with focused regression coverage.
+- [x] Implement fixed-step and exact entry, three-tap calibration, live preview, responsive controls, and Compose fixtures.
+- [x] Preserve local workstation guidance and prior handoff details without adding them to the contribution diff.
+- [x] Align Sync status, ownership, UI structure, and deferred scope across the remaining documents.
+- [x] Validate the documentation diff, architecture guardrails, branch/commit naming, upstream baseline, and branch scope.
 
-## README compatibility contract
+## Implemented behavior and acceptance
 
-The public README uses this concise compatibility statement:
+- One app-owned offset in −30,000…+30,000 ms survives navigation, track changes, and process restart. Positive advances lyrics; negative delays them.
+- Phone lyrics/Karaoke, Sync preview, verbose Details line selection, and Android Auto use the same effective clock once. Actual playback progress and canonical timestamps remain unchanged.
+- Manual adjustment and exact entry preserve the established availability and validation rules. Three-tap calibration saves only a complete valid sample set and cancels when its playback/lyrics context becomes invalid.
+- Sync Reset and `Reset AALyrics` cancel unfinished calibration and restore zero through the explicit settings path.
+- Per-track/provider offsets, separate Phone/Auto compensation, automatic audio calibration, and drift correction remain deferred.
 
-> Works with Spotify, YouTube Music, Apple Music and other Android MediaSession players.
+## Validation evidence
 
-This means:
+- Earlier full-suite validation is recorded in `35775b9:TASK.md`: debug APK assembly and 771 tests across 94 suites passed with no failures, errors, or skips. The same record documents successful exact-entry emulator checks and the user's earlier Phone/Android Auto testing.
+- The subsequent compact-panel checkpoint recorded a successful build and 31 focused regressions, with six normal/narrow/large-font/limit/zero/unavailable Compose fixtures. Its API 37 emulator failed before rendering; that attempt is not a passing visual check.
+- On 2026-10-30, the user reported testing the current interface on a physical phone without noticing problems. This is user-reported phone validation, not a claim that every font size, orientation, or current Android Auto scenario was exercised. Device/version and individual scenarios were not supplied.
+- No production source changed in this documentation follow-up. Successful build evidence was reused; no new Gradle or emulator run was needed for these prose changes.
+- Final preparation checks passed: architecture guardrails, `git diff --check`, branch/commit naming, tracked `AGENTS.md` equality with upstream, and exclusion of local guidance/notes. Upstream `main` was rechecked at `e85c21c`; the branch retains that baseline and contains no unrelated production changes.
 
-- AALyrics observes Android's active MediaSession / MediaController surface.
-- Spotify, YouTube Music, and Apple Music are named examples of media apps that can participate through that Android contract.
-- AALyrics does not claim a private/direct API integration, partnership, or endorsement with those services.
-- Exact metadata, artwork, queue, seek, and transport capabilities remain dependent on what the active media app exposes through Android.
+## Contribution context
 
-## Social Preview contract
-
-The GitHub Social Preview should communicate the real Android Auto product without inventing a substitute application UI.
-
-- Use the canonical AALyrics brand mark from `branding/AALyrics_MASTER.svg` or a derivative generated from it.
-- Use authentic AALyrics / Android Auto product imagery as the factual UI reference.
-- Preferred composition: dark automotive / navy background, blurred Android Auto context, and the authentic AALyrics Android Auto surface presented in the foreground with restrained glassmorphism, depth, and cyan-blue edge light.
-- Marketing treatment may crop, blur, frame, shadow, or composite authentic UI, but should not fabricate unsupported controls, metadata, capabilities, or a replacement AALyrics logo.
-- Target GitHub Social Preview output: **1280×640**, under **1 MB**.
-- Approved primary copy:
-  - `Synchronized lyrics for Android Auto`
-  - `Multi-provider lyrics matching for your music player of choice.`
-- Approved feature labels:
-  - `Multi-provider matching`
-  - `Intelligent provider selection`
-  - `Synchronized lyrics`
-  - `Built for Android Auto`
-- Provider row may identify Musixmatch, LRCLIB, PetitLyrics, and SyncLRC.
-
-## Alignment targets
-
-- [x] Replace stale release-preparation `TASK.md` with the current documentation slice.
-- [x] Align `docs/RELEASES.md` with the published 1.0 Beta state and GitHub Release-label exception.
-- [x] Align `docs/ROADMAP.md` with the completed 1.0 Beta milestone and merged Android Auto work.
-- [x] Document the public MediaSession player-compatibility meaning in `docs/MEDIA_SESSION_RUNTIME.md`.
-- [x] Align `docs/ANDROID_AUTO_NOW_PLAYING.md` with that player-source contract.
-- [x] Record the GitHub Social Preview design/brand contract in `docs/BRANDING.md`.
-- [x] Run a branch-wide documentation regression/staleness review and normal repository validation.
-
-## Acceptance criteria
-
-- Durable docs no longer describe `v1.0.0-beta.1` as an upcoming release.
-- Durable docs distinguish the semantic Beta channel from GitHub's current Latest/label presentation.
-- README player examples are explicitly grounded in Android MediaSession compatibility rather than implied service-specific integrations.
-- Branding docs prevent future Social Preview work from substituting an approximate AALyrics logo or fictional product UI.
-- Roadmap status no longer points at a historical working branch/TASK as if it were current execution state.
-- No production application behavior changes.
-
-
-## Validation record
-
-- Branch-wide diff is documentation-only: `TASK.md`, `docs/RELEASES.md`, `docs/ROADMAP.md`, `docs/MEDIA_SESSION_RUNTIME.md`, `docs/ANDROID_AUTO_NOW_PLAYING.md`, and `docs/BRANDING.md`.
-- The branch is zero commits behind `main` at the final documentation review point.
-- README compatibility wording is present on `main` and matches the MediaSession compatibility contract added here.
-- The live GitHub Release state was re-verified: `v1.0.0-beta.1` is published, `prerelease=false`, and is returned by `/releases/latest`; durable docs explicitly distinguish that presentation state from the semantic Beta version channel.
-- Roadmap no longer treats the historical Android Auto working branch or release-preparation TASK as current execution state.
-- Branding documentation now requires the canonical AALyrics logo and authentic product UI as the factual source for Social Preview artwork, with 1280×640 / under-1-MB output guidance and the approved glassmorphism direction.
-- No production source, Android resources, provider implementation, runtime behavior, signing configuration, or workflow behavior changed.
-- Branch pushes do not start the normal Build workflow in this repository; the Draft PR Build remains the normal CI gate after PR creation.
+- Upstream `CONTRIBUTING.md` currently says external code contributions are not yet accepted, while welcoming technical discussion. The Draft PR presents the completed implementation and its proposed calibration policy for maintainer discussion; it does not imply acceptance of external contributions.
+- `.github/workflows/build.yml` listens to `pull_request` and manual dispatch; ordinary feature-branch pushes do not trigger Build. A fork PR can require maintainer approval before Actions runs.
+- Delivery: push the completed branch, open a Draft PR for the whole Sync feature, then stop. Do not request automated review, mark ready, or merge without explicit authorization.
