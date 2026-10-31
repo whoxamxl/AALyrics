@@ -156,6 +156,7 @@ android {
 dependencies {
     implementation(project(":core:model"))
     implementation(project(":core:lyrics"))
+    implementation(project(":cache:files"))
     implementation(project(":core:timing"))
     implementation(project(":platform:media"))
     implementation(project(":provider:api"))

@@ -53,6 +53,7 @@ AALyrics observes the active Android media session, matches the current track ag
 
 - **Synchronized lyrics** — plain, line-synced, and genuine word-synced lyrics when the selected provider supplies them.
 - **Android Auto Now Playing** — current lyric line, artwork, translated line when eligible, and the transport controls exposed by the active media app.
+- **Offline lyrics reuse** — previously resolved lyrics are cached locally for track switches and app restarts, subject to storage limits.
 - **Multiple lyrics providers** — LRCLIB, PetitLyrics, Musixmatch, and SyncLRC with provider-independent candidate selection.
 - **On-device Translation** — translated lyrics remain tied to the canonical lyric document and playback timing.
 - **Experimental WORD_SYNC Karaoke** — opt-in Phone presentation for genuine word-timed lyrics.

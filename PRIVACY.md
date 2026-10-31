@@ -1,6 +1,6 @@
 # AALyrics Privacy Policy
 
-**Effective date:** September 24, 2026
+**Effective date:** October 31, 2026
 
 AALyrics is an Android application for displaying synchronized lyrics for music playing on your device. This policy describes the data AALyrics accesses, stores, and sends when you use the app.
 
@@ -8,7 +8,7 @@ AALyrics is an Android application for displaying synchronized lyrics for music 
 
 AALyrics does not include advertising, analytics, or telemetry SDKs, and it does not require an AALyrics account.
 
-AALyrics does access information about the media currently playing on your device so it can identify the track and find lyrics. Lyrics lookup requires network requests to third-party lyrics services. AALyrics may also contact GitHub to check for application updates and, when you choose to update, to retrieve release files.
+AALyrics does access information about the media currently playing on your device so it can identify the track and find lyrics. Uncached lyrics lookup requires network requests to third-party lyrics services. Previously cached lyrics can be read locally while offline. AALyrics may also contact GitHub to check for application updates and, when you choose to update, to retrieve release files.
 
 ## Media and playback information
 
@@ -71,9 +71,9 @@ AALyrics stores a small amount of app-owned configuration locally, including set
 - whether automatic update checking is enabled;
 - the timestamp used to enforce the low-frequency automatic update-check cadence.
 
-AALyrics does not currently maintain a persistent history of the songs you play or a persistent lyrics-history database.
+AALyrics keeps a bounded offline lyrics cache in app-private storage. Entries contain selected original lyrics, line/word timing, language and source attribution, plus the request metadata and catalog identifiers needed to distinguish recordings and selection preferences. Retained entries can identify previously requested songs; the cache does not record a chronological playback history. It stores up to 256 entries and 32 MiB, with a 1 MiB limit per entry and least-recently-used eviction.
 
-Current playback, lyrics, and related presentation state are primarily held in memory while the app is running.
+Cached lyrics survive app restarts and ordinary updates. The cache is stored in Android no-backup storage and is not included in device backup. Translated output, playback position, artwork and presentation state are not persisted in this cache.
 
 Android may include eligible app-local data in its standard device backup/restore mechanisms according to your Android and Google backup settings.
 
@@ -100,6 +100,8 @@ AALyrics does not send data to advertising or analytics services. Track metadata
 ## Retention and deletion
 
 App settings remain on the device until they are changed, reset, cleared by Android, or the app is uninstalled, subject to Android backup/restore behavior.
+
+Reset AALyrics preserves cached lyrics so they remain available offline. Cache entries remain until capacity eviction, Android Clear storage or uninstall; they do not expire solely because of age.
 
 Downloaded Translation models remain managed by ML Kit until they are removed through AALyrics, removed by the system/provider, or the app/device data is cleared.
 

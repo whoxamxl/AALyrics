@@ -1,10 +1,10 @@
-# Cache Architecture Foundation
+# Lyrics Cache Architecture
 
 ## Purpose
 
-Define the architectural seam for future lyrics caching without choosing a storage engine, cache schema, TTL policy, or final cache unit before implementation evidence exists.
+Define the cache boundary and the persistent offline lyrics implementation selected after inspecting the legacy cache and current retrieval/selection inputs.
 
-The working fork contains `lyrics/LyricsCache.kt`. Migration intent remains **REFACTOR**: preserve useful cache behavior after re-checking the current fork, but do not carry Android/storage coupling into lyrics core.
+The reference `GitUpGitUp/auto-lyrics` main at `854c5fa` was inspected for this slice: `lyrics/LyricsCache.kt` and the read/refresh/prefetch call sites in `media/MediaTracker.kt`. Implementation progress and validation are recorded in `TASK.md`.
 
 ## Stable ownership rules
 
@@ -59,56 +59,52 @@ Persistent Translation Cache is explicitly outside the current implementation pa
 
 The purpose is observability during development: an old translated artifact must not make a changed Translation algorithm appear fixed or broken.
 
-## Placement intentionally deferred
+## Legacy behavior classification
 
-The exact primary cache unit is **not fixed by this document**. Viable implementation shapes include:
+| Reference behavior | Decision | Current adaptation |
+| --- | --- | --- |
+| Read disk before requesting providers; reuse lyrics after restart | PRESERVE | A valid hit completes without contacting any lyrics provider. |
+| Save selected lyrics, word timing and source | PRESERVE / REFACTOR | Save the complete canonical `LyricsDocument`, including optional line/word end times, language and structured attribution. |
+| Non-fatal storage failures and corrupt-entry removal | PRESERVE | Read failure falls through to retrieval; write failure never hides resolved lyrics. Cancellation is not a cache failure. |
+| Context-owned file storage | REFACTOR | The application supplies a no-backup directory to a separate JVM `:cache:files` adapter; pure core sees only `LyricsCache`. |
+| Lowercased title/artist joined with a separator and 32-bit hash | REFACTOR | Versioned structured request identity, SHA-256 filenames, exact key verification and richer recording/selection inputs. |
+| Direct writes and unbounded retention | REFACTOR | Atomic replacement, bounded entry size and least-recently-used capacity limits. |
+| Age-based background refresh and queue prefetch in `MediaTracker` | DROP from this slice | No expiry or background refresh/prefetch. An old valid entry stays useful offline until capacity eviction. These policies require separate work. |
+| Persisting legacy status alongside lyrics | DROP | Persist usable documents only; no negative results, provider failures, lookup IDs or UI status. |
 
-1. normalized provider-result caching before cross-provider selection;
-2. selected normalized lyrics caching after candidate selection;
-3. a layered combination of both where evidence justifies the complexity.
+## Placement and lifecycle
 
-The implementation slice must inspect the current working fork, expected provider cost/identity behavior, preference-change semantics, and invalidation requirements before choosing.
+The primary cache unit is the **selected normalized lyrics document**, after cross-provider candidate selection. This restores the old successful-result reuse without persisting provider transport DTOs or duplicating candidate-selection policy.
 
-The architecture requirement is that whichever placement is chosen remains behind a replaceable cache boundary and does not make `LyricsCoordinator`, providers, or UI own storage details.
+`LyricsCoordinator` invokes the replaceable `LyricsCache` port before provider fan-out and saves the selected document before publishing Ready/Degraded. It does not own file paths, serialization, eviction or expiry. Persistence finishes before publication so immediately switching away from visible lyrics does not cancel their pending save. I/O failure still allows publication. Cache hits publish Ready with a fresh lookup identity and diagnostics identifying a cache hit with zero provider attempts; historical provider failures are not replayed.
 
-## Identity requirements
+The same coroutine and atomic state reducer govern cache and network work. Cancellation is propagated, and cancellation is rechecked after cache operations so an obsolete/non-cooperative read cannot trigger provider work or publish stale lyrics. Demand gating remains upstream of lookup. Phone and Android Auto share the process-owned cache through the existing application graph.
 
-A future cache design must explicitly define:
+## Request identity and invalidation
 
-- track/request identity used for lookup;
-- provider identity when provider-local artifacts are cached;
-- lyrics/content identity when derived artifacts reference canonical lyrics;
-- candidate-selection preference interaction;
-- schema/version compatibility;
-- stale or invalid entry behavior.
+The encoded key includes:
 
-Identity should be based on normalized domain facts, not Android object identity or presentation state.
+- when present, all stable catalog references sorted by namespace/value, with opaque values preserved;
+- otherwise normalized title, ordered artist names, album and album artist (trimmed and lowercased with `Locale.ROOT`), plus exact optional duration in milliseconds;
+- the preferred synchronization type, including the distinct unset preference;
+- the sorted active lyrics-provider IDs;
+- a cache format/selection-policy version.
 
-## Deferred decisions
+Stable catalog references identify the recording, consistent with `PlaybackSnapshot.trackIdentity` and the existing corrected-metadata playback tests. With identical references, a later title correction or known duration reuses the document. Different references, selection preferences or provider sets miss; reference/provider set order does not matter. Without references the metadata fallback is conservative: album/version/duration changes miss rather than fuzzy-match another recording, and unknown/known duration remain distinct. Adding or removing catalog identity also misses; there is no weaker-key alias fallback. Playback position, transient player session identity, calibration and Translation settings are not inputs. Provider or selector changes that invalidate previous winners must bump the cache policy version.
 
-Do not decide in this foundation slice:
+Only documents containing nonblank lyric text are stored. Both full and partially successful provider runs may supply usable cached lyrics. NotFound, failures and blank/empty documents are never cached. Schema/key mismatches, malformed data and invalid model invariants invalidate an entry and fall through to normal retrieval. There is no time-based expiry or automatic revalidation in this slice; selection preference changes use a distinct entry instead of overwriting another variant.
 
-- Room, SQLite, DataStore, files, memory-only, or another storage engine;
-- exact table/schema layout;
-- TTL values;
-- LRU/size policy;
-- negative caching;
-- whether provider failures/not-found outcomes are cached;
-- encryption/compression;
-- prefetching;
-- provider-result versus selected-result primary cache unit;
-- cache invalidation UI or settings.
+## File adapter and retention
 
-These decisions require implementation-specific evidence and tests.
+- `:cache:files` is a JVM storage adapter depending on the core cache port, not the reverse. It uses explicit versioned JSON encoding/decoding and reconstructs validated domain models.
+- Production storage is `noBackupFilesDir/lyrics_cache`, not Android's disposable `cacheDir`. The adapter constructor performs no cache-directory creation or file reads; operations use the I/O dispatcher.
+- A single process-owned adapter serializes its operations. Writes use a same-directory temporary file, flush/sync and atomic replacement; unsuccessful replacement preserves the previous entry. Interrupted temporary files are cleaned on the next adapter access.
+- Limits: 256 documents, 32 MiB total payload and 1 MiB per entry. Read access updates recency; writes evict the least recently used entries when necessary. Oversized documents remain displayable but are not cached.
+- Valid entries survive process/activity recreation, ordinary app updates and Reset AALyrics. Reset restores settings and intentionally preserves reusable downloaded lyrics, consistent with the downloaded-assets policy.
+- Capacity eviction, Android Clear storage or uninstall removes cached lyrics. The cache is excluded from device backup by its no-backup location. It is not a chronological listening-history feature, but retained lyrics and metadata can identify previously requested songs; the Privacy Policy describes that storage.
 
-## Future implementation gate
+## Acceptance and deferred work
 
-Before implementing cache:
+Validate exact canonical PLAIN/LINE/WORD round trips; A → B → A while offline and application-graph recreation; provider-call avoidance on hit; recording/preference/provider-set separation; corruption/version mismatch; capacity/oversize behavior; non-fatal I/O failures; cancellation/stale reads and writes; and unchanged provider failure isolation and demand gating.
 
-1. re-check the current working-fork `LyricsCache` implementation and call sites;
-2. classify concrete behaviors as PRESERVE / REFACTOR / DROP;
-3. decide cache placement and identity explicitly;
-4. define cache-hit equivalence and invalidation tests;
-5. prove that preference changes, track supersession, provider failure isolation, and demand gating remain correct;
-6. keep storage adapters outside pure core;
-7. implement on a dedicated topic branch and stop before merge for approval.
+Persistent Translation caching remains prohibited by the policy above. Prefetching, expiry/background refresh, cache management UI, cross-version migration, and provider ranking changes are not part of this slice. Follow-up work must preserve the identity, lifecycle, storage and reset boundaries here.

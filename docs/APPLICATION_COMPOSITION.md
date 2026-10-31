@@ -42,7 +42,8 @@ At the time of PR #25, no UI consumed that state. Later runtime/presentation sli
 - One process-lifetime application graph and application-owned coroutine scope are used for the coordinator.
 - LRCLIB, PetitLyrics, Musixmatch, and SyncLRC are instantiated behind the existing `LyricsProvider` contract.
 - `CrossProviderCandidateSelector` is injected behind the existing `CandidateSelector` port.
-- `LyricsCoordinator` is constructed from providers, selector, and application scope.
+- `LyricsCoordinator` is constructed from providers, selector, application scope and the `LyricsCache` port.
+- Production composition supplies one `FileLyricsCache` from `:cache:files`, rooted at `noBackupFilesDir/lyrics_cache`. Tests may supply an isolated file cache or `LyricsCache.None`; the production graph factory requires an explicit cache. No storage policy or file operations move into the composition root.
 - `PlaybackLyricsController` depends on `LyricsLookupLifecycle`, not concrete providers.
 - The shared coordinator `LyricsState` / `StateFlow` is exposed for later runtime and presentation work.
 
@@ -79,7 +80,7 @@ Application composition does **not** own:
 - Android Auto presentation;
 - live `NotificationListenerService` / `MediaSessionManager` runtime;
 - process-wide lyrics-demand gating;
-- cache;
+- cache format, I/O, eviction or invalidation policy;
 - translation;
 - artwork/colors;
 - timing offset/calibration or karaoke rendering;

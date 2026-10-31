@@ -104,7 +104,7 @@ This distinction preserves:
 
 Cache is a data-access capability. It may persist canonical or explicitly derived artifacts behind a replaceable abstraction, but storage technology and cache policy do not belong in providers, UI, or pure playback/media code.
 
-Cache placement and cache unit remain deferred until implementation evidence exists.
+The original-lyrics cache now stores selected canonical documents behind the core `LyricsCache` port and a separate `:cache:files` adapter. Application composition supplies private no-backup storage. Identity, invalidation, capacity, lifecycle and reset policy are defined in the cache contract below; persistent Translation caching remains deferred.
 
 See `docs/CACHE_ARCHITECTURE.md`.
 

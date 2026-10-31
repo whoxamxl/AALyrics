@@ -72,7 +72,7 @@ The demand-gating slice adds an application-lifecycle boundary in front of `Play
 
 The Translation background scaffold also lets `:app` compose persisted Translation settings with a process-level ML Kit target-model preparation runtime. That runtime does not observe canonical lyrics, execute lyric Translation, or publish foreground state.
 
-Translation execution and Phone presentation are composed through their dedicated capability/application boundaries. The PR #84 legacy Android Auto Now Playing path also consumes the existing Translation state downstream without moving Translation execution into `:app` or `:ui:automotive`. Future persistent cache, Sync/calibration UX, Android Auto Karaoke, and Car App Library presentation may be wired from appropriate composition roots, but the composition root must not become the owner of their feature logic.
+Translation execution and Phone presentation are composed through their dedicated capability/application boundaries. The PR #84 legacy Android Auto Now Playing path also consumes the existing Translation state downstream without moving Translation execution into `:app` or `:ui:automotive`. The persistent original-lyrics cache is wired through `LyricsCache` and `:cache:files`. Future Sync/calibration UX, Android Auto Karaoke, and Car App Library presentation may be wired from appropriate composition roots, but the composition root must not become the owner of their feature logic.
 
 ### `:core:model`
 
@@ -87,6 +87,10 @@ Pure Kotlin provider contracts. Concrete providers normalize results into `Lyric
 Pure Kotlin application lyrics orchestration. It owns `LyricsState`, lookup identity/lifecycle, provider fan-out, provider-failure isolation, the bounded one-retry transient recovery policy, stale-result protection, playback-to-lookup ownership, lookup diagnostics, and the `CandidateSelector` port. It depends on provider contracts, never concrete providers or the production selector implementation.
 
 It must not become a general-purpose cache, translation, timing, karaoke, persistence, or presentation orchestrator merely because those capabilities consume lyrics.
+
+### `:cache:files`
+
+JVM adapter implementing the `LyricsCache` port in `:core:lyrics`. It owns versioned request identity, canonical-document JSON, atomic file writes and bounded retention. The application supplies an app-private no-backup directory and one process-owned instance. Core, providers, UI and media code never depend on this concrete adapter. Read/write failures are advisory to the lookup lifecycle; see `docs/CACHE_ARCHITECTURE.md`.
 
 ### `:core:timing`
 
@@ -432,7 +436,7 @@ Stable rules:
 - optional capability failure must not erase valid lower-level lyrics state;
 - providers, MediaSession runtime, `LyricsCoordinator`, and UI must not absorb unrelated capability ownership.
 
-This foundation generally avoids speculative concrete modules and APIs. Translation introduced concrete modules only when implementation justified them; timing extends the existing `:core:timing` module with shared semantic projection over `:core:model`, and the Phone WORD_SYNC Karaoke consumer/rendering contract is now implemented downstream of that engine. Cache storage, timing persistence/scope, Sync UX, dedicated calibration/drift-offset algorithms, Android Auto Karaoke, ViewModels, and additional final UI-state shapes remain deferred until their own evidence-bearing slices.
+This foundation generally avoids speculative concrete modules and APIs. Translation introduced concrete modules only when implementation justified them; timing extends the existing `:core:timing` module with shared semantic projection over `:core:model`, and the Phone WORD_SYNC Karaoke consumer/rendering contract is now implemented downstream of that engine. Original-lyrics storage is now implemented through the core cache port and separate file adapter. Timing persistence/scope, Sync UX, dedicated calibration/drift-offset algorithms, Android Auto Karaoke, ViewModels, and additional final UI-state shapes remain deferred until their own evidence-bearing slices.
 
 ## Core responsibilities
 

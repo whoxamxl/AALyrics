@@ -12,12 +12,14 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
+import kotlin.coroutines.coroutineContext
 
 /**
  * Provider-independent orchestration for one active lyrics lookup lifecycle.
@@ -39,6 +41,7 @@ data class LyricsLookupDiagnostics(
     val lookupId: LyricsLookupId? = null,
     val attemptCount: Int = 0,
     val providerFailures: List<LyricsProviderFailureDiagnostic> = emptyList(),
+    val cacheHit: Boolean = false,
 )
 
 class LyricsCoordinator(
@@ -46,6 +49,7 @@ class LyricsCoordinator(
     private val selector: CandidateSelector,
     private val scope: CoroutineScope,
     private val transientRetryDelayMs: Long = DEFAULT_TRANSIENT_RETRY_DELAY_MS,
+    private val cache: LyricsCache = LyricsCache.None,
 ) : LyricsLookupLifecycle {
     private val providers = providers.toList()
     private val lookupIds = AtomicLong(0L)
@@ -89,6 +93,17 @@ class LyricsCoordinator(
         _diagnostics.value = LyricsLookupDiagnostics(lookupId = lookup.id)
 
         activeJob = scope.launch {
+            val cacheKey = LyricsCacheKey(track, preferences, providers.map { it.descriptor.id.value }.toSet())
+            val cached = cacheOperation { cache.get(cacheKey) }
+                ?.takeIf { lyrics -> lyrics.lines.any { it.text.isNotBlank() } }
+            coroutineContext.ensureActive()
+            if (cached != null) {
+                _state.update { current -> current.reduce(LyricsStateEvent.Resolved(lookup.id, cached)) }
+                if ((_state.value as? LyricsState.ForLookup)?.lookup?.id == lookup.id) {
+                    _diagnostics.value = LyricsLookupDiagnostics(lookupId = lookup.id, cacheHit = true)
+                }
+                return@launch
+            }
             var attemptNumber = 0
 
             while (true) {
@@ -147,6 +162,14 @@ class LyricsCoordinator(
                     delay(transientRetryDelayMs)
                     continue
                 }
+
+                coroutineContext.ensureActive()
+                // Persist before publishing: switching songs may cancel this job as soon as
+                // the result is visible. Storage failure must not hide usable lyrics.
+                if (selected != null && selected.lyrics.lines.any { it.text.isNotBlank() }) {
+                    cacheOperation { cache.put(cacheKey, selected.lyrics) }
+                }
+                coroutineContext.ensureActive()
 
                 // StateFlow.update makes the stale-result guard atomic with respect to
                 // a concurrent Started/Cleared event. If ownership changes while the
@@ -207,6 +230,15 @@ class LyricsCoordinator(
                 )
             },
         )
+    }
+
+    private suspend fun <T> cacheOperation(operation: suspend () -> T): T? = try {
+        operation()
+    } catch (cancellation: CancellationException) {
+        throw cancellation
+    } catch (_: Exception) {
+        // Cache availability must never determine lyrics availability.
+        null
     }
 
     private suspend fun searchProviders(request: LyricsRequest): List<ProviderAttempt> = supervisorScope {

@@ -259,3 +259,14 @@ if grep -RInE \
 fi
 
 echo "Translation execution boundary checks passed."
+
+# Storage remains a downstream adapter, never a provider or presentation responsibility.
+if grep -RInE --include='build.gradle.kts' 'project[[:space:]]*\([[:space:]]*":cache:' core provider ui platform translation; then
+  fail "Only the application composition root may wire concrete lyrics cache storage"
+fi
+if grep -RInE --include='*.kt' \
+  '^[[:space:]]*import[[:space:]]+(android\.|androidx\.|io\.github\.whoxamxl\.aalyrics\.(ui|platform|translation|provider)\.)' \
+  cache/files/src/main; then
+  fail "Lyrics file storage must stay independent of Android, providers, Translation and presentation"
+fi
+echo "Lyrics cache storage boundary checks passed."

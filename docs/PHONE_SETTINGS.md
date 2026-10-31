@@ -947,6 +947,7 @@ After confirmation, reset restores:
 
 Reset does **not**:
 
+- delete cached original lyrics: the bounded offline cache intentionally survives reset, like reusable downloaded assets; clearing app storage/uninstall or capacity eviction removes it;
 - delete downloaded translation models;
 - revoke Notification Access or other Android permissions;
 - change Android Auto Developer Mode / Unknown sources;

@@ -2,6 +2,7 @@ package io.github.whoxamxl.aalyrics
 
 import io.github.whoxamxl.aalyrics.core.lyrics.CandidateSelectionPreferences
 import io.github.whoxamxl.aalyrics.core.lyrics.CandidateSelector
+import io.github.whoxamxl.aalyrics.core.lyrics.LyricsCache
 import io.github.whoxamxl.aalyrics.core.lyrics.LyricsState
 import io.github.whoxamxl.aalyrics.core.model.LyricsDocument
 import io.github.whoxamxl.aalyrics.core.model.LyricsSyncType
@@ -30,7 +31,7 @@ import kotlin.test.assertTrue
 class ApplicationGraphTest {
     @Test
     fun `production graph contains every provider and preserves karaoke default`() = runTest {
-        val graph = createProductionApplicationGraph(this)
+        val graph = createProductionApplicationGraph(this, LyricsCache.None)
 
         assertEquals(
             listOf("lrclib", "petitlyrics", "musixmatch", "synclrc"),

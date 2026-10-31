@@ -21,6 +21,7 @@ rootProject.name = "AALyrics"
 include(":app")
 include(":core:model")
 include(":core:lyrics")
+include(":cache:files")
 include(":core:timing")
 include(":provider:api")
 include(":provider:selection")

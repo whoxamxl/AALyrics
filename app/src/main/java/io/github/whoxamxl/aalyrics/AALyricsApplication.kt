@@ -2,8 +2,10 @@ package io.github.whoxamxl.aalyrics
 
 import android.app.Application
 import android.graphics.Bitmap
+import io.github.whoxamxl.aalyrics.cache.files.FileLyricsCache
 import io.github.whoxamxl.aalyrics.core.lyrics.CandidateSelectionPreferences
 import io.github.whoxamxl.aalyrics.core.lyrics.CandidateSelector
+import io.github.whoxamxl.aalyrics.core.lyrics.LyricsCache
 import io.github.whoxamxl.aalyrics.core.lyrics.LyricsCoordinator
 import io.github.whoxamxl.aalyrics.core.lyrics.LyricsLookupDiagnostics
 import io.github.whoxamxl.aalyrics.core.lyrics.LyricsState
@@ -384,6 +386,7 @@ class AALyricsApplication : Application() {
     }
 
     fun resetAppOwnedSettings() {
+        // Reusable original-lyrics downloads intentionally survive settings/onboarding reset.
         installPermissionPromptRuntime.dismiss()
         updateReleasePromptRuntime.reset()
         appUpdateCheckRuntime.reset()
@@ -481,7 +484,10 @@ class AALyricsApplication : Application() {
         }
         playbackAppLauncher = SelectedPlaybackAppLauncher(this)
         playbackSourceAppInfoResolver = PlaybackSourceAppInfoResolver(this)
-        graph = createProductionApplicationGraph(applicationScope)
+        graph = createProductionApplicationGraph(
+            applicationScope,
+            lyricsCache = FileLyricsCache(noBackupFilesDir.resolve("lyrics_cache")),
+        )
         playbackSnapshotSink = PlaybackSnapshotSink { snapshot ->
             if (snapshot.trackIdentity != graph.playbackState.value.trackIdentity) {
                 mutableAutomotiveArtworkState.value = AutomotiveArtworkState(
@@ -716,9 +722,10 @@ internal class ApplicationGraph(
     selector: CandidateSelector,
     applicationScope: CoroutineScope,
     val selectionPreferences: CandidateSelectionPreferences,
+    lyricsCache: LyricsCache = LyricsCache.None,
 ) {
     internal val providers = providers.toList()
-    internal val coordinator = LyricsCoordinator(this.providers, selector, applicationScope)
+    internal val coordinator = LyricsCoordinator(this.providers, selector, applicationScope, cache = lyricsCache)
     private val mutablePlaybackState = MutableStateFlow(PlaybackSnapshot())
     private val mutablePlaybackControlState = MutableStateFlow(PlaybackControlState())
     private val mutablePlaybackSourceRuntimeState =
@@ -750,7 +757,10 @@ internal class ApplicationGraph(
     val lyricsLookupDiagnostics: StateFlow<LyricsLookupDiagnostics> = coordinator.diagnostics
 }
 
-internal fun createProductionApplicationGraph(applicationScope: CoroutineScope): ApplicationGraph {
+internal fun createProductionApplicationGraph(
+    applicationScope: CoroutineScope,
+    lyricsCache: LyricsCache,
+): ApplicationGraph {
     val providers: List<LyricsProvider> = listOf(
         LrcLibProvider(),
         PetitLyricsProvider(
@@ -774,5 +784,6 @@ internal fun createProductionApplicationGraph(applicationScope: CoroutineScope):
         selector = selector,
         applicationScope = applicationScope,
         selectionPreferences = preferences,
+        lyricsCache = lyricsCache,
     )
 }

@@ -247,13 +247,13 @@ The capability foundation does not by itself authorize implementation. Phases 11
 
 The expected dependency-friendly sequence is:
 
-### Phase 11.1 — Cache — deferred
+### Phase 11.1 — Persistent offline lyrics cache — implemented
 
-Cache remains an independent capability, but persistent Translation Cache is not a prerequisite for Translation implementation.
+Selected canonical lyrics now persist behind the core `LyricsCache` port and the separate `:cache:files` adapter. Valid hits avoid provider requests across track switches and process recreation. The bounded app-private no-backup cache preserves PLAIN/LINE/WORD timing, language and attribution; identity includes recording metadata/references, selection preferences and provider set. Corruption or storage failure falls through to normal retrieval. Reset AALyrics preserves cached lyrics.
 
 Project policy now forbids persistent Translation Cache through stable `v1.0.0`; after `v1.0.0` it remains disabled unless explicitly authorized. This keeps Translation behavior directly observable during development and avoids stale cached output masking algorithm changes.
 
-General lyrics/cache work still follows `docs/CACHE_ARCHITECTURE.md` when separately authorized.
+The inspected legacy behavior, identity/format policy, capacity limits and lifecycle acceptance criteria are documented in `docs/CACHE_ARCHITECTURE.md`. Prefetch, automatic refresh/TTL and cache-management UI remain separate work; branch validation is recorded in `TASK.md`.
 
 ### Phase 11.2a — Translation background scaffold ✅
 
